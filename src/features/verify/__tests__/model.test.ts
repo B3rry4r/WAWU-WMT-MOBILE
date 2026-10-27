@@ -1,5 +1,5 @@
 import type { PlansView, ProductDraft } from '../api';
-import { bonusRowsOf, changesOf, cleanPrice, createBodyOf, draftLine, emptyForm, formOf, pointsLine, shopReady, titleProblem } from '../model';
+import { bonusRowsOf, changesOf, createBodyOf, draftLine, emptyForm, formOf, pointsLine, shopReady, titleProblem } from '../model';
 
 const draft = (over: Partial<ProductDraft> = {}): ProductDraft => ({
   id: 'd1',
@@ -95,11 +95,5 @@ describe('the draft form', () => {
     expect(changesOf({ ...was, access: 'free' }, was)).toEqual({ accessType: 'free', price: 0 });
     expect(changesOf({ ...was, description: '' }, was)).toBeNull();
     expect(changesOf({ ...formOf(draft()) }, formOf(draft()))).toBeNull();
-  });
-
-  it('keeps the price to digits', () => {
-    expect(cleanPrice('₦ 4,500.50')).toBe('450050');
-    expect(cleanPrice('007')).toBe('7');
-    expect(cleanPrice('123456789012')).toHaveLength(8);
   });
 });

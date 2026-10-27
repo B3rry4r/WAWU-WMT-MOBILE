@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 404.**
+**Launch tasks done: 176 of 407.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 5 | 0 | 0 | 0 |
-| review | 236 | 0 | 0 | 0 |
+| review | 239 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -25,6 +25,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [IAP-01](../tasks/IAP-01.md) Points, credits, ticks, tiers and community passes bought through Google Play and the App Store (Hub) (You)
 - [IAP-04](../tasks/IAP-04.md) Admin dashboard Store page (the owner maps every Google Play and App Store product to what it grants, sets each store's switch and cut, reads purchases and refunds) (You)
 - [PACK-CAP](../tasks/PACK-CAP.md) Only Founding Maker adds products, at most 2 packs (R-100) (You)
+- [PRICE-LIST](../tasks/PRICE-LIST.md) Prices come from a list (R-101, Hub) (You)
+- [POINTS-BOUGHT](../tasks/POINTS-BOUGHT.md) Bought points never expire and can never be cashed out (R-101 point 7) (You)
+- [PRICE-PICKER](../tasks/PRICE-PICKER.md) Every price is picked from a list (R-101, app) (You)
 - [STORE-BUY-HUB](../tasks/STORE-BUY-HUB.md) Buy pieces, tips and community passes through Apple and Google from one price ladder (Hub) (You)
 - [NUV-12](../tasks/NUV-12.md) Capital: fixed-return and share-offering products from the wallet (list, reserve, confirm with the PIN, portfolio, history, early liquidation) (You)
 - [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)

@@ -49,7 +49,7 @@ export const CONTENT_CATEGORIES: readonly { id: ContentCategoryId; label: string
 
 export const categoryLabel = (id: ContentCategoryId | null): string => (id ? CATEGORY_NAMES[id] : '');
 
-/** What steps 4 and 5 collect. `price` is the digits as typed, in whole naira; a free piece sends 0 whatever it holds. */
+/** What steps 4 and 5 collect. `price` is the digits of the list price picked, in whole naira; a free piece sends 0 whatever it holds. */
 export type Details = {
   title: string;
   description: string;
@@ -86,17 +86,11 @@ export function useDetails(): Details {
 /** Step 4 can go on once the Hub has what it needs of it: a title, a description and a category. */
 export const detailsReady = (d: Details): boolean => d.title.trim().length > 0 && d.description.trim().length > 0 && d.category !== null;
 
-/** The typed price as whole naira, or null when it is not one the Hub takes (nothing, zero, or over the most it allows). */
+/** The price as whole naira, or null when it is not one the Hub takes (nothing, zero, or over the most it allows). */
 export function priceOf(typed: string): number | null {
   if (!/^\d+$/.test(typed)) return null;
   const naira = Number(typed);
   return naira >= 1 && naira <= limits.priceMax ? naira : null;
-}
-
-/** Digits only, with no leading zeros and no more than the Hub's most: what the price field lets a person type. */
-export function cleanPrice(text: string): string {
-  const digits = text.replace(/\D/g, '').replace(/^0+/, '');
-  return Number(digits || 0) > limits.priceMax ? String(limits.priceMax) : digits;
 }
 
 /** `3000` reads `3,000` in the price field (the sign sits beside it). */
@@ -131,10 +125,6 @@ onSessionEnd(() => {
   resetDetails();
   setSent(null);
 });
-
-/** The Hub's whole-kobo quick prices that are a whole number of naira, as the digits the price field takes. */
-export const presetDigits = (presetsKobo: readonly number[]): string[] =>
-  presetsKobo.filter((kobo) => Number.isInteger(kobo) && kobo > 0 && kobo % 100 === 0 && kobo / 100 <= limits.priceMax).map((kobo) => String(kobo / 100));
 
 /** M25's "Usually takes", worded from the Hub's hours: "About an hour", "About 4 hours", "About a day", "About 3 days". */
 export function reviewWords(hours: number): string {

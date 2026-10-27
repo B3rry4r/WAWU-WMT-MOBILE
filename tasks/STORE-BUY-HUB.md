@@ -3,7 +3,7 @@ id: STORE-BUY-HUB
 title: Buy pieces, tips and community passes through Apple and Google from one price ladder (Hub)
 owner: YOU
 area: IAP
-order: -1267
+order: -1264
 priority: launch
 repo: wawu-backend
 type: money-path

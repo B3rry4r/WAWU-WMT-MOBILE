@@ -379,6 +379,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PriceListController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/wallet": {
         parameters: {
             query?: never;
@@ -7357,8 +7373,8 @@ export interface paths {
          *
          *     `kind: points_pack` with a `packId` buys a points pack the same way
          *     (POINTS-02, PT4 to PT4c), from the wallet or by transfer: one lot of the
-         *     pack's points (plus the Founding Maker's bonus) is added once, ending
-         *     after the bought-points expiry, and the answer is a `PointsPackPurchaseView`
+         *     pack's points (plus the Founding Maker's bonus) is added once, and never
+         *     ends (bought points never expire, R-101 point 7), and the answer is a `PointsPackPurchaseView`
          *     (`kind: "points_pack"`).
          *
          *     `kind: extra_products` (TIER-04, VF13) adds the settings' number of
@@ -8082,7 +8098,8 @@ export interface paths {
         /**
          * PT6 before the PIN: the rate (1,000 points for so many kobo, from the
          *     config), the fewest points one conversion takes, the balance, and the
-         *     cash for `points` (the whole balance when none is asked). WAWU pays the
+         *     cash for `points` (all the cashable points when none is asked; points the
+         *     person bought are never cashable, `cashablePoints`). WAWU pays the
          *     provider's charge, so the person pays nothing to convert (R-31).
          *     `canConvert` and `blockedBy` say when the points asked cannot be
          *     converted as they are (below the minimum, more than the balance, more
@@ -8126,7 +8143,9 @@ export interface paths {
          *     quote_changed` with the new quote in `reason.pointsQuote`, and nothing
          *     is paid. A body with no token is a plain 400.
          *     Before the PIN, and changing nothing: `422 below_minimum`, `402
-         *     insufficient_points`, `400 amount_out_of_range` (more than one move
+         *     insufficient_points`, `422 points_not_cashable` (more than the person's
+         *     earned and bonus points: points they bought cannot be cashed out),
+         *     `400 amount_out_of_range` (more than one move
          *     carries), `409 quote_changed`, `409 currency_not_supported`, `409
          *     wallet_not_open`, `503 fees_not_set`.
          */
@@ -8198,7 +8217,7 @@ export interface paths {
          *     body is the job as it was quoted plus `wallet.payment.totalKobo` and
          *     `wallet.payment.quoteToken`; the PIN is in `X-Transaction-Pin`. One
          *     lot of the shortfall's points is added when the provider confirms the
-         *     debit, ending after the bought-points expiry. Answers 201 with the
+         *     debit, and it never ends (bought points never expire, R-101 point 7). Answers 201 with the
          *     purchase: `paid`, `pending` while the provider has not confirmed (poll
          *     `GET /points/shortfall/{id}`; it is never sent again) or `failed` when
          *     nothing moved. The same Idempotency-Key and body answer the first result
@@ -9397,6 +9416,10 @@ export interface components {
             /** Format: uuid */
             blockedWawuId: string;
         };
+        PriceListView: {
+            prices: components["schemas"]["PriceListItem"][];
+            tips: components["schemas"]["PriceListItem"][];
+        };
         ResolveAccountDto: {
             bankCode: string;
             accountNumber: string;
@@ -10118,7 +10141,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "tier_required" | "pack_not_allowed" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "points_not_cashable" | "tier_required" | "pack_not_allowed" | "price_not_on_list" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -10173,12 +10196,18 @@ export interface components {
             limit?: "per_transaction" | "daily" | "monthly";
             /** @description below_minimum: the fewest points one conversion to cash takes (POINTS-04). */
             minimumPoints?: number;
-            /** @description below_minimum, insufficient_points: the points the person has now. */
+            /** @description below_minimum, insufficient_points, points_not_cashable: the points the person has now. */
             balancePoints?: number;
             /** @description insufficient_points: the points asked for. */
             neededPoints?: number;
             /** @description insufficient_points: neededPoints minus balancePoints. */
             shortfallPoints?: number;
+            /** @description price_not_on_list (R-101): the highest list price below the price sent, in whole naira; null when the price is under the lowest. */
+            nearestLowerNaira?: number | null;
+            /** @description price_not_on_list (R-101): the lowest list price above the price sent, in whole naira; null when the price is over the highest. */
+            nearestHigherNaira?: number | null;
+            /** @description points_not_cashable (POINTS-BOUGHT): the points the person can turn into cash now (earned and bonus points). */
+            cashablePoints?: number;
             /**
              * @description points_cap_reached (POINTS-03): which cap stopped the job.
              * @enum {string}
@@ -13383,7 +13412,8 @@ export interface components {
             /** @enum {string} */
             source: "tier_bonus" | "pack" | "bump" | "referral" | "shortfall" | "returned";
             label: string;
-            expiresAt: string;
+            expiresAt: string | null;
+            cashable: boolean;
         };
         PointMovementView: {
             id: string;
@@ -13396,6 +13426,7 @@ export interface components {
         };
         MyPointsView: {
             balance: number;
+            cashablePoints: number;
             nextExpiry: components["schemas"]["PointNextExpiryView"] | null;
             lots: components["schemas"]["PointLotView"][];
             lotCount: number;
@@ -14241,6 +14272,10 @@ export interface components {
             mediaJobId: string | null;
             createdAt: string;
             updatedAt: string;
+        };
+        PriceListItem: {
+            priceNaira: number;
+            priceKobo: number;
         };
         DmSendInitResponse: {
             flutterwaveConfig: {
@@ -17255,7 +17290,7 @@ export interface components {
             bonusPercent: number;
             bonusPoints: number;
             totalPoints: number;
-            expiryDays: number;
+            expiryDays: number | null;
             /** @enum {string} */
             paymentKind: "points_pack";
             payment: components["schemas"]["PaymentQuoteView"];
@@ -17342,7 +17377,7 @@ export interface components {
             points: number;
             bonusPoints: number;
             totalPoints: number;
-            expiresAt: string;
+            expiresAt: string | null;
         };
         PointsPackPurchaseView: {
             id: string;
@@ -17664,6 +17699,7 @@ export interface components {
             /** @enum {string} */
             currency: "NGN";
             balancePoints: number;
+            cashablePoints: number;
             minimumPoints: number;
             maximumPoints: number | null;
             rate: {
@@ -17676,7 +17712,7 @@ export interface components {
             wawuPaysProviderCharge: boolean;
             canConvert: boolean;
             /** @enum {string|null} */
-            blockedBy: "below_minimum" | "insufficient_points" | "above_maximum" | null;
+            blockedBy: "below_minimum" | "insufficient_points" | "above_maximum" | "not_cashable" | null;
             quoteToken: string;
             expiresAt: string;
         };
@@ -17743,7 +17779,7 @@ export interface components {
             payment: components["schemas"]["PaymentView"];
             grant: {
                 points: number;
-                expiresAt: string;
+                expiresAt: string | null;
             } | null;
             createdAt: string;
             paidAt: string | null;
@@ -19279,6 +19315,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    PriceListController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListView"];
+                };
             };
         };
     };
@@ -35411,7 +35466,7 @@ export interface operations {
                     "application/json": components["schemas"]["MoneyErrorEnvelope"];
                 };
             };
-            /** @description reason.code: below_minimum */
+            /** @description reason.code: below_minimum, points_not_cashable */
             422: {
                 headers: {
                     [name: string]: unknown;

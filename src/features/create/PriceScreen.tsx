@@ -1,39 +1,35 @@
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useRef, useState } from 'react';
-import { Platform, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { ApiError } from '@/api/errors';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { Card, GroupedList } from '@/components/Card';
-import { FilterChips } from '@/components/FilterChips';
 import { KeyValueRow } from '@/components/ListRow';
 import { APP_NAME } from '@/components/BrandMark';
-import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { formatMoney } from '@/components/Money';
+import { PricePicker } from '@/components/PricePicker';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Text } from '@/components/Text';
-import { fieldMetrics } from '@/components/TextField';
-import { useDebounced } from '@/features/schools/useDebounced';
-import { font, space, text, useWawu } from '@/theme';
+import { listOf, refetchIfNotOnList, usePrices } from '@/features/prices/api';
+import { stopOf } from '@/features/prices/model';
+import { font, space, useWawu } from '@/theme';
 
 import { allowanceKey, createContent, fetchSaleTerms, saleTermsKey, saveLessons, type LessonInput, type SaleTerms } from './api';
 import { CreateFrame } from './CreateFrame';
 import { fullFileOf, resetDraft, setMade, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
-import { cleanPrice, groupDigits, presetDigits, priceOf, priceReady, setDetails, setSent, useDetails, type AccessType, type Details } from './details';
+import { priceOf, priceReady, setDetails, setSent, useDetails, type AccessType } from './details';
 import { formatBytes, iconOf, labelOf, type FormatId } from './model';
 import { Stepper } from './parts';
 
-/** me.js `price`: the price figure at 22 (the board's `fs`), 8 under its label; the cover 52 by 66 with 10 corners; the summary card 12 by 14. */
-const priceMetrics = { value: 22, sign: 22, coverW: 52, coverH: 66, coverCorner: 10, title: 14.5, meta: 12.5, metaGap: 3, padV: space.md, padH: 14, note: 12.5 } as const;
+/** The cover 52 by 66 with 10 corners; the summary card 12 by 14 (the picker's own measures are in `PricePicker`). */
+const priceMetrics = { coverW: 52, coverH: 66, coverCorner: 10, title: 14.5, meta: 12.5, metaGap: 3, padV: space.md, padH: 14, note: 12.5 } as const;
 /** The "Free for everyone" card: 14 by 16, a 44 round gift, 12 between it and the words, 15.5 over 12.5 two below. */
 const freeMetrics = { padV: 14, padH: space.lg, between: space.md, icon: 44, title: 15.5, line: 12.5, lineGap: 2 } as const;
-
-/** Alan Sans has no Naira sign (U+20A6), so the platform font draws it, as `Money` does (D15 in DECISIONS.md). */
-const platformFont = 'System';
 
 export const MODES = [
   { value: 'paid', label: 'Paid' },
@@ -62,9 +58,6 @@ export function lessonInputs(lessons: readonly DraftLesson[]): LessonInput[] {
 export const lessonsFailure = (error: unknown): string =>
   `Your course is in review, but its lessons did not save. ${error instanceof ApiError && error.message ? error.message : 'Check your connection and try again.'}`;
 
-/** How long M24 waits after the last key before it asks the Hub about the price typed. */
-export const SALE_TERMS_DELAY_MS = 400;
-
 export type PriceScreenProps = {
   format: FormatId;
   onBack: () => void;
@@ -91,14 +84,15 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const free = details.accessType === 'free';
-  // The price being typed, in whole kobo, for the Hub to work out what the creator keeps of it.
-  const typed = free ? null : priceOf(details.price);
-  const asked = typed === null ? null : typed * 100;
-  // The Hub is asked once the typing rests, about the price that is there, never about the half-typed ones on the way (FIX-110 follow-up).
-  // The card says "..." for "You earn per sale" until the answer is for the price typed, so nothing stale is shown meanwhile.
-  const { settled } = useDebounced(asked === null ? '' : String(asked), SALE_TERMS_DELAY_MS);
-  const settledKobo = settled === '' ? null : Number(settled);
-  const terms = useQuery({ queryKey: saleTermsKey(settledKobo), queryFn: () => fetchSaleTerms(settledKobo), placeholderData: keepPreviousData });
+  // The price picked, in whole naira: the picker only ever gives one on the Hub's list.
+  const picked = free ? null : priceOf(details.price);
+  // The picker never chooses a price by itself, so this step starts a paid piece on the design's stop (₦2,500, or the nearest list price).
+  const start = stopOf(listOf(usePrices().data), null);
+  useEffect(() => {
+    if (!free && details.price === '' && start !== null) setDetails({ price: String(start) });
+  }, [free, details.price, start]);
+  // The listing fee is the Hub's (`GET /content/sale-terms`, FIX-110), drawn once it has answered.
+  const terms = useQuery({ queryKey: saleTermsKey(null), queryFn: () => fetchSaleTerms(null) });
 
   const send = async () => {
     const price = free ? 0 : priceOf(details.price);
@@ -141,6 +135,8 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
       void queryClient.invalidateQueries({ queryKey: allowanceKey });
       onSent();
     } catch (error) {
+      // An admin changed the list while the picker was open: read it again, and the Hub's own sentence says what is on it now.
+      refetchIfNotOnList(queryClient, error);
       setFailure(sendFailure(error));
       sending.current = false;
       setBusy(false);
@@ -158,6 +154,7 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   return (
     <CreateFrame testID="price-screen" title={`New ${labelOf(format)}`} subtitle="Step 5 of 5" onLeave={onBack} foot={foot}>
       <Stepper active={3} />
+      {!free && full && preview ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview} /> : null}
       <SegmentedTabs
         testID="price-mode"
         label="Paid or free"
@@ -176,46 +173,26 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
           </Text>
         </>
       ) : (
-        <>
-          <PriceField details={details} onChange={(price) => setDetails({ price: cleanPrice(price) })} />
-          {terms.data ? <Presets terms={terms.data} price={details.price} onPick={(price) => setDetails({ price })} /> : null}
-          {terms.data ? <EarnCard terms={terms.data} asked={asked} /> : null}
-          {full && preview ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview} /> : null}
-        </>
+        <PricePicker
+          testID="price-picker"
+          value={picked}
+          onChange={(naira) => {
+            setFailure(null);
+            setDetails({ price: String(naira) });
+          }}
+          label="Your price"
+          earnSuffix="a sale"
+        />
       )}
+      {!free && terms.data ? <ListingFeeCard terms={terms.data} /> : null}
     </CreateFrame>
   );
 }
 
-/** M24's quick prices: the Hub's, in whole naira, with the one that equals the price on. */
-export function Presets({ terms, price, onPick }: { terms: SaleTerms; price: string; onPick: (digits: string) => void }) {
-  const digits = presetDigits(terms.presets.map((p) => p.priceKobo));
-  if (digits.length === 0) return null;
-  return (
-    <FilterChips
-      testID="price-presets"
-      label="Quick prices"
-      variant="option"
-      inset={0}
-      items={digits.map((d) => ({ value: d, label: formatMoney(Number(d) * 100, { decimals: false }) }))}
-      value={digits.includes(price) ? price : ''}
-      onChange={onPick}
-    />
-  );
-}
-
-/**
- * M24's card: what the creator keeps of one sale at the price typed (the Hub's figure, said only once it is for that price), their
- * share, and the listing fee ("Free" when the Hub says 0).
- */
-export function EarnCard({ terms, asked }: { terms: SaleTerms; asked: number | null }) {
-  const current = asked !== null && terms.priceKobo === asked && terms.earnPerSaleKobo !== null;
+/** M24's card under the price: the listing fee, "Free" when the Hub says 0 (FIX-110). */
+export function ListingFeeCard({ terms }: { terms: SaleTerms }) {
   return (
     <GroupedList testID="price-terms">
-      {asked === null ? null : (
-        <KeyValueRow testID="price-earn" label="You earn per sale" value={current ? formatMoney(terms.earnPerSaleKobo ?? 0, { decimals: false }) : '...'} />
-      )}
-      <KeyValueRow testID="price-share" label="Your share" value={`${terms.creatorSharePct}%`} />
       <KeyValueRow testID="price-fee" label="Listing fee" value={terms.listingFeeKobo === 0 ? 'Free' : formatMoney(terms.listingFeeKobo, { decimals: false })} />
     </GroupedList>
   );
@@ -228,46 +205,6 @@ function NoteLine() {
     <Text variant="caption" testID="price-note" style={[styles.note, { color: colors.textMuted }]}>
       {`${APP_NAME} checks every piece before it goes live`}
     </Text>
-  );
-}
-
-/** kit `field` with the figure at 22: a sign, then the digits, grouped in threes as they are typed. Whole naira only. */
-export function PriceField({ details, onChange }: { details: Details; onChange: (digits: string) => void }) {
-  const { colors } = useWawu();
-  const [focused, setFocused] = useState(false);
-  const sign = formatMoney(0, { decimals: false }).replace(/\d/g, '');
-  return (
-    <View style={styles.fieldRoot}>
-      <Text variant="secondary" tone="textSecondary" style={styles.fieldLabel}>
-        Price per sale
-      </Text>
-      <View
-        testID="price-field-box"
-        style={[
-          styles.fieldBox,
-          { backgroundColor: colors.surfaceInput, borderColor: focused ? colors.accent : colors.borderHairline, borderWidth: focused ? fieldMetrics.ring : StyleSheet.hairlineWidth },
-        ]}
-      >
-        <Text variant="body" style={[font(700), styles.sign, { fontFamily: platformFont, fontWeight: '700' }]}>
-          {sign}
-        </Text>
-        <TextInput
-          testID="price-input"
-          accessibilityLabel="Price per sale in naira"
-          value={groupDigits(details.price)}
-          onChangeText={onChange}
-          keyboardType="number-pad"
-          inputMode="numeric"
-          placeholder="0"
-          placeholderTextColor={colors.textMuted}
-          selectionColor={colors.accent}
-          cursorColor={colors.accent}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          style={[styles.input, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textPrimary }]}
-        />
-      </View>
-    </View>
   );
 }
 
@@ -322,12 +259,6 @@ export function FreeCard() {
 
 const styles = StyleSheet.create({
   note: { textAlign: 'center', fontSize: priceMetrics.note },
-  fieldRoot: { alignSelf: 'stretch' },
-  fieldLabel: { ...font(600), fontSize: fieldMetrics.label, marginBottom: space.sm },
-  // M24 draws the sign touching the figure ("₦3,000"), no gap between them (SWEEP-APP-4 row 146).
-  fieldBox: { height: fieldMetrics.height, flexDirection: 'row', alignItems: 'center', gap: 0, paddingHorizontal: space.lg, borderRadius: fieldMetrics.radius },
-  sign: { fontSize: priceMetrics.sign },
-  input: { ...text.body, ...font(700), flex: 1, fontSize: priceMetrics.value, paddingVertical: 0 },
   piece: { paddingVertical: priceMetrics.padV, paddingHorizontal: priceMetrics.padH },
   pieceRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   cover: { width: priceMetrics.coverW, height: priceMetrics.coverH, borderRadius: priceMetrics.coverCorner, overflow: 'hidden' },

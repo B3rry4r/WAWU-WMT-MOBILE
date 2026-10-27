@@ -1,4 +1,5 @@
 import { formatMoney } from '@/components/Money';
+import { OFF_LIST_LINE } from '@/features/prices/model';
 
 import type { EventCategory, EventKind, EventOptions, EventView, TicketType } from '../api';
 import { toKobo, watOf } from '../format';
@@ -150,9 +151,9 @@ export const priceShown = (digits: string) => (digits === '' ? '' : formatMoney(
 /** A whole naira figure for the note: "₦0". */
 export const nairaText = (naira: number) => formatMoney(toKobo(naira), { decimals: false });
 
-/** E15's note, from the Hub's share and lowest price. */
+/** E15's note, from the Hub's share. Free is its own switch, a ₦0 ticket (R-8). */
 export const ticketNote = (rules: TicketRules) =>
-  `You keep ${rules.hostSharePercent}% of every ticket. Set price to ${nairaText(rules.minPriceNaira)} for a free event.`;
+  `You keep ${rules.hostSharePercent}% of every ticket. Pick Free for a free event.`;
 
 const tooLong = (max: number) => `Keep it to ${max} characters.`;
 
@@ -209,7 +210,7 @@ export function addressError(address: string, format: EventFormat, f: FieldLimit
 }
 
 /** Step 3 (E15): each ticket type's name, price and how many, against the Hub's rules. Keys are `<ticket key>.<field>`. */
-export function ticketErrors(tickets: readonly TicketDraft[], rules: TicketRules): Errors {
+export function ticketErrors(tickets: readonly TicketDraft[], rules: TicketRules, list: readonly number[] = []): Errors {
   const e: Errors = {};
   if (tickets.length === 0) e.tickets = 'Add a ticket type.';
   if (tickets.length > rules.maxTypes) e.tickets = `Up to ${rules.maxTypes} ticket types.`;
@@ -221,6 +222,8 @@ export function ticketErrors(tickets: readonly TicketDraft[], rules: TicketRules
     else if (seen.has(name.toLowerCase())) e[`${t.key}.name`] = 'Another ticket type has this name.';
     seen.add(name.toLowerCase());
     if (t.price === '') e[`${t.key}.price`] = 'Set a price.';
+    // A paid ticket is a list price (PRICE-PICKER, R-101); ₦0 is a free ticket. Checked once the list has been read.
+    else if (list.length > 0 && Number(t.price) !== 0 && !list.includes(Number(t.price))) e[`${t.key}.price`] = OFF_LIST_LINE;
     else if (Number(t.price) < rules.minPriceNaira || Number(t.price) > rules.maxPriceNaira)
       e[`${t.key}.price`] = `From ${nairaText(rules.minPriceNaira)} to ${nairaText(rules.maxPriceNaira)}.`;
     if (t.quantity === '') e[`${t.key}.quantity`] = 'How many?';
@@ -236,8 +239,9 @@ export const stepErrors = (
   opts: EventOptions,
   now: number,
   original?: Pick<HostDraft, 'day' | 'startTime' | 'endTime' | 'endDaysAfter'>,
+  list: readonly number[] = [],
 ): Errors =>
-  step === 0 ? basicsErrors(d, opts.fields) : step === 1 ? whenWhereErrors(d, opts.fields, now, original) : ticketErrors(d.tickets, opts.tickets);
+  step === 0 ? basicsErrors(d, opts.fields) : step === 1 ? whenWhereErrors(d, opts.fields, now, original) : ticketErrors(d.tickets, opts.tickets, list);
 
 export const hasErrors = (e: Errors) => Object.keys(e).length > 0;
 

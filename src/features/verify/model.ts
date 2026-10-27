@@ -70,13 +70,10 @@ export function priceWords(draft: ProductDraft): string {
 /** VF2's line under a draft's title: "No file yet · ₦4,500". A draft never has a file (publishing adds them, VERIFY-04). */
 export const draftLine = (draft: ProductDraft): string => `No file yet · ${priceWords(draft)}`;
 
-/** What the form holds. `price` is the digits typed, in whole naira (a product's price on the Hub is whole naira). */
+/** What the form holds. `price` is the digits of the list price picked, in whole naira (a product's price on the Hub is whole naira). */
 export type Form = { title: string; kind: FormatId | null; description: string; access: 'paid' | 'free'; price: string };
 
 export const emptyForm: Form = { title: '', kind: null, description: '', access: 'paid', price: '' };
-
-/** The longest price the field takes: the digits of the Hub's own ceiling are checked by the Hub, which answers in words. */
-export const PRICE_DIGITS = 8;
 
 const isFormat = (value: string | null): value is FormatId => value !== null && (FORMAT_IDS as readonly string[]).includes(value);
 
@@ -89,9 +86,6 @@ export function formOf(draft: ProductDraft): Form {
     price: draft.accessType === 'paid' && draft.price !== null ? String(draft.price) : '',
   };
 }
-
-/** Digits only, no leading zeros, at most `PRICE_DIGITS`. */
-export const cleanPrice = (typed: string): string => typed.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, PRICE_DIGITS);
 
 /** The sentence under a title that is blank, or null. A draft needs only a title (the Hub requires it). */
 export const titleProblem = (title: string): string | null => (title.trim().length === 0 ? 'Give your product a title.' : null);

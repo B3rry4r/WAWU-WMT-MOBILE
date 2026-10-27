@@ -42,6 +42,9 @@ const refusal = (status: number, message: string, extra: object = {}): Answer =>
 
 const SETTINGS = '/api/hub/paid-dm/settings';
 const EARN = '/api/hub/paid-dm/settings/earn';
+const PRICES = '/api/hub/prices';
+const LIST = [100, 200, 500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10_000];
+const prices = (list: readonly number[] = LIST): Answer => ok({ prices: list.map((n) => ({ priceNaira: n, priceKobo: n * 100 })), tips: [{ priceNaira: 200, priceKobo: 20_000 }] });
 
 const standing = (over: Record<string, unknown> = {}) => ({
   state: 'ok',
@@ -87,16 +90,17 @@ function open() {
   );
 }
 
-const price = () => screen.getByTestId('paid-price');
+/** The price now on the strip, in naira. */
+const chosen = () => screen.getAllByTestId(/^price-stop-\d+$/).filter((n) => n.props.accessibilityState?.selected).map((n) => Number(String(n.props.testID).replace('price-stop-', '')));
+/** A user picks a list price from the strip, once the list has loaded. */
+const pick = async (naira: number) => fireEvent.press(await screen.findByTestId(`price-stop-${naira}`));
 const saveButton = () => screen.getByTestId('paid-save');
 const isDisabled = (node: { props: { accessibilityState?: { disabled?: boolean }; disabled?: boolean } }) => Boolean(node.props.accessibilityState?.disabled ?? node.props.disabled);
 const puts = () => sent.filter((s) => s.method === 'PUT');
-const earnAsks = () => sent.filter((s) => s.path === EARN).map((s) => s.query);
-/** The Hub's answer to the earn read. The figures are the test's own, so a screen that worked them out itself would show another. */
-const earnIs = (priceKobo: number, earnPerMessageKobo: number) => ok({ priceKobo, creatorSharePct: 85, earnPerMessageKobo });
+const earnLine = () => screen.getByTestId('paid-price-earn').props.accessibilityLabel as string;
 
 beforeEach(() => {
-  answers = {};
+  answers = { [`GET ${PRICES}`]: prices() };
   sent = [];
   onBack.mockClear();
 });
@@ -109,108 +113,51 @@ afterEach(async () => {
 });
 
 describe('Paid messages (I21)', () => {
-  it('a user sees the switch with the price, the price field, the presets and reply times the Hub offers, and what they earn', async () => {
+  it('a user sees the switch with the price on the strip, the reply times the Hub offers, and what they earn (85%)', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
     await open();
     expect(await screen.findByText('Take paid messages')).toBeTruthy();
     expect(screen.getByText('On · ₦1,500 a message')).toBeTruthy();
-    expect(price().props.value).toBe('₦1,500');
-    for (const kobo of [10_000, 50_000, 100_000, 250_000]) expect(screen.getByTestId(`paid-preset-${kobo}`)).toBeTruthy();
+    expect(await screen.findByTestId('price-stop-1500')).toBeTruthy();
+    expect(chosen()).toEqual([1500]);
+    expect(screen.getByText('Price per question')).toBeTruthy();
+    expect(earnLine()).toBe('You earn 1,275 naira when you answer');
+    // Nothing is typed, and the old presets and the Hub's own earn rows are gone.
+    expect(screen.queryByPlaceholderText('₦0')).toBeNull();
+    expect(screen.queryByTestId('paid-preset-100000')).toBeNull();
+    expect(screen.queryByTestId('paid-share')).toBeNull();
     expect(screen.getByRole('tab', { name: '24 hours' }).props.accessibilityState.selected).toBe(true);
     for (const label of ['2 days', '3 days', '1 week']) expect(screen.getByRole('tab', { name: label })).toBeTruthy();
-    expect(screen.getByLabelText('1,275 naira')).toBeTruthy();
-    expect(screen.getByTestId('paid-share').props.children).toBe('85%');
     expect(screen.getByText('Unanswered, last 30 days')).toBeTruthy();
     expect(screen.getByTestId('paid-unanswered').props.children).toBe('4%');
     expect(screen.queryByTestId('paid-warning')).toBeNull();
     expect(screen.queryByTestId('paid-locked')).toBeNull();
   });
 
-  it('shows only what the Hub sends: other presets, other reply times and another share', async () => {
-    answers[`GET ${SETTINGS}`] = ok(
-      settings({ creatorSharePct: 80, earnPerMessageKobo: 120_000, options: { minPriceKobo: 5_000, maxPriceKobo: 1_000_000_000, pricePresets: [{ priceKobo: 20_000 }, { priceKobo: 30_000 }], responseWindowHours: [12, 36] } }),
-    );
+  it('shows only the reply times the Hub sends, and the strip holds the Hub\'s list', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ options: { minPriceKobo: 5_000, maxPriceKobo: 1_000_000_000, pricePresets: [], responseWindowHours: [12, 36] } }));
+    answers[`GET ${PRICES}`] = prices([500, 1500, 3000]);
     await open();
     await screen.findByText('Take paid messages');
-    expect(screen.queryByTestId('paid-preset-10000')).toBeNull();
-    expect(screen.getByTestId('paid-preset-20000')).toBeTruthy();
     expect(screen.getByRole('tab', { name: '12 hours' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: '36 hours' })).toBeTruthy();
     expect(screen.queryByRole('tab', { name: '1 week' })).toBeNull();
-    expect(screen.getByLabelText('1,200 naira')).toBeTruthy();
-    expect(screen.getByTestId('paid-share').props.children).toBe('80%');
+    await screen.findByTestId('price-stop-3000');
+    expect(screen.getAllByTestId(/^price-stop-\d+$/)).toHaveLength(3);
   });
 
-  it('a user can type a price and see what the Hub says they would earn, and pick a preset', async () => {
+  it('a user can pick a price from the strip or a popular one, and see what they would earn, with no earn read to the Hub', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
-    answers[`GET ${EARN}`] = [earnIs(200_000, 199_000), earnIs(50_000, 49_000)];
     await open();
     await screen.findByText('Take paid messages');
-    await fireEvent.changeText(price(), '₦2,000');
-    expect(price().props.value).toBe('₦2,000');
+    await pick(2000);
     expect(screen.getByText('On · ₦2,000 a message')).toBeTruthy();
-    // Nothing is shown for the typed price until the Hub has answered for it: the saved price's figure does not stay on.
-    expect(screen.queryByTestId('paid-earn')).toBeNull();
-    expect(await screen.findByLabelText('1,990 naira')).toBeTruthy();
-    expect(earnAsks()).toEqual(['?priceKobo=200000']);
-    await fireEvent.press(screen.getByTestId('paid-preset-50000'));
-    expect(price().props.value).toBe('₦500');
-    expect(screen.getByTestId('paid-preset-50000').props.accessibilityState.selected).toBe(true);
-    expect(await screen.findByLabelText('490 naira')).toBeTruthy();
-    expect(earnAsks()).toEqual(['?priceKobo=200000', '?priceKobo=50000']);
-  });
-
-  it('asks the Hub once when the typing rests, not once per digit', async () => {
-    answers[`GET ${SETTINGS}`] = ok(settings());
-    answers[`GET ${EARN}`] = earnIs(200_000, 199_000);
-    await open();
-    await screen.findByText('Take paid messages');
-    for (const typed of ['2', '20', '200', '2000']) await fireEvent.changeText(price(), typed);
-    expect(await screen.findByLabelText('1,990 naira')).toBeTruthy();
-    expect(earnAsks()).toEqual(['?priceKobo=200000']);
-  });
-
-  it('shows the saved price\'s figure from the settings read without asking, and again when the person types it back', async () => {
-    answers[`GET ${SETTINGS}`] = ok(settings());
-    answers[`GET ${EARN}`] = earnIs(200_000, 199_000);
-    await open();
-    await screen.findByText('Take paid messages');
-    expect(screen.getByLabelText('1,275 naira')).toBeTruthy();
-    await fireEvent.changeText(price(), '2000');
-    expect(await screen.findByLabelText('1,990 naira')).toBeTruthy();
-    await fireEvent.changeText(price(), '1500');
-    expect(screen.getByLabelText('1,275 naira')).toBeTruthy();
-    expect(earnAsks()).toEqual(['?priceKobo=200000']);
-  });
-
-  it('shows a dash, not a guess, when the Hub cannot say what a typed price earns', async () => {
-    answers[`GET ${SETTINGS}`] = ok(settings());
-    answers[`GET ${EARN}`] = 'offline';
-    await open();
-    await screen.findByText('Take paid messages');
-    await fireEvent.changeText(price(), '2000');
-    await waitFor(() => expect(earnAsks().length).toBeGreaterThan(0), { timeout: 3000 });
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
-    expect(screen.queryByTestId('paid-earn')).toBeNull();
-    expect(screen.getByText('-')).toBeTruthy();
-    // The price is still saveable: what it earns is only shown, never needed.
-    expect(isDisabled(saveButton())).toBe(false);
-  });
-
-  it('INBOX-12 R2-2: a refused earn read is asked once for a typed price, not twice', async () => {
-    answers[`GET ${SETTINGS}`] = ok(settings());
-    answers[`GET ${EARN}`] = 'offline';
-    await open();
-    await screen.findByText('Take paid messages');
-    await fireEvent.changeText(price(), '2000');
-    await waitFor(() => expect(earnAsks().length).toBeGreaterThan(0), { timeout: 3000 });
-    // A second try would come after React Query's one-second retry delay.
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1400));
-    });
-    expect(earnAsks()).toEqual(['?priceKobo=200000']);
+    expect(earnLine()).toBe('You earn 1,700 naira when you answer');
+    await fireEvent.press(screen.getByTestId('price-popular-5000'));
+    expect(screen.getByText('On · ₦5,000 a message')).toBeTruthy();
+    expect(chosen()).toEqual([5000]);
+    expect(earnLine()).toBe('You earn 4,250 naira when you answer');
+    expect(sent.some((s) => s.path === EARN)).toBe(false);
   });
 
   it('INBOX-12 finding 4: a reply time saved off the list (36 hours, set on the web) shows as a selected tab among the offered ones', async () => {
@@ -234,25 +181,12 @@ describe('Paid messages (I21)', () => {
     expect(screen.getByRole('tab', { name: '36 hours' }).props.accessibilityState.selected).toBe(true);
   });
 
-  it('asks nothing for an empty price or one under the lowest, and shows a dash', async () => {
+  it('names each stop on the strip by its price', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
     await open();
     await screen.findByText('Take paid messages');
-    await fireEvent.changeText(price(), '49');
-    await fireEvent.changeText(price(), '');
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-    });
-    expect(earnAsks()).toEqual([]);
-    expect(screen.queryByTestId('paid-earn')).toBeNull();
-  });
-
-  it('names a preset in the shared money words, whole naira', async () => {
-    answers[`GET ${SETTINGS}`] = ok(settings());
-    await open();
-    await screen.findByText('Take paid messages');
-    expect(screen.getByLabelText('Set the price to ₦500')).toBeTruthy();
-    expect(screen.getByLabelText('Set the price to ₦2,500')).toBeTruthy();
+    expect(await screen.findByLabelText('₦500')).toBeTruthy();
+    expect(screen.getByLabelText('₦2,500')).toBeTruthy();
   });
 
   it('a user can switch off, pick a reply time and save, and the Hub gets exactly that in kobo', async () => {
@@ -260,7 +194,7 @@ describe('Paid messages (I21)', () => {
     answers[`PUT ${SETTINGS}`] = ok(settings({ enabled: false, priceKobo: 200_000, responseHours: 72 }));
     await open();
     await screen.findByText('Take paid messages');
-    await fireEvent.changeText(price(), '2000');
+    await pick(2000);
     await fireEvent.press(screen.getByRole('tab', { name: '3 days' }));
     await fireEvent.press(screen.getByTestId('paid-switch'));
     expect(screen.getByText('Off')).toBeTruthy();
@@ -272,40 +206,142 @@ describe('Paid messages (I21)', () => {
     await waitFor(() => expect(screen.queryByText('Saved')).toBeNull(), { timeout: NOTICE_MS + 1500 });
   });
 
-  it('a creator who never set anything sees the switch off and an empty price, and cannot turn on without one', async () => {
+  it('a creator who never set anything sees the switch off and no price chosen, and cannot turn on without picking one', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings({ enabled: false, priceKobo: null, earnPerMessageKobo: null, raiseToKobo: null }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ enabled: true, priceKobo: 250_000 }));
     await open();
     await screen.findByText('Take paid messages');
     expect(screen.getByText('Off')).toBeTruthy();
-    expect(price().props.value).toBe('');
+    await screen.findByTestId('price-stop-2500');
+    expect(chosen()).toEqual([]);
     await fireEvent.press(screen.getByTestId('paid-switch'));
     expect(screen.getByText('On')).toBeTruthy();
     expect(isDisabled(saveButton())).toBe(true);
-    await fireEvent.changeText(price(), '1000');
+    await pick(2500);
+    expect(screen.getByText('On · ₦2,500 a message')).toBeTruthy();
     expect(isDisabled(saveButton())).toBe(false);
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 250_000, responseHours: 24 });
+  });
+
+  it('a saved price off the list keeps Save off while only the reply time changes, so no off-list price is sent', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ priceKobo: 120_000 }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ priceKobo: 100_000, responseHours: 72 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await screen.findByTestId('price-stop-1000');
+    expect(screen.getByText('Pick a price from the list.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: '3 days' }));
+    expect(isDisabled(saveButton())).toBe(true);
+    await fireEvent.press(saveButton());
+    expect(puts()).toHaveLength(0);
+    // Picking a list price turns Save on, and that price is what is sent.
+    await pick(1000);
+    expect(isDisabled(saveButton())).toBe(false);
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 100_000, responseHours: 72 });
+  });
+
+  it('a creator with an old off-list price can still switch paid messages off: Save sends enabled false and no price', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ priceKobo: 120_000 }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ enabled: false, priceKobo: 120_000 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await screen.findByTestId('price-stop-1000');
+    expect(screen.getByText('Pick a price from the list.')).toBeTruthy();
+    expect(isDisabled(saveButton())).toBe(true);
+    await fireEvent.press(screen.getByTestId('paid-switch'));
+    expect(screen.getByText('Off')).toBeTruthy();
+    expect(isDisabled(saveButton())).toBe(false);
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    // The Hub keeps the saved price when none is sent, and does not judge a price it is not sent.
+    expect(puts()[0].body).toEqual({ enabled: false, responseHours: 24 });
+  });
+
+  it('with the switch off, a list price the person picked is still saved', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ priceKobo: 120_000 }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ enabled: false, priceKobo: 200_000 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await fireEvent.press(screen.getByTestId('paid-switch'));
+    await pick(2000);
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: false, priceKobo: 200_000, responseHours: 24 });
+  });
+
+  it('an unchanged price that is on the list is sent as before, and Save waits for the list to load', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${PRICES}`] = 'offline';
+    answers[`PUT ${SETTINGS}`] = ok(settings({ responseHours: 72 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await fireEvent.press(screen.getByRole('tab', { name: '3 days' }));
+    // The list is not known, so nothing proves 1,500 is on it: Save stays off.
+    expect(isDisabled(saveButton())).toBe(true);
+    answers[`GET ${PRICES}`] = prices();
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: ['prices'] });
+    });
+    await waitFor(() => expect(isDisabled(saveButton())).toBe(false));
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 150_000, responseHours: 72 });
   });
 
   it('a price under the lowest the Hub allows is named and cannot be saved', async () => {
-    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`GET ${SETTINGS}`] = ok(settings({ options: { minPriceKobo: 150_000, maxPriceKobo: 1_000_000_000, pricePresets: [], responseWindowHours: [24, 48, 72, 168] } }));
     await open();
     await screen.findByText('Take paid messages');
-    await fireEvent.changeText(price(), '49');
-    expect(screen.getByTestId('paid-price-problem').props.children).toBe('The lowest price is ₦50.');
+    await pick(1000);
+    expect(screen.getByTestId('paid-price-problem').props.children).toBe('The lowest price is ₦1,500.');
     expect(isDisabled(saveButton())).toBe(true);
-    await fireEvent.changeText(price(), '50');
+    await pick(1500);
     expect(screen.queryByTestId('paid-price-problem')).toBeNull();
     expect(isDisabled(saveButton())).toBe(false);
   });
 
-  it('a refused save says why and keeps what was typed', async () => {
+  it('a refused save says why and keeps the price picked', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
     answers[`PUT ${SETTINGS}`] = refusal(400, 'Pick one of the reply times on offer.');
     await open();
     await screen.findByText('Take paid messages');
-    await fireEvent.changeText(price(), '2000');
+    await pick(2000);
     await fireEvent.press(saveButton());
     expect(await screen.findByText('Pick one of the reply times on offer.')).toBeTruthy();
-    expect(price().props.value).toBe('₦2,000');
+    expect(chosen()).toEqual([2000]);
+  });
+
+  it('a 400 price_not_on_list (an admin changed the list meanwhile) reads the list again and shows the Hub\'s sentence', async () => {
+    const sentence = 'That price is not on the price list. The nearest are ₦1,500 and ₦2,000.';
+    answers[`GET ${SETTINGS}`] = ok(settings());
+    answers[`PUT ${SETTINGS}`] = refusal(400, sentence, { reason: { code: 'price_not_on_list', message: sentence, nearestLowerNaira: 1500, nearestHigherNaira: 2000 } });
+    await open();
+    await screen.findByText('Take paid messages');
+    await pick(3000);
+    const reads = () => sent.filter((s) => s.method === 'GET' && s.path === PRICES).length;
+    const before = reads();
+    await fireEvent.press(saveButton());
+    expect(await screen.findByText(sentence)).toBeTruthy();
+    await waitFor(() => expect(reads()).toBeGreaterThan(before));
+  });
+
+  it('a saved price that is off the list shows the nearest list price selected and says to pick one, and sends no off-list price', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ priceKobo: 120_000 }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ priceKobo: 100_000 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await screen.findByTestId('price-stop-1000');
+    expect(chosen()).toEqual([1000]);
+    expect(screen.getByText('Pick a price from the list.')).toBeTruthy();
+    await pick(1000);
+    expect(screen.queryByText('Pick a price from the list.')).toBeNull();
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 100_000, responseHours: 24 });
   });
 });
 
@@ -315,25 +351,35 @@ describe('Paid messages, warned (I22)', () => {
     await open();
     expect(await screen.findByText('You missed 4 of your last 18')).toBeTruthy();
     expect(screen.getByText('Past 30% and paid messages switch off for 7 days. Raise your price for fewer, more serious questions.')).toBeTruthy();
-    expect(screen.getByText('Raise to ₦2,500')).toBeTruthy();
+    expect(await screen.findByText('Raise to ₦2,500')).toBeTruthy();
     expect(screen.getByTestId('paid-unanswered').props.children).toBe('22%');
     expect(isDisabled(saveButton())).toBe(false);
   });
 
   it('a user can raise the price and save it', async () => {
     answers[`GET ${SETTINGS}`] = ok(warned());
-    answers[`GET ${EARN}`] = earnIs(250_000, 212_500);
     answers[`PUT ${SETTINGS}`] = ok({ ...warned(), priceKobo: 250_000, raiseToKobo: null });
     await open();
     await fireEvent.press(await screen.findByTestId('paid-raise'));
-    expect(price().props.value).toBe('₦2,500');
-    expect(await screen.findByLabelText('2,125 naira')).toBeTruthy();
+    expect(chosen()).toEqual([2500]);
+    expect(earnLine()).toBe('You earn 2,125 naira when you answer');
     await fireEvent.press(saveButton());
     await waitFor(() => expect(puts()).toHaveLength(1));
     expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 250_000, responseHours: 24 });
     // The Hub now has nothing higher to offer: the button and the sentence about it go.
     await waitFor(() => expect(screen.queryByTestId('paid-raise')).toBeNull());
     expect(screen.getByText('Past 30% and paid messages switch off for 7 days.')).toBeTruthy();
+  });
+
+  it('lifts a raise to the lowest list price at or above the Hub\'s figure, so no price off the list is sent', async () => {
+    answers[`GET ${SETTINGS}`] = ok({ ...warned(), raiseToKobo: 220_000 });
+    answers[`PUT ${SETTINGS}`] = ok({ ...warned(), priceKobo: 250_000, raiseToKobo: null });
+    await open();
+    expect(await screen.findByText('Raise to ₦2,500')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('paid-raise'));
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 250_000, responseHours: 24 });
   });
 
   it('draws no Raise button when the Hub has no higher price to offer', async () => {
@@ -361,13 +407,14 @@ describe('Paid messages, off for 7 days (I23)', () => {
     await open();
     await screen.findByText('Paid messages are off for 7 days');
     expect(isDisabled(screen.getByTestId('paid-switch'))).toBe(true);
-    expect(price().props.editable).toBe(false);
-    expect(isDisabled(screen.getByTestId('paid-preset-100000'))).toBe(true);
+    expect(isDisabled(await screen.findByTestId('price-stop-5000'))).toBe(true);
+    expect(isDisabled(screen.getByTestId('price-popular-1000'))).toBe(true);
     await fireEvent.press(screen.getByTestId('paid-switch'));
-    await fireEvent.press(screen.getByTestId('paid-preset-100000'));
+    await fireEvent.press(screen.getByTestId('price-stop-5000'));
+    await fireEvent.press(screen.getByTestId('price-popular-1000'));
     await fireEvent.press(screen.getByRole('tab', { name: '3 days' }));
     expect(screen.getByRole('tab', { name: '24 hours' }).props.accessibilityState.selected).toBe(true);
-    expect(price().props.value).toBe('₦1,500');
+    expect(chosen()).toEqual([1500]);
     expect(isDisabled(saveButton())).toBe(true);
     await fireEvent.press(saveButton());
     expect(puts()).toHaveLength(0);

@@ -134,6 +134,21 @@ const paySource: Middleware = {
   },
 };
 
+/**
+ * PRICE-LIST (R-101, lead ruling 27 Oct 2026, option A): every Hub request says it is the app's. Some routes the app uses are routes
+ * the website also calls (a piece, a draft publish, an event and its ticket types), and the Hub holds a price to the owner's price
+ * list on them only when it sees this header. Set first, so the copy kept for a repeat after a token refresh carries it too.
+ */
+export const APP_CLIENT_HEADER = 'x-wawu-client';
+export const APP_CLIENT_VALUE = 'app';
+const appClient: Middleware = {
+  onRequest({ request }) {
+    request.headers.set(APP_CLIENT_HEADER, APP_CLIENT_VALUE);
+    return request;
+  },
+};
+
+api.use(appClient);
 api.use(paySource);
 api.use(auth);
 

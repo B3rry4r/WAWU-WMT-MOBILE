@@ -10,7 +10,11 @@ import type { ConvertQuote, PointLot, PointMovement, MyPoints } from './api';
 export const WORDS = {
   yourPoints: 'Your points',
   whenTheyEnd: 'When they end',
-  spentFirst: 'The soonest-ending points are spent first.',
+  spentFirst: 'The soonest-ending points are spent first, then the ones you bought.',
+  /** Said once on Convert: bought points are in the balance and never in what can be converted (R-101 point 7). */
+  boughtNotCash: "Points you bought can't be turned into cash.",
+  /** Under a lot of bought points on the board. */
+  neverEnds: 'never expires',
   lastMovements: 'Last 20',
   emptyTitle: 'No points yet',
   emptyBody: 'Buy a pack, or get them with a tier or by inviting people.',
@@ -38,11 +42,11 @@ export function endsOn(iso: string, now: Date): string {
 }
 
 /** "ends 12 Jan". */
-export const endsLine = (iso: string, now: Date): string => `ends ${endsOn(iso, now)}`;
+export const endsLine = (iso: string | null, now: Date): string => (iso === null ? WORDS.neverEnds : `ends ${endsOn(iso, now)}`);
 
 /** True for the lots that end at the Hub's `nextExpiry` (the soonest end): the board draws these in the warning tone. */
 export function endsFirst(lot: Pick<PointLot, 'expiresAt'>, nextExpiry: MyPoints['nextExpiry']): boolean {
-  if (!nextExpiry) return false;
+  if (!nextExpiry || lot.expiresAt === null) return false;
   const a = parseTime(lot.expiresAt);
   const b = parseTime(nextExpiry.expiresAt);
   return a !== null && b !== null && a.getTime() === b.getTime();
@@ -110,12 +114,14 @@ export function unquotableLine(digits: string, minimumPoints: number | null): { 
 }
 
 /** The sentence under the field when the Hub says the points cannot be converted as they are. Every figure is the quote's. */
-export function blockLine(quote: Pick<ConvertQuote, 'blockedBy' | 'minimumPoints' | 'maximumPoints' | 'balancePoints'>): string | null {
+export function blockLine(quote: Pick<ConvertQuote, 'blockedBy' | 'minimumPoints' | 'maximumPoints' | 'balancePoints' | 'cashablePoints'>): string | null {
   switch (quote.blockedBy) {
     case 'below_minimum':
       return `The minimum is ${formatPoints(quote.minimumPoints)}.`;
     case 'insufficient_points':
       return `You have ${formatPoints(quote.balancePoints)}.`;
+    case 'not_cashable':
+      return `You can convert ${formatPoints(quote.cashablePoints)}.`;
     case 'above_maximum':
       return quote.maximumPoints === null ? 'That is more than one conversion can carry.' : `The most you can convert at once is ${formatPoints(quote.maximumPoints)}.`;
     default:

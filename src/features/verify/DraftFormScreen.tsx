@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
+import { PricePicker } from '@/components/PricePicker';
 import { FilterChips } from '@/components/FilterChips';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
@@ -11,10 +12,12 @@ import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
 import { FORMATS, type FormatId } from '@/features/create/model';
+import { refetchIfNotOnList } from '@/features/prices/api';
+import { digitsOfNaira, nairaOfDigits } from '@/features/prices/model';
 import { radius, space } from '@/theme';
 
 import { createDraft, deleteDraft, draftKey, draftsKey, fetchDraft, updateDraft } from './api';
-import { changesOf, cleanPrice, createBodyOf, emptyForm, formOf, titleProblem, type Form } from './model';
+import { changesOf, createBodyOf, emptyForm, formOf, titleProblem, type Form } from './model';
 import { ShopFrame } from './parts';
 
 const ACCESS = [
@@ -39,7 +42,7 @@ const failure = (error: unknown, fallback: string): string => (isApiError(error)
 
 /**
  * The Create product form without its file step (VF2's "Add a product" and a draft's edit): a title, how it looks (the kind of
- * product), a description and a price, saved to `POST` or `PATCH /product-drafts`. Only the title is needed; the rest can come later.
+ * product), a description and a price picked from the Hub's list (PRICE-PICKER), saved to `POST` or `PATCH /product-drafts`. Only the title is needed; the rest can come later.
  * A draft with no file saves free. Delete asks once (`DELETE /product-drafts/{id}`). The Hub's own words are shown when it refuses a
  * save, as when the next draft would pass the number it keeps (G-662).
  */
@@ -84,6 +87,8 @@ export function DraftFormScreen({ draftId, onBack, onSaved, onDeleted, onPublish
       await cache.invalidateQueries({ queryKey: draftsKey });
       onSaved();
     } catch (error) {
+      // An admin changed the price list while the picker was open: read it again; the Hub's own sentence is shown below.
+      refetchIfNotOnList(cache, error);
       setProblem(failure(error, 'We could not save this draft. Try again.'));
       setBusy(null);
     }
@@ -197,14 +202,12 @@ export function DraftFormScreen({ draftId, onBack, onSaved, onDeleted, onPublish
       <View style={styles.group}>
         <SegmentedTabs testID="draft-access" label="Paid or free" items={ACCESS} value={current.access} onChange={(access) => set({ access })} />
         {current.access === 'paid' ? (
-          <TextField
+          <PricePicker
             testID="draft-price"
-            label="Price per sale (naira)"
-            value={current.price}
-            onChangeText={(typed) => set({ price: cleanPrice(typed) })}
-            placeholder="0"
-            keyboardType="number-pad"
-            inputMode="numeric"
+            value={nairaOfDigits(current.price)}
+            onChange={(naira) => set({ price: digitsOfNaira(naira) })}
+            label="Your price"
+            earnSuffix="a sale"
           />
         ) : (
           <Text variant="muted" testID="draft-free-note">

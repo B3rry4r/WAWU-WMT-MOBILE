@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -10,10 +10,13 @@ import { Button } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
+import { PricePicker } from '@/components/PricePicker';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { myCommunitiesKey } from '@/features/communities/api';
+import { refetchIfNotOnList } from '@/features/prices/api';
+import { digitsOfNaira, nairaOfDigits } from '@/features/prices/model';
 import { canPickImage, pickImage, type PickedImage } from '@/features/profile-edit/pickImage';
 import { PICK_FAILED } from '@/features/profile-edit/failure';
 import { PickFailed } from '@/features/profile-edit/readPicked';
@@ -33,9 +36,9 @@ export type NewCommunityScreenProps = {
 
 /**
  * I32 · New community (INBOX-14). A picture, a name, what it is for, and who can join: Open (anyone) or Private (members pay the host's
- * price for 30 days, R-63). A private room needs a picture and a price, which the host types here; the Hub checks both and the price's
- * bounds and says so in its own words. Creator accounts only: the route sends anyone else away. The board's line about the host's share is
- * not drawn, because no route serves a room's split (G-INBOX-14-1).
+ * price for 30 days, R-63). A private room needs a picture and a price, which the host picks from the Hub's price list here (PRICE-PICKER,
+ * R-101); the Hub checks both and says so in its own words. Creator accounts only: the route sends anyone else away. The picker's "You earn" line is 85% of the
+ * list price (R-5).
  */
 export function NewCommunityScreen({ onClose, onCreated }: NewCommunityScreenProps) {
   const [picture, setPicture] = useState<PickedImage | null>(null);
@@ -45,6 +48,8 @@ export function NewCommunityScreen({ onClose, onCreated }: NewCommunityScreenPro
   const [kind, setKind] = useState<Kind>('open');
   const [price, setPrice] = useState('');
   const [tried, setTried] = useState(false);
+  // The client the picker reads the list with, so a refused price reads it again where it is drawn.
+  const prices = useQueryClient();
 
   const make = useMutation(
     {
@@ -60,6 +65,8 @@ export function NewCommunityScreen({ onClose, onCreated }: NewCommunityScreenPro
         await queryClient.invalidateQueries({ queryKey: myCommunitiesKey });
         onCreated(room);
       },
+      // An admin changed the price list while the picker was open: read it again; the banner shows the Hub's own sentence.
+      onError: (error: unknown) => refetchIfNotOnList(prices, error),
     },
     queryClient,
   );
@@ -133,16 +140,15 @@ export function NewCommunityScreen({ onClose, onCreated }: NewCommunityScreenPro
         />
       </View>
       {kind === 'private' ? (
-        <TextField
-          label="Price for 30 days (₦)"
-          value={price}
-          onChangeText={(value) => setPrice(value.replace(/[^0-9]/g, ''))}
-          placeholder="2000"
-          keyboardType="number-pad"
-          hint="Members pay this each time they join or renew."
-          error={tried ? errors.price : undefined}
-          testID="new-community-price"
-        />
+        <View style={styles.kinds} testID="new-community-price">
+          <PricePicker value={nairaOfDigits(price)} onChange={(naira) => setPrice(digitsOfNaira(naira))} label="Price for 30 days" earnSuffix="a pass" />
+          <Text variant="muted">Members pay this each time they join or renew.</Text>
+          {tried && errors.price ? (
+            <Text variant="errorLine" tone="danger" accessibilityRole="alert" testID="new-community-price-error">
+              {errors.price}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
     </CreateFrame>
   );
