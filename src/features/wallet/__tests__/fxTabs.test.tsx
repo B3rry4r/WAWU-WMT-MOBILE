@@ -248,6 +248,59 @@ describe('W2 · a currency account', () => {
     expect(rtl.screen.getByText('$1 = ₦1,580.00')).toBeTruthy();
   });
 
+  // FIX-P6 round 3: a payment keeps the provider's rate block, and a line WAWU made is not a swap the person made. The Hub names such a line
+  // "Who Made This" with what it was for; the app draws that, with the rate as a detail line, and only the person's own conversion is "Swap to Naira".
+  const RATE = { fromCurrency: 'USD', toCurrency: 'NGN', rate: '1315.44', fromMinor: 23, toMinor: 30_000 };
+  const line = (id: string, over: Record<string, unknown>) => ({
+    id,
+    accountId: USD_ID,
+    currency: 'USD',
+    direction: 'out',
+    status: 'completed',
+    amountMinor: 23,
+    feeMinor: 0,
+    balanceAfterMinor: null,
+    description: '',
+    counterpartyName: null,
+    reference: id,
+    occurredAt: new Date(Date.now() - 60_000).toISOString(),
+    conversion: RATE,
+    ...over,
+  });
+
+  it('draws a payment that carries a rate block as the Hub names it, with the rate as detail, never as "Swap to Naira"', async () => {
+    hub.transactions = [
+      line('p1', { description: 'Unlock · Lighting night shoots', counterpartyName: 'Who Made This' }),
+      line('p2', { description: 'Tip · Tip to Cleo Okafor', counterpartyName: 'Who Made This' }),
+      line('p3', { description: 'Paid question · Question for Cleo Okafor', counterpartyName: 'Who Made This' }),
+      line('p4', { description: 'Event ticket · Lagos Photo Walk', counterpartyName: 'Who Made This' }),
+      line('p5', { direction: 'in', description: 'Refund · Question for Cleo Okafor', counterpartyName: 'Who Made This' }),
+    ];
+    await boot();
+    await openTab('Dollar');
+    expect(await rtl.screen.findByText('Unlock · Lighting night shoots')).toBeTruthy();
+    for (const words of ['Tip · Tip to Cleo Okafor', 'Paid question · Question for Cleo Okafor', 'Event ticket · Lagos Photo Walk', 'Refund · Question for Cleo Okafor']) {
+      expect(rtl.screen.getByText(words)).toBeTruthy();
+    }
+    expect(rtl.screen.getAllByText('Who Made This')).toHaveLength(5);
+    expect(rtl.screen.queryByText(/Swap to|Swap from/)).toBeNull();
+    // the rate is still there, as a line under the words
+    expect(rtl.screen.getAllByText('$1 = ₦1,315.44')).toHaveLength(5);
+  });
+
+  it("still draws the person's own conversion as \"Swap to Naira\", with its rate", async () => {
+    hub.transactions = [
+      line('s1', { description: 'WAWU swap', counterpartyName: 'Own account' }),
+      line('s2', { direction: 'in', description: 'Swap', counterpartyName: null, conversion: { fromCurrency: 'NGN', toCurrency: 'USD', rate: '0.000741', fromMinor: 31_040, toMinor: 23 } }),
+    ];
+    await boot();
+    await openTab('Dollar');
+    expect(await rtl.screen.findByText('Swap to Naira')).toBeTruthy();
+    expect(rtl.screen.getByText('Swap from Naira')).toBeTruthy();
+    expect(rtl.screen.getByText('$1 = ₦1,315.44')).toBeTruthy();
+    expect(rtl.screen.queryByText('Who Made This')).toBeNull();
+  });
+
   // FIX-P6 L2: a payment from a Dollar account reads as the naira row does, what it paid for under the app's own name; the Hub sends both
   // (a line WAWU made is never named by WAWU's internal account), and the app draws them as they come and invents no label of its own.
   it('draws a payment from a Dollar account as the Hub names it: the app\'s name, then what was paid for', async () => {

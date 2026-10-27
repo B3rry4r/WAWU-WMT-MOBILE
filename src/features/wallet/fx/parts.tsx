@@ -118,6 +118,8 @@ export type FxRowData = {
   id: string;
   title: string;
   subtitle: string;
+  /** A line under the words: the rate of a payment that was converted. A swap's own rate is its subtitle; a line with no rate has none. */
+  detail?: string;
   minor: number;
   code: QuoteCode;
   decimals: number;
@@ -126,6 +128,15 @@ export type FxRowData = {
   tone: 'in' | 'neutral';
   failed: boolean;
 };
+
+/**
+ * A line WAWU made (a payment for a naira price, its fee, a refund), which the Hub names "Who Made This" with what it was for ("Unlock ·
+ * the piece"), the way the naira history names the same movement (FIX-P6). The provider may still send the rate block it converted at; the
+ * line stays that payment, and the rate is only a detail under it. The person's own conversion has another party, never this name.
+ */
+export function madeByWawu(t: Pick<FxTransaction, 'counterpartyName'>): boolean {
+  return (t.counterpartyName ?? '').trim().replace(/\?$/, '').toLowerCase() === 'who made this';
+}
 
 /** One line of an account's statement, as W2 and W3 draw it: who or what, a line under it, the signed amount and the time. */
 export function fxRowOf(t: FxTransaction, decimalsOf: (code: QuoteCode) => number, now: Date): FxRowData {
@@ -137,23 +148,31 @@ export function fxRowOf(t: FxTransaction, decimalsOf: (code: QuoteCode) => numbe
   const when = rowTime(t.occurredAt, now) || clockTime(t.occurredAt);
   let title = t.counterpartyName?.trim() || t.description.trim() || (outgoing ? 'Sent' : 'Received');
   let subtitle = t.counterpartyName?.trim() ? t.description.trim() : '';
+  let detail: string | undefined;
   if (conv) {
     const from = conv.fromCurrency as QuoteCode;
     const to = conv.toCurrency as QuoteCode;
-    title = outgoing ? `Swap to ${SHORT_NAME[to]}` : `Swap from ${SHORT_NAME[from]}`;
-    subtitle =
+    const rate =
       rateLine({ fromCurrency: from, toCurrency: to, fromDecimals: decimalsOf(from), toDecimals: decimalsOf(to), rate: conv.rate }) ?? '';
+    if (madeByWawu(t)) {
+      // Not a swap the person made: the Hub's words stay, the rate is a detail.
+      detail = rate || undefined;
+    } else {
+      title = outgoing ? `Swap to ${SHORT_NAME[to]}` : `Swap from ${SHORT_NAME[from]}`;
+      subtitle = rate;
+    }
   }
   return {
     id: t.id,
     title,
     subtitle,
+    ...(detail ? { detail } : {}),
     minor: outgoing ? -t.amountMinor : t.amountMinor,
     code,
     decimals,
     meta: stateWord ? `${stateWord} · ${when}` : when,
-    icon: conv ? 'ArrowLeftRight' : outgoing ? 'ArrowUpRight' : 'ArrowDownLeft',
-    tone: !outgoing && !conv ? 'in' : 'neutral',
+    icon: conv && !madeByWawu(t) ? 'ArrowLeftRight' : outgoing ? 'ArrowUpRight' : 'ArrowDownLeft',
+    tone: !outgoing && (!conv || madeByWawu(t)) ? 'in' : 'neutral',
     failed: t.status === 'failed' || t.status === 'reversed',
   };
 }
@@ -163,7 +182,7 @@ const META_GAP = 5;
 const META = 12.5;
 
 export function FxTxRow({ row, testID }: { row: FxRowData; testID?: string }) {
-  const label = [row.title, row.subtitle, formatMinor(row.minor, row.code, row.decimals, { sign: true }), row.meta].filter(Boolean).join(', ');
+  const label = [row.title, row.subtitle, row.detail, formatMinor(row.minor, row.code, row.decimals, { sign: true }), row.meta].filter(Boolean).join(', ');
   return (
     <View testID={testID} accessible accessibilityLabel={label} style={styles.row}>
       <IconTile icon={row.icon} tone={row.tone} size={44} />
@@ -174,6 +193,11 @@ export function FxTxRow({ row, testID }: { row: FxRowData; testID?: string }) {
         {row.subtitle ? (
           <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.rowSub}>
             {row.subtitle}
+          </Text>
+        ) : null}
+        {row.detail ? (
+          <Text testID={testID ? `${testID}-detail` : undefined} variant="secondary" tone="textMuted" numberOfLines={1} style={styles.rowSub}>
+            {row.detail}
           </Text>
         ) : null}
       </View>
