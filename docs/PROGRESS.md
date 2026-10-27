@@ -3,12 +3,12 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 400.**
+**Launch tasks done: 176 of 401.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
-| building | 1 | 0 | 0 | 0 |
+| building | 2 | 0 | 0 | 0 |
 | verifying | 5 | 0 | 0 | 0 |
 | review | 232 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
@@ -258,6 +258,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [PACK-CAP](../tasks/PACK-CAP.md) Only Founding Maker adds products, at most 2 packs (R-100) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
