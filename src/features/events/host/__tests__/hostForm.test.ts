@@ -154,8 +154,18 @@ describe('tickets (E15)', () => {
     const found = ticketErrors([good, bad], rules);
     expect(Object.keys(found)).toEqual([`${bad.key}.quantity`]);
   });
-  it('writes the note from the Hub share and lowest price', () => {
-    expect(ticketNote(rules)).toBe('You keep 85% of every ticket. Set price to ₦0 for a free event.');
+  it('refuses a paid price that is not on the list, once the list is known, and lets ₦0 through as a free ticket (PRICE-PICKER)', () => {
+    const t = ticket();
+    const at = (price: string, list: readonly number[]) => ticketErrors([{ ...t, name: 'Regular', quantity: '10', price }], rules, list)[`${t.key}.price`];
+    const list = [500, 1000, 2500];
+    expect(at('1200', list)).toBe('Pick a price from the list.');
+    expect(at('1000', list)).toBeUndefined();
+    expect(at('0', list)).toBeUndefined();
+    // Before the list has been read nothing is judged here (the picker shows no price until it has).
+    expect(at('1200', [])).toBeUndefined();
+  });
+  it('writes the note from the Hub share', () => {
+    expect(ticketNote(rules)).toBe('You keep 85% of every ticket. Pick Free for a free event.');
     expect(ticketNote({ ...rules, hostSharePercent: 80 })).toContain('You keep 80%');
   });
 });

@@ -3,13 +3,12 @@ import {
   canSave,
   dayMonth,
   digitsFromKobo,
-  digitsOf,
   formOf,
   lockedBody,
   lockedTitle,
   modeOf,
   percentText,
-  priceInput,
+  priceNairaOf,
   priceKoboOf,
   priceProblem,
   saveBody,
@@ -53,19 +52,12 @@ describe('the paid message settings model', () => {
     expect(modeOf(standing({ state: 'paused' }))).toBe('locked');
   });
 
-  it('holds the price as the digits of naira, and draws them as money', () => {
+  it('holds the price as the digits of the list price picked, and reads it as whole naira', () => {
     expect(formOf(settings())).toEqual({ enabled: true, digits: '1500', hours: 24 });
     expect(formOf(settings({ priceKobo: null, enabled: false }))).toEqual({ enabled: false, digits: '', hours: 24 });
     expect(digitsFromKobo(1_000_000_000)).toBe('10000000');
-    expect(priceInput('1500')).toBe('₦1,500');
-    expect(priceInput('')).toBe('');
-  });
-
-  it('keeps only digits from what was typed, drops leading zeros, and stops at ten', () => {
-    expect(digitsOf('₦1,500')).toBe('1500');
-    expect(digitsOf('0075')).toBe('75');
-    expect(digitsOf('abc')).toBe('');
-    expect(digitsOf('123456789012')).toBe('1234567890');
+    expect(priceNairaOf({ enabled: true, digits: '1500', hours: 24 })).toBe(1500);
+    expect(priceNairaOf({ enabled: false, digits: '', hours: 24 })).toBeNull();
   });
 
   it('writes a share as a whole percent, never over the line it is under', () => {

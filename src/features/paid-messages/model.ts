@@ -27,19 +27,12 @@ export function formOf(settings: PaidMessageSettings): Form {
   };
 }
 
-/** The price field's words: "₦1,500", or nothing while empty. Digits only, no leading zeros. */
-export function priceInput(digits: string): string {
-  return digits === '' ? '' : formatMoney(nairaToKobo(Number(digits)), { decimals: false });
+/** The price in whole naira, or null while none is chosen. */
+export function priceNairaOf(form: Form): number | null {
+  return form.digits === '' ? null : Number(form.digits);
 }
 
-/** What was typed into the price field, as digits: the glyph, commas and anything else are dropped. */
-export function digitsOf(typed: string): string {
-  const only = typed.replace(/\D/g, '').replace(/^0+/, '');
-  // Past the highest price the Hub takes is a figure nobody means: stop growing, so the field never overflows a number.
-  return only.slice(0, 10);
-}
-
-/** The typed price in kobo, or null while the field is empty. */
+/** The price in kobo, or null while none is chosen. */
 export function priceKoboOf(form: Form): number | null {
   return form.digits === '' ? null : nairaToKobo(Number(form.digits));
 }

@@ -11,6 +11,7 @@ import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, ICON_STROKE } from '@/components/icon';
 import { KeyValueRow } from '@/components/ListRow';
 import { Money } from '@/components/Money';
+import { Skeleton } from '@/components/Skeleton';
 import { PaySheet, SourceFooter, feesTotalKobo, formatNaira, paidFromRows, sourceApproval, sourceRows, type PaySource } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
@@ -20,13 +21,17 @@ import { StatusSheet } from '@/features/feedpay/StatusSheet';
 import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } from '@/theme';
 
-import { NOTE_MAX, QUICK_AMOUNTS_KOBO, noteEcho, sentHeading, tipTitle, WALLET_NAME } from './model';
+import { earnOf } from '@/features/prices/model';
+
+import { NOTE_MAX, getsWords, noteEcho, sentHeading, tipTitle, WALLET_NAME } from './model';
 import type { TipState } from './useTip';
 import { usePaySource } from '@/features/pay-source/usePaySource';
 
 /** design/_gen/home.js `tipSheet`: the sheet's parts 14 apart, the chips 48 high with a 16 corner, the fields 50 high. */
 const SHEET_GAP = space.md + space.xs / 2;
-const CHIP_H = 48;
+const TILE_H = 72;
+const TILE_AMOUNT = 19;
+const TILE_GETS = 11.5;
 const FIELD_H = 50;
 const FIELD_PAD = space.lg;
 const FIELD_TEXT = 15.5;
@@ -41,26 +46,69 @@ function Notice({ line }: { line: string }) {
   return <Banner tone="danger" title="Couldn't check the price" body={line} testID="tip-notice" />;
 }
 
-/** One quick amount: the chosen one is filled with the ink colour, the rest are outlined (H26). */
-function Chip({ kobo, selected, onPress }: { kobo: number; selected: boolean; onPress: () => void }) {
+/**
+ * One tip tile (the approved design, PRICE-PICKER): the amount the fan pays and what the creator gets of it (85%, R-5, rounded down).
+ * The chosen one is tinted with the accent and its "gets" line turns to the success colour. Payment is unchanged: what the fan pays
+ * today is the tip itself, with the Hub's own fees added below in the breakdown.
+ */
+function Tile({ naira, name, selected, onPress }: { naira: number; name: string | null | undefined; selected: boolean; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
+  const gets = getsWords(name);
   return (
     <Pressable
-      testID={`tip-chip-${kobo}`}
+      testID={`tip-tile-${naira}`}
       accessibilityRole="button"
-      accessibilityLabel={formatNaira(kobo)}
+      accessibilityLabel={`${formatNaira(naira * 100)}. ${gets} ${formatNaira(earnOf(naira) * 100)}`}
       accessibilityState={{ selected }}
       onPress={onPress}
       {...ring.handlers}
       style={[
-        styles.chip,
-        selected ? { backgroundColor: colors.textPrimary } : { borderColor: colors.borderStrong, borderWidth: 1 },
+        styles.tile,
+        { backgroundColor: selected ? colors.accentTint : colors.surfaceSunken, borderColor: selected ? colors.accent : 'transparent' },
         ring.style,
       ]}
     >
-      <Money minorUnits={kobo} size={15} decimals={false} tone={selected ? 'surfacePage' : 'textPrimary'} />
+      <Money minorUnits={naira * 100} size={TILE_AMOUNT} weight={700} decimals={false} />
+      <View style={styles.gets}>
+        <Text variant="caption" tone={selected ? 'success' : 'textMuted'} style={styles.getsText}>
+          {gets}
+        </Text>
+        <Money minorUnits={earnOf(naira) * 100} size={TILE_GETS} weight={500} decimals={false} tone={selected ? 'success' : 'textMuted'} />
+      </View>
     </Pressable>
+  );
+}
+
+/** The six tiles from the Hub's tip list: a grid of three, a skeleton while the list is read, and a try again if it could not be. */
+function Tiles({ tip }: { tip: TipState }) {
+  if (tip.tipsFailed) {
+    return (
+      <View testID="tip-tiles-failed" style={styles.failed}>
+        <Text variant="muted">The tip amounts did not load.</Text>
+        <Button label="Try again" variant="secondary" size="sm" full={false} onPress={tip.readTips} testID="tip-tiles-retry" />
+      </View>
+    );
+  }
+  if (tip.tips.length === 0) {
+    return (
+      <View testID="tip-tiles-loading" style={styles.tiles} accessibilityLabel="Loading tip amounts">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <View key={i} style={styles.tileCell}>
+            <Skeleton height={TILE_H} radius={radius.input} />
+          </View>
+        ))}
+      </View>
+    );
+  }
+  return (
+    <View testID="tip-tiles" style={styles.tiles}>
+      {tip.tips.map((naira) => (
+        <View key={naira} style={styles.tileCell}>
+          <Tile naira={naira} name={tip.target?.name} selected={tip.amountKobo === naira * 100} onPress={() => tip.pick(naira * 100)} />
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -119,7 +167,7 @@ function Breakdown({ tip, source }: { tip: TipState; source?: PaySource }) {
 }
 
 /**
- * H26 · Tip sheet: "Tip Tife", where it goes, four quick amounts, any other amount, an optional note, the breakdown (BRIEF H26,
+ * H26 · Tip sheet: "Tip Tife", where it goes, six tip tiles from the Hub's list (PRICE-PICKER, R-101: nothing is typed), an optional note, the breakdown (BRIEF H26,
  * R-10), Pay from wallet and "Tip ₦2,023.25". The Naira, Dollar and USDT picker is not drawn (R-64). Tip opens H27, the shared
  * PIN sheet, and a paid tip ends on H28.
  */
@@ -138,28 +186,7 @@ function TipSheet({ tip, source }: { tip: TipState; source?: PaySource }) {
         <Text variant="muted">Goes straight to their wallet. They see your name and note.</Text>
       </View>
       {flow.notice ? <Notice line={flow.notice} /> : null}
-      <View style={styles.chips}>
-        {QUICK_AMOUNTS_KOBO.map((kobo) => (
-          <View key={kobo} style={styles.chipCell}>
-            <Chip kobo={kobo} selected={tip.chosen === kobo} onPress={() => tip.pick(kobo)} />
-          </View>
-        ))}
-      </View>
-      <Box>
-        <TextInput
-          testID="tip-other"
-          value={tip.typed}
-          onChangeText={tip.type}
-          keyboardType="number-pad"
-          inputMode="numeric"
-          placeholder="Other amount"
-          placeholderTextColor={colors.textMuted}
-          accessibilityLabel="Other amount in naira"
-          selectionColor={colors.accent}
-          cursorColor={colors.accent}
-          style={[styles.input, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textPrimary }]}
-        />
-      </Box>
+      <Tiles tip={tip} />
       <Box>
         <Icon name="PenLine" size={PEN} color={colors.textMuted} />
         <TextInput
@@ -301,9 +328,12 @@ export function TipSheets({
 
 const styles = StyleSheet.create({
   head: { gap: space.xs + space.xs / 2 },
-  chips: { flexDirection: 'row', gap: space.sm },
-  chipCell: { flex: 1 },
-  chip: { height: CHIP_H, borderRadius: radius.input, alignItems: 'center', justifyContent: 'center' },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  tileCell: { width: '31.5%', flexGrow: 1 },
+  tile: { minHeight: TILE_H, borderRadius: radius.input, borderWidth: 1, paddingVertical: space.md + 2, paddingHorizontal: space.xs + 2, alignItems: 'center', gap: space.xs - 1 },
+  gets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: space.xs - 1 },
+  getsText: { fontSize: TILE_GETS },
+  failed: { alignItems: 'center', gap: space.sm },
   box: {
     height: FIELD_H,
     borderRadius: radius.tile,

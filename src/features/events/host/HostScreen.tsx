@@ -7,11 +7,15 @@ import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
+import { PricePicker } from '@/components/PricePicker';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField, fieldMetrics } from '@/components/TextField';
 import { fetchMyTier, tierKey } from '@/features/me/api';
+import { listOf, refetchIfNotOnList, usePrices } from '@/features/prices/api';
+import { digitsOfNaira, nairaOfDigits } from '@/features/prices/model';
 import { canPickImage, pickImage, type PickedImage } from '@/features/profile-edit/pickImage';
 import { layout, radius, space, useWawu } from '@/theme';
 
@@ -47,6 +51,10 @@ import { isHostTierRefusal, tierRunning, type HostTierRefusal } from './hostTier
 /** events_b.js form1 to form3: `body(..., { between: 14, pt: 14 })`, tickets at 12; the FORMAT label 10 over its options; a ticket card 14 in, 10 between its rows. */
 const bodyMetrics = { top: 14, between: 14, ticketsGap: 12, labelGap: 10, cardPad: 14, cardGap: 10, pairBetween: 10 } as const;
 /** events_b.js form3's Add a ticket type: 12 padding, 16 corner, a 1.5 strong ring, a 16 Plus at 2.2, 7 to the words, 13.5 semi-bold. */
+const ACCESS = [
+  { value: 'paid', label: 'Paid' },
+  { value: 'free', label: 'Free' },
+] as const;
 const addMetrics = { pad: 12, corner: 16, ring: 1.5, icon: 16, iconStroke: 2.2, between: 7, font: 13.5 } as const;
 /** How far ahead a start can be picked, and the gap between the times offered. PROVISIONAL(HOST-PICKER, owner=DEV3, why=no ruling sizes them). */
 const PICKER = { days: 365, minutes: 30, endDays: 14 } as const;
@@ -77,6 +85,7 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
   const client = useQueryClient();
   const verification = useQuery({ queryKey: verificationKey, queryFn: fetchMyVerification });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions });
+  const priceList = listOf(usePrices().data);
   // Read again on every visit: a tier bought or ended since the last one decides the entry.
   const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
 
@@ -135,7 +144,7 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
   const opts = options.data;
 
   const advance = (o: EventOptions) => {
-    const found = stepErrors(step, draft, o, now());
+    const found = stepErrors(step, draft, o, now(), undefined, priceList);
     setErrors(found);
     if (hasErrors(found)) return;
     setStep((step + 1) as Step);
@@ -144,10 +153,10 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
   const send = async (o: EventOptions) => {
     if (inFlight.current) return;
     const at = now();
-    const all: Errors = { ...stepErrors(0, draft, o, at), ...stepErrors(1, draft, o, at), ...stepErrors(2, draft, o, at) };
+    const all: Errors = { ...stepErrors(0, draft, o, at), ...stepErrors(1, draft, o, at), ...stepErrors(2, draft, o, at, undefined, priceList) };
     setErrors(all);
     if (hasErrors(all)) {
-      const firstBad = ([0, 1, 2] as Step[]).find((s) => hasErrors(stepErrors(s, draft, o, at)));
+      const firstBad = ([0, 1, 2] as Step[]).find((s) => hasErrors(stepErrors(s, draft, o, at, undefined, priceList)));
       if (firstBad !== undefined && firstBad !== step) setStep(firstBad);
       return;
     }
@@ -160,6 +169,8 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
       void client.invalidateQueries({ queryKey: eventsKey });
       setSent(event);
     } catch (error) {
+      // An admin changed the price list while the picker was open: read it again; the Hub's own sentence is shown below.
+      refetchIfNotOnList(client, error);
       if (isHostTierRefusal(error)) {
         // E21 is the answer, with the Hub's own words; what the app read about the tier and the tick is out of date.
         setRefused(error as HostTierRefusal);
@@ -483,28 +494,40 @@ export function Tickets({
                 error={errors[`${t.key}.name`]}
                 maxLength={rules.nameMaxLength}
               />
-              <View style={styles.pair}>
-                <View style={styles.half}>
-                  <TextField
-                    testID={`host-ticket-${i}-price`}
+              <SegmentedTabs
+                testID={`host-ticket-${i}-access`}
+                label="Paid or free"
+                items={ACCESS}
+                value={t.price === '0' ? 'free' : 'paid'}
+                // Free is a ₦0 ticket (R-8); paid starts empty and the picker offers its first price at once.
+                onChange={(access) => setTicket(t.key, { price: access === 'free' ? '0' : '' })}
+              />
+              {t.price === '0' ? null : (
+                <View testID={`host-ticket-${i}-price`}>
+                  <PricePicker
+                    testID={`host-ticket-${i}-picker`}
+                    value={nairaOfDigits(t.price)}
+                    onChange={(naira) => setTicket(t.key, { price: digitsOfNaira(naira) })}
                     label="Price"
-                    keyboardType="number-pad"
-                    value={priceShown(t.price)}
-                    onChangeText={(typed) => setTicket(t.key, { price: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
-                    error={errors[`${t.key}.price`]}
+                    earnSuffix="a ticket"
+                    storeNote={false}
+                    bleed={bodyMetrics.cardPad}
                   />
+                  {errors[`${t.key}.price`] ? (
+                    <Text variant="errorLine" tone="danger" accessibilityRole="alert">
+                      {errors[`${t.key}.price`]}
+                    </Text>
+                  ) : null}
                 </View>
-                <View style={styles.half}>
-                  <TextField
-                    testID={`host-ticket-${i}-quantity`}
-                    label="How many"
-                    keyboardType="number-pad"
-                    value={t.quantity}
-                    onChangeText={(typed) => setTicket(t.key, { quantity: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
-                    error={errors[`${t.key}.quantity`]}
-                  />
-                </View>
-              </View>
+              )}
+              <TextField
+                testID={`host-ticket-${i}-quantity`}
+                label="How many"
+                keyboardType="number-pad"
+                value={t.quantity}
+                onChangeText={(typed) => setTicket(t.key, { quantity: digitsOf(typed).replace(/^0+(?=\d)/, '') })}
+                error={errors[`${t.key}.quantity`]}
+              />
             </>
           )}
           {!locked && draft.tickets.length > 1 ? <RemoveLink onPress={() => remove(t.key)} testID={`host-ticket-${i}-remove`} /> : null}

@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 405.**
+**Launch tasks done: 176 of 406.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 5 | 0 | 0 | 0 |
-| review | 237 | 0 | 0 | 0 |
+| review | 238 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -27,6 +27,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PACK-CAP](../tasks/PACK-CAP.md) Only Founding Maker adds products, at most 2 packs (R-100) (You)
 - [PRICE-LIST](../tasks/PRICE-LIST.md) Prices come from a list (R-101, Hub) (You)
 - [POINTS-BOUGHT](../tasks/POINTS-BOUGHT.md) Bought points never expire and can never be cashed out (R-101 point 7) (You)
+- [PRICE-PICKER](../tasks/PRICE-PICKER.md) Every price is picked from a list (R-101, app) (You)
 - [NUV-12](../tasks/NUV-12.md) Capital: fixed-return and share-offering products from the wallet (list, reserve, confirm with the PIN, portfolio, history, early liquidation) (You)
 - [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)
 - [R2-MONEY](../tasks/R2-MONEY.md) RELEASE-02 fixes for the money and work area (CHECK-3 defects D-01 to D-06 and the lows) (You)

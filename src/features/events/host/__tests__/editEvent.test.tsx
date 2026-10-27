@@ -115,6 +115,7 @@ const serve = (tiers: ReturnType<typeof tier>[], sold: number, extra?: (c: Call)
   handler = (c) => {
     const own = extra?.(c);
     if (own) return own;
+    if (c.method === 'GET' && c.path === '/prices') return ok(priceList);
     if (c.method === 'GET' && c.path === '/events/options') return ok(options);
     if (c.method === 'GET' && c.path === '/events/e-9') return ok(live());
     if (c.method === 'GET' && c.path === '/events/e-9/tickets') return ok(tiers);
@@ -122,6 +123,16 @@ const serve = (tiers: ReturnType<typeof tier>[], sold: number, extra?: (c: Call)
     return undefined;
   };
 };
+
+/** The price list the Hub serves (R-101): what a ticket's picker offers. */
+const priceList = {
+  prices: [100, 200, 500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6500, 7500, 10_000, 12_000, 15_000].map((n) => ({ priceNaira: n, priceKobo: n * 100 })),
+  tips: [{ priceNaira: 200, priceKobo: 20_000 }],
+};
+/** A host picks a list price for ticket type `i` from its strip, and turns it Paid or Free with the switch above it. */
+const pick = async (i: number, naira: number) =>
+  rtl.fireEvent.press(await rtl.within(await rtl.screen.findByTestId(`host-ticket-${i}-picker`)).findByTestId(`price-stop-${naira}`));
+const access = (i: number, which: 'Paid' | 'Free') => rtl.fireEvent.press(rtl.within(rtl.screen.getByTestId(`host-ticket-${i}-access`)).getByLabelText(which));
 
 const type = (id: string, text: string) => rtl.fireEvent.changeText(rtl.screen.getByTestId(id), text);
 const press = (id: string) => rtl.fireEvent.press(rtl.screen.getByTestId(id));
@@ -354,11 +365,12 @@ describe('E18 · Ticket types', () => {
   it('a host with no ticket sold can change a type\'s price and places, is told it goes back to review, and the Hub saves them', async () => {
     serve([regular(), vip()], 0, (c) => (c.method === 'PUT' && c.path === '/events/e-9/tickets' ? ok([]) : undefined));
     const props = await bootTypes();
-    expect(rtl.screen.getByTestId('host-ticket-0-price').props.value).toBe('₦5,000');
+    // The saved 5,000 is the price selected on the strip; nothing is typed.
+    expect((await rtl.within(rtl.screen.getByTestId('host-ticket-0-picker')).findByTestId('price-stop-5000')).props.accessibilityState.selected).toBe(true);
     expect(rtl.screen.getByTestId('host-ticket-0-quantity').props.value).toBe('100');
     expect(rtl.screen.queryByTestId('ticket-types-locked')).toBeNull();
     expect(rtl.screen.getByTestId('ticket-types-save').props.accessibilityState.disabled).toBe(true);
-    await type('host-ticket-0-price', '6500');
+    await pick(0, 6500);
     await type('host-ticket-0-quantity', '80');
     await press('ticket-types-save');
     expect(await rtl.screen.findByTestId('review-sheet-words')).toHaveTextContent('Your event goes back to review and comes off the calendar until a person approves it again.');
@@ -383,7 +395,7 @@ describe('E18 · Ticket types', () => {
     await bootTypes();
     await press('host-add-ticket');
     await type('host-ticket-1-name', 'Early bird');
-    await type('host-ticket-1-price', '3000');
+    await pick(1, 3000);
     await type('host-ticket-1-quantity', '30');
     await press('host-ticket-0-remove');
     await press('ticket-types-save');
@@ -392,11 +404,12 @@ describe('E18 · Ticket types', () => {
     expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ types: [{ tier: 'regular', name: 'Early bird', priceNaira: 3000, quantity: 30 }] });
   });
 
-  it('a host who sets a price of zero sends the free tier, and a free type given a price becomes a paid one', async () => {
+  it('a host who turns a type Free sends the free tier, and a free type turned Paid and given a list price becomes a paid one', async () => {
     serve([tier('t1', 'regular', 'Regular', 5000, 100), tier('t3', 'free', 'Open door', 0, 50)], 0, (c) => (c.method === 'PUT' ? ok([]) : undefined));
     await bootTypes();
-    await type('host-ticket-0-price', '0');
-    await type('host-ticket-1-price', '1500');
+    await access(0, 'Free');
+    await access(1, 'Paid');
+    await pick(1, 1500);
     await press('ticket-types-save');
     await press('review-confirm');
     await rtl.screen.findByTestId('host-submitted');
@@ -474,7 +487,7 @@ describe('E18 · Ticket types', () => {
       return undefined;
     });
     const props = await bootTypes();
-    await type('host-ticket-0-price', '6500');
+    await pick(0, 6500);
     await press('ticket-types-save');
     await press('review-confirm');
     expect(await rtl.screen.findByText(SOLD_RULE)).toBeTruthy();
@@ -486,14 +499,36 @@ describe('E18 · Ticket types', () => {
     expect(rtl.screen.queryByTestId('host-submitted')).toBeNull();
   });
 
-  it('a host is told what to fix before the sheet opens: a type with no price is not sent', async () => {
-    serve([regular()], 0);
+  it('never sends a price off the list: a saved type priced 1,200 shows the nearest list price, says to pick one, and Save is refused until one is picked', async () => {
+    serve([tier('t1', 'regular', 'Regular', 1200, 100)], 0, (c) => (c.method === 'PUT' ? ok([]) : undefined));
     await bootTypes();
-    await type('host-ticket-0-price', '');
+    expect((await rtl.within(rtl.screen.getByTestId('host-ticket-0-picker')).findByTestId('price-stop-1000')).props.accessibilityState.selected).toBe(true);
+    expect(rtl.screen.getByTestId('host-ticket-0-picker-off-list')).toBeTruthy();
+    await type('host-ticket-0-quantity', '90');
     await press('ticket-types-save');
-    expect(await rtl.screen.findByText('Set a price.')).toBeTruthy();
+    expect((await rtl.screen.findAllByText('Pick a price from the list.')).length).toBeGreaterThan(0);
     expect(rtl.screen.queryByTestId('review-sheet')).toBeNull();
     expect(calls.some((c) => c.method === 'PUT')).toBe(false);
+    // Picking a list price sends it.
+    await pick(0, 1000);
+    await press('ticket-types-save');
+    await press('review-confirm');
+    await rtl.screen.findByTestId('host-submitted');
+    expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ types: [{ tier: 'regular', name: 'Regular', priceNaira: 1000, quantity: 90 }] });
+  });
+
+  it('a host\'s save refused as 400 price_not_on_list reads the list again and shows the Hub\'s sentence', async () => {
+    const sentence = 'That price is not on the price list. The nearest are ₦5,000 and ₦6,500.';
+    serve([regular()], 0, (c) =>
+      c.method === 'PUT' ? { status: 400, body: { statusCode: 400, message: sentence, reason: { code: 'price_not_on_list', message: sentence, nearestLowerNaira: 5000, nearestHigherNaira: 6500 } } } : undefined,
+    );
+    await bootTypes();
+    await pick(0, 6500);
+    await type('host-ticket-0-quantity', '90');
+    await press('ticket-types-save');
+    await press('review-confirm');
+    expect(await rtl.screen.findByText(sentence)).toBeTruthy();
+    await rtl.waitFor(() => expect(calls.filter((c) => c.method === 'GET' && c.path === '/prices').length).toBeGreaterThanOrEqual(2));
   });
 
   it('a host whose tier has ended is taken to E21 with the Hub\'s own words when the save is refused', async () => {

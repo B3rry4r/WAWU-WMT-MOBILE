@@ -159,6 +159,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const method = request.method;
   hub.calls.push({ path, account: request.headers.get('x-pay-source-currency') });
   if (path === '/money/fx/accounts') return ok([]);
+  // The tip list the tiles are drawn from (PRICE-PICKER, R-101): the launch tips, as the Hub serves them.
+  if (path === '/prices') {
+    const item = (n: number) => ({ priceNaira: n, priceKobo: n * 100 });
+    return ok({ prices: [100, 200, 500, 1000, 2000, 5000, 10_000].map(item), tips: [200, 500, 1000, 2000, 5000, 10_000].map(item) });
+  }
   if (path === '/feed/entries') {
     return feedBody([
       { kind: 'content', content: item('a', CREATOR) },
@@ -301,7 +306,7 @@ describe('H2 and H26: the rail and the tip sheet', () => {
     const screen = await openSheet();
     expect(screen.getByText('Tip Tife')).toBeTruthy();
     expect(screen.getByText('Goes straight to their wallet. They see your name and note.')).toBeTruthy();
-    expect(screen.getByTestId('tip-chip-200000').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('tip-tile-2000').props.accessibilityState.selected).toBe(true);
     expect(hub.quotes).toEqual([{ amountKobo: 200000 }]);
     const rows = screen.getByTestId('tip-breakdown');
     expect(rtl.within(rows).getByLabelText('2,000 naira')).toBeTruthy();
@@ -312,24 +317,25 @@ describe('H2 and H26: the rail and the tip sheet', () => {
     expect(screen.queryByText(/Fintava/)).toBeNull();
   });
 
-  it('another quick amount, and any other whole-naira amount, are quoted again', async () => {
+  it('shows the six tiles from the Hub\'s tip list, each with what the fan pays and what Tife gets (85%), and no field to type another amount', async () => {
     const screen = await openSheet();
-    await rtl.fireEvent.press(screen.getByTestId('tip-chip-500000'));
-    await rtl.waitFor(() => expect(hub.quotes.at(-1)).toEqual({ amountKobo: 500000 }));
-    await rtl.fireEvent.changeText(screen.getByTestId('tip-other'), '1,250');
-    await rtl.waitFor(() => expect(hub.quotes.at(-1)).toEqual({ amountKobo: 125000 }));
-    expect(await screen.findByRole('button', { name: 'Tip ₦1,273.25' })).toBeTruthy();
-    // A typed amount clears the quick one.
-    expect(screen.getByTestId('tip-chip-500000').props.accessibilityState.selected).toBe(false);
+    const tiles = screen.getAllByTestId(/^tip-tile-\d+$/).map((t) => String(t.props.testID).replace('tip-tile-', ''));
+    expect(tiles).toEqual(['200', '500', '1000', '2000', '5000', '10000']);
+    expect(screen.getByTestId('tip-tile-1000').props.accessibilityLabel).toBe('₦1,000. Tife gets ₦850');
+    expect(screen.getByTestId('tip-tile-200').props.accessibilityLabel).toBe('₦200. Tife gets ₦170');
+    expect(screen.getByTestId('tip-tile-10000').props.accessibilityLabel).toBe('₦10,000. Tife gets ₦8,500');
+    expect(screen.queryByTestId('tip-other')).toBeNull();
+    expect(screen.queryByPlaceholderText('Other amount')).toBeNull();
   });
 
-  it('a pasted 12.50 is quoted and shown as 12 naira (a tip is whole naira), never 1,250', async () => {
+  it('another tile is quoted again, and only a tile from the list is ever quoted', async () => {
     const screen = await openSheet();
-    await rtl.fireEvent.changeText(screen.getByTestId('tip-other'), '12.50');
-    await rtl.waitFor(() => expect(hub.quotes.at(-1)).toEqual({ amountKobo: 1200 }));
-    expect(await screen.findByRole('button', { name: 'Tip ₦35.25' })).toBeTruthy();
-    expect(screen.getByTestId('tip-other').props.value).toBe('12');
-    expect(hub.quotes.some((q) => q.amountKobo === 125000 || q.amountKobo === 120000)).toBe(false);
+    await rtl.fireEvent.press(screen.getByTestId('tip-tile-5000'));
+    await rtl.waitFor(() => expect(hub.quotes.at(-1)).toEqual({ amountKobo: 500000 }));
+    expect(screen.getByTestId('tip-tile-5000').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('tip-tile-2000').props.accessibilityState.selected).toBe(false);
+    expect(await screen.findByRole('button', { name: 'Tip ₦5,023.25' })).toBeTruthy();
+    expect(hub.quotes.every((q) => [20000, 50000, 100000, 200000, 500000, 1000000].includes(q.amountKobo))).toBe(true);
   });
 
   it('with no wallet yet, the quote leads to Open your wallet and no sheet stays up (R-6)', async () => {

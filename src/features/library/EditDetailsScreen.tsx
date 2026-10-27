@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { isApiError } from '@/api/client';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
+import { PricePicker } from '@/components/PricePicker';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
@@ -15,14 +16,14 @@ import { CategorySheet } from '@/features/create/DetailsScreen';
 import {
   CONTENT_CATEGORIES,
   categoryLabel,
-  cleanPrice,
   limits,
   priceOf,
   type AccessType,
   type ContentCategoryId,
   type Details,
 } from '@/features/create/details';
-import { FreeCard, MODES, PriceField, sendFailure } from '@/features/create/PriceScreen';
+import { FreeCard, MODES, sendFailure } from '@/features/create/PriceScreen';
+import { refetchIfNotOnList } from '@/features/prices/api';
 import { radius, space } from '@/theme';
 
 import { fetchPiece, libraryKey, pieceKey, updatePiece, type LibraryPiece, type UpdateBody } from './api';
@@ -66,7 +67,8 @@ export type EditDetailsScreenProps = { id: string; onBack: () => void; onSaved: 
 /**
  * Edit details, opened from M26 (the board draws the row, not the screen, so it is drawn in the Create steps' own style: the same
  * fields as M23 and the same price step as M24 and M37). It changes what the Hub allows on a piece that is waiting or turned down:
- * the title, the description, the category and the price (`PATCH /content/{id}`). The piece stays turned down until Send again.
+ * the title, the description, the category and the price, picked from the Hub's list (`PATCH /content/{id}`, PRICE-PICKER). The piece stays
+ * turned down until Send again.
  */
 export function EditDetailsScreen({ id, onBack, onSaved }: EditDetailsScreenProps) {
   const piece = useQuery({ queryKey: pieceKey(id), queryFn: () => fetchPiece(id) });
@@ -109,7 +111,11 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
       void client.invalidateQueries({ queryKey: libraryKey });
       onSaved();
     },
-    onError: (error) => setFailure(sendFailure(error)),
+    onError: (error) => {
+      // An admin changed the list while the picker was open: read it again, and the Hub's own sentence says what is on it now.
+      refetchIfNotOnList(client, error);
+      setFailure(sendFailure(error));
+    },
   });
   const free = details.accessType === 'free';
 
@@ -147,7 +153,14 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
           <Text variant="muted">Free pieces count toward your uploads.</Text>
         </>
       ) : (
-        <PriceField details={details} onChange={(price) => set({ price: cleanPrice(price) })} />
+        <PricePicker
+          testID="edit-price-picker"
+          // A saved price that is off the list shows the nearest one selected; it is not sent unless the person picks (`changesOf`).
+          value={priceOf(details.price)}
+          onChange={(naira) => set({ price: String(naira) })}
+          label="Your price"
+          earnSuffix="a sale"
+        />
       )}
       <CategorySheet
         visible={picking}
