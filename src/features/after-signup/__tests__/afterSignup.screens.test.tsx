@@ -284,7 +284,9 @@ describe('P10 Become a creator', () => {
     answers['PUT /api/hub/users/me/account-type'] = ok({ accountType: 'creator' });
     await render(frame(<CreatorGate title="Offer your services" onBack={jest.fn()} />));
     await fireEvent.press(screen.getByTestId('pro-become-creator'));
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/creator-setup'));
+    // SERVICES-FEEDBACK 3 changed this one assertion: it pinned a push of '/creator-setup' with nothing to come back to (the defect named
+    // in the brief). The push now names the screen A11's Later returns to; becomeCreatorReturn.test.tsx walks the whole way back.
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith({ pathname: '/creator-setup', params: { next: 'professional-apply' } }));
     expect(calls('PUT', '/api/hub/users/me/account-type')[0].body).toEqual({ accountType: 'creator' });
   });
 

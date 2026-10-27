@@ -1,5 +1,6 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { useFocusRing } from '@/components/focusRing';
@@ -8,8 +9,10 @@ import type { IconName } from '@/components/icon';
 import { ProductsMeter } from '@/components/ProductsMeter';
 import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
+import { Toast, toastMetrics } from '@/components/Toast';
 import { fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
 import { productsMeterOf } from '@/features/me/model';
+import { SERVICES_DOOR_NOTICE_MS, type ServicesDoor } from '@/features/pro-listing/useListServicesDoor';
 import { StudioRow } from '@/features/points/StudioRow';
 import { font, radius, space, useWawu } from '@/theme';
 
@@ -22,7 +25,20 @@ const tileMetrics = { corner: radius.card, pad: space.lg, gap: space.md, icon: 4
 /** M27 draws the list it disables at 45% opacity. */
 const FULL_FADE = 0.45;
 
-type Tile = { id: string; icon: IconName; title: string; /** Left out when the tile has nothing to add to its name. */ sub?: string; onPress: () => void; disabled?: boolean };
+/** A small spinner is 20 square: it sits in the tile's top right corner, centred on the 48 icon. */
+const SPINNER = 20;
+
+type Tile = {
+  id: string;
+  icon: IconName;
+  title: string;
+  /** Left out when the tile has nothing to add to its name. */
+  sub?: string;
+  onPress: () => void;
+  disabled?: boolean;
+  /** The tile's reads are on their way (SERVICES-FEEDBACK 1): it keeps its pressed look and shows the app's spinner. */
+  busy?: boolean;
+};
 
 export type CreateScreenProps = {
   onClose: () => void;
@@ -34,6 +50,8 @@ export type CreateScreenProps = {
   onCommunity?: () => void;
   /** Service opens P5 (or P8 for a creator who is already listed). */
   onService: () => void;
+  /** What the Service tile shows while its reads run and when one fails (SERVICES-FEEDBACK 1): the tile works at once, and a failed read is said in a line at the bottom. */
+  servicesDoor?: ServicesDoor;
   /** The full-state note's Open library button (M27) opens My content (M28). The button is not drawn without it. */
   onOpenLibrary?: () => void;
   /** "Get verified" under the uploads meter and the full note opens the tiers (VF5, ME-12). Not drawn without it. */
@@ -48,7 +66,8 @@ export type CreateScreenProps = {
  * M19 · Create. Content, Event and Service and the uploads meter from the Hub's own count (the 16 Oct board draws no draft row: Your shop,
  * VF2, opens from Me's draft tile and VF1's "Build my shop", SWEEP-APP-4). Community (opens I32, INBOX-14) and the meter's "Get verified" (opens the tiers, VF5, ME-12) are drawn only when their screens are built (R-47).
  */
-export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onService, onOpenLibrary, onGetVerified, onProductsFull, onStudio }: CreateScreenProps) {
+export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onService, servicesDoor, onOpenLibrary, onGetVerified, onProductsFull, onStudio }: CreateScreenProps) {
+  const insets = useSafeAreaInsets();
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   // At "5 of 5 used" a new piece would be refused when it is created, so Content does not start one (M27). Event and Service take no upload slot.
   const full = allowance.data ? slotsFull(allowance.data) : false;
@@ -61,27 +80,39 @@ export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onServi
     // "Needs an active tier" is M19's note for a person with none: once a tier is held (the state the meter below reads) the note is gone.
     { id: 'event', icon: 'CalendarDays', title: 'Event', sub: running ? undefined : 'Needs an active tier', onPress: onEvent },
     ...(onCommunity ? [{ id: 'community', icon: 'Users' as const, title: 'Community', sub: 'A room your people talk in', onPress: onCommunity }] : []),
-    { id: 'service', icon: 'BriefcaseBusiness', title: 'Service', sub: 'Get listed as a professional', onPress: onService },
+    { id: 'service', icon: 'BriefcaseBusiness', title: 'Service', sub: 'Get listed as a professional', onPress: onService, busy: servicesDoor?.busy },
   ];
   const rows: Tile[][] = [];
   for (let i = 0; i < tiles.length; i += 2) rows.push(tiles.slice(i, i + 2));
 
   return (
-    <CreateFrame testID="create-screen" title="Create" leading="close" onLeave={onClose}>
-      {allowance.data && full && !atLimit ? <SlotsFullNotice allowance={allowance.data} onOpenLibrary={onOpenLibrary} onGetVerified={onGetVerified} /> : null}
-      <View style={styles.grid}>
-        {rows.map((row) => (
-          <View key={row[0].id} style={styles.pair}>
-            {row.map((tile) => (
-              <HubTile key={tile.id} tile={tile} />
-            ))}
-            {row.length === 1 ? <View style={styles.spacer} /> : null}
-          </View>
-        ))}
-      </View>
-      {onStudio ? <StudioRow onPress={onStudio} /> : null}
-      <Meter tier={tier} allowance={allowance} onGetVerified={onGetVerified} />
-    </CreateFrame>
+    <>
+      <CreateFrame testID="create-screen" title="Create" leading="close" onLeave={onClose}>
+        {allowance.data && full && !atLimit ? <SlotsFullNotice allowance={allowance.data} onOpenLibrary={onOpenLibrary} onGetVerified={onGetVerified} /> : null}
+        <View style={styles.grid}>
+          {rows.map((row) => (
+            <View key={row[0].id} style={styles.pair}>
+              {row.map((tile) => (
+                <HubTile key={tile.id} tile={tile} />
+              ))}
+              {row.length === 1 ? <View style={styles.spacer} /> : null}
+            </View>
+          ))}
+        </View>
+        {onStudio ? <StudioRow onPress={onStudio} /> : null}
+        <Meter tier={tier} allowance={allowance} onGetVerified={onGetVerified} />
+      </CreateFrame>
+      <Toast
+        message={servicesDoor?.notice ?? null}
+        tone="alert"
+        placement="bottom"
+        offset={insets.bottom + toastMetrics.bottom}
+        lines={2}
+        duration={SERVICES_DOOR_NOTICE_MS}
+        onHide={servicesDoor?.dismiss}
+        testID="services-door-notice"
+      />
+    </>
   );
 }
 
@@ -114,14 +145,14 @@ function HubTile({ tile }: { tile: Tile }) {
       testID={`create-tile-${tile.id}`}
       accessibilityRole="button"
       accessibilityLabel={tile.sub ? `${tile.title}, ${tile.sub}` : tile.title}
-      accessibilityState={{ disabled: tile.disabled ?? false }}
+      accessibilityState={{ disabled: tile.disabled ?? false, busy: tile.busy ?? false }}
       disabled={tile.disabled}
       onPress={tile.onPress}
       {...ring.handlers}
       style={({ pressed }) => [
         styles.tile,
         {
-          backgroundColor: pressed ? colors.surfaceSunken : colors.surfaceCard,
+          backgroundColor: pressed || tile.busy ? colors.surfaceSunken : colors.surfaceCard,
           boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }],
         },
         tile.disabled ? { opacity: FULL_FADE } : null,
@@ -129,6 +160,7 @@ function HubTile({ tile }: { tile: Tile }) {
       ]}
     >
       <IconTile icon={tile.icon} tone="accent" size={tileMetrics.icon} />
+      {tile.busy ? <ActivityIndicator testID={`create-tile-${tile.id}-busy`} size="small" color={colors.textMuted} style={styles.spinner} /> : null}
       <View>
         <Text variant="body" style={[font(600), styles.tileTitle]}>
           {tile.title}
@@ -163,6 +195,7 @@ function MeterFailed({ message, onRetry }: { message: string; onRetry: () => voi
 }
 
 const styles = StyleSheet.create({
+  spinner: { position: 'absolute', top: tileMetrics.pad + (tileMetrics.icon - SPINNER) / 2, right: tileMetrics.pad },
   grid: { gap: tileMetrics.between },
   pair: { flexDirection: 'row', gap: tileMetrics.between },
   // The empty half of an odd last row takes the same padding as a tile: a flex item's padding comes on top of its share, so without it
