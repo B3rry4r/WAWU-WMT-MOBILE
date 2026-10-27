@@ -19,6 +19,7 @@ import { TgifCard, TgifProblem } from '@/features/home/TgifCard';
 import { todayMetrics } from '@/features/home/look';
 import { countsKey, fetchCounts } from '@/features/me/counts';
 import { dayKey, fetchDay, fetchStats, statsKey } from '@/features/tgif/api/tgif';
+import { SERVICES_DOOR_NOTICE_MS, type ServicesDoor } from '@/features/pro-listing/useListServicesDoor';
 import { localDay } from '@/features/tgif/model';
 import { layout, radius, space, useWawu } from '@/theme';
 
@@ -60,6 +61,8 @@ export type ExploreScreenProps = {
   onFindSchool: () => void;
   /** The "List your services" door (PROS-03): P5, or P8 for a person who has applied. */
   onListServices: () => void;
+  /** What the door shows while its reads run and when one fails (SERVICES-FEEDBACK 1): the row works at once, and a failed read is said in a line at the bottom. */
+  servicesDoor?: ServicesDoor;
   /** The Create button, for creator accounts only (X1, X14): opens M19 (ME-04). */
   onCreate?: () => void;
   /** The TGIF card was tapped (X1): opens today's reader (H29, `/tgif`). */
@@ -95,7 +98,7 @@ export type ExploreScreenProps = {
  * R-47, owner 9 Oct); it comes back the moment the Hub serves one. X17's Sponsored block, which the board draws in
  * Upcoming events' place, is not drawn: the Hub serves an advert only while its event is upcoming, so that rail always holds it.
  */
-export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, onCreate, onOpenTgif, onSearch, onSeeAllCreators, onOpenNotifications, onOpenCreator, onSeeAllMovies, onOpenMovie }: ExploreScreenProps) {
+export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, servicesDoor, onCreate, onOpenTgif, onSearch, onSeeAllCreators, onOpenNotifications, onOpenCreator, onSeeAllMovies, onOpenMovie }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useWawu();
   const focused = useIsFocused();
@@ -152,7 +155,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
   const doors: Door[] = [
     { id: 'find-professional', icon: 'BriefcaseBusiness', title: 'Find a professional', sub: 'Accountants, lawyers, designers', onPress: onFindProfessional },
     { id: 'find-school', icon: 'GraduationCap', title: 'Find a school', sub: 'Courses from schools and academies', onPress: onFindSchool },
-    { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices },
+    { id: 'list-services', icon: 'Sparkles', title: 'List your services', sub: 'Get paid to answer questions', onPress: onListServices, busy: servicesDoor?.busy },
   ];
 
   const slides = sliderSlides(ads.data ?? [], events.featured);
@@ -238,6 +241,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
       </ScrollView>
       {onCreate ? <CreateEntry onPress={onCreate} /> : null}
       <Toast message={follow.notice} tone="alert" placement="bottom" lines={2} duration={FOLLOW_NOTICE_MS} onHide={follow.dismiss} testID="follow-notice" />
+      <Toast message={servicesDoor?.notice ?? null} tone="alert" placement="bottom" lines={2} duration={SERVICES_DOOR_NOTICE_MS} onHide={servicesDoor?.dismiss} testID="services-door-notice" />
     </View>
   );
 }

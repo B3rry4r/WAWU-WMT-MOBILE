@@ -2,11 +2,10 @@ import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { useSession } from '@/api/session';
-import { queryClient } from '@/api/query';
 import { useCreatorGate } from '@/features/create/CreateEntry';
 import { CreateScreen } from '@/features/create/CreateScreen';
 import { abandonDraft } from '@/features/create/draft';
-import { listServicesTarget } from '@/features/pro-listing/door';
+import { useListServicesDoor } from '@/features/pro-listing/useListServicesDoor';
 import { ProductsFullHost } from '@/features/verify/ProductsFullHost';
 
 /**
@@ -19,6 +18,7 @@ export default function CreateRoute() {
   const { status } = useSession();
   const gate = useCreatorGate(status === 'signedIn');
   const [full, setFull] = useState(false);
+  const door = useListServicesDoor((href) => router.push(href));
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
   if (gate !== 'creator') return gate === 'checking' ? null : <Redirect href="/" />;
@@ -33,7 +33,8 @@ export default function CreateRoute() {
       }}
       onEvent={() => router.push('/events/host')}
       onCommunity={() => router.push('/community/new')}
-      onService={() => void listServicesTarget(queryClient).then((href) => router.push(href))}
+      onService={door.start}
+      servicesDoor={door}
       onOpenLibrary={() => router.push('/library')}
       onGetVerified={() => router.push('/tiers')}
       onProductsFull={() => setFull(true)}

@@ -74,7 +74,8 @@ export function CreatorGate({ title, onBack }: { title: string; onBack: () => vo
     try {
       await setHubAccountType('creator');
       await queryClient.invalidateQueries();
-      router.push('/creator-setup');
+      // A11's Later returns to the listing form, the screen this person came from (SERVICES-FEEDBACK 3).
+      router.push({ pathname: '/creator-setup', params: { next: 'professional-apply' } });
     } catch {
       setFailed(true);
     } finally {

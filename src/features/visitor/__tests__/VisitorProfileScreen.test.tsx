@@ -221,6 +221,17 @@ describe('M5 and M6 · someone else\'s profile', () => {
     expect(h.onOpenListing).toHaveBeenCalledWith('l1');
   });
 
+  // SERVICES-FEEDBACK 2: Me's Services shows the owner's listing under review; somebody else's profile is built from the Hub's live
+  // listings only and never reads the owner's own list (which is where a pending listing is).
+  it('a user on somebody else\'s Services sees only the live listings, and the owner\'s own list is never read', async () => {
+    answers = page();
+    await boot();
+    await fireEvent.press(await screen.findByTestId('me-tab-services'));
+    expect(await screen.findByTestId('me-service-listing-l1')).toBeTruthy();
+    expect(screen.queryByText('Under review')).toBeNull();
+    expect(count('GET /api/hub/professionals/applications/mine')).toBe(0);
+  });
+
   it('a user sees "No services yet" for a person with no paid messages and no listing', async () => {
     answers = page({ [`GET ${VISIT}`]: ok(view({ listings: [] }, { dmEnabled: false })) });
     await boot();

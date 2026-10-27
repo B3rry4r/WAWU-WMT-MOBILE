@@ -220,8 +220,12 @@ describe('M1 · Me', () => {
     await fireEvent.press(screen.getByTestId('me-tab-services'));
     expect(await screen.findByTestId('me-service-paid-sub')).toHaveTextContent('₦300 a message · replies within 24 hours');
     expect(screen.getByTestId('me-service-listing-l1')).toBeTruthy();
-    expect(screen.getByText('Brand strategy sessions')).toBeTruthy();
-    expect(screen.queryByTestId('me-service-listing-l2')).toBeNull();
+    // SERVICES-FEEDBACK 2 changed two assertions here, both about the pending listing l2: the old one pinned "a pending listing is not on
+    // Me's Services" (the defect named in the brief), and the fixture's l2 shares the live row's headline, so that text is now on two rows.
+    // The owner's own pending listing is drawn with an "Under review" chip (servicesPending.test.tsx holds the rest).
+    expect(screen.getAllByText('Brand strategy sessions')).toHaveLength(2);
+    expect(screen.getByTestId('me-service-listing-l2')).toBeTruthy();
+    expect(screen.getByTestId('me-service-listing-l2-status')).toHaveTextContent('Under review');
   });
 
   it('a plain account sees Services empty, and the Hub is not asked for creator settings it does not have', async () => {
