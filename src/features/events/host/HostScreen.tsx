@@ -512,6 +512,7 @@ export function Tickets({
                     earnSuffix="a ticket"
                     storeNote={false}
                     bleed={bodyMetrics.cardPad}
+                    fadeInto="surfaceCard"
                   />
                   {errors[`${t.key}.price`] ? (
                     <Text variant="errorLine" tone="danger" accessibilityRole="alert">

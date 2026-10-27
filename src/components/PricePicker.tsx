@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type N
 
 import { listOf, storePriceOf, usePrices } from '@/features/prices/api';
 import { OFF_LIST_LINE, earnOf, isOnList, popularOf, stepOf, stopOf } from '@/features/prices/model';
-import { font, layout, radius, space, useWawu } from '@/theme';
+import { font, layout, radius, space, useWawu, type ColorToken } from '@/theme';
 
 import { useFocusRing } from './focusRing';
 import { Icon } from './icon';
@@ -68,6 +68,8 @@ export type PricePickerProps = {
   disabled?: boolean;
   /** How far the strip reaches past its container on each side, so it runs to the screen's edges: the screen's side padding (the gutter), or a card's. */
   bleed?: number;
+  /** The colour the strip's edges fade into: what the picker sits on. The page by default; a card's own colour inside a card. */
+  fadeInto?: ColorToken;
   testID?: string;
 };
 
@@ -131,7 +133,7 @@ function Shortcut({ naira, selected, disabled, onPress }: { naira: number; selec
  * to pick one; it is not sent unless the person picks (the screens send what `onChange` gave them). The store note ("Fans there pay ₦X")
  * is drawn only for a price the Hub gives a store price for.
  */
-export function PricePicker({ value, onChange, label, earnSuffix, storeNote = true, disabled = false, bleed = layout.gutter, testID = 'price-picker' }: PricePickerProps) {
+export function PricePicker({ value, onChange, label, earnSuffix, storeNote = true, disabled = false, bleed = layout.gutter, fadeInto = 'surfacePage', testID = 'price-picker' }: PricePickerProps) {
   const { colors } = useWawu();
   const prices = usePrices();
   const list = useMemo(() => listOf(prices.data), [prices.data]);
@@ -211,7 +213,8 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
 
   const shown = offList ? selected : (value ?? selected);
   const store = storeNote ? storePriceOf(prices.data, shown) : null;
-  const edge = clear(colors.surfacePage);
+  const into = colors[fadeInto];
+  const edge = clear(into);
   const spoken = `₦${shown.toLocaleString('en-NG')}`;
   const bump = (direction: 1 | -1) => choose(stepOf(list, shown, direction));
 
@@ -275,8 +278,8 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
             <Stop key={naira} naira={naira} selected={naira === selected} disabled={disabled} onPress={() => choose(naira)} />
           ))}
         </ScrollView>
-        <LinearGradient pointerEvents="none" colors={[colors.surfacePage, edge]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.fade, styles.fadeLeft]} />
-        <LinearGradient pointerEvents="none" colors={[edge, colors.surfacePage]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.fade, styles.fadeRight]} />
+        <LinearGradient pointerEvents="none" colors={[into, edge]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.fade, styles.fadeLeft]} />
+        <LinearGradient pointerEvents="none" colors={[edge, into]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.fade, styles.fadeRight]} />
         <View pointerEvents="none" style={[styles.notch, { borderBottomColor: colors.accent }]} />
       </View>
 
