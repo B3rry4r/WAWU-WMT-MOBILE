@@ -74,6 +74,25 @@ describe('the song kept on the phone', () => {
     expect(track.savedTrack()).toBeNull();
   });
 
+  it('leaves no half file behind when the download stops partway', async () => {
+    mockDownload.mockImplementation(async (_url: string, to: { uri: string }) => {
+      mockFiles.set(to.uri, { size: 5 });
+      throw new Error('The connection dropped');
+    });
+    await expect(track.fetchTrack()).rejects.toThrow('The connection dropped');
+    expect(mockFiles.has('file:///documents/wawu-theme.part')).toBe(false);
+    expect(track.savedTrack()).toBeNull();
+  });
+
+  it('leaves no empty file behind', async () => {
+    mockDownload.mockImplementation(async (_url: string, to: { uri: string }) => {
+      mockFiles.set(to.uri, { size: 0 });
+      return { uri: to.uri, exists: true, size: 0, move: jest.fn() };
+    });
+    await expect(track.fetchTrack()).rejects.toThrow();
+    expect(mockFiles.has('file:///documents/wawu-theme.part')).toBe(false);
+  });
+
   it('passes on a failed download', async () => {
     mockDownload.mockRejectedValue(new Error('UnableToDownload 404'));
     await expect(track.fetchTrack()).rejects.toThrow('UnableToDownload');

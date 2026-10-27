@@ -24,10 +24,24 @@ export function savedTrack(): string | null {
  */
 export async function fetchTrack(): Promise<string> {
   const part = new File(Paths.document, PART);
-  if (part.exists) part.delete();
-  const got = await File.downloadFileAsync(THEME_URL, part);
-  if (!got.exists || !((got.size ?? 0) > 0)) throw new Error('The theme song came down empty');
-  const final = new File(Paths.document, NAME);
-  await got.move(final, { overwrite: true });
-  return final.uri;
+  clear(part);
+  try {
+    const got = await File.downloadFileAsync(THEME_URL, part);
+    if (!got.exists || !((got.size ?? 0) > 0)) throw new Error('The theme song came down empty');
+    const final = new File(Paths.document, NAME);
+    await got.move(final, { overwrite: true });
+    return final.uri;
+  } catch (error) {
+    // A dropped connection can leave half a file on Android; it is not kept.
+    clear(part);
+    throw error;
+  }
+}
+
+function clear(file: File) {
+  try {
+    if (file.exists) file.delete();
+  } catch {
+    // A file that will not go is overwritten by the next try.
+  }
 }

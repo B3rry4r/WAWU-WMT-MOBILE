@@ -24,11 +24,16 @@ jest.mock('expo-audio', () => ({
 
 const FILE = 'file:///documents/wawu-theme.mp3';
 let mockSaved: string | null = null;
+let mockSavedThrows = false;
+let mockAppState: AppStateStatus = 'active';
 let mockDownload: () => Promise<string>;
 const mockDownloadCalls = jest.fn();
 jest.mock('../themeTrack', () => ({
   THEME_URL: 'https://wawuafrica.com/wawu-theme.mp3',
-  savedTrack: () => mockSaved,
+  savedTrack: () => {
+    if (mockSavedThrows) throw new Error('The documents folder could not be read');
+    return mockSaved;
+  },
   fetchTrack: () => {
     mockDownloadCalls();
     return mockDownload();
@@ -50,10 +55,13 @@ const downloads = () => {
 beforeEach(() => {
   mockStore.clear();
   mockSaved = null;
+  mockSavedThrows = false;
+  mockAppState = 'active';
   appChange = null;
   jest.clearAllMocks();
   mockPlayer.loop = false;
   downloads();
+  Object.defineProperty(AppState, 'currentState', { configurable: true, get: () => mockAppState });
   jest.spyOn(AppState, 'addEventListener').mockImplementation(((_type: string, handler: (next: AppStateStatus) => void) => {
     appChange = handler;
     return { remove: appRemove };
@@ -62,6 +70,10 @@ beforeEach(() => {
   music.resetThemeMusicForTests();
 });
 
+const appTo = (next: AppStateStatus) => act(async () => {
+  mockAppState = next;
+  appChange?.(next);
+});
 const tap = () => act(async () => void (await music.toggleThemeMusic()));
 
 describe('the WAWU theme player', () => {
@@ -162,16 +174,16 @@ describe('the WAWU theme player', () => {
 
   it('pauses when the app leaves the screen and plays again on return, only if it was on', async () => {
     await tap();
-    await act(async () => appChange?.('background'));
+    await appTo('background');
     expect(mockPlayer.pause).toHaveBeenCalledTimes(1);
     expect(music.getThemeMusic().on).toBe(true);
-    await act(async () => appChange?.('active'));
+    await appTo('active');
     expect(mockPlayer.play).toHaveBeenCalledTimes(2);
 
     await tap();
     mockPlayer.play.mockClear();
-    await act(async () => appChange?.('background'));
-    await act(async () => appChange?.('active'));
+    await appTo('background');
+    await appTo('active');
     expect(mockPlayer.play).not.toHaveBeenCalled();
   });
 
@@ -203,6 +215,103 @@ describe('the WAWU theme player', () => {
     });
     expect(mockPlayer.play).not.toHaveBeenCalled();
     expect(music.getThemeMusic()).toMatchObject({ on: false, busy: false, notice: null });
+  });
+
+  it('listens for the app leaving the screen from setup, before anything has played', async () => {
+    expect(AppState.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(appChange).not.toBeNull();
+    await appTo('background');
+    await appTo('active');
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('a download that finishes while the app is in the background does not start the song; it starts when the app returns, if still on', async () => {
+    let finish: (uri: string) => void = () => undefined;
+    mockDownload = () => new Promise<string>((resolve) => (finish = resolve));
+    const first = music.toggleThemeMusic();
+    await appTo('background');
+    mockSaved = FILE;
+    await act(async () => {
+      finish(FILE);
+      await first;
+    });
+    expect(mockPlayer.play).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(music.getThemeMusic()).toMatchObject({ on: true, busy: false });
+    await appTo('active');
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockPlayer.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('a start that is waiting for the app to return is cancelled by a piece starting, and does not play on return', async () => {
+    mockSaved = FILE;
+    await appTo('background');
+    await tap();
+    expect(music.getThemeMusic().on).toBe(true);
+    const { pieceStartedSound } = require('../pieceSound') as typeof import('../pieceSound');
+    await act(async () => pieceStartedSound());
+    await appTo('active');
+    expect(mockPlayer.play).not.toHaveBeenCalled();
+    expect(music.getThemeMusic().on).toBe(false);
+  });
+
+  it('opening the app in the background does not play the song until the app is on screen', async () => {
+    await tap();
+    music.resetThemeMusicForTests();
+    mockPlayer.play.mockClear();
+    mockCreate.mockClear();
+    await appTo('background');
+    await act(async () => music.resumeThemeMusic());
+    expect(mockPlayer.play).not.toHaveBeenCalled();
+    await appTo('active');
+    expect(mockPlayer.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('a saved file that cannot be read is a notice for a tap, and silence at open', async () => {
+    mockSavedThrows = true;
+    await tap();
+    expect(music.getThemeMusic()).toEqual({ on: false, busy: false, notice: music.THEME_FAILED });
+    mockStore.set('wmt.pref.music', 'on');
+    await act(async () => music.resumeThemeMusic());
+    expect(music.getThemeMusic().on).toBe(false);
+    expect(mockPlayer.play).not.toHaveBeenCalled();
+  });
+
+  it('sign-out stops the song, releases the player and forgets the on for this run; the phone\'s own choice stays', async () => {
+    const session = require('@/api/session') as typeof import('@/api/session');
+    await session.adoptSession({ accessToken: 'access-1', refreshToken: 'refresh-1' });
+    await tap();
+    expect(music.getThemeMusic().on).toBe(true);
+    mockPlayer.pause.mockClear();
+    await act(async () => session.signOut());
+    expect(mockPlayer.pause).toHaveBeenCalledTimes(1);
+    expect(mockPlayer.remove).toHaveBeenCalledTimes(1);
+    expect(music.getThemeMusic()).toEqual({ on: false, busy: false, notice: null });
+    expect(mockStore.get('wmt.pref.music')).toBe('on');
+
+    // The next person to open the app on this phone meets the phone's choice, with a new player.
+    await session.adoptSession({ accessToken: 'access-2', refreshToken: 'refresh-2' });
+    await act(async () => music.resumeThemeMusic());
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(music.getThemeMusic().on).toBe(true);
+    await act(async () => session.signOut());
+    expect(music.getThemeMusic().on).toBe(false);
+  });
+
+  it('sign-out while the song downloads means it never starts', async () => {
+    const session = require('@/api/session') as typeof import('@/api/session');
+    await session.adoptSession({ accessToken: 'access-1', refreshToken: 'refresh-1' });
+    let finish: (uri: string) => void = () => undefined;
+    mockDownload = () => new Promise<string>((resolve) => (finish = resolve));
+    const first = music.toggleThemeMusic();
+    await act(async () => session.signOut());
+    mockSaved = FILE;
+    await act(async () => {
+      finish(FILE);
+      await first;
+    });
+    expect(mockPlayer.play).not.toHaveBeenCalled();
+    expect(music.getThemeMusic()).toEqual({ on: false, busy: false, notice: null });
   });
 
   it('the Settings switch asks for a state: on starts it, off stops it, and asking for the state it is in does nothing', async () => {

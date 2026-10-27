@@ -6,11 +6,12 @@ import { createButtonMetrics } from '@/components/CreateButton';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { pressScale } from '@/components/Button';
-import { Toast, toastMetrics } from '@/components/Toast';
+import { toastMetrics } from '@/components/Toast';
 import { useIsCreator } from '@/features/create/CreateEntry';
 import { layout, space, useWawu } from '@/theme';
 
-import { clearThemeNotice, resumeThemeMusic, toggleThemeMusic, useThemeMusic } from './themeMusic';
+import { resumeThemeMusic, toggleThemeMusic, useThemeMusic } from './themeMusic';
+import { ThemeNotice } from './ThemeNotice';
 
 /**
  * R-99: a round play and pause button for the WAWU theme.
@@ -96,16 +97,7 @@ function MusicButton({ stacked }: { stacked: boolean }) {
           <Icon name={music.on ? 'Pause' : 'Play'} size={musicMetrics.glyph} color={music.on ? colors.accentFg : colors.textSecondary} />
         )}
       </Pressable>
-      <Toast
-        message={music.notice}
-        tone="alert"
-        placement="bottom"
-        offset={layout.tabbarH + toastMetrics.bottom}
-        lines={2}
-        duration={6000}
-        onHide={clearThemeNotice}
-        testID="music-notice"
-      />
+      <ThemeNotice offset={layout.tabbarH + toastMetrics.bottom} />
     </>
   );
 }

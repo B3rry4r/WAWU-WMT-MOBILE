@@ -18,10 +18,15 @@ jest.mock('expo-secure-store', () => ({
 
 const mockPlayer = { play: jest.fn(), pause: jest.fn(), remove: jest.fn(), loop: false };
 jest.mock('expo-audio', () => ({ createAudioPlayer: () => mockPlayer, useAudioPlayer: jest.fn() }));
+let mockSaved: string | null = 'file:///documents/wawu-theme.mp3';
+let mockDownloadFails = false;
 jest.mock('../themeTrack', () => ({
   THEME_URL: 'https://wawuafrica.com/wawu-theme.mp3',
-  savedTrack: () => 'file:///documents/wawu-theme.mp3',
-  fetchTrack: async () => 'file:///documents/wawu-theme.mp3',
+  savedTrack: () => mockSaved,
+  fetchTrack: async () => {
+    if (mockDownloadFails) throw new Error('Network request failed');
+    return 'file:///documents/wawu-theme.mp3';
+  },
 }));
 
 let mockHandler: { handleNotification: () => Promise<Record<string, boolean>> } | null = null;
@@ -81,6 +86,8 @@ async function open() {
 }
 
 beforeEach(() => {
+  mockSaved = 'file:///documents/wawu-theme.mp3';
+  mockDownloadFails = false;
   mockStore.clear();
   mockHandler = null;
   jest.clearAllMocks();
@@ -92,11 +99,11 @@ describe('Settings, Alert sound and Music', () => {
   it('the old Sound row is "Alert sound", and its line says what it does', async () => {
     await open();
     const row = screen.getByTestId('settings-sound');
-    expect(row.props.accessibilityLabel).toBe("Alert sound, When something arrives while you're in the app");
+    expect(row.props.accessibilityLabel).toBe('Alert sound, Alerts while the app is open');
     expect(screen.queryByText('Taps and alerts')).toBeNull();
     expect(screen.queryByText('Sound')).toBeNull();
     expect(screen.getByText('Alert sound')).toBeTruthy();
-    expect(screen.getByText("When something arrives while you're in the app")).toBeTruthy();
+    expect(screen.getByText('Alerts while the app is open')).toBeTruthy();
   });
 
   it('a "Music" row, "Our theme song", sits with the other switches', async () => {
@@ -132,6 +139,19 @@ describe('Settings, Alert sound and Music', () => {
     await tap('settings-music');
     await waitFor(() => expect(checked('settings-music')).toBe(false));
     expect(mockPlayer.pause).toHaveBeenCalled();
+  });
+
+  it('a first download that fails from the Music row says so on Settings, and the switch stays off', async () => {
+    mockSaved = null;
+    mockDownloadFails = true;
+    await open();
+    const { THEME_FAILED } = require('@/features/music/themeMusic') as typeof import('@/features/music/themeMusic');
+    expect(screen.queryByTestId('music-notice')).toBeNull();
+    await tap('settings-music');
+    await waitFor(() => expect(screen.getByText(THEME_FAILED)).toBeTruthy());
+    expect(screen.getByTestId('music-notice')).toBeTruthy();
+    expect(checked('settings-music')).toBe(false);
+    expect(mockPlayer.play).not.toHaveBeenCalled();
   });
 
   it('a push shown while the app is open still reads the Alert sound switch, and Music does not touch it', async () => {
