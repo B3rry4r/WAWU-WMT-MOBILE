@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 27 Oct 2026, built by a Sonnet builder (T2): backend `wmt/STORE-BUY-HUB` `7d23c2d` on `origin/wmt/BATCH-PRICES` `2ef8821`, mobile records `wmt/STORE-BUY-HUB` on `origin/main` `4dccecae`. Status review. R-101 (owner, 27 Oct 2026): in the app a piece, a tip and a community pass are store purchases at the LIST price, from one ladder of consumables `wawu.buy.<naira>`; the creator gets exactly 85% of the list price, 3 working days after the sale. Paid questions (the question credit) are a later task, not here. Not run against Google or Apple (no credentials): the specs use the stores' stand-ins, as IAP-01's.
+As of 27 Oct 2026, built by a Sonnet builder (T2): backend `wmt/STORE-BUY-HUB` `88c2d03` (round 2; `origin/main` `7fa52f7` merged, no conflict), mobile records `wmt/STORE-BUY-HUB` on `origin/main` `4dccecae`. Status review. R-101 (owner, 27 Oct 2026): in the app a piece, a tip and a community pass are store purchases at the LIST price, from one ladder of consumables `wawu.buy.<naira>`; the creator gets exactly 85% of the list price, 3 working days after the sale. Paid questions (the question credit) are a later task, not here. Not run against Google or Apple (no credentials): the specs use the stores' stand-ins, as IAP-01's.
 
 | # | Before | After |
 |---|---|---|
@@ -38,7 +38,9 @@ Decisions (Default (lead), owner may override): (a) a separate `StoreEarning` ta
 
 Proof: migrations `20261213090000_store_buy_ladder` and `20261213090100_store_buy_ladder_rows` (later than every stamp on every origin ref, the newest `20261212090000_price_list`), `prisma migrate diff` empty, each rollback run in a transaction (clean: both run; with an intent, a store earning, a ladder purchase or a store deduction: refused). Specs: `store-buy-rules.spec.ts` (12), `store-buy.contract.spec.ts` (35, real HTTP and database, stand-in stores), the 7 older store specs (107) unchanged and green, `price-list` (62 with the account-purge guard), protected routes (253), `tsc`, `eslint` on changed files, `contract:build` (0 paths removed; 4 operations and 9 schemas gain fields), gates and `check_baseline` EXIT 0. Not run here (GitHub does): the Fintava-double specs.
 
-Not done: a sale notification to the creator; a deletion blocker for an account with unpaid store earnings (`waiting_earnings` counts `EarningSettlement` only: STORE-PAYOUT or a follow-up); the holiday list; the 30% ladder; the paid-question credit. Seen, not mine: `account-data-map.spec.ts` is red on `origin/wmt/BATCH-PRICES` too (`PriceListMove.ownerWawuId` is not classified).
+Round 2 (27 Oct 2026, lead): `origin/main` merged; the new tables are classified in `account-data-map.ts` (`StorePurchaseIntent.wawuUserId` OWNED; `StoreEarning.payeeWawuUserId` COUNTERPARTY, kept like a wallet sale's earning; the ladder columns on `StorePurchase` and `EarningDeduction.storePurchaseId` ride on rows already classified) and in the data export (`storePurchases` now shows `buyKind` and `targetId`; the intent and the store earning are left out on purpose with their reasons). An unpaid `StoreEarning` (status owed, a restore among them) now counts in `waiting_earnings`, so a creator is not deleted while WAWU owes them (`account-deletion-store-earning.contract.spec.ts`, 3). `account-data-map.spec` and `data-export-map.spec` green. `data-export.contract.spec` and `data-export-request.contract.spec` fail the same way on a clean `origin/main` in this environment (19 failed there), so they are not this change; every export section loads for the seeded user.
+
+Not done: a sale notification to the creator; the holiday list; the 30% ladder; the paid-question credit.
 
 ## Read first
 
