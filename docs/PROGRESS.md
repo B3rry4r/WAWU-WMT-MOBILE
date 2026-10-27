@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 410.**
+**Launch tasks done: 176 of 412.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 8 | 0 | 0 | 0 |
+| verifying | 10 | 0 | 0 | 0 |
 | review | 239 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -257,6 +257,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [STORE-QUESTION](../tasks/STORE-QUESTION.md) A paid question bought in the store, earned when answered, a question credit when not (Hub) (You)
+- [STORE-SALE-NOTICE](../tasks/STORE-SALE-NOTICE.md) The creator is told of each store sale, with their 85% in naira (Hub) (You)
 - [STORE-PAYOUT](../tasks/STORE-PAYOUT.md) Pay a creator their 85% of a store sale from WAWU's own wallet, 3 working days on (Hub) (You)
 - [STORE-HOLIDAYS](../tasks/STORE-HOLIDAYS.md) Public holidays are skipped by a store earning's 3 working days (Hub) (You)
 - [STORE-CUT30](../tasks/STORE-CUT30.md) When a store reaches the threshold its ladder prices move from 15% to 30% (Hub) (You)
