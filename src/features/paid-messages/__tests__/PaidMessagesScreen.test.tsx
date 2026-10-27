@@ -244,6 +244,35 @@ describe('Paid messages (I21)', () => {
     expect(puts()[0].body).toEqual({ enabled: true, priceKobo: 100_000, responseHours: 72 });
   });
 
+  it('a creator with an old off-list price can still switch paid messages off: Save sends enabled false and no price', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ priceKobo: 120_000 }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ enabled: false, priceKobo: 120_000 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await screen.findByTestId('price-stop-1000');
+    expect(screen.getByText('Pick a price from the list.')).toBeTruthy();
+    expect(isDisabled(saveButton())).toBe(true);
+    await fireEvent.press(screen.getByTestId('paid-switch'));
+    expect(screen.getByText('Off')).toBeTruthy();
+    expect(isDisabled(saveButton())).toBe(false);
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    // The Hub keeps the saved price when none is sent, and does not judge a price it is not sent.
+    expect(puts()[0].body).toEqual({ enabled: false, responseHours: 24 });
+  });
+
+  it('with the switch off, a list price the person picked is still saved', async () => {
+    answers[`GET ${SETTINGS}`] = ok(settings({ priceKobo: 120_000 }));
+    answers[`PUT ${SETTINGS}`] = ok(settings({ enabled: false, priceKobo: 200_000 }));
+    await open();
+    await screen.findByText('Take paid messages');
+    await fireEvent.press(screen.getByTestId('paid-switch'));
+    await pick(2000);
+    await fireEvent.press(saveButton());
+    await waitFor(() => expect(puts()).toHaveLength(1));
+    expect(puts()[0].body).toEqual({ enabled: false, priceKobo: 200_000, responseHours: 24 });
+  });
+
   it('an unchanged price that is on the list is sent as before, and Save waits for the list to load', async () => {
     answers[`GET ${SETTINGS}`] = ok(settings());
     answers[`GET ${PRICES}`] = 'offline';

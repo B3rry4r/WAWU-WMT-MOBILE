@@ -122,7 +122,7 @@ export function PaidMessagesScreen({ onBack }: PaidMessagesScreenProps) {
             loading={save.isPending}
             onPress={() => {
               setNotice(null);
-              save.mutate(saveBody(form));
+              save.mutate(saveBody(form, list));
             }}
           />
           <Toast message={notice?.message ?? null} tone={notice?.tone} placement="bottom" offset={96} duration={NOTICE_MS} onHide={() => setNotice(null)} />

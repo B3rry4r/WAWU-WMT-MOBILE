@@ -76,23 +76,30 @@ export function priceProblem(form: Form, settings: PaidMessageSettings): string 
 
 /**
  * Whether Save can be pressed: nothing locked, a price that is in range (and present when the switch is on), a reply time chosen. With
- * the Hub's price list given, a price that is not on it keeps Save off until a list price is picked (PRICE-PICKER: an off-list price is
- * never sent), and so does a list that has not loaded, which proves nothing about the saved price.
+ * the Hub's price list given and the switch on, a price that is not on it keeps Save off until a list price is picked (PRICE-PICKER: an
+ * off-list price is never sent), and so does a list that has not loaded, which proves nothing about the saved price. With the switch off
+ * Save is not held back by the price.
  */
 export function canSave(form: Form, settings: PaidMessageSettings, list?: readonly number[]): boolean {
   if (modeOf(settings.standing) === 'locked') return false;
   if (priceProblem(form, settings) !== null) return false;
-  if (list !== undefined && form.digits !== '' && !list.includes(Number(form.digits))) return false;
+  // With the switch off nothing is sold, so an old off-list price does not stop a creator turning paid messages off (`saveBody` leaves it out).
+  if (list !== undefined && form.enabled && form.digits !== '' && !list.includes(Number(form.digits))) return false;
   if (form.enabled && form.digits === '') return false;
   return form.hours !== null;
 }
 
-/** The body Save sends. The price goes only when there is one. */
-export function saveBody(form: Form): { enabled: boolean; priceKobo?: number; responseHours?: number } {
+/**
+ * The body Save sends. The price goes only when there is one. With the Hub's list given and the switch off, a price that is not on the
+ * list is left out: the Hub keeps the price it holds when none is sent (`PUT /paid-dm/settings` takes `enabled: false` with no price), so
+ * an old off-list price is never sent and the creator can still switch paid messages off.
+ */
+export function saveBody(form: Form, list?: readonly number[]): { enabled: boolean; priceKobo?: number; responseHours?: number } {
   const kobo = priceKoboOf(form);
+  const offList = list !== undefined && !form.enabled && form.digits !== '' && !list.includes(Number(form.digits));
   return {
     enabled: form.enabled,
-    ...(kobo === null ? {} : { priceKobo: kobo }),
+    ...(kobo === null || offList ? {} : { priceKobo: kobo }),
     ...(form.hours === null ? {} : { responseHours: form.hours }),
   };
 }

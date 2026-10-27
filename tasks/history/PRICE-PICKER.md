@@ -28,3 +28,7 @@ Checks (each gated on its log's EXIT line):
 - Android fingerprint: 17ffb13d520882bf144982b61d03f3994c6e40e4, unchanged.
 
 Re-shot (the screens whose look changed; same stand-in Hub inside the harness, same folder `.../price-picker-b/shots/`): `1-create-price-dark.png` and `6-create-price-light.png` (the Listing fee row is back), `3-community-pass-price-dark.png` (a price picked; with none the strip shows "Pick a price"), `5-tip-sheet-dark.png` (opens on ₦1,000). `2-paid-question-price-dark.png` and `4-ticket-price-dark.png` are unchanged from round 1.
+
+## Builder round 3 (27 Oct 2026)
+
+One medium from the re-verify of `0960f5b4`: an off-list saved price held Save off even with the switch off. Red first (the new test failed alone, 1 of 27), then fixed in `canSave` and `saveBody`. The Hub's contract (`UpdatePaidDmSettingsDto`: `priceKobo` optional, required only to turn on with none saved) and service (a price not sent is kept, an unchanged one is not judged) were read first. Checks: paid-messages tests 3 suites, 49 tests, EXIT 0; tsc EXIT 0; eslint on the 4 changed files EXIT 0; `npm run gates` EXIT 0; Android fingerprint 17ffb13d520882bf144982b61d03f3994c6e40e4, unchanged.

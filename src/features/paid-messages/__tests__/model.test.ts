@@ -97,6 +97,12 @@ describe('the paid message settings model', () => {
     expect(canSave({ enabled: true, digits: '', hours: 24 }, s)).toBe(false);
     expect(canSave({ enabled: false, digits: '', hours: 24 }, s)).toBe(true);
     expect(canSave({ enabled: true, digits: '49', hours: 24 }, s)).toBe(false);
+    // The price list (PRICE-PICKER): an off-list price keeps Save off while the switch is on, not when it is off.
+    const list = [500, 1000, 1500];
+    expect(canSave({ enabled: true, digits: '1200', hours: 24 }, s, list)).toBe(false);
+    expect(canSave({ enabled: false, digits: '1200', hours: 24 }, s, list)).toBe(true);
+    expect(canSave({ enabled: true, digits: '1500', hours: 24 }, s, list)).toBe(true);
+    expect(canSave({ enabled: true, digits: '1500', hours: 24 }, s, [])).toBe(false);
     expect(canSave({ enabled: true, digits: '1500', hours: null }, s)).toBe(false);
     expect(canSave({ enabled: true, digits: '1500', hours: 24 }, settings({ standing: standing({ state: 'paused', pausedUntil: '2026-10-03T09:00:00.000Z' }) }))).toBe(false);
   });
@@ -104,6 +110,10 @@ describe('the paid message settings model', () => {
   it('sends the price in kobo only when there is one', () => {
     expect(saveBody({ enabled: true, digits: '2500', hours: 48 })).toEqual({ enabled: true, priceKobo: 250_000, responseHours: 48 });
     expect(saveBody({ enabled: false, digits: '', hours: 24 })).toEqual({ enabled: false, responseHours: 24 });
+    // With the switch off, an off-list price is left out (the Hub keeps the one it holds); a list price is sent.
+    expect(saveBody({ enabled: false, digits: '1200', hours: 24 }, [1000, 1500])).toEqual({ enabled: false, responseHours: 24 });
+    expect(saveBody({ enabled: false, digits: '1500', hours: 24 }, [1000, 1500])).toEqual({ enabled: false, priceKobo: 150_000, responseHours: 24 });
+    expect(saveBody({ enabled: true, digits: '1500', hours: 24 }, [1000, 1500])).toEqual({ enabled: true, priceKobo: 150_000, responseHours: 24 });
     expect(priceKoboOf({ enabled: true, digits: '50', hours: 24 })).toBe(5_000);
   });
 
