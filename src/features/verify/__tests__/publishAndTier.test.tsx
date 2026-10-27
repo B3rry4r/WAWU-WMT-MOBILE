@@ -133,6 +133,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     hub.quoteReads += 1;
     const refused = packRefusal();
     if (refused) return refuse(409, { code: 'pack_not_allowed', message: refused });
+    // Eligibility comes first: only a person the pack is for is asked about their wallet (R-100, round 3 M2).
+    if (hub.wallet !== 'open') return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
     return ok({ kind: 'extra_products', currency: 'NGN', extraMinor: 150_000, products: 5, productsAllowed: hub.allowed, productsAllowedAfter: hub.allowed + 5, paymentKind: 'extra_products', payment: { kind: 'extra_products', targetId: 'extra', title: '5 more products', payee: null, priceKobo: 150_000, fee: { providerFeeKobo: 2500, wawuFeeKobo: 0, totalFeeKobo: 2500 }, totalKobo: 152_500, balanceKobo: 48_525_075, shortfallKobo: 0, willBeHeld: false, withinDailyLimit: true, remainingTodayKobo: null, quoteToken: 'tok-extra', expiresAt: '2099-01-01T00:00:00.000Z' } });
   }
   if (path === '/plans/purchases' && method === 'POST') {
@@ -466,6 +468,21 @@ describe('VF13 · the pack is sold only to Founding Maker, 20 products at most (
     expect(screen.queryByTestId('full-price')).toBeNull();
     expect(screen.queryByText(/Add 5/)).toBeNull();
     expect(screen.queryByText(/Add more products/)).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('Verify with no open wallet: the Hub answers pack_not_allowed before wallet_not_open, so the pack stays hidden and nobody is led to open a wallet for it', async () => {
+    hub.packRule = true;
+    hub.wallet = 'opening';
+    hub.used = 3;
+    hub.allowed = 3;
+    hub.heldTier = 'verify';
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    expect(await screen.findByTestId('full-line')).toHaveTextContent('Move up a tier to publish another.');
+    expect(screen.queryByTestId('full-add')).toBeNull();
+    expect(screen.queryByTestId('full-offer')).toBeNull();
+    expect(screen.queryByText('Open your wallet')).toBeNull();
     expect(hub.buys).toHaveLength(0);
   });
 
