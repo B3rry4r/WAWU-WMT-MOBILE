@@ -3,7 +3,7 @@ id: PACK-CAP
 title: Only Founding Maker adds products, at most 2 packs (R-100)
 owner: YOU
 area: VERIFY
-order: 2111
+order: -1268
 priority: launch
 repo: wawu-backend
 type: money-path
