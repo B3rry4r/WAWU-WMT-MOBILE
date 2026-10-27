@@ -7,7 +7,7 @@ order: -1268
 priority: launch
 repo: wawu-backend
 type: money-path
-status: building
+status: review
 depends_on: []
 decisions: [R-100, R-65, R-86, R-89]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 27 Oct 2026. Hub built by a Sonnet builder (T2): backend `wmt/PACK-CAP` `0bea345` on `origin/main` `02b66b5`. The app screens are NOT done (budget): see "Not done".
+As of 27 Oct 2026. Round 1: Hub built by a Sonnet builder (T2), backend `wmt/PACK-CAP` `0bea345` on `origin/main` `02b66b5`. Round 2: the app part, mobile `wmt/PACK-CAP` (see the hand-back for the head). Lead rulings of round 2: the pack is counted on the extras the tier row holds (20 is a hard maximum across renewals; R-100 now says so); an ended Founding Maker's late store purchase is still granted; a flagged purchase is acknowledged in the store and left for an admin. **Apple purchases cannot be refunded by WAWU, so the app must never start a store purchase of the pack that the Hub would refuse: ask the Hub (the quote of the pack) just before opening the store sheet, and open it only if the Hub does not answer `409 pack_not_allowed`.**
 
 - **Settings (R-65):** `plan.extra_products.tiers` (tier ids that may buy; default `founding`) and `plan.extra_products.max_packs` (default 2), in the registry and `plan-settings.defaults.json`; no migration (no row is needed).
 - **Rule:** `src/plans/purchases/extra-products-cap.ts`. Packs are counted on the extras the tier row holds (they carry over a renewal), so 20 stays the most a profile can hold; packs bought before the rule stay.
@@ -27,7 +27,10 @@ As of 27 Oct 2026. Hub built by a Sonnet builder (T2): backend `wmt/PACK-CAP` `0
 - **Store path:** a store purchase of the pack that arrives against the rule is recorded with `flag: pack_not_allowed` and grants nothing (the way a removed member's pass renewal is); the same transaction posted again is the same answer; a refund of it takes nothing back. An admin sees the flag in `admin/store/purchases`.
 - **Existing specs:** five specs that test the room logic, the payment or the grant on the first tier now open the rule in the settings for their own run (`test/plans/open-pack-rule.ts`); no assertion was changed. `limit-offers` and `publishing-allowance` call the function through a wrapper with an open rule.
 - **Checks (backend):** tsc 0, eslint 0 on changed files, 18 suites (313 tests) of the changed files and their neighbours pass, `contract:build` 0 (3 lines in `contract/openapi.json`), gates 0 fail, `check_baseline` 0. The protected suite ran 248 of 253: the 5 failures are `/learn/*` and `/creators/:id/evg`, on a test database with no seed rows (not a route this task touches).
-- **Not done:** (1) the app: VF13 and the "used N of N" sheet (`src/features/verify/ProductsFullSheet.tsx`, `planParts.tsx`, `purchaseModel.ts`) must draw the pack only when the Hub's `product_limit_reached` offers carry `extraProducts`, start a store purchase of `wawu.more.products.5` only then, and for a Founding Maker at the cap read "You have used 20 of 20" and "That's the most products a profile can hold." (2) `npm run api` against the backend contract (the new `pack_not_allowed` code), then the app tests, tsc, gates, eslint. (3) The protected suite on a seeded database.
+- **App (round 2):** VF13 (`ProductsFullSheet.tsx`) draws the pack only while the Hub's quote of it (`GET /plans/purchases/quote?kind=extra_products`) is not refused `409 pack_not_allowed`, and waits for that quote before drawing anything. Verify and Verify Plus, full: the title, "Move up a tier to publish another." and "Upgrade instead" (no pack, price or Add button). Founding Maker at the cap: "You have used 20 of 20" and "That's the most products a profile can hold.", no buy button (Open library stays). Paying takes a fresh quote before the PIN (`usePlanPurchase`): a `409 pack_not_allowed` there removes the pack and shows the Hub's sentence (`full-refused`), with nothing bought. `npm run api` against the backend: the generated types are unchanged (only `contract/SOURCE_COMMIT` moved).
+- **The app has no store purchase of the pack yet.** The pack is still a wallet payment here (IAP-02 has not moved it to the stores, R-86); when it does, the store sheet opens only after the same quote answers 200, so the app never starts a purchase the Hub would refuse.
+- **Protected suite on a seeded database (round 2):** 2 suites, 253 of 253, EXIT 0 (the round 1 failures were the missing seed).
+- **Not done:** the cases for Verify Plus in the app (same path as Verify: the Hub's refusal; the stand-in Hub lists two tiers); the store purchase (IAP-02).
 
 ## Read first
 
@@ -42,7 +45,7 @@ Only a Founding Maker can add products, two packs at most (20 products). Verify 
 - [x] Verify and Verify Plus full: offers carry tiers only; quote, purchase and store grant refuse the pack (grant flagged).
 - [x] Founding Maker: a first pack, a second pack, then nothing at 20.
 - [x] The two settings change the rule.
-- [ ] App: VF13 and the sheet draw the pack only when the Hub offers it, with the full-state copy.
+- [x] App: VF13 and the sheet draw the pack only when the Hub offers it, with the full-state copy.
 
 ## History
 

@@ -69,6 +69,20 @@ const hub = {
   full: false,
   paused: false,
   lostFirstBuy: false,
+  /** PACK-CAP (R-100): the Hub sells the pack only on Founding Maker, 20 products at most; off, the stand-in sells it to anyone. */
+  packRule: false,
+  quoteReads: 0,
+  /** The Hub refuses the pack from this quote on (the rule moved after the person looked). */
+  refuseQuoteFrom: null as number | null,
+};
+/** The Hub's own sentences for `409 pack_not_allowed` (R-100). */
+const PACK_TIER_LINE = 'More products come with a higher tier. Move up a tier to add more.';
+const PACK_CAP_LINE = "That's the most products a profile can hold.";
+const packRefusal = () => {
+  if (hub.refuseQuoteFrom !== null && hub.quoteReads >= hub.refuseQuoteFrom) return PACK_TIER_LINE;
+  if (!hub.packRule) return null;
+  if (hub.heldTier !== 'founding') return PACK_TIER_LINE;
+  return hub.allowed >= 20 ? PACK_CAP_LINE : null;
 };
 const FORMATS = [{ id: 'pdf', full: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000 }, preview: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000, kind: 'extract', seconds: null } }];
 const draft = () => ({ id: 'd1', title: 'Brand deck template', contentType: 'pdf', description: 'A deck', category: hub.category, specializations: [], tags: [], accessType: 'paid', price: 4500, missing: hub.category ? [] : ['category'], createdAt: '2026-10-16T00:00:00.000Z', updatedAt: '2026-10-16T00:00:00.000Z' });
@@ -116,6 +130,9 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     return json(201, { statusCode: 201, message: 'Created', data: { id: 'c1', title: 'Brand deck template', slug: 'brand-deck', creatorWawuId: 'lennox', status: 'pending' } });
   }
   if (path === '/plans/purchases/quote') {
+    hub.quoteReads += 1;
+    const refused = packRefusal();
+    if (refused) return refuse(409, { code: 'pack_not_allowed', message: refused });
     return ok({ kind: 'extra_products', currency: 'NGN', extraMinor: 150_000, products: 5, productsAllowed: hub.allowed, productsAllowedAfter: hub.allowed + 5, paymentKind: 'extra_products', payment: { kind: 'extra_products', targetId: 'extra', title: '5 more products', payee: null, priceKobo: 150_000, fee: { providerFeeKobo: 2500, wawuFeeKobo: 0, totalFeeKobo: 2500 }, totalKobo: 152_500, balanceKobo: 48_525_075, shortfallKobo: 0, willBeHeld: false, withinDailyLimit: true, remainingTodayKobo: null, quoteToken: 'tok-extra', expiresAt: '2099-01-01T00:00:00.000Z' } });
   }
   if (path === '/plans/purchases' && method === 'POST') {
@@ -192,7 +209,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   pinClock(TODAY);
-  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false });
+  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false, packRule: false, quoteReads: 0, refuseQuoteFrom: null });
   (require('../purchaseIntent') as { forgetIntentInMemory: () => void }).forgetIntentInMemory();
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
@@ -431,6 +448,69 @@ describe('VF13 · all products used', () => {
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 12 of 12');
     await screen.findByText('Add 5 for ₦1,525');
     expect(screen.queryByTestId('full-upgrade')).toBeNull();
+  });
+});
+
+describe('VF13 · the pack is sold only to Founding Maker, 20 products at most (R-100, PACK-CAP)', () => {
+  it('Verify, full: only the tiers are drawn, no pack, no price and no Add button', async () => {
+    hub.packRule = true;
+    hub.used = 3;
+    hub.allowed = 3;
+    hub.heldTier = 'verify';
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    expect(await screen.findByTestId('full-line')).toHaveTextContent('Move up a tier to publish another.');
+    expect(screen.getByTestId('full-upgrade')).toHaveTextContent('Upgrade instead');
+    expect(screen.queryByTestId('full-add')).toBeNull();
+    expect(screen.queryByTestId('full-offer')).toBeNull();
+    expect(screen.queryByTestId('full-price')).toBeNull();
+    expect(screen.queryByText(/Add 5/)).toBeNull();
+    expect(screen.queryByText(/Add more products/)).toBeNull();
+    expect(hub.buys).toHaveLength(0);
+  });
+
+  it('Founding Maker with room for a pack still sees the offer', async () => {
+    hub.packRule = true;
+    hub.used = 10;
+    hub.allowed = 10;
+    hub.heldTier = 'founding';
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 10 of 10');
+    await screen.findByText('Add 5 for ₦1,525');
+    expect(screen.getByTestId('full-offer')).toBeTruthy();
+  });
+
+  it('Founding Maker at 20 of 20: the cap sentence, no pack and no buy button', async () => {
+    hub.packRule = true;
+    hub.used = 20;
+    hub.allowed = 20;
+    hub.heldTier = 'founding';
+    await renderRouter(routes, { initialUrl: '/full' });
+    expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 20 of 20');
+    expect(await screen.findByTestId('full-line')).toHaveTextContent("That's the most products a profile can hold.");
+    expect(screen.queryByTestId('full-add')).toBeNull();
+    expect(screen.queryByTestId('full-add-money')).toBeNull();
+    expect(screen.queryByTestId('full-offer')).toBeNull();
+    expect(screen.queryByTestId('full-upgrade')).toBeNull();
+    expect(screen.getByTestId('full-library')).toBeTruthy();
+    expect(screen.queryByText(/Add 5/)).toBeNull();
+    expect(PACK_CAP_LINE).not.toMatch(/[\u2013\u2014]/);
+  });
+
+  it('asks the Hub again before the PIN: a 409 pack_not_allowed takes the pack away and shows the Hub\'s message, with nothing bought', async () => {
+    hub.used = 10;
+    hub.allowed = 10;
+    hub.heldTier = 'founding';
+    await renderRouter(routes, { initialUrl: '/full' });
+    await screen.findByText('Add 5 for ₦1,525');
+    // The rule moves after the person looked: the next quote is refused.
+    hub.refuseQuoteFrom = hub.quoteReads;
+    await fireEvent.press(screen.getByTestId('full-add'));
+    expect(await screen.findByTestId('full-refused')).toHaveTextContent(PACK_TIER_LINE);
+    expect(screen.queryByTestId('full-add')).toBeNull();
+    expect(screen.queryByTestId('full-offer')).toBeNull();
+    expect(screen.queryByText(/for 5 more products/)).toBeNull();
+    expect(hub.buys).toHaveLength(0);
   });
 });
 

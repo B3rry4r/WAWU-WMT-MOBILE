@@ -9,7 +9,7 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 
 import { buy, fetchPurchase, fetchQuote, purchaseQuery, targetId, type Purchase, type PurchaseQuote, type PurchaseTarget } from './purchaseApi';
 import { dropIntent, findIntent, putIntent } from './purchaseIntent';
-import { CHANGED_LINE, failedLine, NOT_READY_LINE, quoteMoved, SHORT_LINE } from './purchaseModel';
+import { CHANGED_LINE, failedLine, NOT_READY_LINE, PACK_NOT_ALLOWED, quoteMoved, SHORT_LINE } from './purchaseModel';
 import { isApprovalStop, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
 
 /** How often a purchase the Hub has not finished is read again (`GET /plans/purchases/{id}`, our own record). Default (agent), owner may override. */
@@ -23,6 +23,8 @@ export type PlanPurchaseOptions = {
   onSetPin: () => void;
   /** An unanswered purchase of this same plan, left by an earlier visit, is sent again as it was (with the offer it was sent with). */
   onAdopt?: (target: PurchaseTarget) => void;
+  /** The fresh quote taken at Pay was refused `pack_not_allowed` (R-100): the pack is no longer on offer, with the Hub's own sentence. */
+  onPackRefused?: (message: string) => void;
 };
 
 const sameThing = (a: PurchaseTarget, b: PurchaseTarget): boolean => a.kind === b.kind && ('tierId' in a ? 'tierId' in b && a.tierId === b.tierId : !('tierId' in b));
@@ -183,7 +185,8 @@ export function usePlanPurchase(target: PurchaseTarget, options: PlanPurchaseOpt
       attempt.current = { key: newRequestKey(), target, method, expectedTotalKobo: now.totalKobo, quoteToken: now.quoteToken, sent: false };
       setPinOpen(true);
     } catch (error) {
-      if (!entry.leadIfNoWallet(error)) setNotice(isApiError(error) ? error.message : 'We could not check the price. Try again.');
+      if (isApiError(error) && error.code === PACK_NOT_ALLOWED && optionsRef.current.onPackRefused) optionsRef.current.onPackRefused(error.message);
+      else if (!entry.leadIfNoWallet(error)) setNotice(isApiError(error) ? error.message : 'We could not check the price. Try again.');
     } finally {
       asking.current = false;
       setBusy(false);
@@ -302,6 +305,8 @@ export function usePlanPurchase(target: PurchaseTarget, options: PlanPurchaseOpt
     looked,
     quote,
     quoteError: quoted.isError && !isNoWallet(quoted.error) ? quoted.error : null,
+    /** The first quote is on its way (nothing to show yet): a sheet that sells only what the Hub offers waits for it. */
+    quoteLoading: quoted.isLoading,
     retryQuote: () => setRound((r) => r + 1),
     method,
     setMethod: setPicked,

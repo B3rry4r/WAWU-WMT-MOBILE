@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
@@ -20,7 +21,7 @@ import { font, radius, space } from '@/theme';
 
 import { plansQuery } from './purchaseApi';
 import { QuoteBreakdown } from './planParts';
-import { naira, nextTiers, pinPurposeOf } from './purchaseModel';
+import { naira, nextTiers, PACK_CAP_LINE, PACK_NOT_ALLOWED, PACK_TIERS_LINE, pinPurposeOf } from './purchaseModel';
 import { usePlanPurchase } from './usePlanPurchase';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
@@ -57,7 +58,10 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotP
   const owner = useSessionAccount(undefined);
   const mine = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
   const plans = useQuery(plansQuery(owner), queryClient);
-  const purchase = usePlanPurchase({ kind: 'extra_products' }, { onSetPin });
+  // PACK-CAP (R-100): the pack is drawn and sold only while the Hub's quote of it is not refused `pack_not_allowed`. The quote is asked
+  // when the sheet opens and again at Pay (before the PIN); a refusal at Pay takes the pack away here, with the Hub's own sentence.
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const purchase = usePlanPurchase({ kind: 'extra_products' }, { onSetPin, onPackRefused: setRefusal });
   const { quote, done } = purchase;
   const extra = plans.data?.extraProducts ?? null;
   const used = mine.data?.productsUsed ?? null;
@@ -94,7 +98,7 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotP
         <Button testID="full-done" label="Done" full onPress={onClose} />
       </View>
     );
-  } else if (used === null || allowed === null || !extra || !purchase.looked) {
+  } else if (used === null || allowed === null || !extra || !purchase.looked || (purchase.quoteLoading && refusal === null)) {
     body = (
       <View testID="full-loading" style={styles.stack}>
         <Skeleton height={32} width="60%" radius={radius.tile} />
@@ -106,7 +110,27 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotP
     const count = extra.count;
     const total = quote?.totalKobo ?? null;
     const up = nextTiers(plans.data?.tiers ?? [], mine.data?.tier?.id ?? null, mine.data?.extraProducts ?? 0, used).length > 0;
-    body = (
+    const packRefused = refusal !== null || (isApiError(purchase.quoteError) && purchase.quoteError.code === PACK_NOT_ALLOWED);
+    const refusedLine = up ? PACK_TIERS_LINE : PACK_CAP_LINE;
+    body = packRefused ? (
+      <>
+        <View>
+          <Text variant="display" accessibilityRole="header" testID="full-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
+            {`You have used ${used} of ${allowed}`}
+          </Text>
+          <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
+            {refusedLine}
+          </Text>
+          {refusal !== null && refusal !== refusedLine ? (
+            <Text variant="meta" tone="danger" testID="full-refused" accessibilityLiveRegion="polite" style={styles.blurb}>
+              {refusal}
+            </Text>
+          ) : null}
+        </View>
+        {up ? <Button testID="full-upgrade" label="Upgrade instead" full onPress={onUpgrade} /> : null}
+        {onOpenLibrary ? <Button testID="full-library" label="Open library" variant="outline" full onPress={onOpenLibrary} /> : null}
+      </>
+    ) : (
       <>
         <View>
           <Text variant="display" accessibilityRole="header" testID="full-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>

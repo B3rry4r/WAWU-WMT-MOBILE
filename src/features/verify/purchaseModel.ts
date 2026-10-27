@@ -130,3 +130,13 @@ export function dayOf(iso: string | null | undefined, now: Date = new Date()): s
   const at = new Date(iso);
   return Number.isNaN(at.getTime()) ? null : dateWords(at, now);
 }
+
+/**
+ * The Hub's refusal of the "Add 5 more products" pack (`409 pack_not_allowed`, R-100, PACK-CAP): the person's tier may not buy it, or they
+ * hold the most packs a profile can (20 products). The pack is drawn and sold only while the Hub's quote of it is not refused with this code.
+ */
+export const PACK_NOT_ALLOWED = 'pack_not_allowed';
+/** Verify and Verify Plus, full: only the tiers are offered. */
+export const PACK_TIERS_LINE = 'Move up a tier to publish another.';
+/** Founding Maker at the cap (R-100's own sentence). */
+export const PACK_CAP_LINE = "That's the most products a profile can hold.";
