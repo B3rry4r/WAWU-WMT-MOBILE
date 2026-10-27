@@ -8,7 +8,7 @@ priority: launch
 repo: wawu-backend
 type: money-path
 status: building
-depends_on: [TIER-04, IAP-01]
+depends_on: []
 decisions: [R-100, R-65, R-86, R-89]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
