@@ -18,8 +18,8 @@ import { SaidBanner, StoreUnready } from '@/features/store/StoreParts';
 import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space } from '@/theme';
 
-import { plansQuery } from './purchaseApi';
-import { nextTiers, packOffered } from './purchaseModel';
+import { askPackOffered, plansQuery } from './purchaseApi';
+import { nextTiers, PACK_CAP_LINE, PACK_CHECK_FAILED_LINE, PACK_NOT_ALLOWED, PACK_TIERS_LINE, packVerdictOf } from './purchaseModel';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
 const MARK = 72;
@@ -57,6 +57,30 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
   // What the person could publish when the store sheet opened, so the result never says a count from before the grant.
   const [before, setBefore] = useState<number | null>(null);
   const pack = store.state.kind === 'ready' ? (store.state.items[0] ?? null) : null;
+  // PACK-CAP (R-100): the pack is drawn only while the Hub's quote of it is not refused, and asked again just before the store sheet opens.
+  // Asked only when the store sells the pack: with none there is no offer to check.
+  const check = useQuery({ queryKey: ['plans', 'pack-check', owner ?? ''], queryFn: askPackOffered, enabled: Boolean(owner) && pack !== null, retry: false, staleTime: 0, gcTime: 0 }, queryClient);
+  const verdict = packVerdictOf(check);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const [checkFailed, setCheckFailed] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const askThenBuy = async (offer: NonNullable<typeof pack>, now: number | null) => {
+    if (asking) return;
+    setAsking(true);
+    setCheckFailed(false);
+    try {
+      await askPackOffered();
+    } catch (error) {
+      const again = packVerdictOf({ isPending: false, isError: true, error });
+      setAsking(false);
+      if (again.kind === 'refused') setRefusal(again.message);
+      else if (again.kind !== 'offered') setCheckFailed(true);
+      if (again.kind !== 'offered') return;
+    }
+    setAsking(false);
+    setBefore(now);
+    void buyer.buy(offer);
+  };
 
   let body;
   if ((mine.isError && !mine.data) || (plans.isError && !plans.data)) {
@@ -101,8 +125,9 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
   } else {
     const count = pack?.product.grants.extraProducts ?? 0;
     const running = mine.data.state === 'active' || mine.data.state === 'ending';
-    // The pack only where the Hub would sell it; `offer` is the product when it is drawn.
-    const offer = pack !== null && count > 0 && packOffered(mine.data, count) ? pack : null;
+    // The pack only where the Hub would sell it (its quote is not refused); `offer` is the product when it is drawn.
+    const offer = pack !== null && count > 0 && verdict.kind === 'offered' && refusal === null ? pack : null;
+    const packRefusedByRule = refusal !== null || (verdict.kind === 'refused' && verdict.code === PACK_NOT_ALLOWED);
     const up = nextTiers(plans.data.tiers, mine.data.tier?.id ?? null, mine.data.extraProducts, used).length > 0;
     body = (
       <>
@@ -111,10 +136,25 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
             {`You have used ${used} of ${allowed}`}
           </Text>
           <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
-            {offer ? (up ? 'Add more products, or move up a tier.' : 'Add more products, or take something down.') : up ? 'Move up a tier, or take something down.' : 'Take something down to make room for a new one.'}
+            {offer
+              ? up
+                ? 'Add more products, or move up a tier.'
+                : 'Add more products, or take something down.'
+              : packRefusedByRule
+                ? up
+                  ? PACK_TIERS_LINE
+                  : PACK_CAP_LINE
+                : up
+                  ? 'Move up a tier, or take something down.'
+                  : 'Take something down to make room for a new one.'}
           </Text>
+          {refusal !== null && refusal !== (up ? PACK_TIERS_LINE : PACK_CAP_LINE) ? (
+            <Text variant="meta" tone="danger" testID="full-refused" accessibilityLiveRegion="polite" style={styles.blurb}>
+              {refusal}
+            </Text>
+          ) : null}
         </View>
-        {running && store.state.kind === 'loading' ? <Skeleton testID="full-offer-loading" height={72} radius={radius.card} /> : null}
+        {running && (store.state.kind === 'loading' || (pack !== null && verdict.kind === 'checking')) ? <Skeleton testID="full-offer-loading" height={72} radius={radius.card} /> : null}
         {offer ? (
           <Card padded testID="full-offer">
             <View style={styles.offer}>
@@ -135,17 +175,19 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
         ) : null}
         {running && store.state.kind !== 'loading' && store.state.kind !== 'ready' ? <StoreUnready state={store.state} onRetry={store.refetch} testID="full-store" /> : null}
         <SaidBanner said={buyer.said} testID="full-said" />
+        {checkFailed ? (
+          <Text variant="meta" tone="danger" testID="full-check-failed" accessibilityLiveRegion="polite" style={styles.centre}>
+            {PACK_CHECK_FAILED_LINE}
+          </Text>
+        ) : null}
         {offer ? (
           <Button
             testID="full-add"
             label={buyer.busy ? 'Buying...' : buyLabel(offer, `Add ${count}`)}
             full
-            loading={buyer.busy}
-            disabled={buyer.busy}
-            onPress={() => {
-              setBefore(allowed);
-              void buyer.buy(offer);
-            }}
+            loading={buyer.busy || asking}
+            disabled={buyer.busy || asking}
+            onPress={() => void askThenBuy(offer, allowed)}
           />
         ) : null}
         {up ? <Button testID="full-upgrade" label="Upgrade instead" variant="outline" full disabled={buyer.busy} onPress={onUpgrade} /> : null}

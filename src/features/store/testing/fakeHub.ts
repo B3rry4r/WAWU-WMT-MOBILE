@@ -29,6 +29,8 @@ export const hub = {
   extra: {} as Record<string, unknown>,
   /** Any other route a screen reads, by `METHOD /path`: the data it answers with (200). */
   routes: {} as Record<string, unknown>,
+  /** A route answered with a refusal in the Hub's shape, by `METHOD /path`; `from` is the read it starts at (1 = every read, 2 = the second on). */
+  errors: {} as Record<string, { status: number; code: string; message: string; from?: number }>,
   /** Every request the stand-in saw, as `METHOD /path`, in order (the API client keeps the first `fetch` it finds, so a call count lives here). */
   reads: [] as string[],
   reset() {
@@ -42,6 +44,7 @@ export const hub = {
     this.seen = new Map();
     this.extra = {};
     this.routes = {};
+    this.errors = {};
     this.reads = [];
   },
 };
@@ -108,6 +111,11 @@ export function installHub(): void {
       const again = hub.seen.has(key);
       hub.seen.set(key, body);
       return json(201, { statusCode: 201, message: 'Created', data: { ...viewOf(product, again, (body.communityId as string | undefined) ?? null), ...hub.extra } });
+    }
+    const key = `${request.method} ${path}`;
+    const refusal = hub.errors[key];
+    if (refusal && hub.reads.filter((r) => r === key).length >= (refusal.from ?? 1)) {
+      return json(refusal.status, { statusCode: refusal.status, message: refusal.message, data: null, reason: { code: refusal.code, message: refusal.message } });
     }
     const other = hub.routes[`${request.method} ${path}`];
     if (other !== undefined) return json(200, { statusCode: 200, message: 'OK', data: other });

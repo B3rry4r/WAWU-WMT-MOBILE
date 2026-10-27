@@ -1,5 +1,5 @@
+import { isApiError } from '@/api/errors';
 import { formatPoints } from '@/components/PointsFigure';
-import type { MyTier } from '@/features/me/api';
 import { lastsText } from '@/features/points/buyModel';
 import { dateWords } from '@/features/wallet/history/lagosTime';
 
@@ -72,13 +72,35 @@ export const nextTiers = (tiers: readonly PlanTier[], heldId: string | null, ext
 };
 
 /**
- * Whether the Hub would sell VF13's "Add 5 more products" to this person now, by the rule it refuses with (`limitOffers`, TIER-02): the pack is
- * bought on a RUNNING tier (`active` or `ending`, never none, ended, or a verification tick alone, whose cap the pack does not raise) and it
- * must lift the limit above what is published. The Hub's refusal carries `extraProducts: null` otherwise; the sheet reads the same facts from
- * `GET /me/tier` so it never draws an offer the Hub would refuse after the store has taken the payment (IAP-03 round 2, F1).
+ * The Hub's refusals of the "Add 5 more products" pack on its quote (`GET /plans/purchases/quote?kind=extra_products`, R-100, PACK-CAP):
+ * `pack_not_allowed` (the person's tier may not buy it, or they hold the most packs a profile can: 20 products) and `tier_required` (no running
+ * tier). The sheet no longer guesses from `GET /me/tier`: it asks the Hub, which answers eligibility first, before any wallet or payment gate.
  */
-export const packOffered = (mine: Pick<MyTier, 'state' | 'productsAllowed' | 'productsUsed'>, count: number): boolean =>
-  (mine.state === 'active' || mine.state === 'ending') && count > 0 && mine.productsAllowed + count > mine.productsUsed;
+export const PACK_NOT_ALLOWED = 'pack_not_allowed';
+/** Verify and Verify Plus, full: only the tiers are offered. */
+export const PACK_TIERS_LINE = 'Move up a tier to publish another.';
+/** Founding Maker at the cap (R-100's own sentence). */
+export const PACK_CAP_LINE = "That's the most products a profile can hold.";
+/** The store sheet is not opened while the Hub cannot be asked: an Apple purchase cannot be refunded by WAWU. */
+export const PACK_CHECK_FAILED_LINE = 'We could not check this right now. Try again.';
+
+export type PackVerdict = { kind: 'checking' } | { kind: 'offered' } | { kind: 'refused'; code: 'pack_not_allowed' | 'tier_required'; message: string } | { kind: 'unknown' };
+
+/**
+ * What the Hub's answer to the pack's quote means. A quote that comes back, or one stopped only by a gate that is asked AFTER eligibility
+ * (`wallet_not_open`, `fees_not_set`: the store path needs neither), means the Hub would sell the pack. A refusal is `pack_not_allowed` or
+ * `tier_required`. Anything else (no network, the server failing) is `unknown`: the pack is not drawn and the store is not opened.
+ */
+export function packVerdictOf(read: { isPending: boolean; isError: boolean; error: unknown }): PackVerdict {
+  if (read.isPending) return { kind: 'checking' };
+  if (!read.isError) return { kind: 'offered' };
+  const error = read.error;
+  if (isApiError(error)) {
+    if (error.code === 'wallet_not_open' || error.code === 'fees_not_set') return { kind: 'offered' };
+    if (error.code === PACK_NOT_ALLOWED || error.code === 'tier_required') return { kind: 'refused', code: error.code, message: error.message };
+  }
+  return { kind: 'unknown' };
+}
 
 /** VF7's three rows, from what the Hub granted: the points (the tier's and the offer's, "600 + 1,000"), the products, the event pass. A row the grant does not carry is not drawn. */
 export type GrantRow = { id: 'points' | 'products' | 'pass'; label: string; value: string };

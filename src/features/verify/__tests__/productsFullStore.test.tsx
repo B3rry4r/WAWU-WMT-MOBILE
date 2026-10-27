@@ -21,6 +21,8 @@ jest.mock('expo-iap', () => require('@/features/store/testing/fakeIap').moduleMo
 
 const tier = (id: string, name: string, priceMinor: number, products = 3) => ({ id, name, days: 365, products, bonusPoints: 0, bonusPointsExpireDays: 365, priceMinor, eventPass: null, badge: { numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: false, preselected: false });
 const PLANS = { currency: 'NGN', tiers: [tier('verify', 'Verify', 100_000), tier('plus', 'Verify Plus', 300_000, 10)], extraProducts: { count: 5, priceMinor: 150_000 }, checkoutBump: { points: 1000, priceMinor: 80_000 } };
+/** The Hub's quote of the pack (`GET /plans/purchases/quote?kind=extra_products`): 200 when the pack is on offer to the person (R-100). */
+const QUOTE_OK = { kind: 'extra_products', currency: 'NGN', extraMinor: 150_000, products: 5, productsAllowed: 3, productsAllowedAfter: 8, paymentKind: 'extra_products', payment: { kind: 'extra_products', targetId: 'extra', title: '5 more products', payee: null, priceKobo: 150_000, fee: { providerFeeKobo: 2500, wawuFeeKobo: 0, totalFeeKobo: 2500 }, totalKobo: 152_500, balanceKobo: 48_525_075, shortfallKobo: 0, willBeHeld: false, withinDailyLimit: true, remainingTodayKobo: null, quoteToken: 'tok-extra', expiresAt: '2099-01-01T00:00:00.000Z' } };
 const PACK_SKU = 'africa.wawu.more.5';
 const pack: HubProduct = { id: 'store-more', platform: 'android', storeProductId: PACK_SKU, kind: 'extra_products', title: 'Add 5 more products', subscription: false, grants: { points: null, credits: null, tierId: null, days: null, extraProducts: 5 } };
 const tierProduct = (id: string): HubProduct => ({ id: `store-${id}`, platform: 'android', storeProductId: `africa.wawu.tier.${id}`, kind: 'tier', title: id, subscription: true, grants: { points: null, credits: null, tierId: id, days: 365 } });
@@ -38,6 +40,7 @@ function serve({ products = [pack], prices = { [PACK_SKU]: '$4.99' } as Record<s
   hub.products = products;
   fakeStore.products = products.flatMap((p) => (prices[p.storeProductId] ? [{ id: p.storeProductId, displayPrice: prices[p.storeProductId], type: p.subscription ? ('subs' as const) : ('in-app' as const) }] : []));
   hub.routes['GET /plans'] = PLANS;
+  hub.routes['GET /plans/purchases/quote'] = QUOTE_OK;
   hub.routes['GET /me/tier'] = meTier(() => (hub.bodies.length > 0 ? 8 : 3));
 }
 
@@ -72,7 +75,8 @@ describe('VF13 · Add 5 more products in the store sheet', () => {
     expect(rtl.screen.getByTestId('full-upgrade')).toHaveTextContent('Upgrade instead');
     expect(rtl.screen.getByTestId('full-library')).toHaveTextContent('Open library');
     expect(rtl.screen.queryByText(/₦|PIN|Bank charge|wallet/i)).toBeNull();
-    expect(hub.reads.filter((r) => r.includes('/plans/purchases'))).toHaveLength(0);
+    // R-100: the Hub's quote of the pack is read once, only for its refusal (eligibility); nothing is bought from the wallet.
+    expect(hub.reads.filter((r) => r.includes('/plans/purchases'))).toEqual(['GET /plans/purchases/quote']);
   });
 
   it('buys it in the store sheet, the Hub is handed the purchase, and the sheet says how many were added and what the person can publish now', async () => {
@@ -130,61 +134,93 @@ describe('VF13 · Add 5 more products in the store sheet', () => {
   });
 });
 
-describe('VF13 · the pack is offered only where the Hub would sell it (F1)', () => {
+describe('VF13 · the pack is offered only where the Hub would sell it (R-100, PACK-CAP)', () => {
   const mine = (over: Record<string, unknown>) => ({ state: 'active', tier: { id: 'verify', name: 'Verify', badge: null }, activeUntil: '2027-01-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 3, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null, ...over });
-  const { packOffered } = require('../purchaseModel') as typeof import('../purchaseModel');
+  const QUOTE = 'GET /plans/purchases/quote';
+  const TIER_SENTENCE = 'More products come with a higher tier. Move up a tier to add more.';
+  const CAP_SENTENCE = "That's the most products a profile can hold.";
+  const refuse = (code: string, message: string, status = 409, from = 1) => (hub.errors[QUOTE] = { status, code, message, from });
 
-  it('packOffered follows the Hub’s own rule: a running tier, and the pack lifts the limit above what is published', () => {
-    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 3 }, 5)).toBe(true);
-    expect(packOffered({ state: 'ending', productsAllowed: 3, productsUsed: 3 }, 5)).toBe(true);
-    // Not a running tier: no tier at all, a tier that ended, or only a tick (the Hub refuses the pack to all three).
-    for (const state of ['none', 'ended'] as const) expect(packOffered({ state, productsAllowed: 3, productsUsed: 3 }, 5)).toBe(false);
-    expect(packOffered({ state: 'none', productsAllowed: 25, productsUsed: 25 }, 5)).toBe(false);
-    // Running, but five more would still leave fewer places than there are products published.
-    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 8 }, 5)).toBe(false);
-    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 7 }, 5)).toBe(true);
-    expect(packOffered({ state: 'active', productsAllowed: 3, productsUsed: 3 }, 0)).toBe(false);
-  });
-
-  it('a person with only a verification tick (no tier) is not offered the pack, though the store has it, and nothing is asked of the store sheet', async () => {
+  it('Verify, full: the Hub refuses the pack, so only the tiers are drawn and the store is never asked', async () => {
     serve();
-    hub.routes['GET /me/tier'] = mine({ state: 'none', tier: null, productsAllowed: 25, productsUsed: 25, activeUntil: null });
+    refuse('pack_not_allowed', TIER_SENTENCE);
     await sheet();
-    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 25 of 25');
-    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    expect(await rtl.screen.findByTestId('full-line')).toHaveTextContent('Move up a tier to publish another.');
+    expect(rtl.screen.getByTestId('full-upgrade')).toHaveTextContent('Upgrade instead');
     expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
     expect(rtl.screen.queryByTestId('full-add')).toBeNull();
     expect(rtl.screen.queryByTestId('full-offer-loading')).toBeNull();
+    expect(rtl.screen.queryByText(/\$4\.99|Add 5/)).toBeNull();
+    expect(fakeStore.requests).toEqual([]);
+  });
+
+  it('Founding Maker at 20 of 20: the cap sentence, no pack and no buy button', async () => {
+    serve();
+    refuse('pack_not_allowed', CAP_SENTENCE);
+    hub.routes['GET /me/tier'] = mine({ tier: { id: 'founding', name: 'Founding Maker', badge: null }, productsAllowed: 20, productsUsed: 20, extraProducts: 10 });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 20 of 20');
+    expect(await rtl.screen.findByTestId('full-line')).toHaveTextContent("That's the most products a profile can hold.");
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-upgrade')).toBeNull();
+    expect(rtl.screen.getByTestId('full-library')).toBeTruthy();
+    expect(fakeStore.requests).toEqual([]);
+  });
+
+  it('a person with no tier or an ended one, or only a verification tick, is refused by the Hub (tier_required) and is not offered the pack', async () => {
+    serve();
+    refuse('tier_required', 'Extra products are added to a plan you have. Pick a plan first.', 402);
+    hub.routes['GET /me/tier'] = mine({ state: 'none', tier: null, productsAllowed: 25, productsUsed: 25, activeUntil: null });
+    await sheet();
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 25 of 25');
+    await rtl.waitFor(() => expect(hub.reads).toContain(QUOTE));
+    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
     expect(rtl.screen.queryByText(/\$4\.99|Add 5/)).toBeNull();
     expect(rtl.screen.getByTestId('full-library')).toBeTruthy();
     expect(fakeStore.requests).toEqual([]);
   });
 
-  it('a tier that has ended is not offered the pack either', async () => {
-    serve();
-    hub.routes['GET /me/tier'] = mine({ state: 'ended', productsAllowed: 3, productsUsed: 25 });
-    await sheet();
-    expect(await rtl.screen.findByTestId('full-title')).toBeTruthy();
-    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
-    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
-    expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
-  });
-
-  it('a tier that is ending still is', async () => {
+  it('a Founding Maker with room is offered the pack, and a tier that is ending still is', async () => {
     serve();
     hub.routes['GET /me/tier'] = mine({ state: 'ending' });
     await sheet();
     expect(await rtl.screen.findByTestId('full-add')).toHaveTextContent('Add 5 · $4.99');
   });
 
-  it('a pack that would still leave fewer places than there are products published is not offered', async () => {
+  it('a person with no wallet is still offered the pack when the Hub says wallet_not_open (eligibility came first; the store path needs no wallet)', async () => {
     serve();
-    hub.routes['GET /me/tier'] = mine({ productsAllowed: 3, productsUsed: 9 });
+    refuse('wallet_not_open', 'Open your wallet first.');
     await sheet();
-    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 9 of 3');
-    await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
+    expect(await rtl.screen.findByTestId('full-add')).toHaveTextContent('Add 5 · $4.99');
+  });
+
+  it('asks the Hub again just before the store sheet: a pack_not_allowed then closes the offer with the Hub’s message and never opens the store', async () => {
+    serve();
+    await sheet();
+    const add = await rtl.screen.findByTestId('full-add');
+    // The rule moves after the person looked: the second read of the quote is refused.
+    refuse('pack_not_allowed', TIER_SENTENCE, 409, hub.reads.filter((r) => r === QUOTE).length + 1);
+    await rtl.act(async () => rtl.fireEvent.press(add));
+    expect(await rtl.screen.findByTestId('full-refused')).toHaveTextContent(TIER_SENTENCE);
+    expect(rtl.screen.queryByTestId('full-add')).toBeNull();
     expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
-    expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+    expect(fakeStore.requests).toEqual([]);
+    expect(hub.bodies).toHaveLength(0);
+  });
+
+  it('when the Hub cannot be asked just before the store sheet, the store is not opened and the person is told to try again', async () => {
+    serve();
+    await sheet();
+    const add = await rtl.screen.findByTestId('full-add');
+    refuse('internal_error', 'The server is having trouble.', 500, hub.reads.filter((r) => r === QUOTE).length + 1);
+    await rtl.act(async () => rtl.fireEvent.press(add));
+    expect(await rtl.screen.findByTestId('full-check-failed')).toHaveTextContent('We could not check this right now. Try again.');
+    expect(rtl.screen.getByTestId('full-add')).toBeTruthy();
+    expect(fakeStore.requests).toEqual([]);
+    expect(hub.bodies).toHaveLength(0);
   });
 });
 

@@ -38,6 +38,17 @@ export function readPlans(value: unknown): Plans {
   return { currency: v.currency, tiers };
 }
 
+/**
+ * Asks the Hub whether it would sell the upload pack to this person now (R-100, PACK-CAP): `GET /plans/purchases/quote?kind=extra_products`.
+ * Only the refusal matters (`409 pack_not_allowed`, `402 tier_required`; the Hub answers eligibility before any wallet or payment gate), so the
+ * answer is not read. An Apple purchase cannot be refunded by WAWU, so the sheet asks this before it draws the pack and again just before it
+ * opens the store.
+ */
+export async function askPackOffered(): Promise<true> {
+  await unwrap(api.GET('/api/hub/plans/purchases/quote', { params: { query: { kind: 'extra_products' as const } } }));
+  return true;
+}
+
 export async function fetchPlans(): Promise<Plans> {
   const body = (await unwrap(api.GET('/api/hub/plans'))) as unknown as Envelope<PlansView>;
   return readPlans(body?.data);
