@@ -21,6 +21,7 @@ export function useUnlock(handlers: FlowHandlers) {
   const client = useQueryClient();
   // R-101: in the Android and iOS apps an unlock is a store purchase on the price ladder. `ladder.native` is false on the web, which keeps the wallet.
   const ladder = useLadder();
+  const clearBought = ladder.buyer.clear;
   const [storeOpen, setStoreOpen] = useState(false);
   const itemRef = useRef<FeedItem | null>(null);
   const [item, setItem] = useState<FeedItem | null>(null);
@@ -46,13 +47,13 @@ export function useUnlock(handlers: FlowHandlers) {
       itemRef.current = post;
       setItem(post);
       if (ladder.native) {
-        ladder.buyer.clear();
+        clearBought();
         setStoreOpen(true);
         return;
       }
       void openFlow();
     },
-    [openFlow, ladder.native, ladder.buyer.clear],
+    [openFlow, ladder.native, clearBought],
   );
 
   /**

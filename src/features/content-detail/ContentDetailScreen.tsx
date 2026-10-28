@@ -46,7 +46,6 @@ import {
   mediaTag,
   metaLine,
   NOT_BOUGHT_LINE,
-  priceKobo,
   rateLabel,
   threads,
   unlockLabel,

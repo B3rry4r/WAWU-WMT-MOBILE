@@ -37,6 +37,7 @@ export function useTip(handlers: FlowHandlers) {
   // R-101: in the Android and iOS apps a tip is a store purchase on the price ladder, shown at the STORE's price. A tip the store sells no
   // product for is not drawn. `ladder.native` is false on the web, which keeps the wallet.
   const ladder = useLadder();
+  const clearBought = ladder.buyer.clear;
   const shown = useShownPrice();
   const listed = (prices.data?.tips ?? []).map((t) => t.priceNaira);
   const tips = ladder.native ? listed.filter((n) => shown.kobo(n) !== null) : listed;
@@ -90,14 +91,14 @@ export function useTip(handlers: FlowHandlers) {
     setTarget(who);
     setChosen(DEFAULT_TIP_KOBO);
     setNote('');
-    if (ladder.native) ladder.buyer.clear();
+    if (ladder.native) clearBought();
     setOpen(true);
-  }, [ladder.native, ladder.buyer.clear]);
+  }, [ladder.native, clearBought]);
 
   const close = () => {
     flow.finish();
     setOpen(false);
-    if (ladder.native) ladder.buyer.clear();
+    if (ladder.native) clearBought();
   };
 
   return {

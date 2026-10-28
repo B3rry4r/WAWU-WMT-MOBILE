@@ -51,11 +51,6 @@ jest.mock('@/features/settings/api/hub', () => ({
   fetchTgif: async () => ({ show: true }),
   patchTgif: async () => ({ show: true }),
 }));
-jest.mock('@/features/points/walletUseApi', () => ({
-  ...jest.requireActual('@/features/points/walletUseApi'),
-  fetchPointsSettings: async () => ({ useWallet: false }),
-  putPointsSettings: async () => ({ useWallet: false }),
-}));
 jest.mock('@/features/settings/sessionGuard', () => ({ useSignedIn: () => true }));
 
 const checked = (testID: string) => Boolean(screen.getByTestId(testID).props.accessibilityState?.checked);

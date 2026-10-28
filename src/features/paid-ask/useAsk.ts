@@ -69,6 +69,7 @@ export function toResult(q: QuestionView): AskResult {
 export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, question: QuestionView | null) => void, focused = true) {
   // R-101: in the Android and iOS apps a paid question is a store purchase on the price ladder (`ladder.native`; false on the web, which keeps the wallet).
   const ladder = useLadder();
+  const clearBought = ladder.buyer.clear;
   const [target, setTarget] = useState<AskTarget | null>(null);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -151,9 +152,9 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
     setTarget(who);
     setText(who.text ?? '');
     draft.current = null;
-    if (ladder.native) ladder.buyer.clear();
+    if (ladder.native) clearBought();
     setOpen(true);
-  }, [ladder.native, ladder.buyer.clear]);
+  }, [ladder.native, clearBought]);
 
   const close = () => {
     flow.finish();
@@ -177,7 +178,6 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
 
   // A question bought in the store is sent by the Hub the moment it checks the sale: the sheet is done and the screen opens the thread.
   const bought = ladder.native ? ladder.buyer.granted : null;
-  const clearBought = ladder.buyer.clear;
   useEffect(() => {
     if (!bought || !target || asked.current === bought.id) return;
     asked.current = bought.id;

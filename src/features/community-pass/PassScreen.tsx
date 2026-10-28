@@ -20,7 +20,7 @@ import { openRoom } from '@/features/communities/routes';
 import { RestoreRow, SaidBanner, StoreLoading, StoreUnready } from '@/features/store/StoreParts';
 import { buyLabel, forDays } from '@/features/store/model';
 import { useLadder } from '@/features/store/ladder/useLadder';
-import { font, layout, space, useWawu } from '@/theme';
+import { layout, space, useWawu } from '@/theme';
 
 import { fetchHostHandle, fetchPass, hostKey, passKey, type PassView } from './api';
 import { BLOCKED_LINE, endedLine, GATE_LINE, joinedLine, runningLine } from './model';

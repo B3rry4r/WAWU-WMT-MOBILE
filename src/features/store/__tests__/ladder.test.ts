@@ -71,11 +71,11 @@ function orderLog(): string[] {
   const realFinish = moduleMock.finishTransaction.getMockImplementation();
   moduleMock.requestPurchase.mockImplementationOnce(async (args: unknown) => {
     hub.reads.push('STORE SHEET');
-    return realBuy?.(args);
+    return (await realBuy?.(args)) ?? null;
   });
-  moduleMock.finishTransaction.mockImplementationOnce(async (args: never) => {
+  moduleMock.finishTransaction.mockImplementationOnce(async (args: Parameters<typeof moduleMock.finishTransaction>[0]) => {
     hub.reads.push('FINISH');
-    return realFinish?.(args);
+    await realFinish?.(args);
   });
   return hub.reads;
 }
@@ -241,7 +241,7 @@ describe.each([
       // The store has taken the payment and lists it; the app came back to the front and a recovery ran before the buy posted it.
       fakeStore.owned = [{ id: 'tx-1', productId: 'wawu.buy.1000', purchaseState: 'purchased', purchaseToken: 'token-1', transactionId: '1001', isAcknowledgedAndroid: false }];
       during = await buyModule().recover(hub.products as never, { platform, all: false, accountToken: TOKEN });
-      return real?.(args);
+      return (await real?.(args)) ?? null;
     });
     const result = await buyModule().purchaseLadder(SPECS.content, { platform, accountToken: TOKEN });
     expect(during).toMatchObject({ granted: [], left: 0 });

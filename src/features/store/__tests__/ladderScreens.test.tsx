@@ -107,10 +107,10 @@ async function boot() {
         <Pressable testID="open-unlock" onPress={() => unlock.begin(item() as never)}>
           <Text>open unlock</Text>
         </Pressable>
-        <Pressable testID="open-tip" onPress={() => tip.begin({ wawuId: CREATOR, name: 'Chidi Eze', avatarUrl: null, hue: 1 as never })}>
+        <Pressable testID="open-tip" onPress={() => tip.begin({ wawuId: CREATOR, name: 'Chidi Eze', avatarUrl: null, hue: 'lilac' })}>
           <Text>open tip</Text>
         </Pressable>
-        <Pressable testID="open-ask" onPress={() => ask.begin({ wawuId: CREATOR, name: 'Chidi Eze', avatarUrl: null, hue: 1 as never, tick: 'creator', priceKobo: 100_000, windowHours: 48 })}>
+        <Pressable testID="open-ask" onPress={() => ask.begin({ wawuId: CREATOR, name: 'Chidi Eze', avatarUrl: null, hue: 'lilac', tick: 'creator', priceKobo: 100_000, windowHours: 48 })}>
           <Text>open ask</Text>
         </Pressable>
         <UnlockSheets unlock={unlock} {...NOT_WIRED} />
@@ -309,7 +309,7 @@ describe('I3 · a paid question on a phone with a store', () => {
     expect(asked[0][0]).toBe(CREATOR);
   });
 
-  it('a question credit at this price or more is offered first and sends the question with no store sheet; an unscoped credit is not offered', async () => {
+  it('a credit that is not a question credit is not offered for a question', async () => {
     serve();
     hub.credits = [credit('c1', 5000)];
     await boot();
@@ -317,8 +317,9 @@ describe('I3 · a paid question on a phone with a store', () => {
     await write('A question');
     await rtl.screen.findByText('Send · $2.99');
     expect(rtl.screen.queryByTestId('ask-sheet-use-credit')).toBeNull();
-    rtl.cleanup();
-    resetApp();
+  });
+
+  it('a question credit at this price or more is offered first and sends the question with no store sheet', async () => {
     serve();
     hub.credits = [credit('q1', 2500, 'question')];
     await boot();
@@ -328,6 +329,16 @@ describe('I3 · a paid question on a phone with a store', () => {
     await rtl.waitFor(() => expect(asked).toHaveLength(1));
     expect(hub.intents[0]).toMatchObject({ kind: 'question', listPriceNaira: 1000, payWith: 'credit' });
     expect(fakeStore.requests).toEqual([]);
+  });
+
+  it('a question credit worth less than the price is not offered', async () => {
+    serve();
+    hub.credits = [credit('q1', 500, 'question')];
+    await boot();
+    await press('open-ask');
+    await write('A question');
+    await rtl.screen.findByText('Send · $2.99');
+    expect(rtl.screen.queryByTestId('ask-sheet-use-credit')).toBeNull();
   });
 
   it('the Hub refusing the question (the creator is not taking questions, or has one waiting) says so in the Hub’s words', async () => {
