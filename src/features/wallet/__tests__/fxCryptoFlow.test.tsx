@@ -119,6 +119,9 @@ describe('W22 · Crypto · receive', () => {
     await fireEvent.press(await rtl.screen.findByTestId('receive-chain-base', {}, patient));
     expect(await rtl.screen.findByText('Your address is pending')).toBeTruthy();
     expect(rtl.screen.queryByText(/on its way|short while/i)).toBeNull();
+    // NUVION-FIX 9.6: it says how long it can take, and no longer "Check again in a moment".
+    expect(rtl.screen.getByText('This can take up to 30 minutes.')).toBeTruthy();
+    expect(rtl.screen.queryByText('Check again in a moment.')).toBeNull();
     await rtl.cleanup();
     const note = 'One of our partner services is temporarily unavailable. Please try again in a few minutes.';
     hub.accounts = hub.accounts.map((a) => (a.id === usdcAccount.id ? { ...a, detailsStatus: 'unavailable', detailsNote: note } : a));

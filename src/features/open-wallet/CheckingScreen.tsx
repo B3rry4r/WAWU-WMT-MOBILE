@@ -55,6 +55,15 @@ export function checkingNext(progress: OpeningProgress): 'opened' | 'rejected' |
 }
 
 /**
+ * The bank approved the person and is making the account number (`approved` with the number `on_its_way`). Nuvion makes it
+ * 5 to 30 minutes after it is asked for (its answer of 27 Oct 2026), so A28 says that, promises a notice, and lets the
+ * person close it (NUVION-FIX 9.3). Pure, for the tests.
+ */
+export function numberOnItsWay(progress: OpeningProgress | undefined): boolean {
+  return progress?.review?.stage === 'approved' && progress.accountNumberStatus === 'on_its_way';
+}
+
+/**
  * A28 · Checking your details (KYC-06): the documents are with the bank. It
  * asks `GET /money/wallet` every few seconds and moves on when the Hub says
  * the account number is active (A8, "Approved"), or the review said no (A29).
@@ -112,15 +121,20 @@ export function CheckingScreen({ onOpened, onRejected, onNeedsDocuments, onSelfi
     );
   }
   void status;
+  const making = numberOnItsWay(progress.data);
   return (
-    <AuthFrame testID="open-wallet-checking" bare>
+    <AuthFrame
+      testID="open-wallet-checking"
+      bare
+      footer={making ? <Button label="Close" variant="secondary" full onPress={onLeave} testID="open-wallet-checking-close" /> : undefined}
+    >
       <View style={styles.centre} accessibilityLiveRegion="polite">
         <Ring />
-        <Text variant="h1" style={styles.title}>
-          Checking your details
+        <Text variant="h1" style={styles.title} testID="open-wallet-checking-title">
+          {making ? 'Your account number is being made' : 'Checking your details'}
         </Text>
-        <Text variant="muted" style={styles.line}>
-          This usually takes a few minutes.
+        <Text variant="muted" style={styles.line} testID="open-wallet-checking-line">
+          {making ? 'This can take up to 30 minutes. We will tell you when it is ready.' : 'This usually takes a few minutes.'}
         </Text>
       </View>
     </AuthFrame>
