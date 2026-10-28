@@ -461,12 +461,45 @@ describe('A28 · Checking your details', () => {
   it('a user reaches Approved only when the Hub says the account number is active', async () => {
     fallback['GET /money/wallet'] = wallet({ state: 'opening', accountNumberStatus: 'on_its_way', review: review('approved') });
     const waiting = await boot();
-    await waiting.screen.findByText('Checking your details');
+    // NUVION-FIX 9.3: approved with the number still being made says so, how long it can take, and offers Close.
+    await waiting.screen.findByText('Your account number is being made');
     expect(waiting.onOpened).not.toHaveBeenCalled();
     await rtl.cleanup();
     fallback['GET /money/wallet'] = wallet({ state: 'open', accountNumberStatus: 'active', review: review('approved') });
     const done = await boot();
     await rtl.waitFor(() => expect(done.onOpened).toHaveBeenCalledTimes(1));
+  });
+
+  it('NUVION-FIX 9.3: approved with the number still being made says it can take up to 30 minutes, promises a notice, and Close leaves', async () => {
+    fallback['GET /money/wallet'] = wallet({ state: 'opening', accountNumberStatus: 'on_its_way', review: review('approved') });
+    const app = await boot();
+    expect(await app.screen.findByText('Your account number is being made')).toBeTruthy();
+    expect(app.screen.getByText('This can take up to 30 minutes. We will tell you when it is ready.')).toBeTruthy();
+    expect(app.screen.queryByText(/few minutes/)).toBeNull();
+    expect(app.screen.queryByText(/\u2014/)).toBeNull();
+    await app.fireEvent.press(app.screen.getByTestId('open-wallet-checking-close'));
+    expect(app.onLeave).toHaveBeenCalledTimes(1);
+    expect(app.onOpened).not.toHaveBeenCalled();
+  });
+
+  it('NUVION-FIX 9.3: while the bank is still checking there is no Close and the old words stand', async () => {
+    fallback['GET /money/wallet'] = wallet({ state: 'opening', review: review('checking') });
+    const app = await boot();
+    expect(await app.screen.findByText('Checking your details')).toBeTruthy();
+    expect(app.screen.queryByTestId('open-wallet-checking-close')).toBeNull();
+    expect(app.screen.queryByText('Your account number is being made')).toBeNull();
+  });
+
+  it('NUVION-FIX 9.3: the making state is approved plus on its way, and nothing else', () => {
+    const { numberOnItsWay } = require('../CheckingScreen') as typeof import('../CheckingScreen');
+    const at = (stage: string | null, number: 'none' | 'on_its_way' | 'active') =>
+      numberOnItsWay({ state: 'opening', flow: 'review', accountNumberStatus: number, review: stage === null ? null : (review(stage) as never) });
+    expect(at('approved', 'on_its_way')).toBe(true);
+    expect(at('approved', 'none')).toBe(false);
+    expect(at('approved', 'active')).toBe(false);
+    expect(at('checking', 'on_its_way')).toBe(false);
+    expect(at(null, 'on_its_way')).toBe(false);
+    expect(numberOnItsWay(undefined)).toBe(false);
   });
 
   it('a user whose check was refused is taken to what to fix', async () => {

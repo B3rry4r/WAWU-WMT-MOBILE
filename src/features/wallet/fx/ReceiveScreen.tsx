@@ -184,6 +184,8 @@ function Address({ code, chain, account, canOpen: allowed, onChanged }: { code: 
   }
   if (!address) {
     // The Hub says where the address stands (`detailsStatus`); the card never promises one is coming (SWEEP-MONEY-6, WALLET-21 L1).
+    // Pending says how long it can take (up to 30 minutes, Nuvion's answer of 27 Oct 2026, NUVION-FIX 9.6): the Hub tells the person
+    // when it is ready.
     const unavailable = account.detailsStatus === 'unavailable';
     return (
       <Card style={styles.card}>
@@ -191,7 +193,7 @@ function Address({ code, chain, account, canOpen: allowed, onChanged }: { code: 
           testID="receive-pending"
           icon="Clock"
           title={unavailable ? 'Your address is not available right now' : 'Your address is pending'}
-          message={unavailable ? account.detailsNote?.trim() || 'Try again in a few minutes.' : 'Check again in a moment.'}
+          message={unavailable ? account.detailsNote?.trim() || 'Try again in a few minutes.' : 'This can take up to 30 minutes.'}
           action={{ label: 'Check again', onPress: onChanged }}
         />
       </Card>

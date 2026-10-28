@@ -3,7 +3,7 @@ id: STORE-BUY-APP
 title: In the Android and iOS apps, a piece, a tip, a community pass and a paid question are store purchases on the price ladder (R-101)
 owner: YOU
 area: IAP
-order: -1257
+order: -1256
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
