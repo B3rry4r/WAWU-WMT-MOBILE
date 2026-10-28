@@ -126,6 +126,56 @@ describe.each([
     expect(await memoryModule().intentOf(TOKEN, key)).toBeNull();
   });
 
+  it('F2: the intent is kept BEFORE the store sheet opens, so a kill while the sheet is open restores into the goods, never a late-sale credit', async () => {
+    let keptWhenTheSheetOpened: string | null = null;
+    moduleMock.requestPurchase.mockImplementationOnce(async () => {
+      // The store sheet is open and the app has not been given any transaction id yet.
+      keptWhenTheSheetOpened = await memoryModule().intentOf(TOKEN, 'no-transaction-yet', 'wawu.buy.1000');
+      throw Object.assign(new Error('the app was killed here'), { code: 'unknown-failure' });
+    });
+    const first = await buyModule().purchaseLadder(SPECS.content, { platform, accountToken: TOKEN });
+    expect(first.kind).toBe('failed');
+    expect(keptWhenTheSheetOpened).toBe('intent-1');
+    // The store had taken the payment: it lists it at the next start, a transaction the app never saw.
+    fakeStore.owned = [{ id: 'tx-7', productId: 'wawu.buy.1000', purchaseState: 'purchased', purchaseToken: 'token-7', transactionId: '1007', isAcknowledgedAndroid: false }];
+    const found = await buyModule().recover(hub.products as never, { platform, all: false, accountToken: TOKEN });
+    expect(hub.bodies.at(-1)).toMatchObject({ productId: 'wawu.buy.1000', intentId: 'intent-1' });
+    expect(found.granted[0]).toMatchObject({ status: 'granted', buyKind: 'content', intentId: 'intent-1' });
+    expect(fakeStore.finished).toEqual([{ productId: 'wawu.buy.1000', isConsumable: true }]);
+  });
+
+  it('F2: cancelling the store sheet lets the kept intent go, so a later payment is never given an intent that was abandoned', async () => {
+    fakeStore.next = { kind: 'error', code: 'user-cancelled' };
+    const result = await buyModule().purchaseLadder(SPECS.content, { platform, accountToken: TOKEN });
+    expect(result.kind).toBe('cancelled');
+    expect(await memoryModule().intentOf(TOKEN, 'no-transaction-yet', 'wawu.buy.1000')).toBeNull();
+  });
+
+  // The App Store lets a second consumable of the same product be bought while the first is not finished; Google Play refuses it itself (already-owned).
+  const onIos = platform === 'ios' ? it : it.skip;
+  onIos('F3: with an earlier payment for the same price still held, Buy opens no store sheet: it hands the earlier payment over with its own intent and finishes it', async () => {
+    await memoryModule().bindIntent(TOKEN, '1500', 'intent-old');
+    hub.made.set('intent-old', { platform, ...SPECS.content });
+    fakeStore.owned = [{ id: 'tx-old', productId: 'wawu.buy.1000', purchaseState: 'purchased', purchaseToken: 'token-old', transactionId: '1500', isAcknowledgedAndroid: false }];
+    const result = await buyModule().purchaseLadder(SPECS.content, { platform, accountToken: TOKEN });
+    expect(fakeStore.requests).toEqual([]);
+    expect(result).toMatchObject({ kind: 'earlier_purchase', purchase: { intentId: 'intent-old' } });
+    expect(fakeStore.finished).toEqual([{ productId: 'wawu.buy.1000', isConsumable: true }]);
+  });
+
+  onIos('F3: after "Do not buy again" (the store took the payment, the Hub did not answer) a second tap on Buy opens no second store sheet and keeps waiting', async () => {
+    hub.answer = 'network';
+    const first = await buyModule().purchaseLadder(SPECS.content, { platform, accountToken: TOKEN });
+    expect(first).toEqual({ kind: 'unreachable' });
+    expect(fakeStore.requests).toHaveLength(1);
+    // The store lists the payment it took; the Hub is still not answering.
+    fakeStore.owned = [{ id: 'tx-1', productId: 'wawu.buy.1000', purchaseState: 'purchased', purchaseToken: null, transactionId: '1001', isAcknowledgedAndroid: false }];
+    const second = await buyModule().purchaseLadder(SPECS.content, { platform, accountToken: TOKEN });
+    expect(fakeStore.requests).toHaveLength(1);
+    expect(second).toEqual({ kind: 'unreachable' });
+    expect(fakeStore.finished).toEqual([]);
+  });
+
   it('a payment found with no intent kept (another phone, or long ago) is posted as it is and the Hub turns it into a credit: shown as a credit, the transaction finished', async () => {
     fakeStore.owned = [{ id: 'tx-9', productId: 'wawu.buy.500', purchaseState: 'purchased', purchaseToken: 'token-9', transactionId: '1009', isAcknowledgedAndroid: false }];
     const found = await buyModule().recover(hub.products as never, { platform, all: false, accountToken: TOKEN });

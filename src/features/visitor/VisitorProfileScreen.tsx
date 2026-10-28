@@ -29,6 +29,7 @@ import { AskSheets } from '@/features/paid-ask/AskSheets';
 import { askButtonLabel, offBody, offTitle } from '@/features/paid-ask/model';
 import { useAsk } from '@/features/paid-ask/useAsk';
 import { useAskTerms } from '@/features/paid-ask/useAskTerms';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { openFreeChat } from '@/features/paid-answers/api';
 import { tickOf } from '@/features/chat/api';
 import { ServicesTab } from '@/features/me/ServicesTab';
@@ -129,6 +130,8 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
   const tip = useTip(pay ?? NOT_WIRED);
   const asking = Boolean(pay && onOpenPaidThread);
   const ask = useAsk(pay ?? NOT_WIRED, (who) => onOpenPaidThread?.(who), focused);
+  // R-101 point 10: on a phone with a store the button says the store's price, never the list price.
+  const shown = useShownPrice();
 
   const view = profile.data ?? null;
   const person = view?.profile.wawuUserId ?? null;
@@ -252,7 +255,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
         ? { kind: 'off' }
         : {
             kind: 'on',
-            label: askButtonLabel(terms.priceKobo),
+            label: askButtonLabel(shown.forKobo(terms.priceKobo)),
             onPress: () =>
               ask.begin({
                 wawuId: view.profile.wawuUserId,
@@ -429,8 +432,9 @@ function ContentBody({ query }: { query: GridQuery }) {
   );
 }
 
-function ServicesBody({ view, onOpenListing }: { view: VisitorProfile; onOpenListing: (listingId: string) => void }) {
-  const paid = paidLine(view.profile);
+export function ServicesBody({ view, onOpenListing }: { view: VisitorProfile; onOpenListing: (listingId: string) => void }) {
+  const shown = useShownPrice();
+  const paid = paidLine(view.profile, shown);
   if (!paid && view.listings.length === 0) {
     return <EmptyState testID="visitor-services-empty" icon="BriefcaseBusiness" title="No services yet" message="Paid messages and professional listings show here once they are on." />;
   }

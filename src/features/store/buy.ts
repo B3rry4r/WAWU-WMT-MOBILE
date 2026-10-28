@@ -3,7 +3,7 @@ import { sendPurchase } from './api';
 import * as iap from './iap';
 import type { StoreCause, StoreTransaction } from './iap';
 import { postIntent, type LadderSpec, type PayWith } from './ladder/api';
-import { bindIntent, intentOf, unbindIntent } from './ladder/memory';
+import { bindIntent, intentOf, sheetKey, unbindIntent } from './ladder/memory';
 import type { StoreItem } from './model';
 import { bindRoom, doneIds, forgetBuy, markDone, pendingBuy, rememberBuy, roomOf, unbindRoom } from './roomIntent';
 
@@ -248,13 +248,13 @@ async function ladderOne(spec: LadderSpec, options: LadderOptions): Promise<Purc
     return intent.purchase ? { kind: 'granted', purchase: intent.purchase, finished: true } : { kind: 'failed' };
   }
   const product = { storeProductId: intent.productId, subscription: false } as const;
-  const bought = await iap.buy({ storeProductId: intent.productId, subscription: false, offerToken: null, accountToken: intent.accountToken, communityId: null, replace: null });
-  if (!bought.ok) {
-    if (bought.cause !== 'already_owned') return fromCause(bought.cause);
-    // The store still holds an earlier payment for this price (a consumable not yet finished): it is handed over with the intent it was
-    // bought for and finished first, and nothing new is bought now.
-    const found = (await iap.owned()).find((t) => t.productId === intent.productId);
-    if (!found) return { kind: 'already_owned' };
+  /**
+   * The store still holds an earlier payment for this price (a consumable not yet finished): it is handed over with the intent it was
+   * bought for and finished first, and nothing new is bought now. Google Play says so itself (`already-owned`); the App Store does not, so
+   * on iOS the held list is read before the sheet opens (F3).
+   */
+  const handEarlier = async (found: StoreTransaction): Promise<PurchaseResult> => {
+    if (found.pending) return { kind: 'store_pending' };
     const earlier = await intentOf(options.accountToken, keyOf(found));
     const outcome = await hand(options.platform, product, found, null, earlier);
     if (outcome.kind === 'granted') {
@@ -263,9 +263,27 @@ async function ladderOne(spec: LadderSpec, options: LadderOptions): Promise<Purc
       return outcome.purchase.status === 'credited' ? { kind: 'credited', purchase: outcome.purchase } : { kind: 'earlier_purchase', purchase: outcome.purchase };
     }
     return outcome.kind === 'unreachable' || outcome.kind === 'grant_failed' ? { kind: outcome.kind } : { kind: 'already_owned' };
+  };
+  if (options.platform === 'ios') {
+    const held = (await iap.owned()).find((t) => t.productId === intent.productId);
+    if (held) return handEarlier(held);
+  }
+  // The intent is kept BEFORE the store sheet opens (F2): if the app is killed while the sheet is open the payment still arrives, and the
+  // next start finds it with no transaction id kept, so it is posted with the intent kept for its product and not as a late sale.
+  await bindIntent(options.accountToken, sheetKey(intent.productId), intent.intentId);
+  const bought = await iap.buy({ storeProductId: intent.productId, subscription: false, offerToken: null, accountToken: intent.accountToken, communityId: null, replace: null });
+  if (!bought.ok) {
+    if (bought.cause === 'cancelled' || bought.cause === 'item_unavailable' || bought.cause === 'store_unavailable') await unbindIntent(options.accountToken, sheetKey(intent.productId));
+    if (bought.cause !== 'already_owned') return fromCause(bought.cause);
+    const found = (await iap.owned()).find((t) => t.productId === intent.productId);
+    // Nothing new is bought: the intent made for it is let go so the earlier payment is not given it.
+    await unbindIntent(options.accountToken, sheetKey(intent.productId));
+    if (!found) return { kind: 'already_owned' };
+    return handEarlier(found);
   }
   const key = keyOf(bought.transaction);
   await bindIntent(options.accountToken, key, intent.intentId);
+  await unbindIntent(options.accountToken, sheetKey(intent.productId));
   const outcome = await hand(options.platform, product, bought.transaction, null, intent.intentId);
   if (outcome.kind === 'granted') await unbindIntent(options.accountToken, key);
   return fromOutcome(outcome);
@@ -348,10 +366,13 @@ export async function recover(
     }
     // A ladder payment is handed over with the intent it was bought for, kept against its transaction (R-101); one with none kept is posted
     // as it is, and the Hub makes the person a credit for it (a late sale), never losing the payment.
-    const intentId = product.kind === 'buy' ? await intentOf(token, keyOf(t)) : null;
+    const intentId = product.kind === 'buy' ? await intentOf(token, keyOf(t), t.productId) : null;
     const outcome = await hand(options.platform, product, t, communityId, intentId);
     if (outcome.kind === 'granted') {
-      if (product.kind === 'buy') await unbindIntent(token, keyOf(t));
+      if (product.kind === 'buy') {
+        await unbindIntent(token, keyOf(t));
+        await unbindIntent(token, sheetKey(t.productId));
+      }
       if (outcome.purchase.alreadyGranted) result.already += 1;
       else result.granted.push(outcome.purchase);
       if (fromRestore && !outcome.purchase.alreadyGranted) restoreTaken = true;

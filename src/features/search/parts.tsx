@@ -12,6 +12,7 @@ import { GroupTile, tileMetrics } from '@/features/communities/GroupTile';
 import { tickOf } from '@/features/explore/CreatorCard';
 import { useInterestLabel } from '@/features/explore/interestLabel';
 import { hueFor } from '@/features/feed/model';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import type { SearchCommunity, SearchPerson } from './api';
@@ -248,6 +249,9 @@ export function PersonRow({ person, onToggleFollow, onPress, testID }: { person:
 export function ContentRow({ row, testID, onPress }: { row: ContentRowModel; testID?: string; /** Opens the piece's own page (H19, HOME-03). Left out, the row only reads. */ onPress?: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
+  // R-101 point 10: on a phone with a store a paid piece shows the store's price, and none where no rung sells it.
+  const shown = useShownPrice();
+  const shownKobo = row.priceKobo === null ? null : shown.forKobo(row.priceKobo);
   const label = `${row.title}, ${row.byline}, ${row.priceKobo === null ? 'free' : 'paid'}`;
   const inner = (
     <>
@@ -269,8 +273,8 @@ export function ContentRow({ row, testID, onPress }: { row: ContentRowModel; tes
       </View>
       {row.priceKobo === null ? (
         <NativeText style={[font(600), { fontSize: styles.line.fontSize, color: colors.positive }]}>Free</NativeText>
-      ) : (
-        <Money minorUnits={row.priceKobo} decimals={false} size={rowMetrics.price} weight={700} />
+      ) : shownKobo === null ? null : (
+        <Money minorUnits={shownKobo} decimals={false} size={rowMetrics.price} weight={700} />
       )}
     </>
   );

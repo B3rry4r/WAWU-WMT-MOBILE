@@ -13,6 +13,7 @@ import { Money } from '@/components/Money';
 import { formatNaira } from '@/components/pay-sheet';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, space, useWawu } from '@/theme';
 import { compactCount, UNNAMED_CREATOR } from '@/features/feed/model';
 
@@ -122,13 +123,16 @@ export function ParentCourseRow({ course, onPress }: { course: NonNullable<Piece
   const { colors } = useWawu();
   const ring = useFocusRing();
   const [broken, setBroken] = useState(false);
-  const amount = course.price > 0 ? formatNaira(nairaToKobo(course.price)) : 'Free';
+  // R-101 point 10: on a phone with a store the course shows the store's price, and none where no rung sells it.
+  const shown = useShownPrice();
+  const shownKobo = course.price > 0 ? shown.forKobo(nairaToKobo(course.price)) : null;
+  const amount = course.price > 0 ? (shownKobo === null ? null : formatNaira(shownKobo)) : 'Free';
   const lines = plural(course.lessonCount, 'lesson', 'lessons');
   return (
     <Pressable
       testID="detail-parent-course"
       accessibilityRole="button"
-      accessibilityLabel={`From the course ${course.title}, ${lines}, ${amount}`}
+      accessibilityLabel={[`From the course ${course.title}`, lines, amount].filter(Boolean).join(', ')}
       accessibilityHint="Opens the course"
       onPress={onPress}
       {...ring.handlers}
@@ -151,7 +155,7 @@ export function ParentCourseRow({ course, onPress }: { course: NonNullable<Piece
               {lines}
             </Text>
           </View>
-          {course.price > 0 ? <Money minorUnits={nairaToKobo(course.price)} decimals={false} size={courseRow.amount} weight={700} /> : <Text variant="body" style={[font(700), { fontSize: courseRow.amount }]}>Free</Text>}
+          {course.price > 0 ? shownKobo === null ? null : <Money minorUnits={shownKobo} decimals={false} size={courseRow.amount} weight={700} /> : <Text variant="body" style={[font(700), { fontSize: courseRow.amount }]}>Free</Text>}
         </View>
       </Card>
     </Pressable>

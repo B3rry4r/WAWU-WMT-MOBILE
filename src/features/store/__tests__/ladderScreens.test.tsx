@@ -185,6 +185,20 @@ describe('H14 and H16 · unlocking a piece on a phone with a store', () => {
     expect(rtl.screen.queryByText(/cash out|withdraw/i)).toBeNull();
   });
 
+  it('F4: when the Hub refuses a credit, the credits are read again and "Use your credit" is not offered a second time', async () => {
+    serve();
+    hub.credits = [credit('c1', 5000)];
+    await boot();
+    await press('open-unlock');
+    await rtl.screen.findByTestId('unlock-store-sheet-use-credit');
+    // The credit was spent elsewhere after the sheet drew it: the Hub says no credit covers this.
+    hub.credits = [];
+    await press('unlock-store-sheet-use-credit');
+    expect(await rtl.screen.findByText('That credit can not pay for this. Pay in the store instead.')).toBeTruthy();
+    await rtl.waitFor(() => expect(rtl.screen.queryByTestId('unlock-store-sheet-use-credit')).toBeNull());
+    expect(rtl.screen.getByTestId('unlock-store-sheet-buy')).toBeTruthy();
+  });
+
   it('a question credit is not offered for a piece', async () => {
     serve();
     hub.credits = [credit('q1', 5000, 'question')];

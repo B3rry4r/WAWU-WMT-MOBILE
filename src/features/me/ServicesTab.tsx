@@ -10,7 +10,7 @@ import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 
 import type { Listing } from './api';
-import { listingTitle, type PaidMessages } from './model';
+import { listingTitle } from './model';
 
 /**
  * design/_gen/me.js line 27, `services`: cards 10 apart, 14 by 16 inside, the 44 icon circle 12 from the
@@ -26,7 +26,7 @@ const UNDER_REVIEW = 'Under review';
 const ONLY_YOU = 'Only you can see it';
 
 export type ServicesTabProps = {
-  paid: PaidMessages | null;
+  paid: { priceLine: string | null; replyLine: string | null } | null;
   listings: readonly Pick<Listing, 'id' | 'headline' | 'category'>[];
   /** The person's own listings still under review, after the live ones with the "Under review" chip. Only Me passes them: a visitor is given live listings only. */
   pending?: readonly Pick<Listing, 'id' | 'headline' | 'category'>[];
@@ -51,7 +51,7 @@ export function ServicesTab({ paid, listings, pending = [], onOpenListings, onOp
             icon="MessageCircle"
             tone="accent"
             title="Paid messages"
-            sub={paid.replyLine ? `${paid.priceLine} · ${paid.replyLine}` : paid.priceLine}
+            sub={[paid.priceLine, paid.replyLine].filter(Boolean).join(' · ')}
             onPress={onOpenPaid}
           />
         ) : (
@@ -60,7 +60,7 @@ export function ServicesTab({ paid, listings, pending = [], onOpenListings, onOp
             icon="MessageCircle"
             tone="accent"
             title="Paid messages"
-            sub={paid.replyLine ? `${paid.priceLine} · ${paid.replyLine}` : paid.priceLine}
+            sub={[paid.priceLine, paid.replyLine].filter(Boolean).join(' · ')}
           />
         )
       ) : null}

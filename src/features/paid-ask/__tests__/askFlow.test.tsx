@@ -2,11 +2,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import { userEvent } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // R-101: this file tests the wallet path (the website's and the web export's); on a phone the same actions are store purchases (store/__tests__/ladder*).
 import '@/features/store/testing/webPath';
+import { resetApp, signInOnly } from '@/features/store/testing/screen';
 
 /*
  * A fan's paid questions (INBOX-10): I4 (waiting), I5 (replied), I7 (refunded), the ask sheet (I3), its not-enough state (I6) and the
@@ -30,6 +31,8 @@ const FEE = 2325;
 const HOUR = 3_600_000;
 const iso = (ms: number) => new Date(Date.now() + ms).toISOString();
 
+/** `undefined`: the Hub has no store prices; a number or null: the store price of the list price ₦1,500 (null: no rung sells it). */
+let storeRung: number | null | undefined;
 type Mode = 'paid' | 'pending' | 'wrong_pin_first' | 'lost_after' | 'lost_before' | 'refused';
 const hub = {
   mode: 'paid' as Mode,
@@ -222,6 +225,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     hub.paymentReads += 1;
     return ok({ ...questionView('asked', 'x').payment, ...(hub.paymentSource ? { source: hub.paymentSource } : {}) });
   }
+  // The store's price for the list price (R-101), read only on a phone with a store; this file's other tests run as the web.
+  if (path === '/prices') return storeRung === undefined ? json(404, { statusCode: 404, message: 'Not Found', data: null }) : ok({ prices: [{ priceNaira: 1500, priceKobo: 150_000, storePriceNaira: storeRung }], tips: [] });
   throw new Error(`no answer for ${method} ${path}`);
 }) as typeof fetch;
 
@@ -411,6 +416,42 @@ describe('I5 · replied', () => {
     expect(rtl.screen.getByText("Chidi isn't taking paid messages right now")).toBeTruthy();
     expect(rtl.screen.queryByTestId('paid-composer-ask')).toBeNull();
     expect(rtl.within(rtl.screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe('This question is closed.');
+  });
+});
+
+describe('F1 · the offer to ask again on a phone with a store (R-101 point 10)', () => {
+  beforeEach(async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    await signInOnly();
+  });
+  afterEach(() => {
+    storeRung = undefined;
+    resetApp();
+  });
+
+  it('a follow-up is offered at the store price on the button and on the answered card, never the list price', async () => {
+    storeRung = 1800;
+    hub.thread = threadOf([answeredQ()]);
+    await boot();
+    await rtl.screen.findByRole('button', { name: 'Ask a follow-up · ₦1,800' });
+    expect(rtl.within(rtl.screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe('Ask a follow-up for ₦1,800. Each paid message gets its own 24-hour window.');
+    expect(rtl.screen.queryByRole('button', { name: /1,500/ })).toBeNull();
+  });
+
+  it('a try-again after a refund names the store price too', async () => {
+    storeRung = 1800;
+    hub.thread = threadOf([refundedQ()]);
+    await boot();
+    await rtl.screen.findByRole('button', { name: 'Try again · ₦1,800' });
+  });
+
+  it('where the store sells no rung for the price, the offer draws none', async () => {
+    storeRung = null;
+    hub.thread = threadOf([answeredQ()]);
+    await boot();
+    await rtl.screen.findByRole('button', { name: 'Ask a follow-up' });
+    expect(rtl.within(rtl.screen.getByTestId('paid-card-a1')).getByTestId('paid-card-a1-body').props.children).toBe('Ask a follow-up. Each paid message gets its own 24-hour window.');
+    expect(rtl.screen.queryByRole('button', { name: /1,500|1,800/ })).toBeNull();
   });
 });
 

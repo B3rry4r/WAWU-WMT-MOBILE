@@ -22,6 +22,12 @@ export async function renderSignedIn(ui: ReactElement) {
   );
 }
 
+/** Signs the app in as `me` without drawing anything, for a test that renders a screen itself and reads a price the store sells (`useShownPrice` waits for a signed-in account). */
+export async function signInOnly(): Promise<void> {
+  const { adoptSession } = require('@/api/session') as typeof import('@/api/session');
+  await adoptSession({ accessToken: TOKEN, refreshToken: 'r' });
+}
+
 export function resetApp(): void {
   const { resetSessionForTests } = require('@/api/session') as typeof import('@/api/session');
   const { queryClient } = require('@/api/query') as typeof import('@/api/query');

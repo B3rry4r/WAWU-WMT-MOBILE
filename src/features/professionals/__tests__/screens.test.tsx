@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { resetApp, signInOnly } from '@/features/store/testing/screen';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
@@ -16,6 +17,7 @@ let sent: string[] = [];
 /** Reads that never answer until the test ends, so "on its way" is a real state. */
 let held: Array<() => void> = [];
 
+afterEach(() => resetApp());
 const ok = (data: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
 const failed = (status: number, message: string): Answer => ({ status, body: { statusCode: status, message } });
 /** A page as the Hub's response interceptor sends it: the items in `data`, the counts in `pagination`. */
@@ -131,6 +133,9 @@ describe('P1 · Professionals', () => {
 
   it('a user reads each professional: name, headline, field and the Hub’s price of a message', async () => {
     answers[ALL_1] = [page([FUNMI, TUNDE], 1, 2)];
+    // R-101 point 10: on a phone with a store the row says the store's price (₦5,000 sells at ₦6,000, ₦7,500 at ₦9,000), never the list price.
+    await signInOnly();
+    answers['GET /prices'] = [ok({ prices: [{ priceNaira: 5000, priceKobo: 500000, storePriceNaira: 6000 }, { priceNaira: 7500, priceKobo: 750000, storePriceNaira: 9000 }], tips: [] })];
     await directory();
     const row = await rtl.screen.findByTestId('pros-row-p1');
     expect(rtl.within(row).getByText('Funmi Adeyemi')).toBeTruthy();
@@ -138,8 +143,8 @@ describe('P1 · Professionals', () => {
     expect(rtl.within(row).getByText('Accounting & Tax')).toBeTruthy();
     expect(rtl.within(row).getByText('a message')).toBeTruthy();
     expect(rtl.within(row).getByTestId('tick-pro')).toBeTruthy();
-    expect(rtl.screen.getByTestId('pros-price-p1').props.accessibilityLabel).toBe('5,000 naira');
-    expect(rtl.screen.getByTestId('pros-price-p2').props.accessibilityLabel).toBe('7,500 naira');
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('pros-price-p1').props.accessibilityLabel).toBe('6,000 naira'));
+    expect(rtl.screen.getByTestId('pros-price-p2').props.accessibilityLabel).toBe('9,000 naira');
     expect(rtl.screen.getByText('Vetted practitioners. Pay to send the first message.')).toBeTruthy();
     // The chips: All, then the Hub's fields.
     expect(rtl.screen.getByTestId('pros-chips-all').props.accessibilityState.checked).toBe(true);

@@ -21,6 +21,7 @@ import { readFailure } from '@/features/profile-edit/failure';
 import { fetchVisitorProfile, visitorKey } from '@/features/visitor/api';
 import { visitorName } from '@/features/visitor/model';
 import { font, layout, space, useWawu } from '@/theme';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 
 import { fetchQuestion, fetchThread, questionKey, threadKey, type QuestionView, type ThreadDetail } from './api';
 import { AskSheets } from './AskSheets';
@@ -45,6 +46,10 @@ export type PaidThreadScreenProps = {
   pay: FlowHandlers;
 };
 
+/** The next question's terms with the price a person on a phone with a store would pay (null where no rung sells it). */
+const shownFollowUp = (followUp: ReturnType<typeof followUpOf>, forKobo: (listKobo: number) => number | null): ReturnType<typeof followUpOf> =>
+  followUp !== null && typeof followUp === 'object' ? { ...followUp, priceKobo: followUp.priceKobo === null ? null : forKobo(followUp.priceKobo) } : followUp;
+
 /**
  * I4 · Waiting for a reply, I5 · Replied and I7 · Refunded: a fan's paid questions to one creator, with the Hub's state under each (the
  * countdown and where the money is, the creator's words, or the refund and where it went). Every figure and time is the Hub's. The
@@ -56,6 +61,8 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   const cache = useContext(QueryClientContext) ?? queryClient;
   const focused = useIsFocused();
   const now = useNow(30_000, focused);
+  // R-101 point 10: on a phone with a store the offers say the store's price, never the list price.
+  const shown = useShownPrice();
   const thread = useQuery(
     {
       queryKey: threadKey(wawuId),
@@ -200,7 +207,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
             entry.status === 'awaiting_response'
               ? waitingCard(q, name, now, fromOf(q.id))
               : entry.status === 'responded'
-                ? answeredCard(name, entry.last ? followUpOf(terms, termsFailed) : null)
+                ? answeredCard(name, entry.last ? shownFollowUp(followUpOf(terms, termsFailed), shown.forKobo) : null)
                 : // The refund's words name the account, so they wait for the payment's record (the card says only "refunded" until then).
                   refundedCard(q, name, sourceOf(q.id).settled ? recordOf(q.id) : null, now, sourceOf(q.id).from);
           return <StatusCardView key={entry.key} testID={`paid-card-${q.id}`} card={card} />;
@@ -224,7 +231,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
   ) : terms.kind === 'off' ? (
     <ClosedComposer line={offTitle(name)} />
   ) : (
-    <AskComposer label={composerLabel(latest, terms.priceKobo)} onPress={() => openAsk(latest?.status === 'refunded' ? latest.text : undefined)} />
+    <AskComposer label={composerLabel(latest, shown.forKobo(terms.priceKobo))} onPress={() => openAsk(latest?.status === 'refunded' ? latest.text : undefined)} />
   );
 
   return (

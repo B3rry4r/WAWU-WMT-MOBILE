@@ -13,6 +13,8 @@ import { bounded } from '@/features/claim/localStore';
 type Bound = Record<string, { intentId: string; at: number }>;
 
 const KEEP_MS = 30 * 24 * 60 * 60 * 1000;
+/** An intent kept for a store sheet that is open: a payment that outlives the app is found within a day or not at all. */
+const SHEET_KEEP_MS = 24 * 60 * 60 * 1000;
 const MAX_BOUND = 12;
 const onWeb = Platform.OS === 'web';
 const keyOf = (token: string) => `wmt.store.intent.${token}`;
@@ -38,6 +40,9 @@ async function readBound(token: string): Promise<Bound> {
   }
 }
 
+/** The key the intent is kept under while the store sheet for this product is open, before the store has given the app any transaction id. */
+export const sheetKey = (productId: string): string => `sheet:${productId}`;
+
 /** The intent this store transaction was bought for. */
 export async function bindIntent(token: string | null, transactionKey: string | null, intentId: string | null, now: number = Date.now()): Promise<void> {
   if (!token || !transactionKey || !intentId) return;
@@ -50,10 +55,14 @@ export async function bindIntent(token: string | null, transactionKey: string | 
 }
 
 /** The intent kept for this transaction, or null when none was (it was bought on another phone, or long ago). */
-export async function intentOf(token: string | null, transactionKey: string | null, now: number = Date.now()): Promise<string | null> {
+export async function intentOf(token: string | null, transactionKey: string | null, productId?: string, now: number = Date.now()): Promise<string | null> {
   if (!token || !transactionKey) return null;
-  const e = (await readBound(token))[transactionKey];
-  return e && typeof e.intentId === 'string' && typeof e.at === 'number' && now - e.at <= KEEP_MS ? e.intentId : null;
+  const bound = await readBound(token);
+  const e = bound[transactionKey];
+  if (e && typeof e.intentId === 'string' && typeof e.at === 'number' && now - e.at <= KEEP_MS) return e.intentId;
+  // The app was closed while the store sheet was open: the payment has no id kept against it, but the intent was kept for its product.
+  const open = productId ? bound[sheetKey(productId)] : undefined;
+  return open && typeof open.intentId === 'string' && typeof open.at === 'number' && now - open.at <= SHEET_KEEP_MS ? open.intentId : null;
 }
 
 /** The Hub has the transaction: the intent is not needed. */

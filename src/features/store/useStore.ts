@@ -82,6 +82,8 @@ function refreshAfterGrant(): void {
 /** A price the Hub refused as moved or off its list: the list and the catalog are read again so the screen shows what is true now. */
 function refreshPrices(result: PurchaseResult): void {
   if (result.kind !== 'intent_refused') return;
+  // A credit the Hub would not take (spent elsewhere, or too small): the person's credits are read again, so "Use your credit" is not offered a second time (F4).
+  if (result.code.startsWith('store_credit_')) void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'store' && q.queryKey[1] === 'credits' });
   if (result.code !== 'price_not_on_list' && result.code !== 'store_intent_price_changed') return;
   void queryClient.invalidateQueries({ queryKey: ['prices'] });
   void queryClient.invalidateQueries({ queryKey: ['store', 'catalog'] });

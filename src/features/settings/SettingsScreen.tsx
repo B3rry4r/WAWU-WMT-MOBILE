@@ -47,11 +47,6 @@ export const TGIF_TITLE = 'TGIF each morning';
 export const TGIF_SUBTITLE = 'Daily verse and prayer, as a notification';
 
 /**
- * G-POINTS-07-1: where "Use wallet" is switched (`GET` and `PUT /me/points/settings`). No board draws the row, so it is the TGIF switch's own
- * look, in the same group; the line says what the switch does, and nothing is taken from the wallet by switching it.
- */
-
-/**
  * R-99: the old "Sound / Taps and alerts" row promised tap sounds the app never makes. It is what it does: the sound a push makes when
  * it arrives while the app is open (`installPushHandler` reads the switch). Notifications keep their own row.
  */

@@ -4,6 +4,7 @@ import { radius } from '@/theme';
 
 import { askButtonLabel } from '@/features/paid-ask/model';
 import type { AskTarget } from '@/features/paid-ask/useAsk';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 
 import type { ProfessionalCardData } from './api';
 import { ButtonRow, CardButton, CardFrame, CardName, Stat, StatsPanel } from './CardFrame';
@@ -37,6 +38,8 @@ export type FeedProfessionalCardProps = {
  */
 export function FeedProfessionalCard({ card, width, height, chromeTop, onOpenProfile, onMessage }: FeedProfessionalCardProps) {
   const terms = useProfessionalAsk(card, Boolean(onMessage));
+  // R-101 point 10: on a phone with a store the button says the store's price, never the list price, and a missed reply is a question credit, not money back.
+  const shown = useShownPrice();
   const off = terms?.kind === 'off';
   const name = card.displayName?.trim() ?? '';
   const reply = usualReply(card.usualReplyMinutes);
@@ -71,7 +74,7 @@ export function FeedProfessionalCard({ card, width, height, chromeTop, onOpenPro
       {off ? null : (
         <View testID="card-note" style={[styles.note, { backgroundColor: media.infoTint }]}>
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.noteEdge, { borderColor: media.info }]} />
-          <Text style={[words.note, { color: media.ink }]}>{refundNote(card.dmPrice, card.dmResponseHours)}</Text>
+          <Text style={[words.note, { color: media.ink }]}>{refundNote(card.dmPrice, card.dmResponseHours, shown.native)}</Text>
         </View>
       )}
       {onOpenProfile || (onMessage && terms?.kind === 'on') ? (
@@ -81,7 +84,7 @@ export function FeedProfessionalCard({ card, width, height, chromeTop, onOpenPro
               testID="card-message"
               tone="light"
               icon="MessageCircle"
-              label={askButtonLabel(terms.priceKobo)}
+              label={askButtonLabel(shown.forKobo(terms.priceKobo))}
               grow={2}
               onPress={() =>
                 onMessage({

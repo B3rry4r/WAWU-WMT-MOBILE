@@ -430,7 +430,9 @@ export const reviewsText = (count: number): string => `${count} ${count === 1 ? 
 export const nairaText = (naira: number): string => formatMoney(nairaToKobo(naira), { decimals: !Number.isInteger(naira) });
 
 /** H10's note: "No reply in 24 hours and your ₦1,500 comes back." The hours are the professional's own window, the price their own. */
-export function refundNote(dmPrice: number, hours: number): string {
+export function refundNote(dmPrice: number, hours: number, store = false): string {
+  // R-101: a question bought in a store that goes unanswered gives a question credit (never cash), and the line names no list price.
+  if (store) return `No reply in ${hours} ${hours === 1 ? 'hour' : 'hours'} and you get a question credit.`;
   return `No reply in ${hours} ${hours === 1 ? 'hour' : 'hours'} and your ${nairaText(dmPrice)} comes back.`;
 }
 

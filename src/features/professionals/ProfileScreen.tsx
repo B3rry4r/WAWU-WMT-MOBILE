@@ -18,6 +18,7 @@ import { AskSheets } from '@/features/paid-ask/AskSheets';
 import { askButtonLabel, firstName, windowWords } from '@/features/paid-ask/model';
 import { useAsk } from '@/features/paid-ask/useAsk';
 import { useAskTerms } from '@/features/paid-ask/useAskTerms';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { fetchMe, meKey } from '@/features/profile-edit/api';
 import { canvasNormalLineHeight, font, layout, radius, space, type, useWawu } from '@/theme';
 
@@ -198,6 +199,8 @@ type AskState = { kind: 'on'; priceKobo: number; windowHours: number | null; onP
 
 function ProfileBody({ profile, ask }: { profile: DirectoryProfile; ask: AskState }) {
   const { colors } = useWawu();
+  // R-101 point 10: on a phone with a store the button says the store's price, never the list price.
+  const shown = useShownPrice();
   const credential = credentialTitle(profile.credentialKind);
   const services = profile.services.filter((s) => s.trim() !== '');
   return (
@@ -221,7 +224,7 @@ function ProfileBody({ profile, ask }: { profile: DirectoryProfile; ask: AskStat
       </View>
       {ask.kind === 'on' ? (
         <View style={styles.stack} testID="pro-ask-block">
-          <Button testID="pro-ask" label={askButtonLabel(ask.priceKobo, 'Ask a question')} icon="MessageCircle" size="lg" full onPress={ask.onPress} />
+          <Button testID="pro-ask" label={askButtonLabel(shown.forKobo(ask.priceKobo), 'Ask a question')} icon="MessageCircle" size="lg" full onPress={ask.onPress} />
           <Text variant="body" tone="textMuted" style={styles.note} testID="pro-ask-promise">
             {replyPromise(profile.name, ask.windowHours)}
           </Text>

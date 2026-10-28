@@ -21,6 +21,8 @@ export type ShownPrice = {
   native: boolean;
   /** The price a buyer sees for `listNaira`, in kobo, or null when there is none to show. */
   kobo: (listNaira: number | null | undefined) => number | null;
+  /** The same, for a list price held in kobo (a creator's `dmPrice` or a piece's price). Null when it is not a whole naira price on the list, or no rung sells it. */
+  forKobo: (listKobo: number | null | undefined) => number | null;
   /** The Hub has answered. */
   ready: boolean;
 };
@@ -32,14 +34,16 @@ export function useShownPrice(): ShownPrice {
     { queryKey: ['prices', 'store', os ?? 'none'], queryFn: () => fetchPrices(os ?? undefined), staleTime: PRICES_STALE_MS, enabled: os !== null && Boolean(owner), retry: false },
     queryClient,
   );
-  if (os === null) return { native: false, kobo: (list) => (list == null ? null : Math.round(list * 100)), ready: true };
+  if (os === null) return { native: false, kobo: (list) => (list == null ? null : Math.round(list * 100)), forKobo: (list) => (list == null ? null : list), ready: true };
+  const kobo = (list: number | null | undefined): number | null => {
+    if (list == null) return null;
+    const store = storePriceOf(prices.data, list);
+    return store === null ? null : Math.round(store * 100);
+  };
   return {
     native: true,
-    kobo: (list) => {
-      if (list == null) return null;
-      const store = storePriceOf(prices.data, list);
-      return store === null ? null : Math.round(store * 100);
-    },
+    kobo,
+    forKobo: (list) => (list == null || list % 100 !== 0 ? null : kobo(list / 100)),
     ready: prices.isSuccess,
   };
 }

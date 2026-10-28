@@ -17,6 +17,7 @@ import { Text } from '@/components/Text';
 import { hueFor } from '@/features/feed/model';
 import { fetchFields, proKeys } from '@/features/pro-listing/api';
 import { canvasNormalLineHeight, font, layout, space, useWawu } from '@/theme';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 
 import { fetchDirectoryPage, prosKeys, type DirectoryEntry } from './api';
 import { chosenField, emptyCopy, fieldChips, fieldLabelOf, hasProTick, messagePrice, rowsOf, type FieldChoice } from './model';
@@ -194,7 +195,9 @@ export function DirectoryScreen({ initial, onBack, onOpen, onOfferServices, onCh
 export function ProRow({ entry, onPress }: { entry: DirectoryEntry; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const price = messagePrice(entry);
+  // R-101 point 10: on a phone with a store the row says the store's price, and none where no rung sells it.
+  const shown = useShownPrice();
+  const price = shown.forKobo(messagePrice(entry));
   const label = [entry.name, entry.headline, fieldLabelOf(entry), price !== null ? `${formatMoney(price, { decimals: false })} a message` : null].filter(Boolean).join(', ');
   return (
     <Pressable

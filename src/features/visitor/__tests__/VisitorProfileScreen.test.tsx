@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { resetApp, signInOnly } from '@/features/store/testing/screen';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
@@ -27,6 +28,9 @@ function installFetch() {
   }) as typeof fetch;
 }
 
+// R-101 point 10: on a phone with a store a visitor reads the STORE's price (₦300 sells at ₦360), never the list price.
+afterEach(() => resetApp());
+const PRICES = { prices: [{ priceNaira: 300, priceKobo: 30000, storePriceNaira: 360 }], tips: [] };
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...extra } });
 const refusal = (statusCode: number, message: string) => ({ status: statusCode, body: { statusCode, message, data: null } });
 
@@ -213,10 +217,12 @@ describe('M5 and M6 · someone else\'s profile', () => {
   });
 
   it('a user can open the person\'s listing from Services, and sees the paid messages line', async () => {
-    answers = page();
+    answers = page({ 'GET /api/hub/prices': ok(PRICES) });
+    await signInOnly();
     const h = await boot();
     await fireEvent.press(await screen.findByTestId('me-tab-services'));
-    expect(await screen.findByTestId('me-service-paid-sub')).toHaveTextContent('₦300 a message · replies within 24 hours');
+    // The store's price (R-101 point 10); the list price is the website's and is not drawn.
+    expect(await screen.findByTestId('me-service-paid-sub')).toHaveTextContent('₦360 a message · replies within 24 hours');
     await fireEvent.press(screen.getByTestId('me-service-listing-l1-open'));
     expect(h.onOpenListing).toHaveBeenCalledWith('l1');
   });
@@ -359,10 +365,13 @@ describe('I2 and I8 · Message with its price, and Messages off (INBOX-10)', () 
   }
 
   it('a user sees "Message · ₦300" beside Follow when the creator takes paid messages, and a tap opens the ask sheet', async () => {
-    answers = page({ [`GET ${AVAILABLE}`]: ok(open) });
+    answers = page({ [`GET ${AVAILABLE}`]: ok(open), 'GET /api/hub/prices': ok(PRICES) });
+    await signInOnly();
     await bootAsk();
     const button = await screen.findByTestId('visitor-message');
-    expect(screen.getByRole('button', { name: 'Message · ₦300' })).toBeTruthy();
+    // R-101 point 10: the store's price on a phone with a store (₦300 lists at ₦360), never the list price.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Message · ₦360' })).toBeTruthy());
+    expect(screen.queryByText(/₦300/)).toBeNull();
     expect(screen.queryByTestId('visitor-message-off')).toBeNull();
     expect(screen.queryByTestId('visitor-messages-off')).toBeNull();
     await fireEvent.press(button);

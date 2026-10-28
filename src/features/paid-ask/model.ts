@@ -111,7 +111,7 @@ export function askTerms(
 }
 
 /** The message button's words: "Message · ₦1,500" (I2), "Ask a question · ₦1,500" on a professional's page (P2). */
-export const askButtonLabel = (priceKobo: number, verb = 'Message'): string => `${verb} · ${formatNaira(priceKobo)}`;
+export const askButtonLabel = (priceKobo: number | null, verb = 'Message'): string => (priceKobo === null ? verb : `${verb} · ${formatNaira(priceKobo)}`);
 
 /** I8: the note under a creator who is not taking paid messages (R-2, R-9: no shop, so their work). */
 export const offTitle = (name: string | null | undefined): string => `${whoOf(name)} isn't taking paid messages right now`;
@@ -209,7 +209,7 @@ export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string 
 }
 
 /** The next question's terms: its price and window, said only when the Hub says paid messages are on. */
-export type FollowUp = { priceKobo: number; windowHours: number | null };
+export type FollowUp = { priceKobo: number | null; windowHours: number | null };
 
 /**
  * What the newest answered question's card may say about asking again. The terms come from the creator's profile and then the Hub's pause,
@@ -234,7 +234,7 @@ export function answeredCard(name: string | null | undefined, followUp: FollowUp
   if (followUp === 'failed') return { tone: 'answered', title: lead, body: TERMS_FAILED_LINE };
   if (!followUp) return { tone: 'answered', title: lead, body: 'This question is closed.' };
   const window = followUp.windowHours === null ? '' : ` Each paid message gets its own ${windowAdjective(followUp.windowHours)} window.`;
-  return { tone: 'answered', title: lead, body: `Ask a follow-up for ${formatNaira(followUp.priceKobo)}.${window}` };
+  return { tone: 'answered', title: lead, body: `Ask a follow-up${followUp.priceKobo === null ? '' : ` for ${formatNaira(followUp.priceKobo)}`}.${window}` };
 }
 
 /**
@@ -324,7 +324,7 @@ export function isWaiting(questions: readonly ThreadQuestion[], now: number): bo
  * "Ask a question · ₦1,500" in a thread with no question yet (the board draws no empty thread; this is the lead default, as the sheet
  * and the profile button say "question").
  */
-export function composerLabel(latest: ThreadQuestion | null, priceKobo: number): string {
+export function composerLabel(latest: ThreadQuestion | null, priceKobo: number | null): string {
   const verb = latest === null ? 'Ask a question' : latest.status === 'refunded' ? 'Try again' : 'Ask a follow-up';
-  return `${verb} · ${formatNaira(priceKobo)}`;
+  return priceKobo === null ? verb : `${verb} · ${formatNaira(priceKobo)}`;
 }
