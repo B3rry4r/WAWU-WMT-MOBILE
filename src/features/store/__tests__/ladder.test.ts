@@ -176,6 +176,34 @@ describe.each([
     expect(fakeStore.finished).toEqual([]);
   });
 
+  onIos('F3 (native): an unfinished consumable that StoreKit lists only through getPendingTransactionsIOS is posted with its intent at the next start and finished', async () => {
+    await memoryModule().bindIntent(TOKEN, '2001', 'intent-old');
+    hub.made.set('intent-old', { platform, ...SPECS.content });
+    // As expo-iap 6.1.1 answers on iOS: a consumable is never an entitlement, so getAvailablePurchases is empty; the unfinished transaction is in getPendingTransactionsIOS.
+    fakeStore.owned = [];
+    fakeStore.unfinishedIOS = [{ id: '2001', productId: 'wawu.buy.1000', purchaseState: 'purchased', purchaseToken: null, transactionId: '2001' }];
+    const found = await buyModule().recover(hub.products as never, { platform, all: false, accountToken: TOKEN });
+    expect(found.granted).toHaveLength(1);
+    expect(hub.bodies.at(-1)).toMatchObject({ productId: 'wawu.buy.1000', transactionId: '2001', intentId: 'intent-old' });
+    expect(fakeStore.finished).toEqual([{ productId: 'wawu.buy.1000', isConsumable: true }]);
+  });
+
+  onIos('F3 (native): Buy waits for a transaction StoreKit lists as pending: no store sheet, and the answer is "Do not buy again"', async () => {
+    fakeStore.unfinishedIOS = [{ id: '2002', productId: 'wawu.buy.1000', purchaseState: 'pending', purchaseToken: null, transactionId: '2002' }];
+    const result = await buyModule().purchaseLadder(SPECS.content, { platform, accountToken: TOKEN });
+    expect(fakeStore.requests).toEqual([]);
+    expect(result).toEqual({ kind: 'store_pending' });
+    // A pending transaction is never posted to the Hub by a recovery.
+    await buyModule().recover(hub.products as never, { platform, all: false, accountToken: TOKEN });
+    expect(hub.bodies).toEqual([]);
+  });
+
+  onIos('F3 (native): Restore purchases reads the unfinished transactions too', async () => {
+    fakeStore.unfinishedIOS = [{ id: '2003', productId: 'wawu.buy.500', purchaseState: 'purchased', purchaseToken: null, transactionId: '2003' }];
+    const held = await iapModule().restore();
+    expect(held.map((t) => t.productId)).toEqual(['wawu.buy.500']);
+  });
+
   it('a payment found with no intent kept (another phone, or long ago) is posted as it is and the Hub turns it into a credit: shown as a credit, the transaction finished', async () => {
     fakeStore.owned = [{ id: 'tx-9', productId: 'wawu.buy.500', purchaseState: 'purchased', purchaseToken: 'token-9', transactionId: '1009', isAcknowledgedAndroid: false }];
     const found = await buyModule().recover(hub.products as never, { platform, all: false, accountToken: TOKEN });

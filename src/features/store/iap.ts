@@ -282,7 +282,25 @@ export async function owned(): Promise<StoreTransaction[]> {
   if (!m || storeOs() === null || !(await connect())) return [];
   try {
     const list = (await m.getAvailablePurchases()) ?? [];
-    return list.filter((p) => p.purchaseState !== 'pending').map(transactionOf);
+    // iOS (F3): StoreKit never lists a consumable as an entitlement, so `getAvailablePurchases` cannot show a `wawu.buy.*` payment the Hub was
+    // not told about; StoreKit's unfinished transactions (`getPendingTransactionsIOS`) can. Read both, once each transaction. A transaction the
+    // store has not cleared yet comes back as `pending`, so a screen waits for it and nothing posts it.
+    let unfinished: typeof list = [];
+    if (Platform.OS === 'ios' && typeof m.getPendingTransactionsIOS === 'function') {
+      try {
+        unfinished = ((await m.getPendingTransactionsIOS()) ?? []) as typeof list;
+      } catch {
+        unfinished = [];
+      }
+    }
+    const seen = new Set<string>();
+    const all = [...list, ...unfinished].filter((p) => {
+      const key = `${p.productId}:${(p as { transactionId?: string | null }).transactionId ?? p.id ?? ''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return all.map(transactionOf);
   } catch {
     return [];
   }

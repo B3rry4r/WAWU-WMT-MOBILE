@@ -29,6 +29,8 @@ export const fakeStore = {
   products: [] as ShelfProduct[],
   next: { kind: 'buy' } as NextBuy,
   owned: [] as HeldPurchase[],
+  /** iOS only: what `getPendingTransactionsIOS` lists (StoreKit's unfinished transactions, consumables included). `getAvailablePurchases` never lists a consumable. */
+  unfinishedIOS: [] as HeldPurchase[],
   finished: [] as { productId: string; isConsumable: boolean }[],
   finishFails: false,
   requests: [] as unknown[],
@@ -42,6 +44,7 @@ export const fakeStore = {
     this.products = [];
     this.next = { kind: 'buy' };
     this.owned = [];
+    this.unfinishedIOS = [];
     this.finished = [];
     this.finishFails = false;
     this.requests = [];
@@ -109,6 +112,7 @@ export const moduleMock = {
     fakeStore.finished.push({ productId: purchase.productId, isConsumable: Boolean(isConsumable) });
   }),
   getAvailablePurchases: jest.fn(async () => [...fakeStore.owned]),
+  getPendingTransactionsIOS: jest.fn(async () => [...fakeStore.unfinishedIOS]),
   restorePurchases: jest.fn(async () => {
     fakeStore.restores += 1;
   }),

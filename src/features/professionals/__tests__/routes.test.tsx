@@ -172,7 +172,8 @@ describe('the professionals routes', () => {
     await rtl.waitFor(() => expect(rtl.within(button).getByText('Ask a question · ₦6,000')).toBeTruthy());
     expect(rtl.screen.queryByText(/5,000/)).toBeNull();
     mockToken = 'access-1';
-    expect(rtl.screen.getByText("Funmi replies within 24 hours, or you're refunded automatically.")).toBeTruthy();
+    // R-101 point 6: on a phone with a store a missed reply is a question credit, in the creator's own window.
+    expect(rtl.screen.getByText('Funmi replies within 24 hours, or you get a question credit.')).toBeTruthy();
     expect(rtl.screen.queryByTestId('pro-closed')).toBeNull();
     await rtl.act(async () => rtl.fireEvent.press(button));
     expect(await rtl.screen.findByTestId('ask-sheet')).toBeTruthy();

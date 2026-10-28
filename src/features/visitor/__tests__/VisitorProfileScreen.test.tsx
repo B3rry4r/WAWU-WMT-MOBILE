@@ -488,13 +488,15 @@ describe('SWEEP-FLOWS L1 · a piece the viewer bought is not drawn as locked on 
   }
 
   it('a paid piece the Hub says is open for this viewer has no frost, veil or lock; one still locked keeps them', async () => {
-    answers = page(grid({ ...piece('bought', 'paid', 8000, 3), fullAssetLocked: false }, { ...piece('closed', 'paid', 8000, 3), fullAssetLocked: true }, piece('silent', 'paid', 8000, 3)));
+    answers = page({ ...grid({ ...piece('bought', 'paid', 8000, 3), fullAssetLocked: false }, { ...piece('closed', 'paid', 8000, 3), fullAssetLocked: true }, piece('silent', 'paid', 8000, 3)), 'GET /api/hub/prices': ok({ prices: [{ priceNaira: 8000, priceKobo: 800000, storePriceNaira: 9600 }], tips: [] }) });
+    await signInOnly();
     await boot();
     await screen.findByTestId('me-tile-bought');
     expect(screen.queryByTestId('me-tile-bought-veil')).toBeNull();
-    expect(screen.getByLabelText('Piece bought, yours, ₦8,000')).toBeTruthy();
+    // R-101 point 10: the caption is the store's price on a phone with a store (₦8,000 sells at ₦9,600), never the list price.
+    await waitFor(() => expect(screen.getByLabelText('Piece bought, yours, ₦9,600')).toBeTruthy());
     expect(screen.getByTestId('me-tile-closed-veil')).toBeTruthy();
-    expect(screen.getByLabelText('Piece closed, paid, ₦8,000')).toBeTruthy();
+    expect(screen.getByLabelText('Piece closed, paid, ₦9,600')).toBeTruthy();
     // An answer that does not say is read as locked.
     expect(screen.getByTestId('me-tile-silent-veil')).toBeTruthy();
   });

@@ -451,11 +451,19 @@ const workIcons: Record<string, IconName> = {
 const workNames: Record<string, string> = { video: 'Video', course: 'Course', pdf: 'PDF', image: 'Photos', audio: 'Audio', template: 'Template' };
 
 /** What one piece of a creator card's strip draws (H9): its kind, a lock and the price when locked, else views and a length. */
-export function workTile(work: CardWork): { icon: IconName; locked: boolean; left: string; right: string | null; label: string } {
+export function workTile(
+  work: CardWork,
+  /** On a phone with a store (R-101 point 10) the locked price is the store's, and none where no rung sells it. Left out, the list price. */
+  shown?: { forKobo: (listKobo: number) => number | null },
+): { icon: IconName; locked: boolean; left: string; right: string | null; label: string } {
   const icon = workIcons[work.contentType] ?? 'FileText';
   const name = workNames[work.contentType] ?? null;
   const locked = work.locked && work.accessType === 'paid';
-  if (locked) return { icon, locked, left: nairaText(work.price), right: name, label: `${work.title}, locked, ${nairaText(work.price)}` };
+  if (locked) {
+    const kobo = shown ? shown.forKobo(Math.round(work.price * 100)) : Math.round(work.price * 100);
+    const price = kobo === null ? null : nairaText(kobo / 100);
+    return { icon, locked, left: price ?? '', right: name, label: price === null ? `${work.title}, locked` : `${work.title}, locked, ${price}` };
+  }
   const views = `${compactCount(work.views)} ${work.views === 1 ? 'view' : 'views'}`;
   let right: string | null = name;
   if (work.contentType === 'video' || work.contentType === 'audio') right = durationText(work.durationLabel);

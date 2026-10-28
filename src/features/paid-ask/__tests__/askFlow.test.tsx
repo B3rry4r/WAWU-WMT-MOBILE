@@ -445,6 +445,16 @@ describe('F1 · the offer to ask again on a phone with a store (R-101 point 10)'
     await rtl.screen.findByRole('button', { name: 'Try again · ₦1,800' });
   });
 
+  it('G-STORE-BUY-APP-8 and F7: a waiting question\u2019s stamp says only "Paid", and its card says a missed reply is a question credit, not money back', async () => {
+    storeRung = 1800;
+    hub.thread = threadOf([waitingQ()]);
+    await boot();
+    const card = await rtl.screen.findByTestId('paid-card-w1');
+    expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toBe('If Chidi does not reply in time, you get a question credit.');
+    expect(rtl.screen.getByTestId('bubble-q-w1-stamp').props.children).toMatch(/ · Paid$/);
+    expect(rtl.screen.queryByText(/1,500|1,800|wallet|comes back|held/)).toBeNull();
+  });
+
   it('where the store sells no rung for the price, the offer draws none', async () => {
     storeRung = null;
     hub.thread = threadOf([answeredQ()]);

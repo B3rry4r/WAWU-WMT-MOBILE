@@ -3,6 +3,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { calls, hub, installFetch, ok, refusal, renderFrame, type Sent } from '../../library/__helpers__/hub';
+import { resetApp, signInOnly } from '@/features/store/testing/screen';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
@@ -69,12 +70,17 @@ beforeEach(() => {
   installFetch();
   hub.answers[`GET ${LIST}`] = byTab;
 });
+afterEach(() => resetApp());
 
 describe('M30 · Saved', () => {
   it('a user sees what they kept with its price, day, Free or Bought, from the Hub', async () => {
+    // R-101 point 10: on a phone with a store the price is the store's (₦2,500 sells at ₦3,000), never the list price.
+    hub.answers['GET /api/hub/prices'] = () => ok({ prices: [{ priceNaira: 2500, priceKobo: 250000, storePriceNaira: 3000 }], tips: [] });
+    await signInOnly();
     await open();
     expect(await screen.findByText('Agency breakdown')).toBeTruthy();
-    expect(screen.getByText('₦2,500')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('₦3,000')).toBeTruthy());
+    expect(screen.queryByText('₦2,500')).toBeNull();
     expect(screen.getByText('Lagos Creators Meetup')).toBeTruthy();
     expect(screen.getByText('Sat 4 Oct 2031')).toBeTruthy();
     expect(screen.getByText('Free')).toBeTruthy();

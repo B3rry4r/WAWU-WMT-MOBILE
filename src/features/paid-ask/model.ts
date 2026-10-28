@@ -168,9 +168,11 @@ export const SOURCE_PENDING = 'pending' as const;
 export type PaidFromState = PaidFrom | null | typeof SOURCE_PENDING;
 
 /** The small line under a question bubble: "09:51 · ₦1,500 paid", and the weekday on another day ("Mon 14:10 · ₦200 paid"). Held to the time alone while the account is not known. */
-export function paidStamp(iso: string, amountKobo: number, now: number, from?: PaidFromState): string {
+export function paidStamp(iso: string, amountKobo: number, now: number, from?: PaidFromState, store = false): string {
   const d = new Date(iso);
   const when = sameDay(d, new Date(now)) ? clock(d) : `${WEEKDAYS[d.getDay()].slice(0, 3)} ${clock(d)}`;
+  // R-101: a question bought in a store was paid at the store's price, which the thread does not carry, so the stamp says only "Paid".
+  if (store) return `${when} · Paid`;
   if (from === SOURCE_PENDING) return when;
   return `${when} · ${from ? paidFromText(from) : formatNaira(amountKobo)} paid`;
 }
@@ -195,8 +197,14 @@ export type StatusCard = { tone: CardTone; title: string; body: string | null };
  * The lines say "your money" and no figure: the thread carries the question's price, and what the person paid (and gets back, every
  * naira) is the price and the bank's charge, which the thread does not carry (I3 and I7 say the Hub's own total).
  */
-export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number, from?: PaidFromState): StatusCard {
+export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number, from?: PaidFromState, store = false): StatusCard {
   const left = Date.parse(q.deadlineAt) - now;
+  // R-101 point 6: a question bought in a store that is not answered in time gives a question credit (never money back to a wallet).
+  if (store) {
+    return left <= 0
+      ? { tone: 'late', title: 'No reply in time', body: 'You get a question credit.' }
+      : { tone: 'waiting', title: `${whoOf(name)} has ${leftLong(left)} left to reply`, body: `If ${whoOf(name)} does not reply in time, you get a question credit.` };
+  }
   // Where the money is held, and where it goes back to, depend on the account that paid: the words wait for it (a loading line, never a guess).
   if (left <= 0) {
     return { tone: 'late', title: 'No reply in time', body: from === SOURCE_PENDING ? null : `Your money is on its way back to ${backTo(from)}.` };
@@ -279,7 +287,7 @@ export type ThreadEntry =
   | { kind: 'card'; key: string; questionId: string; status: ThreadQuestion['status']; question: ThreadQuestion; last: boolean };
 
 /** The thread as the Hub sends it (newest first) turned around: a day label, the question, its replies, its card. */
-export function threadEntries(questions: readonly ThreadQuestion[], now: number, fromOf?: (questionId: string) => PaidFromState): ThreadEntry[] {
+export function threadEntries(questions: readonly ThreadQuestion[], now: number, fromOf?: (questionId: string) => PaidFromState, store = false): ThreadEntry[] {
   const ordered = [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(a.sentAt) - Date.parse(b.sentAt));
   const out: ThreadEntry[] = [];
   let lastDay = '';
@@ -290,7 +298,7 @@ export function threadEntries(questions: readonly ThreadQuestion[], now: number,
       out.push({ kind: 'day', key: `day-${q.id}`, label });
       lastDay = dayKey;
     }
-    out.push({ kind: 'question', key: `q-${q.id}`, text: q.text, stamp: paidStamp(q.sentAt, q.amountKobo, now, fromOf?.(q.id)) });
+    out.push({ kind: 'question', key: `q-${q.id}`, text: q.text, stamp: paidStamp(q.sentAt, q.amountKobo, now, fromOf?.(q.id), store) });
     for (const reply of q.replies) out.push({ kind: 'reply', key: `r-${reply.id}`, text: reply.text, stamp: replyStamp(reply.createdAt) });
     out.push({ kind: 'card', key: `c-${q.id}`, questionId: q.id, status: q.status, question: q, last: i === ordered.length - 1 });
   });

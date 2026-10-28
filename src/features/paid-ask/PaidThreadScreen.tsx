@@ -140,7 +140,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
     const read = sourceOf(id);
     return read.settled ? read.from : SOURCE_PENDING;
   };
-  const entries = useMemo(() => threadEntries(questions, now, fromOf), [questions, now, records, sources]); // eslint-disable-line react-hooks/exhaustive-deps
+  const entries = useMemo(() => threadEntries(questions, now, fromOf, shown.native), [questions, now, records, sources, shown.native]); // eslint-disable-line react-hooks/exhaustive-deps
   const latest = useMemo(() => [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt))[0] ?? null, [questions]);
   const waiting = isWaiting(questions, now);
   const sub = headerLine(latest);
@@ -205,7 +205,7 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
           const q = entry.question;
           const card =
             entry.status === 'awaiting_response'
-              ? waitingCard(q, name, now, fromOf(q.id))
+              ? waitingCard(q, name, now, fromOf(q.id), shown.native)
               : entry.status === 'responded'
                 ? answeredCard(name, entry.last ? shownFollowUp(followUpOf(terms, termsFailed), shown.forKobo) : null)
                 : // The refund's words name the account, so they wait for the payment's record (the card says only "refunded" until then).

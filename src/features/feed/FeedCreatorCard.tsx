@@ -6,6 +6,7 @@ import { Avatar } from '@/components/Avatar';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, ICON_STROKE } from '@/components/icon';
 import { radius } from '@/theme';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 
 import type { CardWork, CreatorCardData } from './api';
 import { ButtonRow, CardButton, CardFrame, CardName, Stat, StatsPanel, useCardFollow } from './CardFrame';
@@ -27,7 +28,9 @@ export type FeedCreatorCardProps = {
 /** One piece in the strip: its kind, a lock and its price when it is locked, else its views and length. */
 function WorkTile({ work, onOpen }: { work: CardWork; onOpen?: () => void }) {
   const ring = useFocusRing();
-  const tile = workTile(work);
+  // R-101 point 10: on a phone with a store the locked price is the store's, never the list price.
+  const shown = useShownPrice();
+  const tile = workTile(work, shown);
   const picture = isPicture(work.thumbnailUrl) ? work.thumbnailUrl : null;
   const body = (
     <>

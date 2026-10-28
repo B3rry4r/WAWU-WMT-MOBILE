@@ -163,10 +163,18 @@ export function tileOf(piece: ContentPiece): GridTile {
  * open, with no frost and no lock, never as locked (SWEEP-FLOWS L1). Anything the Hub does not say is open stays locked. The owner's own
  * grid keeps `tileOf`: the Hub counts the owner as unlocked, and M1 draws their paid pieces frosted with the price.
  */
-export function visitorTileOf(piece: ContentPiece): GridTile {
-  const tile = tileOf(piece);
-  if (piece.accessType !== 'paid' || piece.fullAssetLocked !== false) return tile;
-  return { ...tile, locked: false, spoken: `${piece.title}, yours, ${tile.caption}` };
+export function visitorTileOf(
+  piece: ContentPiece,
+  /** On a phone with a store (R-101 point 10) a paid tile's caption is the store's price, and none where no rung sells it. Left out, the list price. */
+  shown?: { forKobo: (listKobo: number) => number | null },
+): GridTile {
+  const base = tileOf(piece);
+  if (piece.accessType !== 'paid') return base;
+  const kobo = shown ? shown.forKobo(nairaToKobo(piece.price)) : nairaToKobo(piece.price);
+  const caption = kobo === null ? '' : formatMoney(kobo, { decimals: false });
+  const tile = { ...base, caption, spoken: caption ? `${piece.title}, paid, ${caption}` : `${piece.title}, paid` };
+  if (piece.fullAssetLocked !== false) return tile;
+  return { ...tile, locked: false, spoken: caption ? `${piece.title}, yours, ${caption}` : `${piece.title}, yours` };
 }
 
 /**

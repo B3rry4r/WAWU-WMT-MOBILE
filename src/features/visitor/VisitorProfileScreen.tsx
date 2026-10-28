@@ -407,6 +407,8 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
 type GridQuery = ReturnType<typeof useInfiniteQuery<Awaited<ReturnType<typeof fetchGridPage>>>>;
 
 function ContentBody({ query }: { query: GridQuery }) {
+  // R-101 point 10: on a phone with a store a locked tile's caption is the store's price, never the list price.
+  const shown = useShownPrice();
   if (query.isError && !query.data) {
     return <ErrorState testID="visitor-grid-error" title="Their content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
@@ -417,7 +419,7 @@ function ContentBody({ query }: { query: GridQuery }) {
       </LoadingView>
     );
   }
-  const tiles = query.data.pages.flatMap((page) => page.pieces).map(visitorTileOf);
+  const tiles = query.data.pages.flatMap((page) => page.pieces).map((piece) => visitorTileOf(piece, shown));
   if (tiles.length === 0) {
     return <EmptyState testID="visitor-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What they publish shows here." />;
   }

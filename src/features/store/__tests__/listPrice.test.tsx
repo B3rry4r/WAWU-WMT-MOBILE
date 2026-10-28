@@ -129,6 +129,52 @@ describe('F1 · the list price is not drawn on a phone with a store', () => {
     expect(rtl.screen.getByTestId('me-service-paid-sub')).toHaveTextContent('₦1,500 a message · replies within 24 hours');
   });
 
+  it('the locked price in a creator card\u2019s strip is the store\u2019s, none where no rung sells it, and the list price on the web', () => {
+    const { workTile } = require('@/features/feed/model') as typeof import('@/features/feed/model');
+    const work = { title: 'Pitch deck', contentType: 'pdf', locked: true, accessType: 'paid', price: 1500, views: 3, frameCount: 0, durationLabel: null } as never;
+    expect(workTile(work).left).toBe('₦1,500');
+    const store = { forKobo: (k: number) => (k === 150_000 ? 180_000 : null) };
+    expect(workTile(work, store).left).toBe('₦1,800');
+    expect(workTile(work, store).label).toBe('Pitch deck, locked, ₦1,800');
+    const none = { forKobo: () => null };
+    expect(workTile(work, none).left).toBe('');
+    expect(workTile(work, none).label).toBe('Pitch deck, locked');
+  });
+
+  it('the price under a Saved piece is the store\u2019s, none where no rung sells it, and the list price on the web', () => {
+    const { metaOf } = require('@/features/saved/model') as typeof import('@/features/saved/model');
+    const entry = { kind: 'content', content: { bought: false, accessType: 'paid', priceKobo: 150_000 } } as never;
+    expect(metaOf(entry, new Date())).toBe('₦1,500');
+    expect(metaOf(entry, new Date(), { forKobo: (k: number) => (k === 150_000 ? 180_000 : null) })).toBe('₦1,800');
+    expect(metaOf(entry, new Date(), { forKobo: () => null })).toBe('');
+  });
+
+  it('the caption of a locked tile on a visitor\u2019s Content grid is the store\u2019s price, none where no rung sells it, and the list price on the web', () => {
+    const { visitorTileOf } = require('@/features/me/model') as typeof import('@/features/me/model');
+    const piece = { id: 'p1', title: 'Pitch deck', contentType: 'pdf', accessType: 'paid', price: 1500, views: 3, previewAssetUrl: null, fullAssetLocked: true } as never;
+    expect(visitorTileOf(piece).caption).toBe('₦1,500');
+    expect(visitorTileOf(piece, { forKobo: (k: number) => (k === 150_000 ? 180_000 : null) }).caption).toBe('₦1,800');
+    const bare = visitorTileOf(piece, { forKobo: () => null });
+    expect(bare.caption).toBe('');
+    expect(bare.spoken).toBe('Pitch deck, paid');
+  });
+
+  it('F7: on a phone with a store a missed reply is a question credit, in the creator\u2019s own window; the web keeps its refund words', () => {
+    const { replyPromise } = require('@/features/professionals/ProfileScreen') as typeof import('@/features/professionals/ProfileScreen');
+    expect(replyPromise('Funmi Adeyemi', 24, true)).toBe('Funmi replies within 24 hours, or you get a question credit.');
+    expect(replyPromise('Funmi Adeyemi', 72, true)).toBe('Funmi replies within 3 days, or you get a question credit.');
+    expect(replyPromise('Funmi Adeyemi', null, true)).toBe('If Funmi does not reply in time, you get a question credit.');
+    expect(replyPromise('Funmi Adeyemi', 24)).toBe("Funmi replies within 24 hours, or you're refunded automatically.");
+    const { waitingCard, paidStamp } = require('@/features/paid-ask/model') as typeof import('@/features/paid-ask/model');
+    const now = Date.parse('2026-10-28T12:00:00.000Z');
+    const q = { deadlineAt: '2026-10-29T06:00:00.000Z' };
+    expect(waitingCard(q, 'Funmi Adeyemi', now, null, true).body).toBe('If Funmi does not reply in time, you get a question credit.');
+    expect(waitingCard(q, 'Funmi Adeyemi', now, null).body).toMatch(/comes back to your wallet/);
+    expect(waitingCard({ deadlineAt: '2026-10-28T10:00:00.000Z' }, 'Funmi Adeyemi', now, null, true).body).toBe('You get a question credit.');
+    expect(paidStamp('2026-10-28T09:51:00.000Z', 150_000, now, null, true)).toMatch(/ · Paid$/);
+    expect(paidStamp('2026-10-28T09:51:00.000Z', 150_000, now, null)).toMatch(/ · ₦1,500 paid$/);
+  });
+
   it('the labels that carry a price draw none when there is none, and the follow-up offer says so', () => {
     const model = require('@/features/paid-ask/model') as typeof import('@/features/paid-ask/model');
     expect(model.askButtonLabel(null)).toBe('Message');
