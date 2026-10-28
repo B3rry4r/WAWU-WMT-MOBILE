@@ -115,7 +115,7 @@ export function viewOf(product: HubProduct, alreadyGranted: boolean, communityId
 function ladderView(product: HubProduct, again: boolean, intentId: string | null, intentBody: Record<string, unknown> | null, late: boolean) {
   const base = viewOf(product, again, null);
   if (late || !intentBody) {
-    return { ...base, status: 'credited', grant: { points: null, credits: null, tierId: null, extraProducts: null, until: null, communityId: null }, credit: { amountKobo: product.listPriceKobo ?? 0, message: 'This purchase could not be finished in time. You have a ₦' + String((product.listPriceKobo ?? 0) / 100) + ' credit to use on Who Made This.' }, buyKind: null, intentId: null, targetId: null };
+    return { ...base, status: 'credited', grant: { points: null, credits: null, tierId: null, extraProducts: null, until: null, communityId: null }, credit: { amountKobo: product.listPriceKobo ?? 0, message: 'This purchase could not be finished in time. You have a ₦' + String((product.listPriceKobo ?? 0) / 100).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' credit to use on Who Made This.' }, buyKind: null, intentId: null, targetId: null };
   }
   const kind = intentBody.kind as 'content' | 'tip' | 'pass' | 'question';
   const target = (intentBody.contentId ?? intentBody.creatorWawuId ?? intentBody.communityId ?? null) as string | null;

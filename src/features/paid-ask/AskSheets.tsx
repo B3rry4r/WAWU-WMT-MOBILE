@@ -246,7 +246,7 @@ function StoreAskSheet({ ask, ladder }: { ask: AskState; ladder: Ladder }) {
       visible
       testID="ask-sheet"
       label={`Ask ${whoOf(name)}`}
-      head={{ title: `Ask ${whoOf(name)}`, verified: target?.tick, subtitle: usual ?? undefined, image: target?.avatarUrl ?? undefined }}
+      head={{ title: `Ask ${whoOf(name)}`, verified: usual ? target?.tick : undefined, subtitle: usual ?? undefined, image: target?.avatarUrl ?? undefined }}
       price={entry?.price ?? null}
       priceLabel="Question"
       actionLabel="Send"

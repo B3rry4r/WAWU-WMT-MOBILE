@@ -170,7 +170,8 @@ describe('the professionals routes', () => {
     expect(rtl.screen.queryByTestId('pro-closed')).toBeNull();
     await rtl.act(async () => rtl.fireEvent.press(button));
     expect(await rtl.screen.findByTestId('ask-sheet')).toBeTruthy();
-    expect(rtl.screen.getByTestId('ask-title')).toHaveTextContent('Ask Funmi');
+    // R-101: on a phone the ask sheet is the store's (its head is the pay sheet's, not the wallet sheet's `ask-title`); it is still the sheet for Funmi.
+    expect(rtl.screen.getByText('Ask Funmi')).toBeTruthy();
   });
 
   // FIX-101 (FIX-100 L-3): a listing whose category is outside the taxonomy comes with no field, and the page crashed reading its label.

@@ -29,6 +29,10 @@ export const tipTitle = (name: string | null | undefined): string => (firstName(
 export const sentHeading = (amountKobo: number, name: string | null | undefined): string =>
   firstName(name) ? `${formatNaira(amountKobo)} sent to ${firstName(name)}` : `${formatNaira(amountKobo)} sent`;
 
+/** H28's heading for a tip bought in a store (R-101): the store's own price text, never the list price. `price` is null for a tip paid with a credit. */
+export const storeSentHeading = (price: string | null, name: string | null | undefined): string =>
+  price ? (firstName(name) ? `${price} sent to ${firstName(name)}` : `${price} sent`) : firstName(name) ? `Tip sent to ${firstName(name)}` : 'Tip sent';
+
 /** The note as H28 echoes it, or null when none was written. */
 export const noteEcho = (note: string | null | undefined): string | null => (note?.trim() ? note.trim() : null);
 

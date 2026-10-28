@@ -23,7 +23,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } fr
 
 import { earnOf } from '@/features/prices/model';
 
-import { NOTE_MAX, getsWords, noteEcho, sentHeading, tipTitle, WALLET_NAME } from './model';
+import { NOTE_MAX, getsWords, noteEcho, sentHeading, storeSentHeading, tipTitle, WALLET_NAME } from './model';
 import type { TipState } from './useTip';
 import { usePaySource } from '@/features/pay-source/usePaySource';
 import { StoreUnready } from '@/features/store/StoreParts';
@@ -288,7 +288,7 @@ function StoreTipSheet({ tip, store }: { tip: TipState; store: { ladder: Ladder;
         label="Tip sent"
         testID="tip-sent"
         mark={<Avatar name={name ?? undefined} hue={target?.hue} source={target?.avatarUrl ?? undefined} size={AVATAR} decorative />}
-        title={sentHeading(naira * 100, name)}
+        title={storeSentHeading(withCredit ? null : (entry?.price ?? null), name)}
         line={null}
       >
         <GroupedList testID="tip-total-paid">

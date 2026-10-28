@@ -216,7 +216,7 @@ describe('H14 and H16 · unlocking a piece on a phone with a store', () => {
     await boot();
     await press('open-unlock');
     await press('unlock-store-sheet-buy');
-    expect(await rtl.screen.findByText(/You have a ₦2500 credit to use on Who Made This/)).toBeTruthy();
+    expect(await rtl.screen.findByText(/You have a ₦2,500 credit to use on Who Made This/)).toBeTruthy();
     expect(rtl.screen.queryByTestId('unlock-done')).toBeNull();
   });
 
@@ -246,6 +246,9 @@ describe('H26 and H28 · tipping on a phone with a store', () => {
     expect(hub.bodies).toEqual([{ platform: 'android', productId: 'wawu.buy.500', purchaseToken: 'token-1', intentId: 'intent-1' }]);
     expect(fakeStore.finished).toEqual([{ productId: 'wawu.buy.500', isConsumable: true }]);
     expect(rtl.screen.getByText('$1.49')).toBeTruthy();
+    // The receipt names what was paid at the store, never the list price (R-101 point 10).
+    expect(rtl.screen.getByText('$1.49 sent to Chidi')).toBeTruthy();
+    expect(rtl.screen.queryByText(/₦500/)).toBeNull();
   });
 
   it('a tip the store has no product for is not drawn', async () => {
@@ -267,6 +270,7 @@ describe('H26 and H28 · tipping on a phone with a store', () => {
     await press('tip-sheet-use-credit');
     expect(await rtl.screen.findByTestId('tip-sent')).toBeTruthy();
     expect(hub.intents[0]).toMatchObject({ kind: 'tip', listPriceNaira: 500, payWith: 'credit' });
+    expect(rtl.screen.getByText('Tip sent to Chidi')).toBeTruthy();
     expect(fakeStore.requests).toEqual([]);
   });
 

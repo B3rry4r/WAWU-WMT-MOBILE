@@ -207,7 +207,7 @@ describe('I30 · Private, pay to join, in the store sheet', () => {
     fakeStore.next = { kind: 'error', code: 'already-owned' };
     fakeStore.owned = [{ id: 'held', productId: BUY.storeProductId, purchaseState: 'purchased', purchaseToken: 'held-token', isAcknowledgedAndroid: false }];
     await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
-    expect(await rtl.screen.findByText(/You have a ₦2000 credit to use on Who Made This/)).toBeTruthy();
+    expect(await rtl.screen.findByText(/You have a ₦2,000 credit to use on Who Made This/)).toBeTruthy();
     expect(hub.bodies[0]).not.toHaveProperty('intentId');
     expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
     expect(rtl.screen.queryByText(/cash|withdraw|refund/i)).toBeNull();
