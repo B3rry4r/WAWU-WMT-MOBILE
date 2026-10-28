@@ -28,6 +28,11 @@ describe('where a tap on a notification goes (INBOX-21)', () => {
     expect(routeForPush({ kind: 'dm_refunded' })).toBe('/wallet');
   });
 
+  it('opens the earnings for a pass sold and a question answered, and the Inbox for a question credit (STORE-BUY-APP, R-101)', () => {
+    for (const kind of ['pass_sold', 'question_answered']) expect(routeForPush({ kind })).toBe('/earnings');
+    expect(routeForPush({ kind: 'question_credit' })).toBe('/inbox');
+  });
+
   it('opens the Inbox for a paid question and its deadline', () => {
     for (const kind of ['dm_received', 'dm_deadline']) expect(routeForPush({ kind, target: { kind: 'paid_question', id: 'q1' } })).toBe('/inbox');
   });

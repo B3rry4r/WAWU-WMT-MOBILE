@@ -5,6 +5,9 @@ import { userEvent } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// R-101: this file tests the wallet path (the website's and the web export's); on a phone the same actions are store purchases (store/__tests__/ladder*).
+import '@/features/store/testing/webPath';
+
 /*
  * A fan's paid questions (INBOX-10): I4 (waiting), I5 (replied), I7 (refunded), the ask sheet (I3), its not-enough state (I6) and the
  * PIN, on the real thread screen with the Hub as a stand-in `fetch`. The stand-in answers in the Hub's shapes, records every draft,

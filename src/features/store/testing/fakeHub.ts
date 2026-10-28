@@ -137,7 +137,10 @@ export function installHub(): void {
         data: { platform, available: hub.open, reason: hub.open ? null : hub.reason, accountToken: hub.accountToken, products: hub.open ? hub.products.filter((p) => p.platform === platform) : [] },
       });
     }
-    if (request.method === 'GET' && path === '/prices') return json(200, { statusCode: 200, message: 'OK', data: hub.prices });
+    if (request.method === 'GET' && path === '/prices') {
+      const withKobo = (list: { priceNaira: number; storePriceNaira: number | null }[]) => list.map((i) => ({ ...i, priceKobo: i.priceNaira * 100 }));
+      return json(200, { statusCode: 200, message: 'OK', data: { prices: withKobo(hub.prices.prices), tips: withKobo(hub.prices.tips) } });
+    }
     if (request.method === 'GET' && path === '/store/credits') return json(200, { statusCode: 200, message: 'OK', data: { credits: hub.credits } });
     if (request.method === 'POST' && path === '/store/intents') {
       const body = (await request.json()) as Record<string, unknown>;

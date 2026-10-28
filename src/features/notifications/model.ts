@@ -20,6 +20,9 @@ export const CHIPS: { value: FeedCategory; label: string }[] = [
 const ICONS: Record<string, IconName> = {
   sale: 'ShoppingBag',
   tip_received: 'ArrowDownLeft',
+  pass_sold: 'Users',
+  question_answered: 'MessageCircle',
+  question_credit: 'RotateCcw',
   money_in: 'ArrowDownLeft',
   money_in_reversed: 'RotateCcw',
   dm_refunded: 'RotateCcw',

@@ -34,6 +34,10 @@ export const HUB_NOTIFICATION_KINDS = [
   'money_in',
   'money_in_reversed',
   'wallet_ready',
+  // STORE-SALE-NOTICE and STORE-QUESTION (R-101): a creator's sale through a store (a pass, an answered question), and the asker's credit.
+  'pass_sold',
+  'question_answered',
+  'question_credit',
 ] as const;
 
 export type HubNotificationKind = (typeof HUB_NOTIFICATION_KINDS)[number];
