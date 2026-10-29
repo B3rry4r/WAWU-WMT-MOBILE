@@ -31,7 +31,7 @@ the real one the app shows). Hide the notification shade and use the phone's 100
 | 1 | Home, Today | H1 | The first thing a visitor sees | **No** (`Home` tab is a title) | HOME-01, and its depends_on list (HOME-02, HOME-07, HOME-09, EXPLORE-02, ME-02, ME-04, ME-14, WALLET-02, WALLET-05, BILLS-01, EVENTS-01, LEGAL-02, SCHOOLS-03; the backend HOME-10 and HOME-11 are `done` since 6 Oct) |
 | 2 | For you feed with a video and a locked piece | H2, H3 | "Preview before you pay" | **No** | HOME-02, HOME-07 (backend HOME-04 to 06 are done) |
 | 3 | Explore: categories and featured creators | X1, X2 | Discovery | **No** | EXPLORE-01 (and EXPLORE-02; the backend EXPLORE-03 is `done` since 6 Oct) |
-| 4 | A creator's profile: content, services, about | M1, M2 | "Get paid for what you know" | **No** | ME-01 (needs ME-04, ME-11, ME-12 and more) |
+| 4 | A creator's profile: content, services, about | M1, M2 | "The creators and professionals ecosystem." | **No** | ME-01 (needs ME-04, ME-11, ME-12 and more) |
 | 5 | Content detail with the Unlock sheet | H19, H14 | Naira pricing, fees shown before paying | **Partly**: the pay sheet (MONEY-03 `done`) exists but is a dev preview route that redirects home in a release build | HOME-03, HOME-12, WALLET-15 is done |
 | 6 | Communities or a paid-question thread | I24 or I2 | Chat and paid questions | **No** | INBOX-05, or INBOX-10 |
 | 7 | Wallet home | W1 | The Naira wallet | **No** (`Wallet` tab is a title) | WALLET-01 (and WALLET-02, 05, 06, 04, BILLS-01) |
@@ -68,7 +68,7 @@ Folder: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpa
 
 | File | Screen | Artboard |
 |---|---|---|
-| `welcome-light.jpg` | Welcome ("Get paid for what you know") | A1 |
+| `welcome-light.jpg` | Welcome ("The creators and professionals ecosystem.") | A1 |
 | `account-type-light.jpg` | Why you're here | A2 |
 | `sign-up-light.jpg` | Create your account | A3 |
 | `sign-in-light.jpg` | Sign in | A22 |
