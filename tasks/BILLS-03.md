@@ -7,23 +7,34 @@ order: 341
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, BILLS-01, BILLS-02, BILLS-04, UI-02]
-decisions: [R-10, R-6]
+decisions: [R-102, R-10, R-29, R-47]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [S8, S9]
 ---
-On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
-
 # BILLS-03 · Airtime, data and cable TV
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-42 and R-52 (owner, 7 and 16 Oct 2026): bills are switched off at the Nuvion move, not deleted, and the app draws no bill entry.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): BILLS-02, BILLS-04.
-- **History:** none yet. Reports go to tasks/history/BILLS-03.md.
+As of 29 Oct 2026, built by a Sonnet builder (T2), mobile `wmt/BILLS-02` on `origin/main` `6bf62919`, one branch with BILLS-02 and BILLS-08. App only: no backend change, no native change (Android fingerprint unchanged, `17ffb13d`). Status verifying.
+
+**R-102 replaces this brief's payment parts**: no Hub task was built, so there are no `/bills/airtime/billers`, `/bills/data/billers`, `/bills/cable/billers` or `/bills/cable/card-preview` routes. Airtime, data and cable use the website's routes (see BILLS-02), the PIN step and the wallet are not part of it, and the review, payment window and receipt are BILLS-02's, reused unchanged (never a fork).
+
+| # | Before | After |
+|---|---|---|
+| 1 | S2 drew Electricity only | Airtime, Data, Electricity and Cable TV, each only when the provider lists its category |
+| 2 | no S8 | `/bills/airtime`: the networks are the provider's billers, none chosen for the person; phone number with "Mine" (the account's own number); the number is checked by the Hub at eleven digits; amount in whole naira with the board's quick amounts; "Buy ₦2,000 airtime" opens S5 |
+| 3 | no Data | `/bills/data` on S8's layout: the network's bundles (name and price from the provider) in place of the quick amounts, radio rows, Continue opens S5 |
+| 4 | no S9 | `/bills/cable` (the companies, S3's layout), `/bills/items` (S9: the packages, radio rows, Continue), then `/bills/number` (S4's layout for the smartcard; the package's price is the amount), then S5 |
+
+### Notes
+- The provider lists airtime as one item code under every network (`AT099` under MTN, Airtel, Glo and 9mobile), so airtime's item is that one code and the network is the biller; a company that sells one thing passes the packages step by (the website does the same).
+- A bundle or package with no price (`amount` 0) takes the typed amount like airtime.
+- **Fee line (BRIEF S8, S9).** The Hub adds no fee to a bill, so S5 shows the amount and the Total (the same figure), and no fee row (G-BILLS-FEE in BILLS-02). The cable review carries the package's name and its price as the Total.
+- **Recent on S2** is `GET /bills/mine` (the five newest): the company over the number (a phone or smartcard with its middle hidden) and the amount; a row opens its receipt.
+- **Bill reminders (BILLS-05, BILLS-06) are not built here:** no banner is drawn (R-47).
+- Data's screen is not on a board; it is built on S8's layout as BRIEF S2 says (R-29).
 
 ## Read first
 

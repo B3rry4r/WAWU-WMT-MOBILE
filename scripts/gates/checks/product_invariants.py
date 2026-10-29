@@ -38,8 +38,11 @@ def run(ctx: Context) -> Iterator[Finding]:
     if not rules:
         return
 
+    # A rule may carry `allow_paths`: files where that ONE rule does not fire (a ruling made an exception for a named file, cited in
+    # the rule's `allow_ruling`). Every other rule still fires there, and the rule still fires in every other file. Whole-file,
+    # exact paths only: no globs, so an exception never widens by accident.
     compiled = [
-        (re.compile(r["pattern"], re.IGNORECASE), r.get("why", ""), r.get("ruling", ""))
+        (re.compile(r["pattern"], re.IGNORECASE), r.get("why", ""), r.get("ruling", ""), frozenset(r.get("allow_paths", [])))
         for r in rules
         if r.get("pattern")
     ]
@@ -63,7 +66,9 @@ def run(ctx: Context) -> Iterator[Finding]:
                     literals.append(stripped)
             prev = line if stripped else prev
             for lit in literals:
-                for rx, why, ruling in compiled:
+                for rx, why, ruling, allowed in compiled:
+                    if rel in allowed:
+                        continue
                     hit = rx.search(lit)
                     if hit:
                         tag = f"[{ruling}] " if ruling else ""

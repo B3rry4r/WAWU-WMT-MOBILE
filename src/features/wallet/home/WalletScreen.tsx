@@ -32,6 +32,7 @@ import { useFxHome } from '../fx/useFx';
 import { PassesTile } from '../pass/PassesTile';
 import { BalanceCard, ACCT } from './BalanceCard';
 import { PointsTile } from './PointsTile';
+import { BillTiles } from './BillTiles';
 import { WalletActions, type WalletAction } from './WalletActions';
 import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
@@ -52,8 +53,9 @@ const INFO_SKELETON = 86;
  * The Wallet tab (WALLET-01, reworked by DV2-02 to the 16 Oct board): W1, and its states W4 (loading), W5 (a new account) and W6 (the
  * bank did not answer), against `GET /money/wallet`, `GET /money/wallet/balance`, `GET /money/transactions`, `GET /me/points` and `GET /me/tier`.
  *
- * Cash is the card (the Hub's balance), Points and Passes sit under it as information, then the actions, then Transactions. There are no
- * bills anywhere on this tab (R-52).
+ * Cash is the card (the Hub's balance), Points and Passes sit under it as information, then the actions, the bill tiles (Airtime, Data, Power,
+ * TV and More, which open that bill or S2: bills are back, R-102, BILLS-08), then Transactions. The bill tiles need no wallet, so they are drawn
+ * in every state of the tab.
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where it leads, as
  * drawn: the scan icon (WALLET-20). The WAWU card row is built (WALLET-22, R-84): drawn while the Hub says cards are on. The tabs under the title (WALLET-21, R-83, R-84) are one for each
@@ -326,6 +328,7 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
           </View>
           {capital ? <CapitalWalletRow onPress={onOpenCapital} /> : null}
           <WalletActions actions={actions} />
+          <BillTiles />
           <CardRow />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
@@ -335,7 +338,12 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
 
 /** W6 (wallet.js line 67): a card padded 10 by 16 with a 28 corner holding the kit's `empty` block. */
 function StateCard({ children }: { children: ReactNode }) {
-  return <Card style={styles.state}>{children}</Card>;
+  return (
+    <>
+      <Card style={styles.state}>{children}</Card>
+      <BillTiles />
+    </>
+  );
 }
 
 /**

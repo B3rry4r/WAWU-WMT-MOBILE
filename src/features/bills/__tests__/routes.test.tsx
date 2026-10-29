@@ -2,7 +2,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactNode } from 'react';
-import { BackHandler } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 jest.mock('expo-secure-store', () => ({
@@ -30,22 +29,34 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
 }));
 
-const ok = (data: unknown) => ({ status: 200, body: { statusCode: 200, message: 'OK', data } });
-const IKEJA = { code: 'Ikeja_Electric_Bill_Payment', name: 'Ikeja Electric', plan: 'prepaid', minimumKobo: 50000, maximumKobo: 50000000, presets: [{ amountKobo: 200000 }] };
-let billers = ok({ available: true, billers: [IKEJA] });
+const ok = (data: unknown) => ({ statusCode: 200, message: 'OK', data });
+const CATEGORIES = [
+  { id: 1, name: 'Airtime', code: 'AIRTIME' },
+  { id: 3, name: 'Utility Bills', code: 'UTILITYBILLS' },
+];
+const BILL = { id: 'bill-1', category: 'Utility Bills', billerName: 'Ikeja Electric', customerRef: '04123456789', amount: 10000, fee: 0, status: 'delivered', providerReference: 'REF1', failureReason: null, createdAt: '2026-10-29T10:42:00.000Z', deliveredAt: null, refundReference: null, refundedAt: null };
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
-  const url = new URL(request.url);
-  if (request.method === 'GET' && url.pathname === '/api/hub/bills/electricity/billers') {
-    return new Response(JSON.stringify(billers.body), { status: 200, headers: { 'content-type': 'application/json' } });
-  }
+  const path = new URL(request.url).pathname.replace(/^\/api\/hub/, '');
+  const body = (data: unknown) => new Response(JSON.stringify(ok(data)), { status: 200, headers: { 'content-type': 'application/json' } });
+  if (path === '/bills/categories') return body(CATEGORIES);
+  if (path === '/bills/mine') return body({ items: [BILL], currentPage: 1, perPage: 50, total: 1 });
+  if (path === '/bills/categories/UTILITYBILLS/billers') return body([{ id: 10, name: 'Ikeja Electric', biller_code: 'BIL_IKEJA' }]);
   return new Response(JSON.stringify({ statusCode: 404, message: 'Not Found', data: null }), { status: 404 });
 }) as typeof fetch;
 
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
-const BillsRoute = (require('@/app/bills/index') as typeof import('@/app/bills/index')).default;
-const ElectricityRoute = (require('@/app/bills/electricity/index') as typeof import('@/app/bills/electricity/index')).default;
-const MeterRoute = (require('@/app/bills/electricity/[code]') as typeof import('@/app/bills/electricity/[code]')).default;
+const { billDraft } = require('../draft') as typeof import('../draft');
+const page = (path: string) => (require(path) as { default: () => ReactNode }).default;
+const BillsRoute = page('@/app/bills/index');
+const ElectricityRoute = page('@/app/bills/electricity/index');
+const CableRoute = page('@/app/bills/cable/index');
+const AirtimeRoute = page('@/app/bills/airtime');
+const DataRoute = page('@/app/bills/data');
+const ItemsRoute = page('@/app/bills/items');
+const NumberRoute = page('@/app/bills/number');
+const ReviewRoute = page('@/app/bills/review');
+const ReceiptRoute = page('@/app/bills/receipt/[id]');
 
 function wrap(children: ReactNode) {
   return (
@@ -55,22 +66,13 @@ function wrap(children: ReactNode) {
   );
 }
 
-let backSpy: jest.SpyInstance;
-/** The handler the screen gave Android's back button, so a test can press it. */
-function hardwareBack(): () => boolean | null | undefined {
-  const calls = backSpy.mock.calls.filter(([name]) => name === 'hardwareBackPress');
-  return calls[calls.length - 1][1];
-}
-
 beforeEach(() => {
-  backSpy = jest.spyOn(BackHandler, 'addEventListener');
   Object.values(mockRouter).forEach((f) => f.mockClear());
   mockRouter.canGoBack.mockReturnValue(true);
   mockRedirect.mockClear();
-  (globalThis.fetch as jest.Mock).mockClear();
   mockParams = {};
   mockStatus = 'signedIn';
-  billers = ok({ available: true, billers: [IKEJA] });
+  billDraft.clear();
   queryClient.clear();
 });
 
@@ -81,93 +83,81 @@ afterEach(async () => {
   });
   rtl.cleanup();
   queryClient.clear();
-  backSpy.mockRestore();
 });
 
+const routes: [string, () => ReactNode][] = [
+  ['S2', BillsRoute],
+  ['S3 electricity', ElectricityRoute],
+  ['S3 cable', CableRoute],
+  ['S8 airtime', AirtimeRoute],
+  ['S8 data', DataRoute],
+  ['S9 items', ItemsRoute],
+  ['S4 number', NumberRoute],
+  ['S5 review', ReviewRoute],
+  ['S7 receipt', ReceiptRoute],
+];
+
 describe('the bills routes', () => {
-  it('S2: Electricity opens the companies, S3 (/bills/electricity)', async () => {
+  it.each(routes)('%s: a person who is not signed in goes to the welcome screen and sees nothing of bills', async (_name, Route) => {
+    mockStatus = 'signedOut';
+    mockParams = { id: 'bill-1' };
+    await rtl.render(wrap(<Route />));
+    expect(mockRedirect).toHaveBeenCalledWith('/welcome');
+  });
+
+  it.each(routes)('%s: nothing is drawn while the session is being restored', async (_name, Route) => {
+    mockStatus = 'restoring';
+    mockParams = { id: 'bill-1' };
+    await rtl.render(wrap(<Route />));
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(rtl.screen.queryByTestId('auth-back')).toBeNull();
+  });
+
+  it('S2: a kind opens its own address and a recent bill opens its receipt', async () => {
     await rtl.render(wrap(<BillsRoute />));
-    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Electricity' })));
+    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByTestId('bills-electricity')));
     expect(mockRouter.push).toHaveBeenCalledWith('/bills/electricity');
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('bills-airtime')));
+    expect(mockRouter.push).toHaveBeenCalledWith('/bills/airtime');
+    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByTestId('bills-recent-bill-1')));
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/bills/receipt/[id]', params: { id: 'bill-1' } });
   });
 
-  it('S2: back goes back a step, or to Home when it was opened on its own, and Android’s back does the same', async () => {
+  it('S2: back goes back, or Home when it was opened on its own', async () => {
     await rtl.render(wrap(<BillsRoute />));
-    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Back' })));
+    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByTestId('auth-back')));
     expect(mockRouter.back).toHaveBeenCalledTimes(1);
     mockRouter.canGoBack.mockReturnValue(false);
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Back' })));
-    expect(mockRouter.replace).toHaveBeenLastCalledWith('/');
-    mockRouter.canGoBack.mockReturnValue(true);
-    mockRouter.back.mockClear();
-    expect(hardwareBack()()).toBe(true);
-    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('auth-back')));
+    expect(mockRouter.replace).toHaveBeenCalledWith('/');
   });
 
-  it('S3: a tap on a company opens S4 with its code', async () => {
+  it('S3: a company opens the package step, which a link cannot reach on a company of its own choosing', async () => {
     await rtl.render(wrap(<ElectricityRoute />));
-    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Ikeja Electric, Prepaid' })));
-    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/bills/electricity/[code]', params: { code: 'Ikeja_Electric_Bill_Payment' } });
-  });
-
-  it('S3: back, and the X on "Paying for", go back a step, or to S2 when it was opened on its own', async () => {
-    await rtl.render(wrap(<ElectricityRoute />));
-    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Change what you are paying for' })));
-    expect(mockRouter.back).toHaveBeenCalledTimes(1);
-    mockRouter.canGoBack.mockReturnValue(false);
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Back' })));
-    expect(mockRouter.replace).toHaveBeenLastCalledWith('/bills');
-  });
-
-  it('S3: a list that says bills are not on replaces S3 with S2, which draws S13', async () => {
-    billers = ok({ available: false, billers: [] });
-    await rtl.render(wrap(<ElectricityRoute />));
-    await rtl.waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith('/bills'));
-  });
-
-  it('S4: opens on the code in the address; the X on "Biller" goes to S3 and the X on "Paying for" to S2', async () => {
-    mockParams = { code: 'Ikeja_Electric_Bill_Payment' };
-    await rtl.render(wrap(<MeterRoute />));
-    expect(await rtl.screen.findByText('Ikeja Electric · Prepaid')).toBeTruthy();
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Change the company' })));
-    expect(mockRouter.dismissTo).toHaveBeenLastCalledWith('/bills/electricity');
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Change what you are paying for' })));
-    expect(mockRouter.dismissTo).toHaveBeenLastCalledWith('/bills');
-  });
-
-  it('S4: a code the list no longer has goes to S3', async () => {
-    mockParams = { code: 'Gone_Disco' };
-    await rtl.render(wrap(<MeterRoute />));
-    await rtl.waitFor(() => expect(mockRouter.dismissTo).toHaveBeenCalledWith('/bills/electricity'));
-  });
-
-  it('S4: an address with no code goes to S3', async () => {
-    mockParams = {};
-    await rtl.render(wrap(<MeterRoute />));
-    expect(mockRedirect).toHaveBeenCalledWith('/bills/electricity');
-  });
-
-  it('S4: back goes back a step, or to S3 when it was opened on its own', async () => {
-    mockParams = { code: 'Ikeja_Electric_Bill_Payment' };
-    await rtl.render(wrap(<MeterRoute />));
-    // The form replaces the loading frame once the list is in: press its Back, not the loading frame's.
-    await rtl.screen.findByTestId('meter-amount');
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Back' })));
-    expect(mockRouter.back).toHaveBeenCalledTimes(1);
-    mockRouter.canGoBack.mockReturnValue(false);
-    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Back' })));
-    expect(mockRouter.replace).toHaveBeenLastCalledWith('/bills/electricity');
+    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByTestId('biller-BIL_IKEJA')));
+    expect(mockRouter.push).toHaveBeenCalledWith('/bills/items');
+    expect(billDraft.get()?.biller?.code).toBe('BIL_IKEJA');
   });
 
   it.each([
-    ['S2', () => <BillsRoute />],
-    ['S3', () => <ElectricityRoute />],
-    ['S4', () => <MeterRoute />],
-  ])('%s: someone signed out is sent to the welcome screen and nothing is asked of the Hub', async (_name, route) => {
-    mockStatus = 'signedOut';
-    mockParams = { code: 'Ikeja_Electric_Bill_Payment' };
-    await rtl.render(wrap(route()));
-    expect(mockRedirect).toHaveBeenCalledWith('/welcome');
-    expect((globalThis.fetch as jest.Mock).mock.calls.filter(([input]) => String(input instanceof Request ? input.url : input).includes('/bills/')).length).toBe(0);
+    ['S9 items', ItemsRoute],
+    ['S4 number', NumberRoute],
+    ['S5 review', ReviewRoute],
+  ] as [string, () => ReactNode][])('%s: opened with no bill started it goes back to the kinds of bill', async (_name, Route) => {
+    await rtl.render(wrap(<Route />));
+    await rtl.waitFor(() => expect(mockRouter.dismissTo).toHaveBeenCalledWith('/bills'));
+  });
+
+  it('S7: with no id in the address it goes to S2', async () => {
+    mockParams = {};
+    await rtl.render(wrap(<ReceiptRoute />));
+    expect(mockRedirect).toHaveBeenCalledWith('/bills');
+  });
+
+  it('S7: Done goes to S2, and Try again goes back to the review only while the bill is still being put together', async () => {
+    mockParams = { id: 'bill-1' };
+    await rtl.render(wrap(<ReceiptRoute />));
+    await rtl.act(async () => rtl.fireEvent.press(await rtl.screen.findByTestId('receipt-done')));
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/bills');
   });
 });

@@ -832,6 +832,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/bills/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * BILLS-09 (R-102): where a bill stands, with its token and units. The buyer's
+         *     own bills only. A `processing` bill is asked about at the provider at most
+         *     once in 20 seconds. The id is a UUID so `GET /bills/wallet/status` and the
+         *     like keep answering exactly what the wallet bill route answered before this
+         *     route existed (the same 400 from the same pipe on `id`).
+         */
+        get: operations["BillPaymentController_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/bills/electricity/billers": {
         parameters: {
             query?: never;
@@ -20069,6 +20092,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        token: string | null;
+                        units: string | null;
                         id: string;
                         category: string;
                         billerName: string;
@@ -20103,6 +20128,8 @@ export interface operations {
                 content: {
                     "application/json": {
                         items: {
+                            token: string | null;
+                            units: string | null;
                             id: string;
                             category: string;
                             billerName: string;
@@ -20120,6 +20147,34 @@ export interface operations {
                         currentPage: number;
                         perPage: number;
                         total: number;
+                    };
+                };
+            };
+        };
+    };
+    BillPaymentController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        /** @enum {string} */
+                        status: "pending" | "failed" | "refunded" | "processing" | "paid" | "delivered";
+                        token: string | null;
+                        units: string | null;
+                        providerReference: string | null;
                     };
                 };
             };

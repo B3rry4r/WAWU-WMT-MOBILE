@@ -5,6 +5,7 @@ import { formatMoney, Money } from '@/components/Money';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
+import { Radio } from '@/features/create/parts';
 import { fieldMetrics } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu, type ColorToken } from '@/theme';
@@ -54,6 +55,11 @@ export const billMetrics = {
   monoTracking: 0.04,
   fieldGap: 8,
   prefixGap: 2,
+  recentIcon: 44,
+  recentAmount: 14.5,
+  networkHeight: 44,
+  networkGap: 8,
+  networkWord: 14,
 } as const;
 const m = billMetrics;
 
@@ -119,15 +125,15 @@ export function SectionLabel({ children }: { children: string }) {
   return <Text variant="label">{children}</Text>;
 }
 
-/** One company on S3: its badge, its name, its plan and a chevron. */
-export function BillerRow({ name, initials, plan, onPress, testID }: { name: string; initials: string; plan: string; onPress: () => void; testID?: string }) {
+/** One company on S3: its badge, its name, a note under it when the provider gives one, and a chevron. */
+export function BillerRow({ name, initials, note, onPress, testID }: { name: string; initials: string; note?: string; onPress: () => void; testID?: string }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${plan}`}
+      accessibilityLabel={note ? `${name}, ${note}` : name}
       onPress={onPress}
       {...ring.handlers}
       style={({ pressed }) => [styles.row, { borderBottomColor: colors.borderHairline }, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
@@ -141,12 +147,103 @@ export function BillerRow({ name, initials, plan, onPress, testID }: { name: str
         <Text variant="body" style={[font(600), styles.rowTitle]}>
           {name}
         </Text>
-        <Text variant="secondary" tone="textMuted" style={styles.rowLine}>
-          {plan}
-        </Text>
+        {note ? (
+          <Text variant="secondary" tone="textMuted" style={styles.rowLine}>
+            {note}
+          </Text>
+        ) : null}
       </View>
       <Icon name="ChevronRight" size={m.rowChevron} color={colors.textMuted} />
     </Pressable>
+  );
+}
+
+/** One thing the person has paid for, in S2's Recent: a round icon, the company over the number, and the amount. */
+export function RecentRow({ icon, title, line, amountKobo, onPress, testID }: { icon: IconName; title: string; line: string; amountKobo: number; onPress: () => void; testID?: string }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}, ${line}`}
+      onPress={onPress}
+      {...ring.handlers}
+      style={({ pressed }) => [styles.recent, pressed && { backgroundColor: colors.surfaceSunken }, ring.style]}
+    >
+      <IconTile icon={icon} tone="neutral" size={m.recentIcon} />
+      <View style={styles.rowWords}>
+        <Text variant="body" numberOfLines={1} style={[font(600), styles.rowTitle]}>
+          {title}
+        </Text>
+        <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.rowLine}>
+          {line}
+        </Text>
+      </View>
+      <Money minorUnits={amountKobo} size={m.recentAmount} decimals={false} />
+    </Pressable>
+  );
+}
+
+/** One package, bundle or plan on S9: its name, a line under it when there is one, its price when it has one, and a radio. */
+export function PackageRow({ name, line, amountKobo, chosen, onPress, testID }: { name: string; line?: string; amountKobo: number | null; chosen: boolean; onPress: () => void; testID?: string }) {
+  const { colors } = useWawu();
+  const ring = useFocusRing();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="radio"
+      accessibilityLabel={amountKobo === null ? name : `${name}, ${formatMoney(amountKobo, { decimals: amountKobo % 100 !== 0 })}`}
+      accessibilityState={{ selected: chosen }}
+      onPress={onPress}
+      {...ring.handlers}
+      style={[styles.row, { borderBottomColor: colors.borderHairline }, ring.style]}
+    >
+      <View style={styles.rowWords}>
+        <Text variant="body" style={[font(600), styles.rowTitle]}>
+          {name}
+        </Text>
+        {line ? (
+          <Text variant="secondary" tone="textMuted" style={styles.rowLine}>
+            {line}
+          </Text>
+        ) : null}
+      </View>
+      {amountKobo === null ? null : <Money minorUnits={amountKobo} size={m.recentAmount} decimals={amountKobo % 100 !== 0} />}
+      <Radio selected={chosen} />
+    </Pressable>
+  );
+}
+
+/** S8's networks: equal chips in a row, the chosen one on the accent tint with an accent ring (the board's own). */
+export function NetworkChips({ networks, chosen, onPick, testID }: { networks: readonly { code: string; name: string }[]; chosen: string | null; onPick: (code: string) => void; testID?: string }) {
+  const { colors } = useWawu();
+  return (
+    <View testID={testID} style={styles.networks}>
+      {networks.map((n) => {
+        const on = n.code === chosen;
+        return (
+          <Pressable
+            key={n.code}
+            testID={testID ? `${testID}-${n.code}` : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={n.name}
+            accessibilityState={{ selected: on }}
+            onPress={() => onPick(n.code)}
+            style={[
+              styles.network,
+              on
+                ? { backgroundColor: colors.accentTint, borderColor: colors.accent, borderWidth: m.tileRingChosen }
+                : { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline, borderWidth: StyleSheet.hairlineWidth },
+            ]}
+          >
+            <Text variant="body" numberOfLines={1} style={[font(700), styles.networkWord]}>
+              {n.name}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -201,6 +298,8 @@ type FieldProps = {
   maxLength?: number;
   /** The box redraws its words as the person types (the amount's commas): keep the caret after the key just typed (browsers; R2-2). */
   keepCaret?: boolean;
+  /** S8's "Mine": a word at the end of the box that fills it. */
+  trail?: ReactNode;
   children?: ReactNode;
   testID?: string;
 };
@@ -210,7 +309,7 @@ type FieldProps = {
  * (SHARED-CHANGES.md BILLS-01 #1 asks for them; this is its look, from the same `fieldMetrics`, and it goes when that lands).
  * The line under the field is the screen's own, passed as children.
  */
-export function BillField({ label, value, onChangeText, placeholder, keyboardType, mono, valueSize = m.fieldValue, prefix, prefixTestID, invalid, maxLength, keepCaret, children, testID }: FieldProps) {
+export function BillField({ label, value, onChangeText, placeholder, keyboardType, mono, valueSize = m.fieldValue, prefix, prefixTestID, invalid, maxLength, keepCaret, trail, children, testID }: FieldProps) {
   const { colors } = useWawu();
   const inputRef = useRef<TextInput | null>(null);
   const caret = useKeepCaret(inputRef, value, keepCaret === true);
@@ -267,6 +366,7 @@ export function BillField({ label, value, onChangeText, placeholder, keyboardTyp
             { color: colors.textPrimary, fontSize: valueSize, letterSpacing: mono ? m.monoTracking * valueSize : 0, lineHeight: canvasNormalLineHeight(valueSize) },
           ]}
         />
+        {trail}
       </View>
       {children}
     </View>
@@ -305,6 +405,10 @@ const styles = StyleSheet.create({
   rowWords: { flex: 1 },
   rowTitle: { fontSize: m.rowTitle, lineHeight: canvasNormalLineHeight(m.rowTitle) },
   rowLine: { fontSize: m.rowLine, lineHeight: canvasNormalLineHeight(m.rowLine) },
+  recent: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm + 2 },
+  networks: { flexDirection: 'row', gap: m.networkGap },
+  network: { flex: 1, height: m.networkHeight, borderRadius: m.chipRadius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xs },
+  networkWord: { fontSize: m.networkWord, lineHeight: canvasNormalLineHeight(m.networkWord) },
   presets: { flexDirection: 'row', gap: m.presetGap },
   preset: { flex: 1, height: m.presetHeight, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   field: { alignSelf: 'stretch', gap: m.fieldGap },

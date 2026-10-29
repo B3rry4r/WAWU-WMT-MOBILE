@@ -38,6 +38,7 @@ describe('Home money card while the wallet is opening: the currency being opened
     retrying: false,
     onSend: jest.fn(),
     onAdd: jest.fn(),
+    onOpenBills: jest.fn(),
   };
 
   it('draws the Dollar flag and word on the card of a USD opening, and not Naira', async () => {

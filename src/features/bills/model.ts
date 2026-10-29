@@ -1,18 +1,19 @@
+import { ApiError } from '@/api/errors';
 import { formatMoney } from '@/components/Money';
-
-import { billsCodes, type ElectricityBiller } from './api';
 
 /**
  * The meter box asks for a check once the person has stopped typing for `METER_CHECK_DELAY_MS` and has typed at least
  * `METER_CHECK_MIN_DIGITS` digits; fewer digits show nothing at all (no "Checking", no red sentence). Both are the app's own:
- * they only stop a check for every key and a "not found" flashing while someone is still typing. The Hub and Fintava decide
+ * they only stop a check for every key and a "not found" flashing while someone is still typing. The Hub and the provider decide
  * what a number is.
- * PROVISIONAL(BILLS-METER-MIN-DIGITS, owner=YOU, why=meter numbers are 11 or 13 digits and Fintava gives no shortest so ten is a guess that no real meter is shorter than).
+ * PROVISIONAL(BILLS-METER-MIN-DIGITS, owner=YOU, why=meter numbers are 11 or 13 digits and the provider gives no shortest so ten is a guess that no real meter is shorter than).
  */
 export const METER_CHECK_DELAY_MS = 600;
 export const METER_CHECK_MIN_DIGITS = 10;
 /** The Hub takes up to 20 digits. */
 export const METER_MAX_DIGITS = 20;
+/** A Nigerian phone number is eleven digits ("0803 123 4412"): a check before then is for a number still being typed. */
+export const PHONE_CHECK_MIN_DIGITS = 11;
 /** Whole naira, up to the ten digits the biggest listed maximum needs. */
 export const AMOUNT_MAX_DIGITS = 10;
 /** Kobo digits after the decimal point. */
@@ -25,6 +26,23 @@ const KOBO_PER_NAIRA = 100;
 /** What a person typed or pasted into the meter box, as digits: "0412 3456 789" is 04123456789. */
 export function meterDigits(typed: string): string {
   return typed.replace(/\D/g, '').slice(0, METER_MAX_DIGITS);
+}
+
+/** What a person typed or pasted into the phone box, as digits: "0803 123 4412" is 08031234412, at most eleven. */
+export function phoneDigits(typed: string): string {
+  return typed.replace(/\D/g, '').slice(0, PHONE_CHECK_MIN_DIGITS);
+}
+
+/** A phone number as S8 draws it: "0803 123 4412". */
+export function groupPhone(digits: string): string {
+  return [digits.slice(0, 4), digits.slice(4, 7), digits.slice(7)].filter((part) => part !== '').join(' ');
+}
+
+/** The person's own number as the box takes it: the account's "+2348031234412" is "08031234412". Anything that is not a Nigerian number gives nothing. */
+export function ownPhone(phone: string | null | undefined): string | null {
+  const digits = (phone ?? '').replace(/\D/g, '');
+  if (digits.startsWith('234') && digits.length === 13) return `0${digits.slice(3)}`;
+  return digits.length === PHONE_CHECK_MIN_DIGITS && digits.startsWith('0') ? digits : null;
 }
 
 /** Digits in groups of four, as S4 draws a meter number ("0412 3456 789"). */
@@ -104,6 +122,16 @@ export function caretAfter(words: string, count: number): number {
   return words.length;
 }
 
+/**
+ * What the amount box holds when only whole naira are taken (a bill's amount is a whole number of naira, the Hub's `init` refuses
+ * anything else): digits only, no point, no leading zero. Past ten digits the box keeps what it held.
+ */
+export function takeNaira(typed: string, previous: string): string {
+  const digits = typed.replace(/[^0-9]/g, '');
+  if (digits.length > AMOUNT_MAX_DIGITS) return previous;
+  return digits.replace(/^0+/, '');
+}
+
 /** The amount box's words: the naira with commas and the kobo as typed ("1,500.50"), or nothing before the first digit. The ₦ is drawn beside it. */
 export function amountBoxText(text: string): string {
   const [naira, kobo] = text.split('.');
@@ -120,8 +148,23 @@ export function amountKobo(text: string): number | null {
 
 export type AmountProblem = { kind: 'below'; minimumKobo: number } | { kind: 'above'; maximumKobo: number };
 
-/** Whether an amount is within the company's own minimum and maximum, as Fintava lists them. Nothing typed is no problem yet, and no amount. */
-export function amountProblem(biller: Pick<ElectricityBiller, 'minimumKobo' | 'maximumKobo'>, kobo: number | null): AmountProblem | null {
+/** What a bill may cost, in kobo: the Hub's own floor (₦50) and the company's limits when `validate` named them (0 is "none named"). */
+export type Limits = { minimumKobo: number; maximumKobo: number };
+
+/** The least the Hub takes for a bill: its `init` refuses less than ₦50. */
+export const HUB_MINIMUM_NAIRA = 50;
+/** No ceiling of its own: the Hub's is a blast-radius limit, not a product rule, so only a company's named maximum applies. */
+export const NO_MAXIMUM = Number.MAX_SAFE_INTEGER;
+
+/** The limits for a number `validate` checked: the Hub's floor, raised by the company's minimum and capped by its maximum when it named them (naira). */
+export function limitsOf(validated: { minimum: number; maximum: number } | undefined): Limits {
+  const minimumNaira = Math.max(HUB_MINIMUM_NAIRA, Math.ceil(validated?.minimum ?? 0));
+  const maximumNaira = validated && validated.maximum > 0 ? Math.floor(validated.maximum) : null;
+  return { minimumKobo: minimumNaira * KOBO_PER_NAIRA, maximumKobo: maximumNaira === null ? NO_MAXIMUM : maximumNaira * KOBO_PER_NAIRA };
+}
+
+/** Whether an amount is within the limits. Nothing typed is no problem yet, and no amount. */
+export function amountProblem(biller: Limits, kobo: number | null): AmountProblem | null {
   if (kobo === null) return null;
   if (kobo < biller.minimumKobo) return { kind: 'below', minimumKobo: biller.minimumKobo };
   if (kobo > biller.maximumKobo) return { kind: 'above', maximumKobo: biller.maximumKobo };
@@ -139,15 +182,10 @@ export function amountProblemWords(problem: AmountProblem): string {
 }
 
 /** An amount that can be paid: typed, positive and inside the limits. */
-export function amountOk(biller: Pick<ElectricityBiller, 'minimumKobo' | 'maximumKobo'>, text: string): boolean {
+export function amountOk(biller: Limits, text: string): boolean {
   const kobo = amountKobo(text);
   return kobo !== null && kobo > 0 && amountProblem(biller, kobo) === null;
 }
-
-export const planWord = (plan: ElectricityBiller['plan']): string => (plan === 'prepaid' ? 'Prepaid' : 'Postpaid');
-
-/** "Ikeja Electric · Prepaid", the biller chip on S4. */
-export const billerChipWords = (biller: Pick<ElectricityBiller, 'name' | 'plan'>): string => `${biller.name} · ${planWord(biller.plan)}`;
 
 /** The badge on S3's rows: the first letters of the first two words ("Ikeja Electric" is IE). */
 export function billerInitials(name: string): string {
@@ -159,13 +197,11 @@ export function billerInitials(name: string): string {
     .join('');
 }
 
-/**
- * "Chidinma Okoro · 14 Admiralty Way": the name, and the address when Fintava gave one. A meter is found only with a name
- * (the Hub answers nothing else as found), so there are no words for a found meter that names no one (D2).
- */
-export function meterOwnerWords(preview: { name: string; address: string | null }): string {
-  return preview.address ? `${preview.name} · ${preview.address}` : preview.name;
-}
+/** What the checker line says for a number the provider accepted without naming anyone (airtime and data numbers have no owner name). */
+export const NUMBER_CONFIRMED = 'Number confirmed';
+
+/** The name the provider holds for a number, or the neutral words when it names no one. A found number is never drawn as "found" without one or the other (D2). */
+export const ownerWords = (name: string | null): string => (name !== null && name.trim() !== '' ? name : NUMBER_CONFIRMED);
 
 /** Which presets a typed amount equals, so that chip shows as chosen. */
 export const presetChosen = (text: string, presetKobo: number): boolean => amountKobo(text) === presetKobo;
@@ -173,34 +209,41 @@ export const presetChosen = (text: string, presetKobo: number): boolean => amoun
 /** A preset tapped: what the amount box then holds. The Hub's quick amounts are whole naira (its config refuses any other). */
 export const presetText = (presetKobo: number): string => takeAmount(String(Math.floor(presetKobo / KOBO_PER_NAIRA)), '');
 
-/** What sits under the meter box on S4 (S10 is `not_found`), decided from what has been typed and what the check answered. */
+/**
+ * The Hub passes the provider's refusal of a number through as `502` with the provider's own words, so any `502` that is not the Hub
+ * saying it could not reach, or was not set up for, the provider is "no such number" (S10). Anything else (a limit, a fault, no
+ * connection) is a try again and never S10.
+ */
+const UNREACHABLE = [/could not reach/i, /not configured/i, /temporar/i, /unavailable/i];
+export function isNoSuchNumber(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 502 && !UNREACHABLE.some((re) => re.test(error.message));
+}
+
+/** What sits under the number box (S4; S10 is `not_found`), decided from what has been typed and what the check answered. */
 export type MeterLine =
   | { kind: 'none' }
   | { kind: 'checking' }
   | { kind: 'found'; words: string }
   | { kind: 'not_found' }
-  /** The Hub got an answer it could not use: the meter is neither found nor refused. Try again. */
-  | { kind: 'unconfirmed' }
   | { kind: 'problem'; message: string };
 
 type CheckState = {
   isFetching: boolean;
   isError: boolean;
-  error: { code?: string; message: string } | null;
-  data: { name: string; address: string | null } | undefined;
+  error: unknown;
+  data: { name: string | null } | undefined;
 };
 
 /**
- * The line under the meter box. A check counts only for the digits it was made for: while the person is still typing
+ * The line under the number box. A check counts only for the digits it was made for: while the person is still typing
  * (`digits` is not yet `settled`) or has typed too few, nothing is said, and an answer for an earlier number is never shown.
  */
-export function meterLine(digits: string, settled: string, check: CheckState): MeterLine {
-  if (digits.length < METER_CHECK_MIN_DIGITS || digits !== settled) return { kind: 'none' };
-  if (check.data) return { kind: 'found', words: meterOwnerWords(check.data) };
+export function meterLine(digits: string, settled: string, check: CheckState, minDigits: number = METER_CHECK_MIN_DIGITS): MeterLine {
+  if (digits.length < minDigits || digits !== settled) return { kind: 'none' };
+  if (check.data) return { kind: 'found', words: ownerWords(check.data.name) };
   if (check.isError && check.error) {
-    if (check.error.code === billsCodes.meterNotFound) return { kind: 'not_found' };
-    if (check.error.code === billsCodes.meterUnconfirmed) return { kind: 'unconfirmed' };
-    return { kind: 'problem', message: check.error.message };
+    if (isNoSuchNumber(check.error)) return { kind: 'not_found' };
+    return { kind: 'problem', message: check.error instanceof Error ? check.error.message : 'We could not check this number. Try again.' };
   }
   return check.isFetching ? { kind: 'checking' } : { kind: 'none' };
 }

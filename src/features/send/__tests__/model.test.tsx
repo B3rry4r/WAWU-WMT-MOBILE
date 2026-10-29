@@ -118,15 +118,15 @@ describe('what the send screens read and write', () => {
     expect(actionTileSize(0)).toBe(0);
   });
 
-  it('Home’s balance card has Send, then Add, and no Bills (bills are off, R-52), and Send calls the send', async () => {
+  it('Home’s balance card has Send, then Add, then Bills (R-102), and Send calls the send', async () => {
     const onSend = jest.fn();
     await rtl.render(
-      <MoneyCard state={{ kind: 'figure', kobo: 48_525_075 }} masked={false} onToggleMask={() => undefined} onOpenWallet={() => undefined} onRetryWallet={() => undefined} onRetryBalance={() => undefined} retrying={false} onSend={onSend} onAdd={() => undefined} />,
+      <MoneyCard state={{ kind: 'figure', kobo: 48_525_075 }} masked={false} onToggleMask={() => undefined} onOpenWallet={() => undefined} onRetryWallet={() => undefined} onRetryBalance={() => undefined} retrying={false} onSend={onSend} onAdd={() => undefined} onOpenBills={() => undefined} />,
     );
     const names = rtl.screen.getAllByRole('button').map((b) => b.props.accessibilityLabel);
     expect(names.indexOf('Send')).toBeGreaterThanOrEqual(0);
     expect(names.indexOf('Send')).toBeLessThan(names.indexOf('Add'));
-    expect(names).not.toContain('Bills');
+    expect(names.indexOf('Add')).toBeLessThan(names.indexOf('Bills'));
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Send' }));
     expect(onSend).toHaveBeenCalledTimes(1);
   });

@@ -7,21 +7,27 @@ import {
   amountOk,
   amountProblem,
   amountProblemWords,
-  billerChipWords,
   billerInitials,
   groupMeter,
   meterDigits,
   meterLine,
-  meterOwnerWords,
+  ownerWords,
+  NUMBER_CONFIRMED,
+  isNoSuchNumber,
+  limitsOf,
+  takeNaira,
+  groupPhone,
+  phoneDigits,
+  ownPhone,
   METER_CHECK_DELAY_MS,
   METER_CHECK_MIN_DIGITS,
   METER_MAX_DIGITS,
-  planWord,
   presetChosen,
   presetText,
   takeAmount,
   takeAmountChange,
 } from '../model';
+import { ApiError } from '@/api/errors';
 
 const limits = { minimumKobo: 100000, maximumKobo: 50000000 };
 
@@ -170,12 +176,6 @@ describe('the amount box takes naira, with commas and at most two kobo digits (D
 });
 
 describe('the company', () => {
-  it('says its plan and shows it after the name on the S4 chip', () => {
-    expect(planWord('prepaid')).toBe('Prepaid');
-    expect(planWord('postpaid')).toBe('Postpaid');
-    expect(billerChipWords({ name: 'Ikeja Electric', plan: 'prepaid' })).toBe('Ikeja Electric · Prepaid');
-  });
-
   it('has a badge of the first letters of its first two words', () => {
     expect(billerInitials('Ikeja Electric')).toBe('IE');
     expect(billerInitials('Port Harcourt Electric')).toBe('PH');
@@ -185,14 +185,16 @@ describe('the company', () => {
   });
 });
 
-describe('what is said under the meter box', () => {
-  const idle = { isFetching: false, isError: false, error: null, data: undefined };
-  const owner = { name: 'Chidinma Okoro', address: '14 Admiralty Way' };
+describe('what is said under the number box', () => {
+  const idle = { isFetching: false, isError: false, error: null as unknown, data: undefined };
+  const owner = { name: 'Chidinma Okoro' };
+  const refused = new ApiError('server', 502, 'Customer not found');
+  const down = new ApiError('server', 502, 'Could not reach the bill payment provider.');
 
-  it('is the name and address, or the name alone, and never "Meter found" (D2)', () => {
-    expect(meterOwnerWords(owner)).toBe('Chidinma Okoro · 14 Admiralty Way');
-    expect(meterOwnerWords({ name: 'Chidinma Okoro', address: null })).toBe('Chidinma Okoro');
-    expect(meterOwnerWords({ name: 'Chidinma Okoro', address: '' })).toBe('Chidinma Okoro');
+  it('is the name the provider holds, or neutral words when it names no one, and never "Meter found" (D2)', () => {
+    expect(ownerWords('Chidinma Okoro')).toBe('Chidinma Okoro');
+    expect(ownerWords(null)).toBe(NUMBER_CONFIRMED);
+    expect(ownerWords('  ')).toBe(NUMBER_CONFIRMED);
   });
 
   it('checks a meter once ten digits are typed, after 600 ms of quiet (U3, D3)', () => {
@@ -205,29 +207,64 @@ describe('what is said under the meter box', () => {
     expect(meterLine('041234567', '041234567', { ...idle, data: owner })).toEqual({ kind: 'none' });
     expect(meterLine('0412345678', '041234567', { ...idle, data: owner })).toEqual({ kind: 'none' });
     expect(meterLine('0412345678', '0412345678', idle)).toEqual({ kind: 'none' });
-    // Five to nine digits show no answer, no red sentence and no "Checking", whatever an earlier check left.
     for (const n of ['04123', '041234', '0412345', '04123456', '041234567']) {
       expect(meterLine(n, n, { ...idle, isFetching: true })).toEqual({ kind: 'none' });
-      expect(meterLine(n, n, { ...idle, isError: true, error: { code: 'meter_not_found', message: 'x' } })).toEqual({ kind: 'none' });
+      expect(meterLine(n, n, { ...idle, isError: true, error: refused })).toEqual({ kind: 'none' });
     }
   });
 
-  it('is checking while the answer is out, found with it, and S10 on a meter that is not found', () => {
+  it('is checking while the answer is out, found with it, and S10 on a number the provider refused', () => {
     expect(meterLine('0412345678', '0412345678', { ...idle, isFetching: true })).toEqual({ kind: 'checking' });
-    expect(meterLine('0412345678', '0412345678', { ...idle, data: owner })).toEqual({ kind: 'found', words: 'Chidinma Okoro · 14 Admiralty Way' });
-    expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: { code: 'meter_not_found', message: 'x' } })).toEqual({ kind: 'not_found' });
+    expect(meterLine('0412345678', '0412345678', { ...idle, data: owner })).toEqual({ kind: 'found', words: 'Chidinma Okoro' });
+    expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: refused })).toEqual({ kind: 'not_found' });
   });
 
-  it('is "could not confirm" for an answer the Hub could not confirm, with Try again, never found and never "not found" (D2)', () => {
-    expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: { code: 'meter_unconfirmed', message: 'x' } })).toEqual({ kind: 'unconfirmed' });
+  it('takes a phone number after eleven digits, not ten', () => {
+    expect(meterLine('0803123441', '0803123441', { ...idle, isFetching: true }, 11)).toEqual({ kind: 'none' });
+    expect(meterLine('08031234412', '08031234412', { ...idle, isFetching: true }, 11)).toEqual({ kind: 'checking' });
   });
 
-  it('is the Hub’s own words for any other failure, never "not found"', () => {
-    expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: { code: 'provider_unreachable', message: 'Try again in a moment.' } })).toEqual({
-      kind: 'problem',
-      message: 'Try again in a moment.',
-    });
-    expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: { message: 'No connection.' } })).toEqual({ kind: 'problem', message: 'No connection.' });
+  it('is the Hub’s own words for any other failure (it could not reach the provider, no connection), never "not found"', () => {
+    expect(isNoSuchNumber(refused)).toBe(true);
+    expect(isNoSuchNumber(down)).toBe(false);
+    expect(isNoSuchNumber(new ApiError('server', 502, 'Bill payments are not configured on this server.'))).toBe(false);
+    expect(isNoSuchNumber(new ApiError('validation', 400, 'customer must be shorter'))).toBe(false);
+    expect(isNoSuchNumber(new Error('x'))).toBe(false);
+    expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: down })).toEqual({ kind: 'problem', message: 'Could not reach the bill payment provider.' });
+    expect(meterLine('0412345678', '0412345678', { ...idle, isError: true, error: new ApiError('network', 0, 'No connection.') })).toEqual({ kind: 'problem', message: 'No connection.' });
+  });
+});
+
+describe('what a bill may cost', () => {
+  it('is the Hub’s ₦50 floor, raised by the company’s minimum and capped by its maximum when it named them', () => {
+    expect(limitsOf(undefined)).toEqual({ minimumKobo: 5000, maximumKobo: Number.MAX_SAFE_INTEGER });
+    expect(limitsOf({ minimum: 0, maximum: 0 })).toEqual({ minimumKobo: 5000, maximumKobo: Number.MAX_SAFE_INTEGER });
+    expect(limitsOf({ minimum: 1000, maximum: 500000 })).toEqual({ minimumKobo: 100000, maximumKobo: 50000000 });
+    expect(limitsOf({ minimum: 10, maximum: 500000 })).toEqual({ minimumKobo: 5000, maximumKobo: 50000000 });
+  });
+
+  it('takes whole naira only: digits, no point, no leading zero, ten at most', () => {
+    expect(takeNaira('1,500', '')).toBe('1500');
+    expect(takeNaira('1500.50', '1500')).toBe('150050');
+    expect(takeNaira('007', '')).toBe('7');
+    expect(takeNaira('abc', '12')).toBe('');
+    expect(takeNaira('12345678901', '1234567890')).toBe('1234567890');
+  });
+});
+
+describe('the phone number', () => {
+  it('keeps eleven digits and is drawn as "0803 123 4412"', () => {
+    expect(phoneDigits('0803 123 4412 99')).toBe('08031234412');
+    expect(groupPhone('08031234412')).toBe('0803 123 4412');
+    expect(groupPhone('0803')).toBe('0803');
+    expect(groupPhone('08031')).toBe('0803 1');
+  });
+
+  it('is the account’s own number as the box takes it, and nothing for one that is not a Nigerian number', () => {
+    expect(ownPhone('+2348031234412')).toBe('08031234412');
+    expect(ownPhone('08031234412')).toBe('08031234412');
+    expect(ownPhone('+14155550123')).toBeNull();
+    expect(ownPhone(null)).toBeNull();
   });
 });
 
