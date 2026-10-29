@@ -107,6 +107,7 @@ describe('A1: welcome', () => {
    * Round 2 (owner, 27 Oct 2026, a new video and a bottom panel): the cases of round 1 that pinned the full-screen video under the
    * words and the fade that started 180 above the headline (the whole-screen fill, `welcome-bottom`, the dark page colour behind it,
    * the 15 s file's hash and size) are changed to the box above a panel, the panel, the new token and the 8 s file's hash and size.
+   * Round 3 (owner, 29 Oct 2026, WELCOME-TEXT): the owner's own 15 s file replaces the 8 s one; the file case pins its hash and size.
    */
   const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
   const PLAYER = () => jest.mocked(useVideoPlayer).mock.results.at(-1)?.value as { play: jest.Mock; pause: jest.Mock; loop: boolean; muted: boolean };
@@ -150,10 +151,10 @@ describe('A1: welcome', () => {
     }
   });
 
-  it('plays the file the owner approved, byte for byte: 1080 x 1920, 8 s, no sound, never re-encoded (R-98)', () => {
+  it('plays the file the owner approved, byte for byte: 1080 x 1920, 15 s, no sound, never re-encoded (R-98, 29 Oct 2026)', () => {
     const file = readFileSync(join(__dirname, '../../assets/video/welcome-loop.mp4'));
-    expect(file.length).toBe(2248484);
-    expect(createHash('sha256').update(file).digest('hex')).toBe('7635695f56be909a65fa3c5ffa45c9867a96e5d9157cf837edd9c0a7029080ef');
+    expect(file.length).toBe(4160801);
+    expect(createHash('sha256').update(file).digest('hex')).toBe('fc533cb4ab104a9306e755c859c48c8b6817227980d4343e4eecebac79acd624');
   });
 
   it('the video plays while the welcome screen is in front and pauses when another screen is on it, and plays again on Back (R-98)', async () => {
@@ -206,7 +207,7 @@ describe('A1: welcome', () => {
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
     expect(flat('welcome-words')).toMatchObject({ paddingHorizontal: 24, paddingBottom: 28 });
     const title = StyleSheet.flatten(screen.getByText(HEADLINE).props.style);
-    expect(title).toMatchObject({ fontSize: 34, lineHeight: 34 * 1.05, letterSpacing: -0.04 * 34 });
+    expect(title).toMatchObject({ fontSize: 24, lineHeight: 24 * 1.05, letterSpacing: -0.04 * 24 });
     expect(title.color).toBe(darkColors.textOnAccent);
     const line = StyleSheet.flatten(screen.getByText('Create. Sell. Get paid. Grow.').props.style);
     expect(line).toMatchObject({ opacity: 0.8, lineHeight: 15 * 1.45 });
