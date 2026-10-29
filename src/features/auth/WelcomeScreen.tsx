@@ -113,14 +113,14 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
               tone="textOnAccent"
               style={[font(700), { fontSize: WORDS.title, lineHeight: WORDS.title * WORDS.leading, letterSpacing: WORDS.tracking * WORDS.title }]}
             >
-              Get paid for what you know
+              The creators and professionals ecosystem.
             </Text>
             <Text
               variant="body"
               tone="textOnAccent"
               style={{ opacity: WORDS.lineOpacity, lineHeight: WORDS.line * WORDS.lineLeading }}
             >
-              Sell your work and answer paid questions.
+              Create. Sell. Get paid. Grow.
             </Text>
           </View>
         </View>

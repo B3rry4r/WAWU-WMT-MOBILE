@@ -56,7 +56,7 @@ const routes = {
   '(tabs)/me': Me,
 };
 
-const HEADLINE = 'Get paid for what you know';
+const HEADLINE = 'The creators and professionals ecosystem.';
 const TITLE = 'What brings you to Who Made This?';
 let requests: string[] = [];
 /** When set, POST /auth/login answers with tokens; otherwise every request fails as if offline. */
@@ -92,7 +92,7 @@ describe('A1: welcome', () => {
   it('a user who opens the app signed out sees the headline, the line under it and both buttons', async () => {
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    expect(screen.getByText('Sell your work and answer paid questions.')).toBeTruthy();
+    expect(screen.getByText('Create. Sell. Get paid. Grow.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
     expect(screen.getByRole('image', { name: 'Who Made This?' })).toBeTruthy();
@@ -208,7 +208,7 @@ describe('A1: welcome', () => {
     const title = StyleSheet.flatten(screen.getByText(HEADLINE).props.style);
     expect(title).toMatchObject({ fontSize: 34, lineHeight: 34 * 1.05, letterSpacing: -0.04 * 34 });
     expect(title.color).toBe(darkColors.textOnAccent);
-    const line = StyleSheet.flatten(screen.getByText('Sell your work and answer paid questions.').props.style);
+    const line = StyleSheet.flatten(screen.getByText('Create. Sell. Get paid. Grow.').props.style);
     expect(line).toMatchObject({ opacity: 0.8, lineHeight: 15 * 1.45 });
     expect(line.color).toBe(darkColors.textOnAccent);
     expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
