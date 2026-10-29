@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 415.**
+**Launch tasks done: 176 of 416.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 34 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 18 | 0 | 0 | 0 |
+| verifying | 19 | 0 | 0 | 0 |
 | review | 239 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -257,6 +257,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being verified
 
+- [EMAIL-02](../tasks/EMAIL-02.md) The Hub asks WAWU ID to email each money and account notice, once, at its real event (POST /internal/mail/notice) (You)
 - [STORE-QUESTION](../tasks/STORE-QUESTION.md) A paid question bought in the store, earned when answered, a question credit when not (Hub) (You)
 - [STORE-SALE-NOTICE](../tasks/STORE-SALE-NOTICE.md) The creator is told of each store sale, with their 85% in naira (Hub) (You)
 - [STORE-PAYOUT](../tasks/STORE-PAYOUT.md) Pay a creator their 85% of a store sale from WAWU's own wallet, 3 working days on (Hub) (You)
