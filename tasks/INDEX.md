@@ -446,6 +446,7 @@ Builder and verifier are always different sessions.
 53. [AITOOLS-06](AITOOLS-06.md) Receptionist: a person's own text agent, paid by the message (backend)
 54. [POINTS-12](POINTS-12.md) Studio: Receptionist
 55. [BILLS-08](BILLS-08.md) Bills are back: the entries on the balance card and the Wallet tab, and every kind of bill is live
+56. [BILLS-09](BILLS-09.md) A prepaid bill's token and units, where a bill stands, and the checkout gate
 
 ## Developer
 

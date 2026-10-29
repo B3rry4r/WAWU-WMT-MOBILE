@@ -82,7 +82,12 @@
         {
           "pattern": "flutterwave",
           "ruling": "R-1",
-          "why": "Fintava is the money rail in the app (DECISIONS.md R-1). Flutterwave is never named to users."
+          "why": "Fintava is the money rail in the app (DECISIONS.md R-1). Flutterwave is never named to users.",
+          "allow_paths": [
+            "src/features/bills/checkoutPage.ts"
+          ],
+          "allow_ruling": "R-102",
+          "allow_why": "The bills checkout loads Flutterwave's own page: its address is one string in this one file. Flutterwave is still never named in the app's copy."
         },
         {
           "pattern": "community chat tokens?",

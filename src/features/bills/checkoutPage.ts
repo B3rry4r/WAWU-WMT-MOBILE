@@ -25,10 +25,11 @@ const inScript = (value: unknown): string =>
   JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
 /**
- * The origin the checkout script comes from and the page is given, so the script loads over https. The host is written in two pieces:
- * it is the provider's address, not a word the person reads (the product-invariants gate looks for the provider's name in strings, R-1).
+ * The origin the checkout script comes from and the page is given, so the script loads over https. It is the provider's address, not a
+ * word the person reads: the product-invariants gate lets this one file hold it (R-102, `allow_paths` on the R-1 rule), and the provider
+ * is still never named in the app's copy.
  */
-export const CHECKOUT_ORIGIN = 'https://checkout.flutter' + 'wave.com';
+export const CHECKOUT_ORIGIN = 'https://checkout.flutterwave.com';
 
 export function checkoutHtml(config: CheckoutConfig, customer: CheckoutCustomer, labels: CheckoutLabels): string {
   const cfg = inScript({

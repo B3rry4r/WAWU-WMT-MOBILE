@@ -26,7 +26,8 @@ As of 29 Oct 2026, built by a Sonnet builder (T2), mobile `wmt/BILLS-02` on `ori
 | 1 | S2 to S4 on Fintava's `/bills/electricity/*`; S4 had no Continue | the four kinds on `GET /bills/categories`, `/categories/{code}/billers`, `/billers/{code}/items`, `POST /bills/validate`; S4 and its smartcard twin end in Continue |
 | 2 | no S5 | S5 `/bills/review`: what was picked, the name on the number, Total, "Pay ₦X"; Pay records the bill (`POST /bills/init`), opens the payment window, and a completed charge is checked once (`POST /bills/{id}/verify`) |
 | 3 | no payment window | `CheckoutModal`: the provider's inline checkout in a web view, with the Hub's `txRef`, `amount`, `currency`, `publicKey`; X or back closes it with nothing charged; only https pages load; no key, card or secret is in the app |
-| 4 | no S7, S12 | `/bills/receipt/[id]` from the Hub's record (`GET /bills/mine`): "₦X paid", the number, reference, date, total, Share receipt (the phone's share sheet, R-33), Done; "Payment received, on its way" while the provider has not confirmed (read again every 15 s); S12 when failed, Try again |
+| 4 | no S7, S12 | `/bills/receipt/[id]` from the Hub's record (`GET /bills/mine`): "₦X paid", the number, reference, date, total, Share receipt (the phone's share sheet, R-33), Done; "Payment received, on its way" while the provider has not confirmed (read again every 10 s for 3 minutes, BILLS-09); S12 when failed, Try again |
+| 5 | S7 had no token card (the Hub served none) | [BILLS-09](BILLS-09.md), on this branch: the Hub now serves `token` and `units` and `GET /bills/{id}/status`; S7 draws "Your token", Copy token and the units line, and reads the status while `processing` |
 
 ### The Hub's own words, shown as written
 - `503` "Bill payments are briefly unavailable while we top up. Nothing has been charged..." from `init`, before any charge.
@@ -34,7 +35,6 @@ As of 29 Oct 2026, built by a Sonnet builder (T2), mobile `wmt/BILLS-02` on `ori
 - A check that got no answer is never called failed: "We couldn't confirm your payment yet. It went through, so please don't pay again." and Try again sends the same transaction id (the Hub never delivers twice).
 
 ### Gap rows (R-29: no board draws these; built from existing parts)
-- **G-BILLS-TOKEN** (S7). `verify` and `mine` carry no token, units or provider token field, so the board's "Your token" card, Copy token and "45.2 kWh" are not drawn (R-47). If the Hub adds them, S7 adds the card.
 - **G-BILLS-FEE** (S5). The Hub charges the amount and adds no fee, and `validate` returns a `fee` the payer is not charged; no fee row is drawn and "No fee" is not written (BRIEF rule 4). If the Hub starts to charge a fee, S5 shows its parts (rule 3).
 - **G-BILLS-WALLET** (S5, S6, S11). The board's "Pay from wallet" card is "Pay online: Card, bank transfer or USSD, on the next screen". S6 (PIN) and S11 (not enough in wallet) have no counterpart.
 - **G-BILLS-REFUND** (S12). The board's "Reversed/Returned to your wallet" pill is not drawn: nothing returns to a wallet. A "Refunded" pill shows only when the Hub has recorded a refund (`status: refunded`, with its reference).

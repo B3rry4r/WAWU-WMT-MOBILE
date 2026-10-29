@@ -15,7 +15,9 @@ import type { components, operations } from '@/api/schema.generated';
  * - `POST /bills/{id}/verify` with the checkout's transaction id: the Hub checks the payment with the provider and delivers the bill.
  *   Safe to send again: a bill past `pending` answers its current state. A bill the biller could not deliver is `400` with the Hub's
  *   own sentence;
- * - `GET /bills/mine`: what the person has paid for (Recent).
+ * - `GET /bills/mine`: what the person has paid for (Recent);
+ * - `GET /bills/{id}/status` (BILLS-09): where one of the person's bills stands, with its prepaid token and units. A `processing`
+ *   bill is read this way every 10 seconds on S7; the Hub asks the provider at most once in 20 seconds and never buys.
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data` (SHARED-CHANGES.md row 11), so each
  * call reads `data` itself.
@@ -26,6 +28,7 @@ export type BillItem = components['schemas']['BillItem'];
 export type Validated = NonNullable<operations['BillPaymentController_validate']['responses'][200]['content']>['application/json'];
 type InitAnswer = NonNullable<operations['BillPaymentController_init']['responses'][200]['content']>['application/json'];
 export type BillRecord = NonNullable<operations['BillPaymentController_verify']['responses'][200]['content']>['application/json'];
+export type BillStatusRead = NonNullable<operations['BillPaymentController_status']['responses'][200]['content']>['application/json'];
 
 /** The checkout's own parameters, exactly as `init` answers them. */
 export type CheckoutConfig = InitAnswer[Exclude<keyof InitAnswer, 'billPaymentId'>];
@@ -40,6 +43,7 @@ export const billsKeys = {
   billers: (category: string) => ['bills', 'billers', category] as const,
   items: (billerCode: string) => ['bills', 'items', billerCode] as const,
   mine: ['bills', 'mine'] as const,
+  status: (id: string) => ['bills', 'status', id] as const,
 };
 
 type Envelope<T> = { data?: T | null };
@@ -115,6 +119,13 @@ export async function initBill(input: InitBillInput): Promise<InitiatedBill> {
 
 const STATUSES: readonly string[] = ['pending', 'paid', 'processing', 'delivered', 'failed', 'refunded'];
 
+/** A prepaid token is a short run of digits (letters allowed, billers differ); the Hub cleans it, the app checks it again before it draws it. */
+const TOKEN_SHAPE = /^[0-9A-Za-z][0-9A-Za-z -]{3,63}$/;
+/** Units are a plain number of kilowatt hours as text ("45.2"). */
+const UNITS_SHAPE = /^\d{1,9}(\.\d{1,4})?$/;
+const readToken = (value: unknown): string | null => (isText(value) && TOKEN_SHAPE.test(value.trim()) ? value.trim() : null);
+const readUnits = (value: unknown): string | null => (isText(value) && UNITS_SHAPE.test(value.trim()) ? value.trim() : null);
+
 /** One bill as the Hub writes it; a row that cannot be read is dropped, never half drawn. */
 export function readRecord(raw: unknown): BillRecord | null {
   if (!isObject(raw)) return null;
@@ -136,6 +147,8 @@ export function readRecord(raw: unknown): BillRecord | null {
     deliveredAt: isText(r.deliveredAt) ? r.deliveredAt : null,
     refundReference: isText(r.refundReference) ? r.refundReference : null,
     refundedAt: isText(r.refundedAt) ? r.refundedAt : null,
+    token: readToken(r.token),
+    units: readUnits(r.units),
   };
 }
 
@@ -160,6 +173,20 @@ export async function fetchMine(): Promise<BillRecord[]> {
     .filter((r): r is BillRecord => r !== null);
 }
 
+/** Where one bill stands. A status the app does not know, or an answer for another bill, is unreadable and changes nothing. */
+export async function fetchStatus(id: string): Promise<BillStatusRead> {
+  const body = await unwrap(api.GET('/api/hub/bills/{id}/status', { params: { path: { id } } }));
+  const data = dataOf(body);
+  if (!isObject(data) || data.id !== id || !isText(data.status) || !STATUSES.includes(data.status)) throw unreadable('bill');
+  return {
+    id,
+    status: data.status as BillStatusRead['status'],
+    token: readToken(data.token),
+    units: readUnits(data.units),
+    providerReference: isText(data.providerReference) ? data.providerReference : null,
+  };
+}
+
 export const mineQuery = { queryKey: billsKeys.mine, queryFn: fetchMine } as const;
 
 export const recordKey = (id: string) => ['bills', 'record', id] as const;
@@ -167,4 +194,26 @@ export const recordKey = (id: string) => ['bills', 'record', id] as const;
 /** Keeps a record the Hub just gave, so its receipt does not wait for the list. */
 export function cacheRecord(record: BillRecord): void {
   queryClient.setQueryData(recordKey(record.id), record);
+}
+
+/**
+ * Puts what a status read said into the bill's cached record, which is where S7 draws from. A token or units the record already has are
+ * kept when the read carries none. When the bill leaves its in-flight state Recent is read again (the receipt itself needs nothing
+ * more: it draws the status, the token, the units and the reference, and the Hub's failure sentence comes from this session).
+ */
+export function applyStatus(read: BillStatusRead): BillRecord | null {
+  const cached = queryClient.getQueryData<BillRecord>(recordKey(read.id));
+  if (!cached) return null;
+  const next: BillRecord = {
+    ...cached,
+    status: read.status,
+    token: read.token ?? cached.token ?? null,
+    units: read.units ?? cached.units ?? null,
+    providerReference: read.providerReference ?? cached.providerReference,
+  };
+  cacheRecord(next);
+  if (read.status !== cached.status && read.status !== 'processing') {
+    void queryClient.invalidateQueries({ queryKey: billsKeys.mine });
+  }
+  return next;
 }

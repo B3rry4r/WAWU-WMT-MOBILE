@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AccessibilityInfo, Share, StyleSheet, View } from 'react-native';
 
 import { ApiError, isApiError } from '@/api/errors';
@@ -18,12 +18,20 @@ import { Reference } from '@/features/send/parts';
 import { longDateTime } from '@/features/wallet/history/lagosTime';
 import { radius, space } from '@/theme';
 
-import { fetchMine, recordKey, type BillRecord } from './api';
+import { applyStatus, billsKeys, fetchMine, fetchStatus, recordKey, type BillRecord } from './api';
 import { billDraft } from './draft';
 import { kindOfRecord, type BillKind } from './kinds';
 import { groupMeter, groupPhone } from './model';
+import { TokenCard } from './TokenCard';
 
 const RECEIPT = { mark: 88, headGap: 12, headTop: 20, figure: 36, title: 28, titleTracking: -0.035, partMoney: 14.5, poll: 15000 } as const;
+
+/**
+ * BILLS-09: while the Hub holds a bill as `processing`, S7 reads `GET /bills/{id}/status` at once and then every 10 seconds, for up to 3
+ * minutes. The Hub asks the provider at most once in 20 seconds for it and never buys, so the reads are cheap. After 3 minutes the
+ * "on its way" state stays, with Done, and the receipt is read again whenever it is opened.
+ */
+export const STATUS_READ = { everyMs: 10_000, forMs: 180_000 } as const;
 
 /** What the receipt says; the Hub wrote none of these, so they say only what the bill's status says. */
 export const RECEIPT_WORDS = {
@@ -51,7 +59,8 @@ async function readBill(id: string): Promise<BillRecord> {
   return found;
 }
 
-const inFlight = (status: BillRecord['status']) => status === 'processing' || status === 'paid' || status === 'pending';
+/** `paid` and `pending` are read from the list again every 15 seconds; `processing` has its own status read. */
+const listPolled = (status: BillRecord['status']) => status === 'paid' || status === 'pending';
 
 export function receiptNumber(kind: BillKind | null, ref: string): { label: string; value: string } {
   if (kind === 'electricity') return { label: 'Meter', value: groupMeter(ref.replace(/\D/g, '')) };
@@ -72,15 +81,37 @@ export function shareText(bill: BillRecord): string {
  * S7 · the receipt, and S12 when the bill was not delivered, from one record (`GET /bills/mine`, or the answer `verify` just gave).
  * Delivered: "₦10,000 paid", the number, the reference and the date, with Share receipt (the phone's share sheet, R-33) and Done.
  * The provider confirms delivery on its own time, so a paid bill usually reads "Payment received, on its way" first and is read again
- * until it settles. Failed: the Hub's own sentence when this session has it, else the plain fact, the amount, the reference when
+ * until it settles (the status read above). When the Hub gives a prepaid token, the card of S7 shows it with Copy token and the units. Failed: the Hub's own sentence when this session has it, else the plain fact, the amount, the reference when
  * there is one and Try again. "Refunded" shows only when the Hub has recorded a refund; the app never says money is back on its own.
  */
 export function ReceiptScreen({ id, onDone, onTryAgain }: ReceiptScreenProps) {
   const read = useQuery(
-    { queryKey: recordKey(id), queryFn: () => readBill(id), refetchInterval: (query) => (query.state.data && inFlight(query.state.data.status) ? RECEIPT.poll : false) },
+    { queryKey: recordKey(id), queryFn: () => readBill(id), refetchInterval: (query) => (query.state.data && listPolled(query.state.data.status) ? RECEIPT.poll : false) },
     queryClient,
   );
   const bill = read.data;
+  // The status read of a `processing` bill. Its answer goes into the record above (`applyStatus`); an answer that cannot be had is not
+  // drawn: the state stays and the next read tries again.
+  const statusStarted = useRef<number | null>(null);
+  useQuery(
+    {
+      queryKey: billsKeys.status(id),
+      queryFn: async () => {
+        statusStarted.current ??= Date.now();
+        const answer = await fetchStatus(id);
+        applyStatus(answer);
+        return answer;
+      },
+      enabled: bill?.status === 'processing',
+      refetchInterval: () => (statusStarted.current !== null && Date.now() - statusStarted.current >= STATUS_READ.forMs ? false : STATUS_READ.everyMs),
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 0,
+      gcTime: 0,
+      retry: false,
+    },
+    queryClient,
+  );
   const [notice, setNotice] = useState<string | null>(null);
 
   const share = async () => {
@@ -197,6 +228,7 @@ function Receipt({ bill }: { bill: BillRecord }) {
           </Text>
         )}
       </View>
+      {bill.token ? <TokenCard token={bill.token} units={bill.units ?? null} /> : null}
       <GroupedList testID="receipt-card">
         <KeyValueRow testID="receipt-number" label={number.label} value={number.value} />
         {bill.providerReference ? <KeyValueRow testID="receipt-reference" label="Reference" value={<Reference value={bill.providerReference} />} /> : null}
