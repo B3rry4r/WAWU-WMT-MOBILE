@@ -3,6 +3,8 @@ import { ApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import type { components, operations } from '@/api/schema.generated';
 
+import { tidyBillerName } from './names';
+
 /**
  * Bills are bought through Flutterwave's checkout, as the website does (R-102, BILLS-02, BILLS-03, BILLS-08). The Hub's `/bills/*`
  * routes are the website's, live today; the wallet is not involved and the app never talks to Flutterwave except in the checkout
@@ -61,11 +63,13 @@ function dataOf(body: unknown): unknown {
   return isObject(body) && !Array.isArray(body) && 'data' in body ? (body as Envelope<unknown>).data : body;
 }
 
-/** A list of rows: the array itself, or an object that carries it as `items` (the Hub's paged lists). */
+/** A list of rows: the array itself, or an object that carries it as `items` (the Hub's paged lists) or `data` (the provider's). */
 function rowsOf(body: unknown, what: string): unknown[] {
   const data = dataOf(body);
   if (Array.isArray(data)) return data;
   if (isObject(data) && Array.isArray(data.items)) return data.items;
+  // The provider's own page: `{ current_page, data: [...] }`.
+  if (isObject(data) && Array.isArray(data.data)) return data.data;
   throw unreadable(what);
 }
 
@@ -76,18 +80,41 @@ export async function fetchCategories(): Promise<BillCategory[]> {
   return rows.filter((r): r is BillCategory => isObject(r) && isText(r.name)) as BillCategory[];
 }
 
-/** The billers in a category, by the category's CODE (the provider matches on the code). */
+/**
+ * The billers in a category, by the category's CODE (the provider matches on the code). A company's name is kept tidy from here on
+ * (`tidyBillerName`): the provider's "MTN NIGERIA" is "MTN" on a chip, in the review, on the receipt and in Recent.
+ */
 export async function fetchBillers(category: string): Promise<Biller[]> {
   const body = await unwrap(api.GET('/api/hub/bills/categories/{category}/billers', { params: { path: { category } } }));
   const rows = rowsOf(body, 'companies');
-  return rows.filter((r): r is Biller => isObject(r) && isText(r.name) && isText(r.biller_code)) as Biller[];
+  return rows
+    .filter((r): r is Biller => isObject(r) && isText(r.name) && isText(r.biller_code))
+    .map((r) => ({ ...r, name: tidyBillerName(r.name, r.biller_code) }));
 }
 
-/** What a biller sells: bundles, packages, plans. Airtime lists one code under every network. */
+/** A price as the provider sends it: a number, or digits in text ("4400", "6000.00"); anything else, and a negative, is no price (0). */
+function readPrice(value: unknown): number {
+  if (isNumber(value)) return value > 0 ? value : 0;
+  if (isText(value) && /^\s*\d+(\.\d+)?\s*$/.test(value)) return Number(value);
+  return 0;
+}
+
+/**
+ * What a biller sells: bundles, packages, plans. Airtime lists one code under every network. A row is kept when it has a code and a
+ * name (its short name will do); a price that did not arrive as a number is read, or is no price, and never drops the row: a
+ * filter on the price once left a company with nothing to pick.
+ */
 export async function fetchItems(billerCode: string): Promise<BillItem[]> {
   const body = await unwrap(api.GET('/api/hub/bills/billers/{billerCode}/items', { params: { path: { billerCode } } }));
   const rows = rowsOf(body, 'packages');
-  return rows.filter((r): r is BillItem => isObject(r) && isText(r.item_code) && isText(r.name) && isNumber(r.amount)) as BillItem[];
+  const items: BillItem[] = [];
+  for (const r of rows) {
+    if (!isObject(r) || !isText(r.item_code) || r.item_code.trim() === '') continue;
+    const name = isText(r.name) && r.name.trim() !== '' ? r.name : isText(r.short_name) ? r.short_name : '';
+    if (name.trim() === '') continue;
+    items.push({ ...(r as unknown as BillItem), name, amount: readPrice(r.amount) });
+  }
+  return items;
 }
 
 /** The name on a meter, smartcard or phone. A number the provider does not know rejects with the Hub's `502`. */
@@ -136,7 +163,7 @@ export function readRecord(raw: unknown): BillRecord | null {
   return {
     id: r.id,
     category: r.category,
-    billerName: r.billerName,
+    billerName: tidyBillerName(r.billerName),
     customerRef: r.customerRef,
     amount: r.amount,
     fee: isNumber(r.fee) ? r.fee : 0,

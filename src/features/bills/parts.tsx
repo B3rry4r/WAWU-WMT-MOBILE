@@ -14,7 +14,7 @@ import { useKeepCaret } from './useKeepCaret';
 
 /**
  * design/_gen/services.js (S2 to S4), the pieces the three screens share, each at the canvas's own size:
- * - `step`: a chip row 10 by 14 at corner 14 on the sunken colour, its label 12.5 muted in a 64 column, its value 14
+ * - `step`: a chip row 10 by 14 at corner 14 on the sunken colour, its label 12.5 muted in a 64 column (at least; one line always), its value 14
  *   semi-bold, and a 15 X in the muted colour at stroke 2.2;
  * - `cat`: a tile 14 all round at the tile corner on the card colour with a hairline, a 40 accent icon, 12 to the word (15,
  *   semi-bold);
@@ -72,7 +72,7 @@ export function StepChip({ label, value, onClear, clearLabel, testID }: { label:
   const ring = useFocusRing();
   return (
     <View testID={testID} style={[styles.chip, { backgroundColor: colors.surfaceSunken }]}>
-      <Text variant="secondary" tone="textMuted" style={styles.chipLabel}>
+      <Text variant="secondary" tone="textMuted" numberOfLines={1} style={styles.chipLabel}>
         {label}
       </Text>
       <Text variant="body" numberOfLines={1} style={[font(600), styles.chipValue]}>
@@ -237,7 +237,7 @@ export function NetworkChips({ networks, chosen, onPick, testID }: { networks: r
                 : { backgroundColor: colors.surfaceCard, borderColor: colors.borderHairline, borderWidth: StyleSheet.hairlineWidth },
             ]}
           >
-            <Text variant="body" numberOfLines={1} style={[font(700), styles.networkWord]}>
+            <Text variant="body" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[font(700), styles.networkWord]}>
               {n.name}
             </Text>
           </Pressable>
@@ -395,7 +395,9 @@ export function HintLine({ tone, icon, words, strong, action, testID }: { tone: 
 
 const styles = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: m.chipGap, paddingVertical: m.chipPadV, paddingHorizontal: m.chipPadH, borderRadius: m.chipRadius },
-  chipLabel: { width: m.chipLabelWidth, fontSize: m.chipLabel },
+  // The board's 64 column is the least the label takes, never the most: a fixed width wrapped "Paying for" onto two lines as soon as
+  // the text was bigger than the board's, so the label is as wide as its words (one line) and the value gives way.
+  chipLabel: { minWidth: m.chipLabelWidth, flexShrink: 0, fontSize: m.chipLabel },
   chipValue: { flex: 1, fontSize: m.chipValue, lineHeight: canvasNormalLineHeight(m.chipValue) },
   tile: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md, padding: m.tilePad, borderRadius: radius.tile, borderWidth: StyleSheet.hairlineWidth },
   tileWord: { flex: 1, fontSize: m.tileWord, lineHeight: canvasNormalLineHeight(m.tileWord) },
