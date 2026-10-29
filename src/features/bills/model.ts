@@ -28,10 +28,35 @@ export function meterDigits(typed: string): string {
   return typed.replace(/\D/g, '').slice(0, METER_MAX_DIGITS);
 }
 
-/** What a person typed or pasted into the phone box, as digits: "0803 123 4412" is 08031234412, at most eleven. */
+/**
+ * What a person typed or pasted into the phone box, as digits: "0803 123 4412" is 08031234412, at most eleven. A number in the
+ * international form ("+234 803 123 4412", "2348031234412", or "+234 0803 123 4412") is the same number in the local form. A
+ * lone "234" is left as typed until a digit follows it, so a number being typed with its +234 does not jump under the finger.
+ */
 export function phoneDigits(typed: string): string {
-  return typed.replace(/\D/g, '').slice(0, PHONE_CHECK_MIN_DIGITS);
+  const digits = typed.replace(/\D/g, '');
+  if (digits.startsWith('234') && digits.length > 3) {
+    const rest = digits.slice(3);
+    return (rest.startsWith('0') ? rest : `0${rest}`).slice(0, PHONE_CHECK_MIN_DIGITS);
+  }
+  return digits.slice(0, PHONE_CHECK_MIN_DIGITS);
 }
+
+/**
+ * Whether digits are a Nigerian mobile number: eleven digits from 07, 08 or 09. This is the whole check for an airtime or data
+ * number (BILLS-10): the provider's validation is for meters and smartcards, and answers "not found" for a phone number.
+ */
+export const isNigerianMobile = (digits: string): boolean => /^0[789]\d{9}$/.test(digits);
+
+/** What sits under the phone box: nothing while the number is short, a good word for a Nigerian mobile number, a plain fix for eleven digits that are not one. */
+export type PhoneLine = { kind: 'none' } | { kind: 'ok' } | { kind: 'invalid' };
+export function phoneLine(digits: string): PhoneLine {
+  if (digits.length < PHONE_CHECK_MIN_DIGITS) return { kind: 'none' };
+  return isNigerianMobile(digits) ? { kind: 'ok' } : { kind: 'invalid' };
+}
+/** The words under the phone box for a number that is not a Nigerian mobile number. */
+export const PHONE_INVALID_WORDS = 'Enter a Nigerian mobile number: 11 digits starting with 07, 08 or 09.';
+export const PHONE_OK_WORDS = 'Number looks right';
 
 /** A phone number as S8 draws it: "0803 123 4412". */
 export function groupPhone(digits: string): string {

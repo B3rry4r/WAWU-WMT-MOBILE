@@ -24,7 +24,7 @@ As of 29 Oct 2026, built by a Sonnet builder (T2), mobile `wmt/BILLS-02` on `ori
 | # | Before | After |
 |---|---|---|
 | 1 | S2 drew Electricity only | Airtime, Data, Electricity and Cable TV, each only when the provider lists its category |
-| 2 | no S8 | `/bills/airtime`: the networks are the provider's billers, none chosen for the person; phone number with "Mine" (the account's own number); the number is checked by the Hub at eleven digits; amount in whole naira with the board's quick amounts; "Buy ₦2,000 airtime" opens S5 |
+| 2 | no S8 | `/bills/airtime`: the networks are the provider's billers, none chosen for the person; phone number with "Mine" (the account's own number); the number is checked on the phone as a Nigerian mobile number, never by the provider (BILLS-10); amount in whole naira with the board's quick amounts; "Buy ₦2,000 airtime" opens S5 |
 | 3 | no Data | `/bills/data` on S8's layout: the network's bundles (name and price from the provider) in place of the quick amounts, radio rows, Continue opens S5 |
 | 4 | no S9 | `/bills/cable` (the companies, S3's layout), `/bills/items` (S9: the packages, radio rows, Continue), then `/bills/number` (S4's layout for the smartcard; the package's price is the amount), then S5 |
 

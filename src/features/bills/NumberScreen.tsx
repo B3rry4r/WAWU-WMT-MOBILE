@@ -13,6 +13,7 @@ import { billsKeys, validateCustomer } from './api';
 import { billDraft, useBillDraft } from './draft';
 import { BILLS_TITLE } from './BillsScreen';
 import { kindInfo } from './kinds';
+import { sentenceCase } from './names';
 import {
   amountBoxText,
   amountKobo,
@@ -83,6 +84,8 @@ export function NumberScreen({ onBack, onChangeCategory, onChangeBiller, onMissi
 
   if (!draft || !biller || !item) return null;
   const info = kindInfo(draft.kind);
+  // The field is named by the provider's own label for the item ("SmartCard Number", "Meter Number"), in the app's sentence case.
+  const numberLabel = sentenceCase(item.label ?? '') || info.numberLabel;
   const line = meterLine(number, settled, { isFetching: check.isFetching, isError: check.isError, error: check.error, data: check.data });
   const fixed = item.amount > 0;
   const limits = limitsOf(check.data);
@@ -109,7 +112,7 @@ export function NumberScreen({ onBack, onChangeCategory, onChangeBiller, onMissi
         <StepChip testID="bills-step-biller" label="Biller" value={biller.name} clearLabel="Change the company" onClear={onChangeBiller} />
         <BillField
           testID="meter-number"
-          label={info.numberLabel}
+          label={numberLabel}
           value={groupMeter(number)}
           onChangeText={(typed) => setNumber(meterDigits(typed))}
           keyboardType="number-pad"

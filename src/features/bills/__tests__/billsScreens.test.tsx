@@ -391,8 +391,9 @@ describe('S8 · Airtime and Data', () => {
     expect(rtl.screen.getByTestId('phone-bill-buy').props.accessibilityState?.disabled).toBe(true);
     await press('networks-BIL_MTN');
     await type('phone-number', '0803 123 4412');
-    await rtl.screen.findByText('Number confirmed', undefined, LATER);
-    expect(bodyOf('POST /bills/validate')).toEqual([{ itemCode: 'AT099', customer: '08031234412' }]);
+    // BILLS-10: the number is checked on the phone; the provider's validation is for meters and smartcards only.
+    await rtl.screen.findByText('Number looks right');
+    expect(asked('POST /bills/validate')).toBe(0);
     await press('amount-presets-200000');
     expect(screenText()).toContain('Buy ₦2,000 airtime');
     await press('phone-bill-buy');
@@ -430,25 +431,25 @@ describe('S8 · Airtime and Data', () => {
     expect(rtl.screen.queryByTestId('amount')).toBeNull();
     await press('item-D2');
     await type('phone-number', '08031234412');
-    await rtl.screen.findByText('Number confirmed', undefined, LATER);
-    expect(bodyOf('POST /bills/validate')).toEqual([{ itemCode: 'D2', customer: '08031234412' }]);
+    await rtl.screen.findByText('Number looks right');
+    expect(asked('POST /bills/validate')).toBe(0);
     await press('phone-bill-buy');
     expect(billDraft.get()).toMatchObject({ kind: 'data', item: { code: 'D2', name: 'MTN 5GB', amount: 2500 }, amount: 2500 });
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
-  it('a number the provider refuses is not bought for', async () => {
+  it('a number that is not a Nigerian mobile number is not bought for', async () => {
     answers['GET /bills/categories'] = [ok(CATEGORIES)];
     answers['GET /bills/categories/AIRTIME/billers'] = [ok(NETWORKS)];
     answers['GET /bills/billers/BIL_MTN/items'] = [ok([item({ item_code: 'AT099', name: 'MTN VTU' })])];
-    answers['POST /bills/validate'] = [refusal(502, 'Invalid customer')];
     await open('airtime');
     await rtl.screen.findByTestId('networks');
     await press('networks-BIL_MTN');
-    await type('phone-number', '08031234412');
-    await rtl.screen.findByText("We couldn't confirm this number. Check it.", undefined, LATER);
+    await type('phone-number', '01031234412');
+    await rtl.screen.findByText('Enter a Nigerian mobile number: 11 digits starting with 07, 08 or 09.');
     await press('amount-presets-200000');
     expect(rtl.screen.getByTestId('phone-bill-buy').props.accessibilityState?.disabled).toBe(true);
+    expect(asked('POST /bills/validate')).toBe(0);
   });
 });
 
