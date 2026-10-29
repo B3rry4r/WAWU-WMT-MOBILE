@@ -105,6 +105,30 @@ export function needsOpening(progress: OpeningProgress): boolean {
   return progress.review === null || stage === 'rejected' || stage === 'expired';
 }
 
+/** Which of the held photos or files the phone no longer has: the ID's front or back, or the proof of address. */
+export type GoneSide = 'front' | 'back' | 'proof';
+
+/**
+ * Thrown before anything is sent when a photo or file the person added is no longer on the phone (it was deleted
+ * from the app's cache). The upload itself goes by the bytes held in memory, but the person is asked for that photo
+ * again rather than sending a file the phone no longer holds (OPEN-UPLOAD).
+ */
+export class FilesGone extends Error {
+  constructor(readonly sides: GoneSide[]) {
+    super('A photo or file of this opening is no longer on this phone.');
+    this.name = 'FilesGone';
+  }
+}
+
+/** The held photos and files the phone has lost since they were picked (a back no longer asked for, as with a passport, is not looked at). */
+export function goneSides(draft: Pick<Draft, 'idType' | 'idFront' | 'idBack' | 'proof'>): GoneSide[] {
+  const gone: GoneSide[] = [];
+  if (draft.idFront?.stillThere?.() === false) gone.push('front');
+  if (!isOneSided(draft.idType) && draft.idBack?.stillThere?.() === false) gone.push('back');
+  if (draft.proof?.stillThere?.() === false) gone.push('proof');
+  return gone;
+}
+
 export type SubmitInput = {
   progress: OpeningProgress;
   draft: Draft;
@@ -114,9 +138,17 @@ export type SubmitInput = {
 
 /** Sends what is needed, in order. Resolves with the documents as they stand after the last upload (null when nothing was uploaded). */
 export async function sendOpening({ progress, draft, details, onOpened }: SubmitInput): Promise<DocumentsView | null> {
+  // Before the details or any file go up, and again before the files (the details take a moment): a photo the phone has
+  // lost is asked for again, and nothing is half sent.
+  const checkFiles = () => {
+    const gone = goneSides(draft);
+    if (gone.length > 0) throw new FilesGone(gone);
+  };
+  checkFiles();
   if (needsOpening(progress)) {
     if (!details) throw new NeedsDetails();
     onOpened(await openForReview(details));
+    checkFiles();
   }
   let view: DocumentsView | null = null;
   // A passport has one side: a back that is somehow still held is not sent with it.

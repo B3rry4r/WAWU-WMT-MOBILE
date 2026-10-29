@@ -377,7 +377,10 @@ describe('A27 · Proof of address', () => {
 });
 
 describe('Sending a file from the phone', () => {
-  it('a phone sends each file by where its own copy is, with its name and type, never as raw bytes', async () => {
+  // OPEN-UPLOAD (29 Oct 2026): this test used to pin `{ uri, name, type }` parts, which Expo's fetch (the phone's global one)
+  // cannot send: it throws before the request starts and the app showed "No connection" (uploadPhone.test.ts runs the
+  // phone's own fetch). A phone now sends the bytes it holds, with the name and the type, as the browser does.
+  it('a phone sends each file as its bytes with its name and type, never as a { uri } part the phone\'s fetch cannot read', async () => {
     const { Platform } = require('react-native') as typeof import('react-native');
     const { uploadDocument } = require('../api/documents') as typeof import('../api/documents');
     const original = Platform.OS;
@@ -389,8 +392,12 @@ describe('Sending a file from the phone', () => {
       Platform.OS = original;
     }
     expect(appended.map((p) => p.key)).toEqual(['kind', 'file', 'file_back']);
-    expect(appended[1].part).toEqual({ uri: 'file:///cache/id-front.jpg', name: 'id-front.jpg', type: 'image/jpeg' });
-    expect(appended[2].part).toEqual({ uri: 'file:///cache/id-back.png', name: 'id-back.png', type: 'image/png' });
+    expect(appended[1].name).toBe('id-front.jpg');
+    expect(appended[1].part).toBeInstanceOf(Blob);
+    expect((appended[1].part as Blob).type).toBe('image/jpeg');
+    expect(appended[2].name).toBe('id-back.png');
+    expect(appended[2].part).toBeInstanceOf(Blob);
+    expect((appended[2].part as Blob).type).toBe('image/png');
     expect(calls('POST', '/money/identity/documents')).toHaveLength(1);
   });
 });
