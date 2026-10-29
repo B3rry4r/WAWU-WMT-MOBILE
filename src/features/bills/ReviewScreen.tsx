@@ -39,6 +39,8 @@ export const REVIEW_WORDS = {
   notConfirmed: "Your payment wasn't confirmed, so nothing was bought. Check your bank before you try again.",
   confirming: "Your payment went through. We're getting your bill ready, so please don't pay again.",
   couldNotConfirm: "We couldn't confirm your payment yet. It went through, so please don't pay again. Try again.",
+  /** The window was closed with no completed charge. A bank transfer or USSD may still land, so nothing is said about what was charged. */
+  closed: 'You closed the payment window. If you finished paying, your bill still goes through and shows in Recent.',
 } as const;
 
 /** The number as the review draws it: a meter or smartcard in groups of four, a phone as "0803 123 4412". */
@@ -61,7 +63,7 @@ type Phase =
  * number, from `validate`); the total is the amount, because the Hub charges the amount and adds no fee of its own, so no fee row is drawn
  * (BRIEF rule 4: "No fee" is never drawn as a fact). Pay asks the Hub to record the bill (`init`), opens Flutterwave's payment window with the Hub's
  * parameters, and when the window reports a completed charge asks the Hub to check it and deliver the bill (`verify`). Closing the window
- * without paying comes back here with nothing charged.
+ * without a completed charge comes back here and says so, with no claim about what was charged (a bank transfer or USSD may still land).
  *
  * A charge the Hub could not yet confirm is not called failed: the review says it went through, keeps the transaction id and offers Try
  * again, which sends the same check (safe to repeat: the Hub never delivers twice). A bill the biller could not deliver goes to S12 with the
@@ -71,6 +73,9 @@ export function ReviewScreen({ onBack, onMissing, onSettled }: ReviewScreenProps
   const draft = useBillDraft();
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const [error, setError] = useState<string | null>(null);
+  const [closedNote, setClosedNote] = useState(false);
+  /** One `init` at a time: a second tap before the first answer would record a second bill. */
+  const starting = useRef(false);
   const me = useQuery({ queryKey: settingsKeys.me, queryFn: fetchMe }, queryClient);
   const live = useRef(true);
   useEffect(() => {
@@ -125,11 +130,14 @@ export function ReviewScreen({ onBack, onMissing, onSettled }: ReviewScreenProps
 
   const pay = async () => {
     if (!draft.biller || !draft.item || !draft.customer) return;
+    if (starting.current || phase.kind !== 'idle') return;
     if (!email) {
       setError(REVIEW_WORDS.noEmail);
       return;
     }
+    starting.current = true;
     setError(null);
+    setClosedNote(false);
     setPhase({ kind: 'starting' });
     try {
       const bill = await initBill({
@@ -146,6 +154,8 @@ export function ReviewScreen({ onBack, onMissing, onSettled }: ReviewScreenProps
       if (!live.current) return;
       setPhase({ kind: 'idle' });
       setError(e instanceof Error && e.message !== '' ? e.message : REVIEW_WORDS.unavailable);
+    } finally {
+      starting.current = false;
     }
   };
 
@@ -161,6 +171,7 @@ export function ReviewScreen({ onBack, onMissing, onSettled }: ReviewScreenProps
       setError(REVIEW_WORDS.unavailable);
     } else {
       setPhase({ kind: 'idle' });
+      setClosedNote(true);
     }
   };
 
@@ -183,6 +194,11 @@ export function ReviewScreen({ onBack, onMissing, onSettled }: ReviewScreenProps
             {error ? (
               <Text variant="errorLine" testID="review-error" accessibilityRole="alert" style={styles.centre}>
                 {error}
+              </Text>
+            ) : null}
+            {closedNote && !error ? (
+              <Text variant="muted" testID="review-closed" style={styles.centre}>
+                {REVIEW_WORDS.closed}
               </Text>
             ) : null}
             <Button testID="review-pay" label={`Pay ${formatNaira(amount * 100)}`} full loading={busy} disabled={busy} onPress={() => void pay()} />

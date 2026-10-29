@@ -96,5 +96,9 @@ export function parseCheckoutMessage(raw: string): CheckoutEvent | null {
   return { kind: 'notConfirmed', transactionId: id };
 }
 
-/** Only https pages (the checkout, a bank's or a card's own page) may load in the window; anything else it tries to open is refused. */
+/**
+ * Any https page may load in the window, wherever it is hosted: a bank's 3-D Secure page can take over the top frame, and pinning hosts
+ * could break real card payments. Every other scheme and every app intent is refused. The guard is the Hub's own re-check of the
+ * payment (the transaction reference, amount, currency and owner) before it delivers anything (lead ruling, BILLS-09 round 1).
+ */
 export const allowsLoad = (url: string): boolean => url.startsWith('https://') || url === 'about:blank';

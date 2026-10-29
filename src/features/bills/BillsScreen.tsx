@@ -82,7 +82,8 @@ export function BillsScreen({ onBack, onOpen, onOpenBill }: BillsScreenProps) {
     );
   } else {
     const kinds = kindsListed(categories.data);
-    const recent = mine.data?.slice(0, RECENT_ROWS) ?? [];
+    // A bill the Hub holds as `pending` has no confirmed payment (an abandoned checkout): it is never Recent.
+    const recent = mine.data?.filter((bill) => bill.status !== 'pending').slice(0, RECENT_ROWS) ?? [];
     body =
       kinds.length === 0 ? (
         <EmptyState testID="bills-none" icon="Receipt" title="No bills to pay right now" message="Pull down to check again in a moment." />

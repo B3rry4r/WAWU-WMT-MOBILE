@@ -229,7 +229,8 @@ describe('S7 · the status read while a bill is processing', () => {
     await flush();
     await flush();
     await rtl.screen.findByTestId('failed-card');
-    expect(rtl.screen.getByText("Payment didn't go through")).toBeTruthy();
+    // Round 1 (lead ruling): a failed bill is one the Hub took the payment for, so it never says "Payment didn't go through".
+    expect(rtl.screen.getByText("We couldn't deliver your bill")).toBeTruthy();
     expect(rtl.screen.getByTestId('receipt-retry')).toBeTruthy();
   });
 
@@ -271,8 +272,9 @@ describe('S7 · the status read while a bill is processing', () => {
     await rtl.screen.findByTestId('receipt-token-card');
   });
 
-  it('a delivered or failed bill is not read at all', async () => {
-    answers['GET /bills/mine'] = mine(BILL({ status: 'delivered' }));
+  it('a delivered bill that has its token, or a failed one, is not read at all', async () => {
+    // (A delivered electricity bill with no token is read again: S7 says the token is not here yet, fixRound1.test.tsx.)
+    answers['GET /bills/mine'] = mine(BILL({ status: 'delivered', token: TOKEN }));
     await open();
     await flush();
     await flush();

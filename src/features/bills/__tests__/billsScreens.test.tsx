@@ -653,7 +653,8 @@ describe('S7 · the receipt, and S12', () => {
     const onTryAgain = jest.fn();
     await open('bill-1', { onTryAgain });
     await rtl.screen.findByTestId('failed-card');
-    expect(rtl.screen.getByText("Payment didn't go through")).toBeTruthy();
+    // BILLS-09 round 1 (lead ruling, verifier M): a failed bill is one the Hub took the payment for, so the title is no longer "Payment didn't go through".
+    expect(rtl.screen.getByText("We couldn't deliver your bill")).toBeTruthy();
     expect(rtl.screen.getByText('Your payment went through but Ikeja Electric could not deliver it, so nothing was bought.')).toBeTruthy();
     // The app never says money is back until the Hub has recorded a refund.
     expect(rtl.screen.queryByText('Refunded')).toBeNull();

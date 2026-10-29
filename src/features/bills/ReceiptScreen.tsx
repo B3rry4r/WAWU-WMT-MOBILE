@@ -38,9 +38,20 @@ export const RECEIPT_WORDS = {
   paid: 'paid',
   onItsWay: 'Payment received, on its way',
   onItsWayLine: 'Your payment went through and this usually lands within a few minutes. You do not need to pay again.',
-  failedTitle: "Payment didn't go through",
+  /** The payment went through and the biller could not deliver: a refund is owed (the Hub's own sentence is used when this session has it). */
+  failedTitle: "We couldn't deliver your bill",
+  refundedTitle: 'Your payment was refunded',
+  refundOnItsWay: 'Refund on its way',
   refunded: 'Refunded',
-  chase: 'Quote the reference below if you need to chase it.',
+  failedBody: (biller: string) => `Your payment went through but ${biller} could not deliver it, so nothing was bought. You will be refunded in full.`,
+  refundedBody: (biller: string) => `${biller} could not deliver this bill, so your payment was refunded.`,
+  chaseBelow: 'Quote the reference below if you need to chase it.',
+  /** A delivered electricity bill the provider has not yet given a token for (the Hub keeps asking for 24 hours). */
+  tokenMissing: "Your token isn't here yet. We'll keep checking. If it doesn't show soon, contact support with the reference below.",
+  tokenMissingNoReference: "Your token isn't here yet. We'll keep checking. If it doesn't show soon, contact support.",
+  /** A bill the Hub holds as `pending`: no payment has been confirmed for it, and it is never shown as paid. */
+  unpaidTitle: 'Payment not confirmed yet',
+  unpaidLine: 'If you finished paying, your bill still goes through and shows in Recent.',
   notFound: "We couldn't find that bill",
 } as const;
 
@@ -59,8 +70,17 @@ async function readBill(id: string): Promise<BillRecord> {
   return found;
 }
 
-/** `paid` and `pending` are read from the list again every 15 seconds; `processing` has its own status read. */
+/** `paid` and `pending` are read from the list again every 15 seconds, for as long as `processing` is read (3 minutes); `processing` has its own status read. */
 const listPolled = (status: BillRecord['status']) => status === 'paid' || status === 'pending';
+
+/** A delivered electricity bill the provider has not given a token for yet: S7 says so and keeps reading its status. */
+const awaitsToken = (bill: BillRecord) => bill.status === 'delivered' && kindOfRecord(bill.category) === 'electricity' && !bill.token;
+
+/** The reference the Hub quotes in its own sentence for a bill it could not deliver ("Quote wawu-bill-... if you need to chase it."). */
+export function quotedReference(sentence: string): string | null {
+  const found = /\bQuote\s+(\S{4,64})\s+if you need to chase it/.exec(sentence);
+  return found ? found[1] : null;
+}
 
 export function receiptNumber(kind: BillKind | null, ref: string): { label: string; value: string } {
   if (kind === 'electricity') return { label: 'Meter', value: groupMeter(ref.replace(/\D/g, '')) };
@@ -85,13 +105,23 @@ export function shareText(bill: BillRecord): string {
  * there is one and Try again. "Refunded" shows only when the Hub has recorded a refund; the app never says money is back on its own.
  */
 export function ReceiptScreen({ id, onDone, onTryAgain }: ReceiptScreenProps) {
+  const listStarted = useRef<number | null>(null);
   const read = useQuery(
-    { queryKey: recordKey(id), queryFn: () => readBill(id), refetchInterval: (query) => (query.state.data && listPolled(query.state.data.status) ? RECEIPT.poll : false) },
+    {
+      queryKey: recordKey(id),
+      queryFn: () => readBill(id),
+      refetchInterval: (query) => {
+        const held = query.state.data;
+        if (!held || !listPolled(held.status)) return false;
+        listStarted.current ??= Date.now();
+        return Date.now() - listStarted.current >= STATUS_READ.forMs ? false : RECEIPT.poll;
+      },
+    },
     queryClient,
   );
   const bill = read.data;
-  // The status read of a `processing` bill. Its answer goes into the record above (`applyStatus`); an answer that cannot be had is not
-  // drawn: the state stays and the next read tries again.
+  // The status read of a `processing` bill, and of a delivered electricity bill with no token yet. Its answer goes into the record above
+  // (`applyStatus`); an answer that cannot be had is not drawn: the state stays and the next read tries again.
   const statusStarted = useRef<number | null>(null);
   useQuery(
     {
@@ -102,7 +132,7 @@ export function ReceiptScreen({ id, onDone, onTryAgain }: ReceiptScreenProps) {
         applyStatus(answer);
         return answer;
       },
-      enabled: bill?.status === 'processing',
+      enabled: bill !== undefined && (bill.status === 'processing' || awaitsToken(bill)),
       refetchInterval: () => (statusStarted.current !== null && Date.now() - statusStarted.current >= STATUS_READ.forMs ? false : STATUS_READ.everyMs),
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
@@ -127,7 +157,10 @@ export function ReceiptScreen({ id, onDone, onTryAgain }: ReceiptScreenProps) {
 
   const failed = bill?.status === 'failed' || bill?.status === 'refunded';
   let body;
-  if (bill) {
+  if (bill && bill.status === 'pending') {
+    // No payment is confirmed for this bill, so it is never drawn as paid or "on its way".
+    body = <EmptyState testID="receipt-unpaid" icon="Clock" title={RECEIPT_WORDS.unpaidTitle} message={RECEIPT_WORDS.unpaidLine} />;
+  } else if (bill) {
     body = failed ? <Failed bill={bill} /> : <Receipt bill={bill} />;
   } else if (read.isError && isApiError(read.error) && read.error.kind === 'not_found') {
     body = <EmptyState testID="receipt-missing" icon="Receipt" title={RECEIPT_WORDS.notFound} message="It may belong to another account." />;
@@ -227,6 +260,11 @@ function Receipt({ bill }: { bill: BillRecord }) {
             {RECEIPT_WORDS.onItsWayLine}
           </Text>
         )}
+        {awaitsToken(bill) ? (
+          <Text variant="muted" testID="receipt-token-missing" style={styles.centre}>
+            {bill.providerReference ? RECEIPT_WORDS.tokenMissing : RECEIPT_WORDS.tokenMissingNoReference}
+          </Text>
+        ) : null}
       </View>
       {bill.token ? <TokenCard token={bill.token} units={bill.units ?? null} /> : null}
       <GroupedList testID="receipt-card">
@@ -239,29 +277,39 @@ function Receipt({ bill }: { bill: BillRecord }) {
   );
 }
 
+/**
+ * S12, for a bill the Hub holds as `failed` or `refunded`. A bill is only ever `failed` after the payment was taken (the Hub checks the
+ * charge before it calls the biller), so this is never "Payment didn't go through": the payment went through and a refund is owed, which
+ * is what the Hub says in its own sentence (kept for this session) and what the record says after a reload. "Refund on its way" is the
+ * board's refund pill without a wallet; "Refunded" shows only when the Hub has recorded the refund.
+ */
 function Failed({ bill }: { bill: BillRecord }) {
-  const sentence = billDraft.failureFor(bill.id) ?? `${bill.billerName} couldn't deliver this bill. ${RECEIPT_WORDS.chase}`;
+  const refunded = bill.status === 'refunded';
+  const hubSentence = billDraft.failureFor(bill.id);
+  const reference = bill.providerReference ?? (hubSentence ? quotedReference(hubSentence) : null);
+  const sentence = refunded
+    ? RECEIPT_WORDS.refundedBody(bill.billerName)
+    : (hubSentence ?? `${RECEIPT_WORDS.failedBody(bill.billerName)}${reference ? ` ${RECEIPT_WORDS.chaseBelow}` : ''}`);
   const number = receiptNumber(kindOfRecord(bill.category), bill.customerRef);
   return (
     <>
       <View testID="failed-head" style={styles.head}>
         <IconTile icon="X" tone="danger" size={RECEIPT.mark} strokeWidth={2.4} />
         <Text variant="display" accessibilityRole="header" testID="failed-title" style={[styles.centre, styles.title]}>
-          {RECEIPT_WORDS.failedTitle}
+          {refunded ? RECEIPT_WORDS.refundedTitle : RECEIPT_WORDS.failedTitle}
         </Text>
         <Text variant="secondary" tone="textSecondary" testID="failed-reason" style={styles.centre}>
           {sentence}
         </Text>
-        {bill.status === 'refunded' ? (
-          <View>
-            <StatusPill testID="failed-status" label={RECEIPT_WORDS.refunded} tone="positive" icon="RotateCcw" />
-          </View>
-        ) : null}
+        <View>
+          <StatusPill testID="failed-status" label={refunded ? RECEIPT_WORDS.refunded : RECEIPT_WORDS.refundOnItsWay} tone="positive" icon="RotateCcw" />
+        </View>
       </View>
       <GroupedList testID="failed-card">
         <KeyValueRow testID="failed-biller" label="Biller" value={bill.billerName} />
         <KeyValueRow testID="failed-number" label={number.label} value={number.value} />
         <KeyValueRow testID="failed-amount" label="Amount" value={<Money minorUnits={bill.amount * 100} size={RECEIPT.partMoney} weight={600} decimals={false} />} />
+        {reference ? <KeyValueRow testID="failed-reference" label="Reference" value={<Reference value={reference} />} /> : null}
         {bill.refundReference ? <KeyValueRow testID="failed-refund" label="Refund reference" value={<Reference value={bill.refundReference} />} /> : null}
       </GroupedList>
     </>
