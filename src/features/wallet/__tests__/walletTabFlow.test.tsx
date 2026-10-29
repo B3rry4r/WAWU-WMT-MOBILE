@@ -182,7 +182,7 @@ describe('the Wallet tab with no wallet yet, on the real router', () => {
 });
 
 describe('the Wallet tab with a wallet, on the real router', () => {
-  it('a user sees no scan, Dollar, Crypto or Swap entry (their screens are not built, R-47) and no bills (R-52), the settings icon and the Add money, Send, Withdraw, Buy points and To cash actions, and the tab stays on /wallet', async () => {
+  it('a user sees no scan, Dollar, Crypto or Swap entry (their screens are not built, R-47) the settings icon, the Add money, Send, Withdraw, Buy points and To cash actions and the five bill tiles (R-102), and the tab stays on /wallet', async () => {
     opened = true;
     await renderRouter(routes);
     await fireEvent.press(screen.getByRole('tab', { name: 'Wallet' }));
@@ -197,7 +197,7 @@ describe('the Wallet tab with a wallet, on the real router', () => {
     expect(screen.getByRole('button', { name: 'Hide balance' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy account number' })).toBeTruthy();
     for (const name of ['Add money', 'Send', 'Withdraw', 'Buy points', 'To cash']) expect(screen.getByRole('button', { name })).toBeTruthy();
-    for (const name of ['Bills', 'Power', 'More', 'Airtime', 'Data', 'TV']) expect(screen.queryByRole('button', { name })).toBeNull();
+    for (const name of ['Airtime', 'Data', 'Power', 'TV', 'More']) expect(screen.getByRole('button', { name })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Wallet' }).props.accessibilityState.selected).toBe(true);
     expect(pathname()).toBe('/wallet');
     expect(screen.queryByRole('header', { name: 'A26' })).toBeNull();

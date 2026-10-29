@@ -401,16 +401,22 @@ describe('Today empty and in error', () => {
   });
 });
 
-describe('H1 · the balance card has no Bills button (R-52, DV2-RM)', () => {
-  it('draws Send and Add among the card actions, and no Bills (bills are off) and no Scan (it has no screen yet)', async () => {
+describe('H1 · the balance card has Send, Add and Bills (R-102, BILLS-08)', () => {
+  it('draws Send, Add and Bills among the card actions, in the board’s order, and no Scan (it has no screen yet)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
     expect(screen.getAllByRole('button', { name: 'Send' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Add' })).toHaveLength(1);
-    for (const id of ['today-action-send', 'today-action-add']) expect(screen.getByTestId(id)).toBeTruthy();
-    expect(screen.queryByTestId('today-action-bills')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Bills' })).toBeNull();
-    for (const label of ['Bills', 'Scan']) expect(screen.queryByText(label)).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Bills' })).toHaveLength(1);
+    for (const id of ['today-action-send', 'today-action-add', 'today-action-bills']) expect(screen.getByTestId(id)).toBeTruthy();
+    expect(screen.queryByText('Scan')).toBeNull();
+  });
+
+  it('a user can tap Bills on the balance card and reach Pay a bill (S2)', async () => {
+    const screen = await boot();
+    await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());
+    await rtl.fireEvent.press(screen.getByTestId('today-action-bills'));
+    expect(mockPush).toHaveBeenCalledWith('/bills');
   });
 
   it('a user can still tap Send on the balance card and land on Send money', async () => {
@@ -428,7 +434,7 @@ describe('H1 · the balance card has no Bills button (R-52, DV2-RM)', () => {
   });
 });
 
-describe('H1 · no Events tile and no Pay bills tile (R-61, R-52, DV2-RM)', () => {
+describe('H1 · no Events tile and no Pay bills tile (R-61, DV2-RM; the 16 Oct board draws none, and bills open from the balance card and the Wallet tab, R-102)', () => {
   it('a user sees "What would you like to do today?" with no Events tile and no Pay bills tile, and no Shop (R-2)', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-balance')).toBeTruthy());

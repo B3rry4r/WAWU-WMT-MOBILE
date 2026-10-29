@@ -370,6 +370,7 @@ The bottom bar stays as the canvas and SHELL-01 draw it, **Home · Explore · In
 - Every agent runs on Sonnet, and every screen shows its full designed UI with unbuilt parts present but inert (owner, 8 Oct 2026).
 
 **Carried out by:** NUV-02, NUV-03, NUV-04, WEBPAY-01, NUV-10 (opening part), then the app fixes in BRAND-01.
+*Updated by R-102 (owner, 29 Oct 2026): bills are no longer a Fintava feature. They are bought through Flutterwave checkout, as the website does, and the wallet is not involved.*
 
 ### R-46 · The UI is always complete (withdrawn by R-47, 9 Oct 2026)
 *Owner, 8 Oct 2026 ("if the screens are not ready ... it doesn't mean the UI should be incomplete"; "you are still going to show what is exact what is here only that when it is clicked it's not going to open anything because it has not been built").*
@@ -501,6 +502,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 ### R-52 · Bills: WAWU covers a failed bill's fees, and bills are switched off at the Nuvion move
 *Owner, 16 Oct 2026 (G-462, G-648).* When a bill fails, WAWU pays the provider's fee and the refund fee, and the person gets every naira back. Bills are turned off when wallets move to Nuvion (R-42: switched off, not deleted). The app draws no bill entry anywhere: no Bills button on the balance card, no bill tiles on the Wallet, no Bills filter in history.
 **Carried out by:** BILLS-04 round 2 (done, recorded here); DV2-RM for the app entries (its own removals pass). The Hub already answers `409 target_not_payable` on every bill route.
+*Updated by R-102 (owner, 29 Oct 2026): bills are back in the app, so "bills are switched off" and "the app draws no bill entry anywhere" no longer hold. What stays: WAWU covers a failed wallet bill's fees (the wallet bill routes stay off).*
 
 ### R-53 · Send quick amounts are as designed; the provider's part of a fee is labelled "Bank charge"
 *Owner, 16 Oct 2026.* The send screen's quick amounts are ₦5,000, ₦10,000, ₦25,000 and ₦50,000, as W9 draws them. Wherever a fee breakdown names the provider's part, the label is "Bank charge" (never "Fintava's charge" or "Nuvion's charge"); WAWU's part keeps its own label (R-10).
@@ -730,3 +732,11 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 10. The app never shows the website's price and never says that buying elsewhere is cheaper.
 **Carried out by:** PRICE-LIST (Hub), POINTS-BOUGHT (Hub), STORE-LADDER (lead, the store products), STORE-BUY-HUB (Hub), STORE-PAYOUT (Hub), PRICE-PICKER (app), STORE-BUY-APP (app, store-build lineage).
 *Updates R-86 (paid content, tips and paid questions now go through the stores in the app), R-91 (convert at payment stays for tickets, school and legal fees and the website), R-43 (points), R-5 (the split holds at 85/15 of the list price).*
+
+### R-102 · Bills are back in the app, paid through Flutterwave checkout as the website does
+*Owner, 29 Oct 2026 ("bring back bills payment but use our flutter wave integration"; then: the app uses the website's bills the same way, the wallet is not involved).*
+- Bills are back in the app, paid through Flutterwave checkout as the website does, on the Hub's `/bills/*` routes (`categories`, `categories/{category}/billers`, `billers/{billerCode}/items`, `validate`, `init`, `{id}/verify`, `mine`). The app opens the checkout in a web view with the parameters `init` answers, and asks the Hub to check the payment and deliver the bill (`verify`) with the transaction id the checkout returns.
+- The wallet is not involved, and wallets stay on Nuvion. No PIN, no balance, no wallet fee lines. Every amount on a bill screen is the person's own pick or what the Hub says.
+- The wallet bill routes (`/bills/wallet*`, BILLS-04) stay off (`409`) and the app does not call them. Bills are live: there is no switched-off screen (S13 is not built).
+- Updates R-52 (bills off, no bill entry) and R-45 (Fintava for bills).
+**Carried out by:** BILLS-02, BILLS-03 and BILLS-08 (app). There is no Hub task. The real test is the owner paying a small bill on TestFlight after the merge.

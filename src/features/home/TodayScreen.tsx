@@ -61,7 +61,7 @@ export type TodayScreenProps = {
  * is always in TGIF's old place (R-59, DV2-01): it reads `GET /ads?placement=today_slot`; with no campaign, while it loads and
  * when it cannot be read nothing shows, never an empty frame. Today draws no TGIF card and reads no TGIF (R-59, DV2-RM): TGIF is
  * on Explore (EXPLORE-07) and in the morning notification (HOME-16), and the notification opens the reader. The services row
- * (`Services`) draws Monetize for a creator account only. No Bills button on the money card and no Pay bills or Events tile
+ * (`Services`) draws Monetize for a creator account only. The money card has a Bills button (R-102); there is no Pay bills or Events tile
  * (R-52, R-61, DV2-RM).
  */
 export function TodayScreen({ onView, masked, onToggleMask, onSearch, onOpenNotifications, onSeeAllCreators, onOpenCreator }: TodayScreenProps) {
@@ -175,6 +175,7 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
           retrying={wallet.isFetching || balance.isFetching}
           onSend={() => router.push('/send')}
           onAdd={() => router.push('/add-money')}
+          onOpenBills={() => router.push('/bills')}
           others={otherBalances(adder.accounts)}
           onAddCurrency={adder.available ? adder.show : undefined}
         />

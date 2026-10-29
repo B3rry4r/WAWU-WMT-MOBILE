@@ -17,6 +17,7 @@ const base = {
   retrying: false,
   onSend: jest.fn(),
   onAdd: jest.fn(),
+  onOpenBills: jest.fn(),
 };
 const OTHERS = [
   { code: 'USD', minor: 1_240, decimals: 2 },

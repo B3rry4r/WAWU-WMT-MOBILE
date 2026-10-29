@@ -186,9 +186,15 @@ export default function RootLayout() {
           <Stack.Screen name="add-money" />
           <Stack.Screen name="add-money/status" />
           <Stack.Screen name="add-money/way" />
-          <Stack.Screen name="bills/electricity/[code]" />
+          <Stack.Screen name="bills/airtime" />
+          <Stack.Screen name="bills/cable/index" />
+          <Stack.Screen name="bills/data" />
           <Stack.Screen name="bills/electricity/index" />
           <Stack.Screen name="bills/index" />
+          <Stack.Screen name="bills/items" />
+          <Stack.Screen name="bills/number" />
+          <Stack.Screen name="bills/receipt/[id]" />
+          <Stack.Screen name="bills/review" />
           <Stack.Screen name="capital/index" />
           <Stack.Screen name="capital/order" />
           <Stack.Screen name="capital/product" />

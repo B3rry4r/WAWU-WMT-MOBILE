@@ -17,6 +17,8 @@ On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, 
 
 # BILLS-01 · Pay a bill: choose biller, meter and amount
 
+**Update, 29 Oct 2026 (R-102, BILLS-02):** these screens now run on the Hub's website routes (`/bills/categories`, `/billers`, `/items`, `/validate`) and pay through the provider's checkout, not Fintava's `/bills/electricity/*`. S4 is `/bills/number` (its code is no longer in the address), S3 and S4 serve cable too, S10's words are the same, and S13 is not built (there is no switch and no real cause). The rest of this file is the 10 Oct build as it was.
+
 Taken over by the lead's agents on 10 Oct 2026 (owner: the developers' subscriptions have ended; was DEV2).
 
 ## Read first

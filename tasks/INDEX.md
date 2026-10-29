@@ -445,6 +445,7 @@ Builder and verifier are always different sessions.
 52. [OWNER-1019](OWNER-1019.md) Record the owner's four answers of 19 Oct 2026 (Q-42 to Q-45) as rulings R-70 to R-73
 53. [AITOOLS-06](AITOOLS-06.md) Receptionist: a person's own text agent, paid by the message (backend)
 54. [POINTS-12](POINTS-12.md) Studio: Receptionist
+55. [BILLS-08](BILLS-08.md) Bills are back: the entries on the balance card and the Wallet tab, and every kind of bill is live
 
 ## Developer
 

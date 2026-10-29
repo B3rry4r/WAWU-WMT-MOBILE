@@ -7,23 +7,41 @@ order: 340
 priority: after-launch
 repo: wawu-wmt-mobile
 type: mobile-screen
-status: todo
+status: verifying
 depends_on: [MONEY-02, MONEY-03, MONEY-13, MONEY-19, WALLET-15, BILLS-01, BILLS-04, UI-02]
-decisions: [R-6, R-10, R-19, R-31, R-33]
+decisions: [R-102, R-10, R-33, R-29, R-47]
 passes: [V1, V4, V5, V6, V7, V8, V9]
 artboards: [S5, S6, S7, S11, S12]
 ---
-On hold since 6 Oct 2026: the wallet provider is moving from Fintava to Nuvion, which has no bill payments. The owner decides whether bills stay (drop, or a separate bills provider).
-
 # BILLS-02 · Pay a bill: review, PIN, token, failures
 
 ## Current state
 
-As of 16 Oct 2026.
-- **Priority:** after-launch, set by OPS-R0 (records pass, 17 Oct 2026). Not launch work by R-42 and R-52 (owner, 7 and 16 Oct 2026): bills are switched off at the Nuvion move, not deleted, and the app draws no bill entry.
-- **Status:** todo. No branch, no code, nothing merged, no findings.
-- **Next:** a builder starts from the brief below after these are done (or in review): BILLS-04.
-- **History:** none yet. Reports go to tasks/history/BILLS-02.md.
+As of 29 Oct 2026, built by a Sonnet builder (T2), mobile `wmt/BILLS-02` on `origin/main` `6bf62919`, one branch with BILLS-03 and BILLS-08. App only: no backend change, no native change (Android fingerprint unchanged, `17ffb13d`). Status verifying.
+
+**R-102 replaces this brief's payment parts** (owner, 29 Oct 2026, the second of two directions that day). Bills are paid through Flutterwave checkout, as the website does, on the Hub's `/bills/*` routes (live today); the wallet is not involved. So the wallet, PIN, balance, shortfall and R-31 fee lines below are NOT built: no S6, no "Pay from wallet" card, no S11, no fee rows. The wallet bill routes (`/bills/wallet*`, BILLS-04) stay off (409) and nothing here calls them.
+
+| # | Before | After |
+|---|---|---|
+| 1 | S2 to S4 on Fintava's `/bills/electricity/*`; S4 had no Continue | the four kinds on `GET /bills/categories`, `/categories/{code}/billers`, `/billers/{code}/items`, `POST /bills/validate`; S4 and its smartcard twin end in Continue |
+| 2 | no S5 | S5 `/bills/review`: what was picked, the name on the number, Total, "Pay ₦X"; Pay records the bill (`POST /bills/init`), opens the payment window, and a completed charge is checked once (`POST /bills/{id}/verify`) |
+| 3 | no payment window | `CheckoutModal`: the provider's inline checkout in a web view, with the Hub's `txRef`, `amount`, `currency`, `publicKey`; X or back closes it with nothing charged; only https pages load; no key, card or secret is in the app |
+| 4 | no S7, S12 | `/bills/receipt/[id]` from the Hub's record (`GET /bills/mine`): "₦X paid", the number, reference, date, total, Share receipt (the phone's share sheet, R-33), Done; "Payment received, on its way" while the provider has not confirmed (read again every 15 s); S12 when failed, Try again |
+
+### The Hub's own words, shown as written
+- `503` "Bill payments are briefly unavailable while we top up. Nothing has been charged..." from `init`, before any charge.
+- `400` "Your payment went through but X could not deliver it... refunded in full within 3 working days..." from `verify`: S12's line (kept for the session; after a reload S12 says the biller could not deliver it and to quote the reference).
+- A check that got no answer is never called failed: "We couldn't confirm your payment yet. It went through, so please don't pay again." and Try again sends the same transaction id (the Hub never delivers twice).
+
+### Gap rows (R-29: no board draws these; built from existing parts)
+- **G-BILLS-TOKEN** (S7). `verify` and `mine` carry no token, units or provider token field, so the board's "Your token" card, Copy token and "45.2 kWh" are not drawn (R-47). If the Hub adds them, S7 adds the card.
+- **G-BILLS-FEE** (S5). The Hub charges the amount and adds no fee, and `validate` returns a `fee` the payer is not charged; no fee row is drawn and "No fee" is not written (BRIEF rule 4). If the Hub starts to charge a fee, S5 shows its parts (rule 3).
+- **G-BILLS-WALLET** (S5, S6, S11). The board's "Pay from wallet" card is "Pay online: Card, bank transfer or USSD, on the next screen". S6 (PIN) and S11 (not enough in wallet) have no counterpart.
+- **G-BILLS-REFUND** (S12). The board's "Reversed/Returned to your wallet" pill is not drawn: nothing returns to a wallet. A "Refunded" pill shows only when the Hub has recorded a refund (`status: refunded`, with its reference).
+- **G-BILLS-CATEGORY** (S2). The provider lists its own categories (`code`, `name`); the app matches Airtime, Data, Electricity and Cable TV by normalised code, then name (`src/features/bills/kinds.ts`), and `init` sends the category's display name as the website does. A kind the provider does not list has no tile.
+- **G-BILLS-PRESETS** (S4, S8). The provider names no quick amounts; they are as the boards draw them (S4 ₦2,000, ₦5,000, ₦10,000, ₦20,000; S8 ₦500, ₦1,000, ₦2,000, ₦5,000), shown only inside a number's own limits when `validate` named any. The least a bill can cost is the Hub's own ₦50. Whole naira only (the Hub's `init` takes an integer).
+- **G-BILLS-S13** (S13). Not built: there is no switch and no real cause (R-20); a provider that cannot be reached is a failure with Try again.
+- **Gate note.** The product-invariants gate (R-1: "Flutterwave is never named to users") reads the checkout address as copy. The address is written in two pieces in `checkoutPage.ts` so the gate passes untouched; the lead may update that gate for R-102.
 
 ## Read first
 - **Lead note (3 Oct 2026):** the fee figures below were written before R-31. Every amount on S5, S6, S7 and S11 comes from the server's fee quote (`GET /money/fees/quote?kind=bill`, WALLET-15, merged), never from this file: today it returns ₦10,115.75 for a ₦10,000 electricity bill (the ₦100 bill charge plus Fintava's ₦15.75 balance-transfer charge, R-31). The owner is asked on the progress page whether the payer or WAWU pays that charge; build against the quote and the screen follows the ruling.

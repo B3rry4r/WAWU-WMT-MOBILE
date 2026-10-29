@@ -29,6 +29,8 @@ export type MoneyCardProps = {
   onSend: () => void;
   /** Opens Add money (W15, WALLET-05). */
   onAdd: () => void;
+  /** Opens Pay a bill (S2, BILLS-08). */
+  onOpenBills: () => void;
   /** The other currencies the person holds, each the provider's own figure in its own sign (never added into one). Nothing drawn when empty. */
   others?: readonly OtherBalance[];
   /** "Add a currency": drawn only while the Hub offers one to add. */
@@ -41,11 +43,12 @@ export type MoneyCardProps = {
  * a balance is never cut off here either; with no figure, the Wallet tab's words for the state and its one
  * button take the figure's place.
  *
- * Send (WALLET-02) and Add (WALLET-05) are the actions built, and Scan is added by WALLET-20 after launch
- * (R-27, R-41), each in the canvas's order, packed from the left. There is no Bills button: bills are off (R-52, DV2-RM). The chip's
- * currency switch comes with the Dollar and Crypto accounts (WALLET-21), so the chip is a label until then.
+ * Send (WALLET-02), Add (WALLET-05) and Bills (BILLS-08) are the actions built, and Scan is added by WALLET-20 after launch
+ * (R-27, R-41), each in the canvas's order (Send, Add, Bills, Scan), packed from the left. Bills is back (R-102: bills are bought through
+ * the provider's checkout, which R-52 had switched off). The chip's currency switch comes with the Dollar and Crypto accounts
+ * (WALLET-21), so the chip is a label until then.
  */
-export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onSend, onAdd, others = [], onAddCurrency }: MoneyCardProps) {
+export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWallet, onRetryBalance, retrying, onSend, onAdd, onOpenBills, others = [], onAddCurrency }: MoneyCardProps) {
   const { shadows } = useWawu();
   // The card is the Naira card unless the state says which currency is being opened (FIX-P6): the Hub's word, or nothing when it has none.
   const chip = state.kind === 'notice' && state.currency !== undefined ? state.currency : 'NGN';
@@ -112,6 +115,7 @@ export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWa
       <View style={styles.actions}>
         <CardAction testID="today-action-send" icon="ArrowUpRight" label="Send" accent onPress={onSend} />
         <CardAction testID="today-action-add" icon="Plus" label="Add" onPress={onAdd} />
+        <CardAction testID="today-action-bills" icon="Receipt" label="Bills" onPress={onOpenBills} />
       </View>
     </View>
   );
