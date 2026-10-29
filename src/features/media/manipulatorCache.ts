@@ -21,6 +21,15 @@ export function forgetFile(uri: string): void {
   }
 }
 
+/** True while the file at `uri` is on the phone. When the phone cannot say (the read throws), it is taken to be there. */
+export function fileExists(uri: string): boolean {
+  try {
+    return new File(uri).exists;
+  } catch {
+    return true;
+  }
+}
+
 /** The files in the manipulator's folder now, by uri (none when it does not exist or cannot be read). */
 export function manipulatorFiles(): Set<string> {
   try {
