@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-As of 29 Oct 2026, built by a Sonnet builder (T2) after EMAIL-01 (its task file is on mobile `wmt/EMAIL-01`, so `depends_on` is empty until that merges), backend `wmt/EMAIL-02` `78b44dc` on `origin/main` `3650c24`. Built to the lead's EMAIL contract (the route is EMAIL-01's, wawu-id `wmt/EMAIL-01`, not landed when this was built). Status verifying. No route, table, column, migration or contract change; `contract:build` writes nothing new.
+As of 29 Oct 2026, built by a Sonnet builder (T2) after EMAIL-01 (its task file is on mobile `wmt/EMAIL-01`, so `depends_on` is empty until that merges), backend `wmt/EMAIL-02` `04924a5` (round 0 `78b44dc`) on `origin/main` `3650c24`. Built to the lead's EMAIL contract (the route is EMAIL-01's, wawu-id `wmt/EMAIL-01`, not landed when this was built). Round 1 (verifier FIX, lead rulings): `pass_sold` and `question_earned` added, backend head below. Status verifying. No route, table, column, migration or contract change; `contract:build` writes nothing new.
 
 | # | Before | After |
 |---|---|---|
@@ -43,19 +43,21 @@ As of 29 Oct 2026, built by a Sonnet builder (T2) after EMAIL-01 (its task file 
 | purchase_receipt | wallet piece bought | `unlock-wallet.service.ts:349` | title, paid, payment reference |
 | ticket_confirmed | wallet ticket order issued | `event-ticketing/wallet/event-wallet-order.service.ts:900` | title, start, venue or place, paid, payment reference |
 | event_cancelled | host's cancel won | `event-ticketing/event-ticketing.service.ts:1024` | title; what is coming back (sum of paid orders) or none for a free ticket |
+| pass_sold | wallet pass granted (the call that wrote the pass row); store pass sold | `community/pass/community-pass.service.ts:376`, `store/notice/store-sale-notice.service.ts` (kind `pass`) | room name, buyer, host's share (payment row; store 85% of list), `paidWhen` as for a sale |
+| question_earned | wallet question's hold released as the creator's earning (the conditional write's winner); store question answered and its earning recorded | `money/holds/wallet-hold.service.ts` (`releaseAsEarning`, `emailQuestionEarned`), `store-sale-notice.service.ts` (kind `question`) | asker, creator's share, `paidWhen` |
 | bill_paid | web bill moves to `delivered` | `bill-payment/bill-payment.service.ts:478` | biller, customer ref, amount, token and units when that answer had them |
 
 ### Defaults (lead), owner may override
 
-(a) `money_in` is emailed for a bank transfer in and money from another person only; earnings, refunds, swaps and points have their own emails or are the person's own money. (b) `bank_send_failed.returnedMinor` is the whole quote (amount and fees); the Hub cannot know the moment the provider's reversal lands. (c) Names are "Ada O." (first name, last initial), null when WAWU ID does not answer. (d) The store question's earning on answer is not emailed again (the creator got `paid_message_received`). (e) `ticketRef` and `reference` are the payment's reference.
+(a) `money_in` is emailed for a bank transfer in and money from another person only; earnings, refunds, swaps and points have their own emails or are the person's own money. (b) `bank_send_failed.returnedMinor` is the whole quote (amount and fees); the Hub cannot know the moment the provider's reversal lands. (c) Names are "Ada O." (first name, last initial), null when WAWU ID does not answer. (d) A question is emailed twice, on purpose: `paid_message_received` when it arrives, `question_earned` when it is answered and the earning arises (lead, round 1). (e) `ticketRef` and `reference` are the payment's reference.
 
 ### Checks (EXIT lines in the hand-back)
 
-New specs: `notice-mailer.spec.ts` (16) and `notice-events.spec.ts` (23): 39 of 39 pass; three mutants (the winner guard of a bank send, of a called-off refund, of a delivered bill) each fail a test. Existing affected set 637 tests, 83 fail, the same 9 suites and 83 on `origin/main` (needs a running WAWU ID); `test:protected` 5 failed of 253 on both. No Fintava double was run.
+New specs: `notice-mailer.spec.ts` (16) and `notice-events.spec.ts` (30): 46 of 46 pass; round 1 mutants (the winner guards of the hold release and the pass grant) each fail a test, as do the three of round 0 (the winner guard of a bank send, of a called-off refund, of a delivered bill) each fail a test. Existing affected set 719 tests, 113 fail, the same 11 suites and 113 on `origin/main` (needs a running WAWU ID); `test:protected` 5 failed of 253 on both. No Fintava double was run.
 
 ### Open (all low, for `tasks/SWEEP-MONEY.md`)
 
-- Dollar money-in: the Hub has no dollar credit notice (the money-in notice reads the naira ledger), so none is emailed. A community pass sale and an answered store question have no kind in the contract.
+- Dollar money-in: the Hub has no dollar credit notice (the money-in notice reads the naira ledger), so none is emailed.
 - Flutterwave event refunds (the web's cancel loop) and the web's bill delivered by the manual reconcile route send bill_paid only through `settleFromProviderStatus`; the web event refund is not emailed.
 - The tip, wallet paid-message and Flutterwave question-refund hooks are tested through the shared mailer and facts only, not by a spec of their own.
 - `bank_send_*` covers Nigerian bank sends; abroad sends have no kind.
