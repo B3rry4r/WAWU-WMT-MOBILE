@@ -44,13 +44,26 @@ export const tierLine = (tier: Pick<PlanTier, 'days' | 'products'>): string => `
 const firstWord = (name: string): string => name.trim().split(/\s+/)[0] ?? name;
 
 /**
- * VF5's two lines under a tier's name: what it gives (its length, products, points and event pass), then, when it carries them, the
- * numbered badge and the bonus on points packs. A part the Hub does not give is not written.
+ * What a tier gives, one entry per thing, in the order VF5 has always drawn them (R-108): its length, its products, its points, its event
+ * pass (the Hub's own name for it), then, when it carries them, the numbered badge and the bonus on points packs. A part the Hub does not
+ * give is not listed. The card draws one line, with a check, for each.
  */
-export function tierFacts(tier: PlanTier): { gives: string; extras: string | null } {
-  const gives = [lengthOf(tier), productsOf(tier.products), tier.bonusPoints > 0 ? formatPoints(tier.bonusPoints) : null, tier.eventPass?.name ?? null].filter(Boolean).join(' · ');
-  const extras = [tier.badge?.numbered ? `Numbered ${firstWord(tier.name)} badge` : null, tier.packBonusPercent > 0 ? `${tier.packBonusPercent}% bonus on points packs` : null].filter(Boolean).join(', ');
-  return { gives, extras: extras || null };
+export function tierItems(tier: PlanTier): string[] {
+  return [
+    lengthOf(tier),
+    productsOf(tier.products),
+    tier.bonusPoints > 0 ? formatPoints(tier.bonusPoints) : null,
+    tier.eventPass?.name ?? null,
+    tier.badge?.numbered ? `Numbered ${firstWord(tier.name)} badge` : null,
+    tier.packBonusPercent > 0 ? `${tier.packBonusPercent}% bonus on points packs` : null,
+  ].filter((item): item is string => Boolean(item));
+}
+
+/** The small line under a tier's price (R-108): "a year" for a tier of 365 days, "a month" for 30; any other length is said as it is. */
+export function periodOf(tier: Pick<PlanTier, 'days'>): string {
+  if (tier.days >= 360 && tier.days <= 370) return 'a year';
+  if (tier.days >= 28 && tier.days <= 31) return 'a month';
+  return `for ${lengthOf(tier)}`;
 }
 
 /** The tier the sheet starts on: the one the Hub marks `preselected`, else the first. Never a name of the design's. */

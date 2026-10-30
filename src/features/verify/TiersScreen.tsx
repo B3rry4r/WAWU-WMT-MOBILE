@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
+import { Icon } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { ErrorState } from '@/components/StateViews';
@@ -19,11 +20,13 @@ import { useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { plansQuery, type PlanTier } from './purchaseApi';
-import { dayOf, tierFacts, TIER_WORDS } from './purchaseModel';
+import { dayOf, periodOf, tierItems, TIER_WORDS } from './purchaseModel';
 import { Radio } from './planParts';
 
 const HEAD = { title: 22, tracking: -0.03 } as const;
-const CARD = { padV: 14, padH: 16, between: 8 } as const;
+const CARD = { padV: 16, padH: 16, between: 14, itemGap: 10, check: 18 } as const;
+/** The share of the screen's height the tier list may take before it scrolls above the button. */
+const LIST_SHARE = 0.6;
 
 export type TiersScreenProps = {
   /** False closes the sheet (its Modal) while this screen stays mounted, so the choice made on it is still there when it opens again. */
@@ -52,6 +55,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
   const mine = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
   const store = useStoreCatalog(['tier']);
   const [chosen, setChosen] = useState<string | null>(null);
+  const { height } = useWindowDimensions();
 
   const held = running(mine.data) ? mine.data : null;
   const all = plans.data?.tiers ?? [];
@@ -86,7 +90,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
       <View testID="tiers-loading" style={styles.list}>
         <Skeleton height={34} width="70%" radius={radius.tile} />
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} height={92} radius={radius.card} />
+          <Skeleton key={i} height={200} radius={radius.card} />
         ))}
       </View>
     );
@@ -103,7 +107,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
     const heldName = held?.tier.name ?? 'your tier';
     const until = held ? dayOf(held.activeUntil) : null;
     body = (
-      <>
+      <ScrollView testID="tiers-scroll" style={[styles.scroll, { maxHeight: Math.round(height * LIST_SHARE) }]} contentContainerStyle={styles.scrolled} showsVerticalScrollIndicator={false}>
         <View>
           <Text variant="display" accessibilityRole="header" testID="tiers-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
             {held ? TIER_WORDS.upgradeTitle : TIER_WORDS.title}
@@ -118,7 +122,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
             <TierCard key={o.tier.id} tier={o.tier} price={o.item.price} on={selected?.tier.id === o.tier.id} mark={o.tier.preselected ? 'best' : undefined} onPress={() => setChosen(o.tier.id)} />
           ))}
         </View>
-      </>
+      </ScrollView>
     );
   }
 
@@ -142,34 +146,50 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
 
 type Mark = 'best' | 'mine';
 
+/** A button drawn inside a card, at its foot: the tier offer's "Subscribe to X" (R-108). */
+export type TierCardAction = { label: string; testID: string; onPress: () => void };
+
 /**
- * One tier: its name and mark, the STORE's price for it (R-86; null draws none, as on the tier a person holds), what it gives, and the choice mark. The tier a
- * person holds has no choice mark. Exported for the tier offer (R-94), which draws the same card with the store's price and its own Subscribe under it.
+ * One tier, drawn as a subscription card (R-108). Top row: its name and mark, and the STORE's price for it (R-86; null draws none, as on the
+ * tier a person holds) with the period in small text under it. Below, one line for each thing the tier gives (`tierItems`), each with a check.
+ * `on` is the choice made on the tiers sheet (the accent edge and tint, with a radio when `onPress` makes the card a choice); `featured` is the
+ * accent edge alone, for the tier the Hub marks `preselected` on the offer; `action` is the button at the foot of the card, filled when the card is
+ * featured and outlined on the others. One component for the tiers sheet and the tier offer (R-94).
  */
-export function TierCard({ tier, fallbackName, mark, on, price, onPress }: { tier: PlanTier | null; fallbackName?: string; mark?: Mark; on?: boolean; price: string | null; onPress?: () => void }) {
+export function TierCard({
+  tier,
+  fallbackName,
+  mark,
+  on,
+  featured,
+  price,
+  onPress,
+  action,
+}: {
+  tier: PlanTier | null;
+  fallbackName?: string;
+  mark?: Mark;
+  on?: boolean;
+  featured?: boolean;
+  price: string | null;
+  onPress?: () => void;
+  action?: TierCardAction;
+}) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const name = tier?.name ?? fallbackName ?? '';
-  const facts = tier ? tierFacts(tier) : null;
+  const id = tier?.id ?? 'mine';
+  const items = tier ? tierItems(tier) : [];
+  const period = tier && price !== null ? periodOf(tier) : null;
   const chooses = onPress !== undefined;
-  return (
-    <Pressable
-      testID={`tier-${tier?.id ?? 'mine'}`}
-      accessibilityRole={chooses ? 'radio' : 'text'}
-      accessibilityState={chooses ? { checked: Boolean(on) } : undefined}
-      accessibilityLabel={[name, mark === 'mine' ? 'your tier' : null, mark === 'best' ? TIER_WORDS.best : null, price, facts?.gives, facts?.extras].filter(Boolean).join(', ')}
-      disabled={!chooses}
-      onPress={onPress}
-      {...ring.handlers}
-      style={[
-        styles.card,
-        {
-          backgroundColor: on ? colors.accentTint : colors.surfaceCard,
-          boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: on ? 2 : 1, color: on ? colors.accent : colors.borderHairline, inset: true }],
-        },
-        ring.style,
-      ]}
-    >
+  const lit = Boolean(on);
+  const edged = lit || Boolean(featured);
+  const look = {
+    backgroundColor: lit ? colors.accentTint : colors.surfaceCard,
+    boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: edged ? 2 : 1, color: edged ? colors.accent : colors.borderHairline, inset: true }],
+  };
+  const inside = (
+    <>
       <View style={styles.cardHead}>
         <View style={styles.nameRow}>
           <Text variant="body" style={[font(700), styles.name]}>
@@ -180,26 +200,64 @@ export function TierCard({ tier, fallbackName, mark, on, price, onPress }: { tie
         </View>
         <View style={styles.priceRow}>
           {price !== null ? (
-            <Text variant="body" testID={`tier-price-${tier?.id ?? 'mine'}`} style={[font(700), styles.price]}>
-              {price}
-            </Text>
+            <View style={styles.priceCol}>
+              <Text variant="body" testID={`tier-price-${id}`} style={[font(700), styles.price]}>
+                {price}
+              </Text>
+              {period ? (
+                <Text variant="meta" tone="textMuted" testID={`tier-period-${id}`}>
+                  {period}
+                </Text>
+              ) : null}
+            </View>
           ) : null}
-          {chooses ? <Radio on={Boolean(on)} /> : null}
+          {chooses ? <Radio on={lit} /> : null}
         </View>
       </View>
-      {facts ? (
+      {items.length > 0 ? (
         <>
-          <Text variant="secondary" tone="textSecondary">
-            {facts.gives}
-          </Text>
-          {facts.extras ? (
-            <Text variant="secondary" tone="textSecondary">
-              {facts.extras}
-            </Text>
-          ) : null}
+          <View style={[styles.rule, { backgroundColor: colors.borderHairline }]} />
+          <View testID={`tier-items-${id}`} style={styles.items}>
+            {items.map((item, i) => (
+              <View key={item} style={styles.item}>
+                <Icon name="Check" size={CARD.check} color={colors.accentFg} strokeWidth={3} />
+                <Text variant="body" testID={`tier-item-${id}-${i}`} style={styles.itemText}>
+                  {item}
+                </Text>
+              </View>
+            ))}
+          </View>
         </>
       ) : null}
-    </Pressable>
+      {action ? <Button testID={action.testID} label={action.label} variant={featured ? 'primary' : 'outline'} full onPress={action.onPress} /> : null}
+    </>
+  );
+  if (chooses) {
+    return (
+      <Pressable
+        testID={`tier-${id}`}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: lit }}
+        accessibilityLabel={[name, mark === 'best' ? TIER_WORDS.best : null, price, period, ...items].filter(Boolean).join(', ')}
+        onPress={onPress}
+        {...ring.handlers}
+        style={[styles.card, look, ring.style]}
+      >
+        {inside}
+      </Pressable>
+    );
+  }
+  // With a button inside, the card is not one grouped element: the lines and the button are each found on their own by a screen reader.
+  return (
+    <View
+      testID={`tier-${id}`}
+      accessible={!action}
+      accessibilityRole={action ? undefined : 'text'}
+      accessibilityLabel={action ? undefined : [name, mark === 'mine' ? 'your tier' : null, mark === 'best' ? TIER_WORDS.best : null, price, period, ...items].filter(Boolean).join(', ')}
+      style={[styles.card, look]}
+    >
+      {inside}
+    </View>
   );
 }
 
@@ -207,10 +265,17 @@ const styles = StyleSheet.create({
   page: { flex: 1 },
   blurb: { marginTop: space.xs },
   list: { gap: space.md },
+  scroll: { flexGrow: 0 },
+  scrolled: { gap: space.md },
   card: { gap: CARD.between, paddingVertical: CARD.padV, paddingHorizontal: CARD.padH, borderRadius: radius.card },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1, flexWrap: 'wrap' },
   name: { fontSize: 17 },
-  price: { fontSize: 16 },
+  price: { fontSize: 17 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  priceCol: { alignItems: 'flex-end' },
+  rule: { height: StyleSheet.hairlineWidth },
+  items: { gap: CARD.itemGap },
+  item: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  itemText: { flex: 1 },
 });

@@ -15,10 +15,11 @@ import { PointsFrame } from '@/features/points/PointsFrame';
 import { heldSubscription } from '@/features/store/buy';
 import { RestoreRow, SaidBanner, StoreUnready } from '@/features/store/StoreParts';
 import { buyLabel } from '@/features/store/model';
-import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
+import { useStoreBuyer, useStoreCatalog, type StoreBuyer } from '@/features/store/useStore';
+import type { Said } from '@/features/store/words';
 import { font, radius, space } from '@/theme';
 
-import { plansQuery } from './purchaseApi';
+import { plansQuery, type PlanTier } from './purchaseApi';
 import { tierLine, TIER_WORDS } from './purchaseModel';
 
 const BODY_GAP = 12;
@@ -88,26 +89,7 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
   } else if (!item) {
     body = <ErrorState testID="checkout-none" icon="TriangleAlert" title="That tier is not on sale" message="Your store does not have it right now. Choose a tier again." onRetry={onBack} />;
   } else {
-    body = (
-      <>
-        <Card padded testID="checkout-summary">
-          <View style={styles.summary}>
-            <TierBadge name={tier.name} />
-            <Text variant="secondary" tone="textMuted" testID="checkout-line" style={styles.summaryLine}>
-              {tierLine(tier)}
-            </Text>
-            <Text variant="body" testID="checkout-price" style={[font(700), styles.price]}>
-              {item.price}
-            </Text>
-          </View>
-        </Card>
-        <Text variant="meta" tone="textMuted" testID="checkout-renews" style={styles.centre}>
-          {kind === 'upgrade' ? 'The store works out what moving up costs, and renews this tier until you cancel there.' : 'The store renews this tier until you cancel there.'}
-        </Text>
-        <SaidBanner said={buyer.said} testID="checkout-said" />
-        <RestoreRow buyer={buyer} testID="checkout-restore" />
-      </>
-    );
+    body = <CheckoutReady tier={tier} price={item.price} kind={kind} said={buyer.said} buyer={buyer} />;
   }
 
   const verb = kind === 'renew' ? 'Renew' : kind === 'upgrade' ? 'Upgrade' : 'Buy';
@@ -119,6 +101,42 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
     <PointsFrame title={TIER_WORDS.checkout} onBack={onBack} gap={BODY_GAP} foot={foot} testID="checkout-screen">
       {body}
     </PointsFrame>
+  );
+}
+
+/** What the checkout shows once the tier and the store's own price are known (VF6). Exported so the development preview draws the same body. */
+export function CheckoutReady({
+  tier,
+  price,
+  kind,
+  said,
+  buyer,
+}: {
+  tier: PlanTier;
+  price: string;
+  kind: CheckoutScreenProps['kind'];
+  said: Said | null;
+  buyer: Pick<StoreBuyer, 'restore' | 'restoring' | 'restoreLine' | 'busy'>;
+}) {
+  return (
+    <>
+      <Card padded testID="checkout-summary">
+        <View style={styles.summary}>
+          <TierBadge name={tier.name} />
+          <Text variant="secondary" tone="textMuted" testID="checkout-line" style={styles.summaryLine}>
+            {tierLine(tier)}
+          </Text>
+          <Text variant="body" testID="checkout-price" style={[font(700), styles.price]}>
+            {price}
+          </Text>
+        </View>
+      </Card>
+      <Text variant="meta" tone="textMuted" testID="checkout-renews" style={styles.centre}>
+        {kind === 'upgrade' ? 'The store works out what moving up costs, and renews this tier until you cancel there.' : 'The store renews this tier until you cancel there.'}
+      </Text>
+      <SaidBanner said={said} testID="checkout-said" />
+      <RestoreRow buyer={buyer} testID="checkout-restore" />
+    </>
   );
 }
 

@@ -773,3 +773,13 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 - When the Hub offers nothing to add and the person holds only Naira, there is no strip (nothing that does nothing, R-47).
 - Amends R-87 and R-93 where they say the strip lists every currency the Hub serves.
 **Carried out by:** WALLET-BLANK (app).
+
+### R-108 · A tier card reads like a subscription card: price and "a year" on top, one checked line for each thing it gives, Subscribe inside it
+*Owner, 30 Oct 2026, on his Android phone's "Choose your tier" ("Why not a proper vertical list in the cards, have you ever seen a subscription card look like these?").* Overrides VF5's one dot-separated line and the Subscribe pill that sat outside the card.
+- Top row: the tier's name (with the "Best" badge on the tier the Hub marks `preselected`, Founding Maker) and the store's price, unchanged and as the store formats it (R-86), with "a year" under it in small text (the tier's `days` are 365; any other length is said as it is).
+- Below it, a vertical list: one line for each thing the tier gives, each with a check icon: its length, products, points, event pass (the Hub's own name for it), the numbered badge and the bonus on points packs, each only when the Hub gives it. The same items the card showed before, from the same data; nothing is added.
+- "Subscribe to X" sits inside the card at its foot: filled accent on the featured (preselected) card, which also has the accent border, outlined on the others. 44 pt targets, comfortable spacing.
+- One card for the tier offer (`/tier-offer`) and the Settings tiers sheet (`TierCard` in `src/features/verify/TiersScreen.tsx`); on the sheet it is the choice (radio, accent edge and tint) with Continue under the list, which scrolls above it on a short phone. Never forked.
+- Item 2 (lead, 30 Oct 2026): a payment the store refused is told as refused, not as "no store on this phone". See `tasks/TIER-CARDS.md`.
+- Updates VF5 and R-94.
+**Carried out by:** TIER-CARDS (app).

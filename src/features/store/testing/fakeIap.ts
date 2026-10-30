@@ -22,7 +22,7 @@ export type HeldPurchase = {
 };
 
 /** What the store does with the next `requestPurchase`. */
-export type NextBuy = { kind: 'buy'; purchase?: Partial<HeldPurchase> } | { kind: 'pending' } | { kind: 'error'; code: string } | { kind: 'reject'; code: string } | { kind: 'silent' };
+export type NextBuy = { kind: 'buy'; purchase?: Partial<HeldPurchase> } | { kind: 'pending' } | { kind: 'error'; code: string; sub?: string } | { kind: 'reject'; code: string } | { kind: 'silent' };
 
 export const fakeStore = {
   connectOk: true,
@@ -37,7 +37,7 @@ export const fakeStore = {
   restores: 0,
   fetches: [] as { skus: string[]; type: string }[],
   updated: [] as Listener<HeldPurchase>[],
-  failed: [] as Listener<{ code: string; productId?: string | null; message: string }>[],
+  failed: [] as Listener<{ code: string; productId?: string | null; message: string; subResponseCodeAndroid?: string }>[],
   serial: 0,
   reset() {
     this.connectOk = true;
@@ -79,7 +79,7 @@ export const moduleMock = {
     fakeStore.updated.push(listener);
     return { remove: () => void (fakeStore.updated = fakeStore.updated.filter((l) => l !== listener)) };
   }),
-  purchaseErrorListener: jest.fn((listener: Listener<{ code: string; productId?: string | null; message: string }>) => {
+  purchaseErrorListener: jest.fn((listener: Listener<{ code: string; productId?: string | null; message: string; subResponseCodeAndroid?: string }>) => {
     fakeStore.failed.push(listener);
     return { remove: () => void (fakeStore.failed = fakeStore.failed.filter((l) => l !== listener)) };
   }),
@@ -91,7 +91,7 @@ export const moduleMock = {
     await Promise.resolve();
     if (next.kind === 'silent') return null;
     if (next.kind === 'error') {
-      for (const l of [...fakeStore.failed]) l({ code: next.code, productId, message: next.code });
+      for (const l of [...fakeStore.failed]) l({ code: next.code, productId, message: next.code, ...(next.sub ? { subResponseCodeAndroid: next.sub } : {}) });
       return null;
     }
     fakeStore.serial += 1;

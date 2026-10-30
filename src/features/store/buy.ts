@@ -31,6 +31,8 @@ export type PurchaseResult =
   /** The store could not be reached before anything was charged. */
   | { kind: 'network' }
   | { kind: 'store_unavailable' }
+  /** The store is there and refused the payment (Google Play declined it, for funds or another reason). Nothing was charged. */
+  | { kind: 'declined' }
   | { kind: 'item_unavailable' }
   | { kind: 'not_open'; why: 'not_configured' | 'disabled' }
   /** The store took the payment and the Hub could not confirm it yet. The transaction is left open and goes again (Restore, the next open). */
@@ -149,6 +151,8 @@ function fromCause(cause: StoreCause): PurchaseResult {
       return { kind: 'store_unavailable' };
     case 'item_unavailable':
       return { kind: 'item_unavailable' };
+    case 'declined':
+      return { kind: 'declined' };
     default:
       return { kind: 'failed' };
   }
@@ -273,7 +277,7 @@ async function ladderOne(spec: LadderSpec, options: LadderOptions): Promise<Purc
   await bindIntent(options.accountToken, sheetKey(intent.productId), intent.intentId);
   const bought = await iap.buy({ storeProductId: intent.productId, subscription: false, offerToken: null, accountToken: intent.accountToken, communityId: null, replace: null });
   if (!bought.ok) {
-    if (bought.cause === 'cancelled' || bought.cause === 'item_unavailable' || bought.cause === 'store_unavailable') await unbindIntent(options.accountToken, sheetKey(intent.productId));
+    if (bought.cause === 'cancelled' || bought.cause === 'item_unavailable' || bought.cause === 'store_unavailable' || bought.cause === 'declined') await unbindIntent(options.accountToken, sheetKey(intent.productId));
     if (bought.cause !== 'already_owned') return fromCause(bought.cause);
     const found = (await iap.owned()).find((t) => t.productId === intent.productId);
     // Nothing new is bought: the intent made for it is let go so the earlier payment is not given it.

@@ -30,6 +30,12 @@ export function storeUnavailableLine(os: Os | null): string {
   return os === null ? 'Buying happens in the phone app, where the store can take your payment.' : `${storeName(os)} is not available on this phone right now. Check that you are signed in to it and that it is up to date, then try again.`;
 }
 
+/** A payment the store refused (R-108 item 2): nothing was charged, and the person is told where to look. "The App Store" starts a sentence with a capital. */
+export function storeDeclinedLine(os: Os | null): string {
+  const store = os === null ? 'the store' : storeName(os);
+  return `${store.charAt(0).toUpperCase()}${store.slice(1)} didn't take the payment. You weren't charged. Check your payment method in ${store}, then try again.`;
+}
+
 /** "the App Store" or "Google Play". */
 export { storeName };
 

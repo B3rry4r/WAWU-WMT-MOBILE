@@ -1,6 +1,6 @@
 import type { PurchaseResult } from './buy';
 import type { Os } from './iap';
-import { NOT_OPEN_LINE, PAUSED_LINE, storeUnavailableLine } from './model';
+import { NOT_OPEN_LINE, PAUSED_LINE, storeDeclinedLine, storeUnavailableLine } from './model';
 
 /** How a screen shows what came of a buy: a plain sentence for the real cause, and how loud to be. Nothing here is a price. */
 export type Said = { tone: 'neutral' | 'warning' | 'danger'; line: string };
@@ -54,6 +54,8 @@ export function said(result: PurchaseResult, os: Os | null, subscription: boolea
       return { tone: 'danger', line: 'We could not reach the store. Check your connection and try again. You were not charged.' };
     case 'store_unavailable':
       return { tone: 'danger', line: storeUnavailableLine(os) };
+    case 'declined':
+      return { tone: 'danger', line: storeDeclinedLine(os) };
     case 'item_unavailable':
       return { tone: 'danger', line: 'The store does not have this right now. Please try again later.' };
     case 'not_open':

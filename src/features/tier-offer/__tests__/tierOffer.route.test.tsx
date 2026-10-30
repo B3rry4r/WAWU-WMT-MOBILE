@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { fireEvent } from '@testing-library/react-native';
-import { renderRouter, screen, waitFor as waitForRaw } from 'expo-router/testing-library';
+import { renderRouter, screen, waitFor as waitForRaw, within } from 'expo-router/testing-library';
 import { Platform, Text, View } from 'react-native';
 
 import { fakeStore } from '@/features/store/testing/fakeIap';
@@ -180,10 +180,23 @@ describe('a person the Hub offers the tiers to sees them before Home (TIER-OFFER
     expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
     await waitFor(() => expect(screen.getByTestId('tier-offer-list')).toBeTruthy());
     for (const id of ['verify', 'plus', 'founding']) expect(screen.getByTestId(`tier-offer-subscribe-${id}`)).toBeTruthy();
-    // The prices are the store's, as the tiers sheet draws them in this lineage (R-86); the Hub's naira figures are not drawn.
-    expect(screen.getByLabelText(/Verify, .*\$2\.99/)).toBeTruthy();
-    expect(screen.getByLabelText(/Verify Plus, .*\$5\.99/)).toBeTruthy();
-    expect(screen.getByLabelText(/Founding Maker, .*\$9\.99/)).toBeTruthy();
+    // R-108 (TIER-CARDS updated these three assertions: they read the card's one grouped label "Verify, $2.99, 12 months · ..." from the old dot-line card).
+    // Each tier is a card: its name, the STORE's price with "a year" under it (R-86; the Hub's naira figures are not drawn), one line for each thing
+    // it gives, and its own Subscribe inside the card.
+    const cards: [string, string, string, string[]][] = [
+      ['verify', 'Verify', '$2.99', ['12 months', '3 products', 'Maker Pass']],
+      ['plus', 'Verify Plus', '$5.99', ['12 months', '6 products', 'Maker Pass']],
+      ['founding', 'Founding Maker', '$9.99', ['12 months', '10 products', 'Maker Pass']],
+    ];
+    for (const [id, name, price, items] of cards) {
+      const card = screen.getByTestId(`tier-${id}`);
+      expect(within(card).getByText(name)).toBeTruthy();
+      expect(within(card).getByTestId(`tier-price-${id}`)).toHaveTextContent(price);
+      expect(within(card).getByTestId(`tier-period-${id}`)).toHaveTextContent('a year');
+      items.forEach((item, i) => expect(within(card).getByTestId(`tier-item-${id}-${i}`)).toHaveTextContent(item));
+      expect(within(card).queryByText(/·/)).toBeNull();
+      expect(within(card).getByTestId(`tier-offer-subscribe-${id}`)).toHaveTextContent(`Subscribe to ${name}`);
+    }
     expect(screen.queryByText(/2,999|5,999|9,999/)).toBeNull();
 
     // The way out is plain: a button named Close, and no "Not now" while the X is on.
