@@ -78,6 +78,17 @@ export function offerWords(options: readonly AddOption[]): string {
   return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
 }
 
+/**
+ * The note's one line (R-110 point 1): "Hold dollars, euros and crypto." Up to three words are named, as the Hub offers them and in its order;
+ * with more on offer the line names the first three and says "and more", so it fits one line and still names nothing the Hub did not offer.
+ */
+export function offerLine(options: readonly AddOption[]): string {
+  const words = options.filter((o) => !o.coin).map((o) => WORDS[o.value]);
+  if (options.some((o) => o.coin)) words.push('crypto');
+  if (words.length <= 3) return `Hold ${offerWords(options)}.`;
+  return `Hold ${words.slice(0, 3).join(', ')} and more.`;
+}
+
 export type OtherBalance = { code: FxCode; minor: number; decimals: number };
 
 /**

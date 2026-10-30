@@ -313,7 +313,7 @@ describe('the one-time note after a wallet opens (D2)', () => {
     hub.accounts = [];
     await boot();
     const line = await rtl.screen.findByTestId('currency-note-line');
-    expect(line.props.children).toBe('You can also hold dollars, euros, pounds, Canadian dollars, dirhams, cedis and crypto.');
+    expect(line.props.children).toBe('Hold dollars, euros, pounds and more.');
     await rtl.fireEvent.press(rtl.screen.getByTestId('currency-note-dismiss'));
     expect(rtl.screen.queryByTestId('currency-note')).toBeNull();
     await rtl.waitFor(() => expect(mockVault.get(noteKey())).toBe('seen'));
@@ -328,7 +328,7 @@ describe('the one-time note after a wallet opens (D2)', () => {
     hub.accounts = [];
     hub.currencies = currenciesBody({ off: ['EUR', 'GBP', 'CAD', 'AED', 'GHS'] });
     await boot();
-    expect((await rtl.screen.findByTestId('currency-note-line')).props.children).toBe('You can also hold dollars and crypto.');
+    expect((await rtl.screen.findByTestId('currency-note-line')).props.children).toBe('Hold dollars and crypto.');
   });
 
   it('its Add a currency opens the choice and puts the note away for good', async () => {

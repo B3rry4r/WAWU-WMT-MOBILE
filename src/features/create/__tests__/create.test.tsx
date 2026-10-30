@@ -104,14 +104,15 @@ describe('M19 · Create', () => {
     });
     const none = { state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
 
-    it('a person with a tier sees "2 of 3 products" with the tier name and end date from the Hub, in place of the uploads count', async () => {
+    it('a person with a tier sees "2 of 3" with the tier chip and "Renews 26 Nov" from the Hub, in place of the uploads count', async () => {
       hub.answers[`GET ${TIER}`] = ok(running('active'));
       hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
       await open();
       const meter = await screen.findByTestId('create-products');
-      expect(meter).toHaveAccessibleName('2 of 3 products. Verify · ends 26 Nov');
-      expect(screen.getByText('2 of 3 products')).toBeTruthy();
-      expect(screen.getByText('Verify · ends 26 Nov')).toBeTruthy();
+      expect(meter).toHaveAccessibleName('2 of 3 products. Verify. Renews 26 Nov');
+      expect(screen.getByText('2 of 3')).toBeTruthy();
+      expect(screen.getByText('Verify')).toBeTruthy();
+      expect(screen.getByText('Renews 26 Nov')).toBeTruthy();
       expect(screen.queryByTestId('create-meter')).toBeNull();
       expect(screen.queryByText('Get verified')).toBeNull();
     });
@@ -120,7 +121,9 @@ describe('M19 · Create', () => {
       hub.answers[`GET ${TIER}`] = ok(running('ending', 5, 8));
       hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 8, true));
       await open();
-      expect(await screen.findByText('5 of 8 products')).toBeTruthy();
+      expect(await screen.findByText('5 of 8')).toBeTruthy();
+      // An ending tier says when it ends, not that it renews.
+      expect(screen.getByText(/^Ends /)).toBeTruthy();
     });
 
     it('a person with no tier gets no products meter; a live tick keeps its uploads count', async () => {

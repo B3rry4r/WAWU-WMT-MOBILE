@@ -11,7 +11,7 @@ import { Text } from '@/components/Text';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { CommunitiesView } from '@/features/communities/CommunitiesView';
-import { CreateEntry } from '@/features/create/CreateEntry';
+import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { PaidQueueView, waitingQuery } from '@/features/paid-answers/PaidQueueView';
 import { fetchIsCreator, proKeys } from '@/features/pro-listing/api';
 import { layout, space, useWawu } from '@/theme';
@@ -94,6 +94,8 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
   const { colors } = useWawu();
   const focused = useIsFocused();
   const inbox = useInbox(kind);
+  // The Inbox draws no theme button (R-99), so only a creator's Create button needs room under the last row (R-110).
+  const room = useFloatingRoom(false);
   const [pulled, setPulled] = useState(false);
 
   const rows = drawableRows(inbox.items, renderers);
@@ -203,7 +205,7 @@ function InboxList({ kind, renderers, onBrowseCommunities }: InboxListProps) {
       onEndReached={onEndReached}
       onEndReachedThreshold={0.5}
       refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}
-      contentContainerStyle={[styles.content, center && styles.centered]}
+      contentContainerStyle={[styles.content, { paddingBottom: Math.max(inboxMetrics.listBottom, room) }, center && styles.centered]}
       style={styles.list}
     />
   );

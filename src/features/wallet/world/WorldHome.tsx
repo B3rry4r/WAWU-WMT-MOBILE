@@ -327,7 +327,6 @@ export function AccountCard({
       {account.rawDetails?.status === "active" && number ? (
         <PaidFromAbroad
           code={account.currency as FxCode}
-          name={name}
           onPress={() => setSheet(true)}
         />
       ) : null}

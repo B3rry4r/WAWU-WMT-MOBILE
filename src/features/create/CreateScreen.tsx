@@ -127,7 +127,7 @@ type AllowanceQuery = UseQueryResult<Allowance>;
  */
 function Meter({ tier, allowance, onGetVerified }: { tier: TierQuery; allowance: AllowanceQuery; onGetVerified?: () => void }) {
   const products = productsMeterOf(tier.data);
-  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} caption={products.caption} testID="create-products" />;
+  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} tier={products.tier} testID="create-products" />;
   if (tier.isPending) return <ProductsMeter loading used={0} allowed={0} testID="create-meter-loading" />;
   // No running tier (or none readable): a tier that ended or never was draws no products meter.
   if (allowance.data) return <UploadsMeter allowance={allowance.data} onGetVerified={onGetVerified} />;

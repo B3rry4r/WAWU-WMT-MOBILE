@@ -184,7 +184,7 @@ describe('the world Wallet tab offers coins as the naira wallet does (FX-POLISH 
     hub.accounts = [{ ...ACCOUNTS[0], balance: { availableMinor: 729, bookedMinor: 729 } }];
     hub.listed = listed();
     await renderRouter(routes, { initialUrl: '/wallet' });
-    expect((await screen.findByTestId('currency-note-line')).props.children).toBe('You can also hold Canadian dollars and crypto.');
+    expect((await screen.findByTestId('currency-note-line')).props.children).toBe('Hold Canadian dollars and crypto.');
     await fireEvent.press(screen.getByTestId('currency-note-dismiss'));
     expect(screen.queryByTestId('currency-note')).toBeNull();
     // Its Add a currency is the sheet of this tab.

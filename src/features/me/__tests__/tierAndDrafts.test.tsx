@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 jest.mock('expo-secure-store', () => ({
@@ -132,12 +133,20 @@ afterEach(() => {
 });
 
 describe('M1 · tier badge and products meter (DV2-03)', () => {
-  it('a person with a running tier sees its badge by their name and "N of M products" with the tier and its end day, all from the Hub', async () => {
+  it('the scroll ends with room for the floating buttons under its last block, so an empty state\'s words are never covered (R-110 point 3)', async () => {
+    answers = base();
+    await boot();
+    await screen.findByTestId('me-products');
+    await waitFor(() => expect((StyleSheet.flatten(screen.getByTestId('me-scroll').props.contentContainerStyle) as { paddingBottom: number }).paddingBottom).toBeGreaterThanOrEqual(83));
+  });
+
+  it('a person with a running tier sees its badge by their name and "N of M" with the tier chip and when it renews, all from the Hub', async () => {
     answers = base();
     await boot();
     expect(await screen.findByTestId('me-products')).toBeTruthy();
-    expect(screen.getByTestId('me-products')).toHaveTextContent(/2 of 7 products/);
-    expect(screen.getByTestId('me-products')).toHaveTextContent(/Verify Plus · ends 26 Nov/);
+    expect(screen.getByTestId('me-products')).toHaveTextContent(/2 of 7/);
+    expect(screen.getByTestId('me-products-tier')).toHaveTextContent('Verify Plus');
+    expect(screen.getByTestId('me-products-renewal')).toHaveTextContent('Renews 26 Nov');
     expect(screen.getByTestId('me-products').props.accessibilityValue).toEqual({ min: 0, max: 7, now: 2 });
     expect(within(screen.getByTestId('me-tier-badge')).getByText('Verify Plus')).toBeTruthy();
     expect(asked).toContain(`GET ${TIER}`);
@@ -147,13 +156,15 @@ describe('M1 · tier badge and products meter (DV2-03)', () => {
   it('a 12-month tier bought today shows its year, so it never reads as ending today (FIX-78 F-3)', async () => {
     answers = base({ [`GET ${TIER}`]: ok(tierView({ tier: { id: 'founding_maker', name: 'Founding Maker', badge: null }, activeFrom: '2026-10-18T09:00:00.000Z', activeUntil: '2027-10-18T09:00:00.000Z' })) });
     await boot();
-    expect(await screen.findByTestId('me-products')).toHaveTextContent(/Founding Maker · ends 18 Oct 2027/);
+    expect(await screen.findByTestId('me-products')).toHaveTextContent(/Renews 18 Oct 2027/);
+    expect(screen.getByTestId('me-products-tier')).toHaveTextContent('Founding Maker');
   });
 
   it('a tier that is ending still shows both, and the meter follows the Hub when the person has added products', async () => {
     answers = base({ [`GET ${TIER}`]: ok(tierView({ state: 'ending', productsAllowed: 9, productsUsed: 9, extraProducts: 4 })) });
     await boot();
-    expect(await screen.findByTestId('me-products')).toHaveTextContent(/9 of 9 products/);
+    expect(await screen.findByTestId('me-products')).toHaveTextContent(/9 of 9/);
+    expect(screen.getByTestId('me-products-renewal')).toHaveTextContent(/^Ends /);
     expect(screen.getByTestId('me-tier-badge')).toBeTruthy();
   });
 
@@ -203,7 +214,7 @@ describe('M1 · tier badge and products meter (DV2-03)', () => {
     expect(screen.getByTestId('me-name')).toBeTruthy();
     expect(screen.queryByTestId('me-products')).toBeNull();
     await fireEvent.press(screen.getByTestId('me-tier-error-retry'));
-    expect(await screen.findByTestId('me-products')).toHaveTextContent(/2 of 7 products/);
+    expect(await screen.findByTestId('me-products')).toHaveTextContent(/2 of 7/);
     expect(screen.queryByTestId('me-tier-error')).toBeNull();
   });
 

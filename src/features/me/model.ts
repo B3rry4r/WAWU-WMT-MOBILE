@@ -1,5 +1,5 @@
 import { formatMoney } from '@/components/Money';
-import { productsMeterCaption } from '@/components/ProductsMeter';
+import type { MeterTier } from '@/components/ProductsMeter';
 import { APP_NAME_COPY } from '@/lib/appName';
 import { nairaToKobo } from '@/api/kobo';
 import { compactCount } from '@/features/feed/model';
@@ -314,11 +314,11 @@ export function headerBadgeOf(tier: MyTier | null | undefined, personBadge: Prof
   return { name, number };
 }
 
-/** The meter under the counts (M1): products used of what the tier allows, with "Verify · ends 26 Nov". Null with no running tier or no allowance. */
-export type ProductsMeterView = { used: number; allowed: number; caption: string | undefined };
+/** The meter under the counts (M1): products used of what the tier allows, and the tier (its name, state and end day) for the chip and "Renews 30 Oct 2027". Null with no running tier or no allowance. */
+export type ProductsMeterView = { used: number; allowed: number; tier: MeterTier };
 
-export function productsMeterOf(tier: MyTier | null | undefined, now: Date = new Date()): ProductsMeterView | null {
+export function productsMeterOf(tier: MyTier | null | undefined): ProductsMeterView | null {
   const held = runningTier(tier);
   if (!held || !(held.productsAllowed > 0)) return null;
-  return { used: held.productsUsed, allowed: held.productsAllowed, caption: productsMeterCaption(held.tier?.name, held.activeUntil, now) };
+  return { used: held.productsUsed, allowed: held.productsAllowed, tier: { name: held.tier?.name, state: held.state, endsAt: held.activeUntil } };
 }

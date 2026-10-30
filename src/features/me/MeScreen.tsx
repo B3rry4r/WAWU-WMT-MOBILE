@@ -9,7 +9,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import { Banner } from '@/components/Banner';
 import { ProductsMeter } from '@/components/ProductsMeter';
-import { CreateEntry } from '@/features/create/CreateEntry';
+import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
 import { EntryRow } from '@/features/verify/voiceParts';
@@ -65,7 +65,7 @@ import { ServicesTab } from './ServicesTab';
 
 /** How near the end of the page (in points) the next page of pieces is asked for. */
 const MORE_WITHIN = 600;
-/** Room under the last block, so it clears the bottom bar's shadow line. */
+/** Room under the last block, so it clears the bottom bar's shadow line (and, with the floating buttons, `useFloatingRoom`: R-110 point 3). */
 const BOTTOM_ROOM = space.s3xl;
 /** design/_gen/me.js line 18, `profBody`: the blocks stack 16 apart. */
 const BODY_GAP = space.lg;
@@ -141,6 +141,7 @@ export type MeScreenProps = {
 export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onOpenPiece, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const room = useFloatingRoom();
   const cache = useCache();
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe }, cache);
   const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields }, cache);
@@ -204,7 +205,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
 
   return (
     <View testID="me-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
-      <ScrollView testID="me-scroll" onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView testID="me-scroll" onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(BOTTOM_ROOM, room) }]}>
         <ProfileTop
           coverUrl={me.data?.coverUrl ?? null}
           top={insets.top}
@@ -361,7 +362,7 @@ function TierMeter({ tier }: { tier: TierQuery }) {
   if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" retryLabel="Try loading your tier again" onRetry={() => void tier.refetch()} />;
   if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
   const meter = productsMeterOf(tier.data);
-  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} caption={meter.caption} testID="me-products" /> : null;
+  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} tier={meter.tier} testID="me-products" /> : null;
 }
 
 function ContentBody({ query, drafts, creator, onOpenShop, onOpenPiece }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void; onOpenPiece?: (id: string) => void }) {

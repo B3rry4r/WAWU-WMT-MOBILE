@@ -22,7 +22,7 @@ import {
   type PointsFigureSize,
   type PointsFit,
 } from '@/components/PointsFigure';
-import { ProductsMeter, productsMeterCaption, productsMeterFill, productsMeterLine } from '@/components/ProductsMeter';
+import { ProductsMeter, productsMeterFigure, productsMeterFill, productsMeterLine, productsMeterRenewal } from '@/components/ProductsMeter';
 import { TierBadge, tierBadgeLabel } from '@/components/TierBadge';
 import { barCountFor, playedBars, VoiceLabel, VoicePlayer, voiceClock, voiceErrorLabel, voicePlayerMetrics } from '@/components/VoicePlayer';
 import { darkColors, lightColors } from '@/theme/tokens.generated';
@@ -95,10 +95,13 @@ describe('TierBadge', () => {
 });
 
 describe('ProductsMeter', () => {
-  it('says "2 of 3 products" with the caption, and fills two thirds of the bar', async () => {
-    await render(<ProductsMeter used={2} allowed={3} caption="Verify · ends 26 Nov" testID="meter" />);
-    expect(screen.getByText('2 of 3 products')).toBeTruthy();
-    expect(screen.getByText('Verify · ends 26 Nov')).toBeTruthy();
+  it('says "Products", "2 of 3", the tier chip and the renewal line, and fills two thirds of the bar', async () => {
+    await render(<ProductsMeter used={2} allowed={3} tier={{ name: 'Verify', state: 'active', endsAt: '2026-11-26T12:00:00Z' }} testID="meter" />);
+    expect(screen.getByText('Products')).toBeTruthy();
+    expect(screen.getByText('2 of 3')).toBeTruthy();
+    expect(screen.getByText('Verify')).toBeTruthy();
+    expect(screen.getByText(/^Renews 26 Nov( 2026)?$/)).toBeTruthy();
+    expect(screen.getByTestId('meter').props.accessibilityLabel).toMatch(/^2 of 3 products\. Verify\. Renews 26 Nov/);
     expect(String(styleOf(screen.getByTestId('meter-fill')).width).startsWith('66.6')).toBe(true);
     expect(styleOf(screen.getByTestId('meter-fill')).backgroundColor).toBe(darkColors.accent);
     expect(screen.getByTestId('meter').props.accessibilityValue).toEqual({ min: 0, max: 3, now: 2 });
@@ -106,7 +109,7 @@ describe('ProductsMeter', () => {
 
   it('draws none used as an empty bar and all used as a full one', async () => {
     const { rerender } = await render(<ProductsMeter used={0} allowed={3} testID="meter" />);
-    expect(screen.getByText('0 of 3 products')).toBeTruthy();
+    expect(screen.getByText('0 of 3')).toBeTruthy();
     expect(styleOf(screen.getByTestId('meter-fill')).width).toBe('0%');
     await rerender(<ProductsMeter used={3} allowed={3} testID="meter" />);
     expect(styleOf(screen.getByTestId('meter-fill')).width).toBe('100%');
@@ -114,7 +117,7 @@ describe('ProductsMeter', () => {
 
   it('stops the bar at full when a person is over their allowance, and keeps the true figures', async () => {
     await render(<ProductsMeter used={4} allowed={3} testID="meter" />);
-    expect(screen.getByText('4 of 3 products')).toBeTruthy();
+    expect(screen.getByText('4 of 3')).toBeTruthy();
     expect(styleOf(screen.getByTestId('meter-fill')).width).toBe('100%');
     expect(screen.getByTestId('meter').props.accessibilityValue).toEqual({ min: 0, max: 3, now: 3 });
   });
@@ -122,6 +125,7 @@ describe('ProductsMeter', () => {
   it('says "product" when one is allowed', () => {
     expect(productsMeterLine(0, 1)).toBe('0 of 1 product');
     expect(productsMeterLine(5, 10)).toBe('5 of 10 products');
+    expect(productsMeterFigure(0, 10)).toBe('0 of 10');
   });
 
   it('draws nothing with no allowance, and a block the size of the meter while loading', async () => {
@@ -129,7 +133,7 @@ describe('ProductsMeter', () => {
     expect(screen.queryByTestId('meter')).toBeNull();
     await rerender(<ProductsMeter used={0} allowed={0} loading testID="meter" />);
     expect(screen.getByTestId('meter-loading')).toBeTruthy();
-    expect(screen.queryByText(/products/)).toBeNull();
+    expect(screen.queryByText('Products')).toBeNull();
   });
 
   it('reads the fill from the figures only', () => {
@@ -138,59 +142,59 @@ describe('ProductsMeter', () => {
     expect(productsMeterFill(-2, 3)).toBe(0);
   });
 
-  it('writes the caption in Lagos time, from the tier name and the end date', () => {
-    expect(productsMeterCaption('Verify', '2026-11-26T12:00:00Z', NOW)).toBe('Verify · ends 26 Nov');
-    expect(productsMeterCaption('Verify', '2026-11-26T23:30:00Z', NOW)).toBe('Verify · ends 27 Nov');
-    expect(productsMeterCaption('Verify', null, NOW)).toBe('Verify');
-    expect(productsMeterCaption(null, '2026-11-26T12:00:00Z', NOW)).toBe('ends 26 Nov');
-    expect(productsMeterCaption('Verify', 'not a date', NOW)).toBe('Verify');
-    expect(productsMeterCaption(undefined, undefined, NOW)).toBeUndefined();
+  it('writes the line under the bar in Lagos time, from the end date ("Ends 26 Nov" for an ending tier)', () => {
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-11-26T12:00:00Z' }, NOW)).toBe('Ends 26 Nov');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-11-26T23:30:00Z' }, NOW)).toBe('Ends 27 Nov');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: null }, NOW)).toBeUndefined();
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-11-26T12:00:00Z' }, NOW)).toBe('Ends 26 Nov');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: 'not a date' }, NOW)).toBeUndefined();
+    expect(productsMeterRenewal(undefined, NOW)).toBeUndefined();
   });
 
   it('writes September as "Sep", the board\'s three letters, never "Sept"', () => {
-    expect(productsMeterCaption('Verify', '2026-09-30T12:00:00Z', NOW)).toBe('Verify · ends 30 Sep');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-09-30T12:00:00Z' }, NOW)).toBe('Ends 30 Sep');
     // A date in another year carries its year (FIX-78 F-3), so a September a year away never reads as this September.
-    expect(productsMeterCaption('Verify', '2027-09-01T08:00:00Z', NOW)).toBe('Verify · ends 1 Sep 2027');
-    expect(productsMeterCaption(null, '2026-09-30T12:00:00Z', NOW)).toBe('ends 30 Sep');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2027-09-01T08:00:00Z' }, NOW)).toBe('Ends 1 Sep 2027');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-09-30T12:00:00Z' }, NOW)).toBe('Ends 30 Sep');
   });
 
   it('writes every month as the history writes it, from the same table', () => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     months.forEach((name, i) => {
       const at = new Date(Date.UTC(2026, i, 15, 12));
-      expect(productsMeterCaption(null, at, NOW)).toBe(`ends 15 ${name}`);
+      expect(productsMeterRenewal({ state: 'ending', endsAt: at }, NOW)).toBe(`Ends 15 ${name}`);
     });
   });
 
   it('reads the day on the Lagos clock at midnight and at the ends of a month and a year', () => {
-    expect(productsMeterCaption('Verify', '2026-09-30T22:59:59Z', NOW)).toBe('Verify · ends 30 Sep');
-    expect(productsMeterCaption('Verify', '2026-09-30T23:00:00Z', NOW)).toBe('Verify · ends 1 Oct');
-    expect(productsMeterCaption('Verify', '2026-12-31T22:59:59Z', NOW)).toBe('Verify · ends 31 Dec');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-09-30T22:59:59Z' }, NOW)).toBe('Ends 30 Sep');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-09-30T23:00:00Z' }, NOW)).toBe('Ends 1 Oct');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-12-31T22:59:59Z' }, NOW)).toBe('Ends 31 Dec');
     // Past midnight in Lagos it is already the next year, so the date carries it (FIX-78 F-3: this and the 2028 line were written without the year).
-    expect(productsMeterCaption('Verify', '2026-12-31T23:59:00Z', NOW)).toBe('Verify · ends 1 Jan 2027');
-    expect(productsMeterCaption('Verify', '2026-02-28T23:30:00Z', NOW)).toBe('Verify · ends 1 Mar');
-    expect(productsMeterCaption('Verify', '2028-02-28T23:30:00Z', NOW)).toBe('Verify · ends 29 Feb 2028');
-    expect(productsMeterCaption('Verify', '2026-11-26T00:00:00Z', NOW)).toBe('Verify · ends 26 Nov');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-12-31T23:59:00Z' }, NOW)).toBe('Ends 1 Jan 2027');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-02-28T23:30:00Z' }, NOW)).toBe('Ends 1 Mar');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2028-02-28T23:30:00Z' }, NOW)).toBe('Ends 29 Feb 2028');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-11-26T00:00:00Z' }, NOW)).toBe('Ends 26 Nov');
   });
 
   it('reads a date with an offset, and a Date, on the same clock', () => {
-    expect(productsMeterCaption('Verify', '2026-11-26T20:00:00-05:00', NOW)).toBe('Verify · ends 27 Nov');
-    expect(productsMeterCaption('Verify', '2026-11-26T23:30:00+01:00', NOW)).toBe('Verify · ends 26 Nov');
-    expect(productsMeterCaption('Verify', new Date('2026-09-30T23:00:00Z'), NOW)).toBe('Verify · ends 1 Oct');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-11-26T20:00:00-05:00' }, NOW)).toBe('Ends 27 Nov');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-11-26T23:30:00+01:00' }, NOW)).toBe('Ends 26 Nov');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: new Date('2026-09-30T23:00:00Z') }, NOW)).toBe('Ends 1 Oct');
   });
 
   it('adds the year when the end date is not in the current year, on the Lagos clock (FIX-78 F-3)', () => {
     // A 12-month tier bought today ends a year from today: it must not read as ending today.
-    expect(productsMeterCaption('Founding Maker', '2027-10-18T09:00:00.000Z', NOW)).toBe('Founding Maker · ends 18 Oct 2027');
-    expect(productsMeterCaption(null, '2027-01-02T12:00:00Z', NOW)).toBe('ends 2 Jan 2027');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2027-10-18T09:00:00.000Z' }, NOW)).toBe('Ends 18 Oct 2027');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2027-01-02T12:00:00Z' }, NOW)).toBe('Ends 2 Jan 2027');
     // This year: no year.
-    expect(productsMeterCaption('Verify', '2026-12-30T12:00:00Z', NOW)).toBe('Verify · ends 30 Dec');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-12-30T12:00:00Z' }, NOW)).toBe('Ends 30 Dec');
     // The year turns at midnight in Lagos, not in UTC: 23:30 UTC on 31 Dec 2026 is 00:30 on 1 Jan 2027 there.
-    expect(productsMeterCaption('Verify', '2026-12-31T23:30:00Z', NOW)).toBe('Verify · ends 1 Jan 2027');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2026-12-31T23:30:00Z' }, NOW)).toBe('Ends 1 Jan 2027');
     // A tier that ended last year says so.
-    expect(productsMeterCaption('Verify', '2025-10-18T09:00:00Z', NOW)).toBe('Verify · ends 18 Oct 2025');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2025-10-18T09:00:00Z' }, NOW)).toBe('Ends 18 Oct 2025');
     // "Today" is read on the Lagos clock too: 23:30 UTC on 31 Dec is already next year there.
-    expect(productsMeterCaption('Verify', '2027-03-01T09:00:00Z', new Date('2026-12-31T23:30:00Z'))).toBe('Verify · ends 1 Mar');
+    expect(productsMeterRenewal({ state: 'ending', endsAt: '2027-03-01T09:00:00Z' }, new Date('2026-12-31T23:30:00Z'))).toBe('Ends 1 Mar');
   });
 });
 
@@ -1087,10 +1091,10 @@ describe('the preview routes show every state without the API', () => {
 
   it('products meter: partway, none, full, loading, and no tier', async () => {
     await renderRouter({ 'preview/products-meter': ProductsMeterPreview }, { initialUrl: '/preview/products-meter' });
-    expect(routed.getByText('2 of 3 products')).toBeTruthy();
-    expect(routed.getByText('0 of 3 products')).toBeTruthy();
-    expect(routed.getByText('3 of 3 products')).toBeTruthy();
-    expect(routed.getByText('0 of 1 product')).toBeTruthy();
+    expect(routed.getByText('2 of 3')).toBeTruthy();
+    expect(routed.getByText('0 of 3')).toBeTruthy();
+    expect(routed.getByText('3 of 3')).toBeTruthy();
+    expect(routed.getByText('0 of 1')).toBeTruthy();
     expect(routed.getByTestId('meter-loading')).toBeTruthy();
     expect(routed.queryByTestId('meter-none')).toBeNull();
   });

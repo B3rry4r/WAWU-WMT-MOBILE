@@ -8,6 +8,7 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { onSessionEnd } from '@/api/session';
 import { Card } from '@/components/Card';
+import { floatingRoom } from '@/components/floating';
 import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -43,7 +44,7 @@ import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
  * kit.js line 35 (`body`) leaves 120 under it over a tab bar that overlays it; here the bar is its own box.
  * W6's card (line 67) is padded 10 by 16 with a 28 corner.
  */
-const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, statePadH: 16, infoGap: 10 } as const;
+const HOME = { bodyTop: 4, bodyBottom: Math.max(120 - layout.tabbarH, floatingRoom({ create: false, music: true })), statePadV: 10, statePadH: 16, infoGap: 10 } as const;
 /** The Points card's stand-in while its read is out: as high as the card (12 + the head, the count and the line + 12). */
 const INFO_SKELETON = 86;
 

@@ -86,7 +86,7 @@ export function AllowanceMeter() {
   // never the free level's "Get verified" line (RELEASE-02 second pass, L-p2-12). The Hub's tier read is the one that decides.
   const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
   const products = productsMeterOf(tier.data);
-  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} caption={products.caption} testID="meter-products" />;
+  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} tier={products.tier} testID="meter-products" />;
   if (tier.isPending) return <Skeleton testID="meter-loading" height={96} radius={radius.card} />;
   if (allowance.data) return <UploadsMeter allowance={allowance.data} />;
   if (allowance.isError) {

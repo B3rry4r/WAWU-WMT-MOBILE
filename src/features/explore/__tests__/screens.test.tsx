@@ -337,7 +337,7 @@ describe('X1 · Explore', () => {
   });
 
   it.each([['a creator', 'creator'], ['a user', 'user'], ['a professional', 'professional']])(
-    'no Create button is drawn for %s (ME-04 is not built), and the scroll keeps the canvas’s 30 below the last row',
+    'no Create button is drawn for %s (ME-04 is not built), and the scroll keeps the floating buttons\' room below the last row (R-110: 90 for a creator, 83 for anyone else, not the canvas\'s 30)',
     async (_who, accountType) => {
       answers[featured] = [ok({ items: [] })];
       answers['GET /users/me'] = [ok({ wawuUserId: ME, accountType })];
@@ -347,7 +347,7 @@ describe('X1 · Explore', () => {
       expect(rtl.screen.queryByTestId('explore-create')).toBeNull();
       expect(rtl.screen.queryByRole('button', { name: 'Create' })).toBeNull();
       const flat = Object.assign({}, ...[rtl.screen.getByTestId('explore-scroll').props.contentContainerStyle].flat(Infinity).filter(Boolean));
-      expect(flat.paddingBottom).toBe(120 - 90);
+      expect(flat.paddingBottom).toBe(accountType === 'creator' ? 90 : 83);
     },
   );
 

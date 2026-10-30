@@ -216,6 +216,15 @@ describe('W2 · a currency account', () => {
     ]);
   });
 
+  it('the Wallet scroll ends with room for the theme button under its last card (R-110 point 3)', async () => {
+    await boot();
+    await openTab('Dollar');
+    await rtl.screen.findByTestId('fx-body-USD');
+    const { StyleSheet } = require('react-native') as typeof import('react-native');
+    const flat = StyleSheet.flatten(rtl.screen.getByTestId('wallet-scroll').props.contentContainerStyle) as { paddingBottom: number };
+    expect(flat.paddingBottom).toBeGreaterThanOrEqual(83);
+  });
+
   it('Get paid from abroad opens the details Nuvion issued, each with Copy', async () => {
     await boot();
     await openTab('Dollar');

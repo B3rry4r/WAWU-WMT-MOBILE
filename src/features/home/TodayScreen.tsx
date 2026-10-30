@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/api/session';
 import { IconButton } from '@/components/Button';
+import { floatingRoom } from '@/components/floating';
 import { ErrorState } from '@/components/StateViews';
 import { openAd } from '@/features/ads/api';
 import { SponsoredSlot } from '@/features/ads/SponsoredSlot';
@@ -93,7 +94,7 @@ export function TodayScreen({ onView, masked, onToggleMask, onSearch, onOpenNoti
           </View>
         ) : null}
       </View>
-      <ScrollView testID="today-scroll" contentContainerStyle={[styles.body, creator ? styles.bodyCreator : null]} showsVerticalScrollIndicator={false}>
+      <ScrollView testID="today-scroll" contentContainerStyle={[styles.body, { paddingBottom: Math.max(m.bodyBottom, floatingRoom({ create: creator, music: true })) }]} showsVerticalScrollIndicator={false}>
         {signedIn ? <TodayBody masked={masked} onToggleMask={onToggleMask} onSeeAllCreators={onSeeAllCreators} onOpenCreator={onOpenCreator} /> : <TodayLoading />}
       </ScrollView>
     </View>
@@ -210,5 +211,4 @@ const styles = StyleSheet.create({
   tabs: { marginRight: m.barClear },
   buttons: { flexDirection: 'row', alignItems: 'center', gap: m.barButtonsApart, flexShrink: 0 },
   body: { paddingTop: m.bodyTop, paddingHorizontal: gutter, paddingBottom: m.bodyBottom, gap: m.between },
-  bodyCreator: { paddingBottom: m.bodyBottomCreator },
 });
