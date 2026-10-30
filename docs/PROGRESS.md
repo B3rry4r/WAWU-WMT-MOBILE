@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 42 | 0 | 0 | 0 |
+| todo | 40 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 23 | 0 | 0 | 0 |
+| verifying | 25 | 0 | 0 | 0 |
 | review | 239 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -272,6 +272,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AITOOLS-10](../tasks/AITOOLS-10.md) Make a video and Talking photo (backend) (You)
 - [AITOOLS-11](../tasks/AITOOLS-11.md) Voice changer, Dialogue and a saved clone of your own voice (backend) (You)
 - [AITOOLS-12](../tasks/AITOOLS-12.md) Music for a video and Split a song (backend) (You)
+- [AITOOLS-13](../tasks/AITOOLS-13.md) Audiobook and Podcast maker (backend) (You)
+- [AITOOLS-06](../tasks/AITOOLS-06.md) Receptionist: a talking AI agent with the creator's own knowledge (backend) (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
