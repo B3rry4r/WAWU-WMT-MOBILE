@@ -42,6 +42,19 @@ describe('the code field takes a pasted or offered code, and the keypad still wo
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('654321', ''));
   });
 
+  it('a message with a number before the code ("2 min, code 123456") takes the six-digit code, not the first six digits', async () => {
+    const onSubmit = await boot();
+    await paste('2 min, code 123456');
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('123456', ''));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('with no standalone six-digit run it takes the first six digits', async () => {
+    const onSubmit = await boot();
+    await paste('code 12 34 56 78');
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('123456', ''));
+  });
+
   it('typing on the keypad still works, a digit at a time, and sends at the sixth', async () => {
     const onSubmit = await boot();
     for (const d of '123456') await key(d);

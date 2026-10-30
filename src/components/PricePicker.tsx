@@ -56,7 +56,7 @@ const clear = (color: string): string => (/^#[0-9a-f]{6}$/i.test(color) ? `${col
 const offsetOf = (event: NativeSyntheticEvent<NativeScrollEvent>): number => event.nativeEvent.contentOffset.x;
 
 export type PricePickerProps = {
-  /** The price now, in whole naira. Null when none is chosen yet: the strip is centred on the design's stop with nothing selected and no price claimed. */
+  /** The price now, in whole naira. Null when none is chosen yet: the strip waits at its start with nothing selected and no price claimed (WALK-FIX M8). */
   value: number | null;
   /** The chosen list price, in whole naira. Called only for a person's own tap, scroll or shortcut (or a screen reader's adjust), never by the picker itself. */
   onChange: (naira: number) => void;
@@ -249,7 +249,8 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
   const into = colors[fadeInto];
   const edge = clear(into);
   const spoken = shown === null ? 'No price chosen' : `₦${shown.toLocaleString('en-NG')}`;
-  // Adjusting with no price chosen yet chooses the stop the strip is centred on; otherwise one list step.
+  // Adjusting with no price chosen yet chooses the design's stop (`selected`), and the strip then moves to it; until a price is chosen the strip
+  // waits at its start (WALK-FIX M8). Otherwise one list step.
   const bump = (direction: 1 | -1) => choose(shown === null ? selected : stepOf(list, shown, direction));
 
   return (
