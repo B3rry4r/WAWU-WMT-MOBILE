@@ -141,7 +141,8 @@ describe('P1 · Professionals', () => {
     expect(rtl.within(row).getByText('Funmi Adeyemi')).toBeTruthy();
     expect(rtl.within(row).getByText('Funmi Adeyemi headline, 9 years')).toBeTruthy();
     expect(rtl.within(row).getByText('Accounting & Tax')).toBeTruthy();
-    expect(rtl.within(row).getByText('a message')).toBeTruthy();
+    // The row draws before the store's prices have answered, and says "a message" only once they have (FIX-TESTCLOCK): wait for it.
+    await rtl.waitFor(() => expect(rtl.within(rtl.screen.getByTestId('pros-row-p1')).getByText('a message')).toBeTruthy());
     expect(rtl.within(row).getByTestId('tick-pro')).toBeTruthy();
     await rtl.waitFor(() => expect(rtl.screen.getByTestId('pros-price-p1').props.accessibilityLabel).toBe('6,000 naira'));
     expect(rtl.screen.getByTestId('pros-price-p2').props.accessibilityLabel).toBe('9,000 naira');

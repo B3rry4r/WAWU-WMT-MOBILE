@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 420.**
+**Launch tasks done: 176 of 421.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 34 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 20 | 0 | 0 | 0 |
-| review | 242 | 0 | 0 | 0 |
+| review | 243 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -35,6 +35,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-114](../tasks/FIX-114.md) The Inbox Money chip shows the sends between two people next to the requests (G-INBOX-15-1; tips and refunds are still not rows) (You)
 - [R2-MONEY](../tasks/R2-MONEY.md) RELEASE-02 fixes for the money and work area (CHECK-3 defects D-01 to D-06 and the lows) (You)
 - [GEO-01](../tasks/GEO-01.md) WAWU ID takes a phone from any country and keeps a country of residence on every account (R-85) (You)
+- [FIX-TESTCLOCK](../tasks/FIX-TESTCLOCK.md) Two app tests that failed with no code change wait for the state they mean (professionals directory price, A28 title) (You)
 - [NUV-11](../tasks/NUV-11.md) Send abroad: a person pays a foreign bank account or a mobile money wallet from any of their accounts, with an FX quote, PIN and Idempotency-Key (You)
 - [SWEEP-APP-8](../tasks/SWEEP-APP-8.md) App sweep, bundle B17: seven low rows from FIX-107, FIX-110, FIX-113, POINTS-10 and the Inbox (names, name token, Studio file result, lesson pill, profile works, price terms) (You)
 - [THEME-MUSIC](../tasks/THEME-MUSIC.md) The WAWU theme plays in the app from a round button above Create, and the Sound row says what it does (R-99) (You)
