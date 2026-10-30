@@ -88,20 +88,22 @@ export type DoneCardProps = {
   onProductsFull: () => void;
   /** The share sheet's or the photos' notice, in words. */
   onNotice: (words: string, good: boolean) => void;
+  /** Split a song (POINTS-17): each part has its own "Make it a piece" in the parts list, so the card draws none of its own. */
+  hidePiece?: boolean;
 };
 
 /**
  * POINTS-13 · The card under every finished result: "Make it a piece" first and largest (creators only, and only for a result a Create
  * format takes), then Save, then "Use in a product" (audio), then a small quiet "Download" under the card.
  */
-export function DoneCard({ owner, job, toolName, creator, onUse, onPiece, onReopen, onNeedTier, onProductsFull, onNotice }: DoneCardProps) {
+export function DoneCard({ owner, job, toolName, creator, onUse, onPiece, onReopen, onNeedTier, onProductsFull, onNotice, hidePiece = false }: DoneCardProps) {
   const files = resultFiles(job);
   const pieceable = files.filter((f) => f.output.pieceFormat);
   const downloadable = files.filter((f) => f.output.downloadUrl);
   const [choosing, setChoosing] = useState<'piece' | 'download' | null>(null);
   return (
     <View style={styles.card} testID="result-card">
-      {creator && pieceable.length > 0 ? (
+      {creator && pieceable.length > 0 && !hidePiece ? (
         <PieceRow job={job} options={pieceable} choosing={choosing === 'piece'} onChoose={(on) => setChoosing(on ? 'piece' : null)} onPiece={onPiece} onReopen={onReopen} onNeedTier={onNeedTier} onProductsFull={onProductsFull} />
       ) : null}
       <ResultActions owner={owner} job={job} onUse={onUse} />
@@ -110,6 +112,57 @@ export function DoneCard({ owner, job, toolName, creator, onUse, onPiece, onReop
       ) : null}
     </View>
   );
+}
+
+export type PieceMakerHandlers = { onPiece: DoneCardProps['onPiece']; onReopen: () => void; onNeedTier: () => void; onProductsFull: () => void };
+
+/**
+ * "Make it a piece" for one result file (POINTS-13), shared by the card's piece row and the stems' parts list (POINTS-17: each part its
+ * own button): the Hub copies the output into the person's own folder and Create opens with it; the same key goes again on a try that did
+ * not finish, a new one after a refusal; a result already in the draft just opens it again.
+ */
+export function usePieceMaker(job: Pick<VoiceJob, 'id'>, handlers: PieceMakerHandlers) {
+  const { onPiece, onReopen, onNeedTier, onProductsFull } = handlers;
+  const [busy, setBusy] = useState<number | null>(null);
+  const [failure, setFailure] = useState<{ index: number; words: string } | null>(null);
+  const sending = useRef(false);
+  /** The key of a try that did not finish: the same key goes again. A try that finished (or was refused) takes a new one. */
+  const key = useRef<{ index: number; value: string } | null>(null);
+  const make = async (file: ResultFile, before?: () => void) => {
+    if (sending.current) return;
+    before?.();
+    setFailure(null);
+    if (heldPiece(job.id, file.index)) {
+      onReopen();
+      return;
+    }
+    sending.current = true;
+    setBusy(file.index);
+    const sentKey = key.current?.index === file.index ? key.current.value : newRequestKey();
+    key.current = { index: file.index, value: sentKey };
+    try {
+      const piece = await makePiece(job.id, file.index, sentKey);
+      key.current = null;
+      rememberPiece(job.id, file.index, piece.full.key);
+      onPiece(piece, file.output.url);
+    } catch (error) {
+      if (isApiError(error) && error.code === 'tier_required') {
+        key.current = null;
+        onNeedTier();
+      } else if (isApiError(error) && error.code === 'product_limit_reached') {
+        key.current = null;
+        onProductsFull();
+      } else {
+        // The Hub's own sentence (no room is "This file needs 3 MB, but only 1 MB of your 1 GB storage is free."); a refusal frees the key.
+        if (isApiError(error) && error.status >= 400 && error.status < 500) key.current = null;
+        setFailure({ index: file.index, words: isApiError(error) && error.message ? error.message : RESULT_WORDS.pieceFailed });
+      }
+    } finally {
+      sending.current = false;
+      setBusy(null);
+    }
+  };
+  return { make, busy, failure };
 }
 
 function PieceRow({
@@ -133,47 +186,11 @@ function PieceRow({
 }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const [busy, setBusy] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
-  const sending = useRef(false);
-  /** The key of a try that did not finish: the same key goes again. A try that finished (or was refused) takes a new one. */
-  const key = useRef<{ index: number; value: string } | null>(null);
+  const maker = usePieceMaker(job, { onPiece, onReopen, onNeedTier, onProductsFull });
+  const busy = maker.busy !== null;
+  const failure = maker.failure?.words ?? null;
   const format = options[0].output.pieceFormat as string;
-
-  const make = async (file: ResultFile) => {
-    if (sending.current) return;
-    onChoose(false);
-    setFailure(null);
-    if (heldPiece(job.id, file.index)) {
-      onReopen();
-      return;
-    }
-    sending.current = true;
-    setBusy(true);
-    const sentKey = key.current?.index === file.index ? key.current.value : newRequestKey();
-    key.current = { index: file.index, value: sentKey };
-    try {
-      const piece = await makePiece(job.id, file.index, sentKey);
-      key.current = null;
-      rememberPiece(job.id, file.index, piece.full.key);
-      onPiece(piece, file.output.url);
-    } catch (error) {
-      if (isApiError(error) && error.code === 'tier_required') {
-        key.current = null;
-        onNeedTier();
-      } else if (isApiError(error) && error.code === 'product_limit_reached') {
-        key.current = null;
-        onProductsFull();
-      } else {
-        // The Hub's own sentence (no room is "This file needs 3 MB, but only 1 MB of your 1 GB storage is free."); a refusal frees the key.
-        if (isApiError(error) && error.status >= 400 && error.status < 500) key.current = null;
-        setFailure(isApiError(error) && error.message ? error.message : RESULT_WORDS.pieceFailed);
-      }
-    } finally {
-      sending.current = false;
-      setBusy(false);
-    }
-  };
+  const make = (file: ResultFile) => maker.make(file, () => onChoose(false));
   const press = () => {
     if (busy) return;
     if (options.length > 1) onChoose(!choosing);

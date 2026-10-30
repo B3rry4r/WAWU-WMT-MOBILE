@@ -84,6 +84,13 @@ const TOOL_THINGS: Record<string, { making: string; noun: string }> = {
   'photo-edit': { making: 'Editing your photo', noun: 'photo' },
   video: { making: 'Making your video', noun: 'video' },
   'talking-photo': { making: 'Making your talking photo', noun: 'talking photo' },
+  // POINTS-16 to POINTS-18 (R-109).
+  'voice-changer': { making: 'Changing your voice', noun: 'recording' },
+  dialogue: { making: 'Making your scene', noun: 'scene' },
+  'video-music': { making: 'Making your music', noun: 'music' },
+  stems: { making: 'Splitting your song', noun: 'song' },
+  audiobook: { making: 'Making your audiobook', noun: 'audiobook' },
+  podcast: { making: 'Making your podcast', noun: 'podcast' },
 };
 /** The working view's title (PT2a): "Making your image", "Editing your photo"; the older tools keep "Making your {name}". */
 export const workingTitleFor = (tool: { id: string; name: string }): string => TOOL_THINGS[tool.id]?.making ?? `Making your ${tool.name}`;

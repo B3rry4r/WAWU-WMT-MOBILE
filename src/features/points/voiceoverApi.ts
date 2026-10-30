@@ -59,7 +59,8 @@ export function resultFiles(job: Pick<VoiceJob, 'outputs'>): ResultFile[] {
 export const mediaResult = (job: Pick<VoiceJob, 'outputs'>): ResultFile | null => resultFiles(job).find((f) => f.output.kind === 'image' || f.output.kind === 'video') ?? null;
 
 /** True when a done job has what it made to show: the audio link, a picture or a video, or a transcript. A done job with none is still being filed; the next read has it. */
-export const hasResult = (job: Pick<VoiceJob, 'audioUrl' | 'outputs'>): boolean => filled(job.audioUrl) || mediaResult(job) !== null || outputText(job, 'text') !== null;
+export const hasResult = (job: Pick<VoiceJob, 'audioUrl' | 'outputs'>): boolean =>
+  filled(job.audioUrl) || mediaResult(job) !== null || outputText(job, 'text') !== null || resultFiles(job).some((f) => f.output.kind === 'audio');
 
 /** GET /ai-tools/jobs/{id}. */
 export async function fetchVoiceJob(id: string): Promise<VoiceJob> {
@@ -74,13 +75,16 @@ export const voiceJobQuery = (owner: string | null, id: string | null) =>
 /** How often a working job is read again, in ms. */
 export const JOB_POLL_MS = 2000;
 
+/** The tools whose job takes minutes: a dub (POINTS-11), an audiobook and a podcast (POINTS-18). */
+const LONG_TOOLS: readonly string[] = ['dubbing', 'audiobook', 'podcast'];
+
 /**
- * How often a working job is read again, by the tool and how long the job has been going (POINTS-11). Every tool is read each 2 seconds. A dub
- * takes minutes, so after its first minute the reads slow: every 5 seconds until the fifth minute, then every 10. The age is the Hub's
+ * How often a working job is read again, by the tool and how long the job has been going (POINTS-11, POINTS-18). Every tool is read each 2 seconds. A dub,
+ * an audiobook and a podcast take minutes, so after their first minute the reads slow: every 5 seconds until the fifth minute, then every 10. The age is the Hub's
  * `createdAt` against the phone's clock; a time that cannot be read, or one ahead of the phone's clock, counts as a job that has just started.
  */
 export function pollMsFor(toolId: string, createdAt: string | null | undefined, now: number = Date.now()): number {
-  if (toolId !== 'dubbing') return JOB_POLL_MS;
+  if (!LONG_TOOLS.includes(toolId)) return JOB_POLL_MS;
   const started = createdAt ? new Date(createdAt).getTime() : Number.NaN;
   const age = Number.isFinite(started) ? Math.max(0, now - started) : 0;
   return age < 60_000 ? JOB_POLL_MS : age < 300_000 ? 5000 : 10_000;
@@ -99,7 +103,15 @@ export type StartOutcome =
 export type JobRequest =
   | { kind: 'text'; text: string; voiceId: string }
   | { kind: 'prompt'; prompt: string }
-  | { kind: 'file'; fileKey: string; targetLanguage?: string }
+  | { kind: 'file'; fileKey: string; targetLanguage?: string; /** Voice changer: the voice to hear it in. */ voiceId?: string; /** Split a song: two parts or six. */ parts?: number; /** Music for a video: the mood, in words. */ description?: string }
+  /** Dialogue (POINTS-16): the lines in order, each with its voice. */
+  | { kind: 'dialogue'; lines: { text: string; voiceId: string }[] }
+  /** Podcast maker (POINTS-18): a text or an https link, one host or two, a length and a language. */
+  | { kind: 'podcast'; source: { text: string } | { url: string }; mode: 'conversation' | 'bulletin'; voiceIds: string[]; duration: 'short' | 'standard' | 'long'; language: string }
+  /** Receptionist (POINTS-12): one message to the person's own agent. */
+  | { kind: 'message'; message: string }
+  /** Clone your own voice (POINTS-16): the sample's `key`, the name and the words agreed to. */
+  | { kind: 'clone'; fileKey: string; name: string; consentLine: string }
   /** Make an image (no photo) and Edit a photo (the photo's `key`), POINTS-14. */
   | { kind: 'image'; prompt: string; shape?: string; photoKey?: string }
   /** Make a video, with the length it is priced by and an optional photo to start from, POINTS-15. */
@@ -141,13 +153,32 @@ function post(input: StartInput) {
     const body = { text: request.text, voiceId: request.voiceId, quoteToken };
     if (toolId === 'voiceover') return api.POST('/api/hub/ai-tools/voiceover/jobs', { ...options, body });
     if (toolId === 'quick-voice') return api.POST('/api/hub/ai-tools/quick-voice/jobs', { ...options, body });
+    // Audiobook (POINTS-18): the whole text and a voice; the Hub speaks the chapters one after another and joins them into one file.
+    if (toolId === 'audiobook') return api.POST('/api/hub/ai-tools/audiobook/jobs', { ...options, body });
     return null;
+  }
+  if (request.kind === 'dialogue') {
+    return toolId === 'dialogue' ? api.POST('/api/hub/ai-tools/dialogue/jobs', { ...options, body: { lines: request.lines, quoteToken } }) : null;
+  }
+  if (request.kind === 'podcast') {
+    const body = { source: request.source, mode: request.mode, voiceIds: request.voiceIds, duration: request.duration, language: request.language, quoteToken };
+    return toolId === 'podcast' ? api.POST('/api/hub/ai-tools/podcast/jobs', { ...options, body }) : null;
+  }
+  if (request.kind === 'message') {
+    return toolId === 'receptionist' ? api.POST('/api/hub/ai-tools/receptionist/messages', { ...options, body: { message: request.message, quoteToken } }) : null;
+  }
+  if (request.kind === 'clone') {
+    return toolId === 'my-voice' ? api.POST('/api/hub/ai-tools/my-voice', { ...options, body: { fileKey: request.fileKey, name: request.name, consentLine: request.consentLine, quoteToken } }) : null;
   }
   if (request.kind === 'file') {
     // The person's own file (AITOOLS-04): its `key` from the upload, and the quote token of the cost they were shown. Captions detects the language.
     const body = { fileKey: request.fileKey, quoteToken };
     if (toolId === 'captions') return api.POST('/api/hub/ai-tools/captions/jobs', { ...options, body });
     if (toolId === 'clean-audio') return api.POST('/api/hub/ai-tools/clean-audio/jobs', { ...options, body });
+    // POINTS-16 and POINTS-17: the voice to hear a recording in, the mood of a video's music, and the parts of a song.
+    if (toolId === 'voice-changer' && request.voiceId) return api.POST('/api/hub/ai-tools/voice-changer/jobs', { ...options, body: { ...body, voiceId: request.voiceId } });
+    if (toolId === 'video-music') return api.POST('/api/hub/ai-tools/video-music/jobs', { ...options, body: { ...body, ...(request.description ? { description: request.description } : {}) } });
+    if (toolId === 'stems') return api.POST('/api/hub/ai-tools/stems/jobs', { ...options, body: { ...body, ...(request.parts === 2 || request.parts === 6 ? { parts: request.parts } : {}) } });
     // Dubbing (AITOOLS-05): the same file and quote, and the language to hear it in, one of the Hub's own list. The language spoken is left out: the Hub detects it.
     if (toolId === 'dubbing' && request.targetLanguage) return api.POST('/api/hub/ai-tools/dubbing/jobs', { ...options, body: { ...body, targetLanguage: request.targetLanguage } });
     return null;

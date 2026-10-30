@@ -11,6 +11,8 @@ export type ChosenFile = {
   extension: string;
   /** Where the screen can draw it, when it is a picture. */
   previewUri?: string;
+  /** A video's length in seconds when the picker reports it (the phone's library does), so a clip over the Hub's limit is refused before it goes up (POINTS-17). */
+  seconds?: number;
   /** Phone builds: deletes the app's own copy once the upload has settled. */
   discard?: () => void;
 };

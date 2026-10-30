@@ -72,10 +72,24 @@ export function failedWords(message: string | null | undefined): { title: string
 }
 
 /** What a tool takes in: the words to speak (`text`, the default of an entry that does not say), a description of a sound or track (`prompt`), or the person's own recording (`file`). */
-export type InputKind = 'text' | 'prompt' | 'file' | 'image' | 'video';
-/** `image` (Make an image, Edit a photo) and `video` (Make a video, Talking photo) are POINTS-14 and POINTS-15's kinds. */
+export type InputKind = 'text' | 'prompt' | 'file' | 'image' | 'video' | 'dialogue' | 'podcast' | 'chat';
+/** `image` (Make an image, Edit a photo) and `video` (Make a video, Talking photo) are POINTS-14 and POINTS-15's kinds; `dialogue`, `podcast` and `chat` (the Receptionist) are POINTS-16, POINTS-18 and POINTS-12's. */
 export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind =>
-  tool.input.kind === 'prompt' ? 'prompt' : tool.input.kind === 'file' ? 'file' : tool.input.kind === 'image' ? 'image' : tool.input.kind === 'video' ? 'video' : 'text';
+  tool.input.kind === 'prompt'
+    ? 'prompt'
+    : tool.input.kind === 'file'
+      ? 'file'
+      : tool.input.kind === 'image'
+        ? 'image'
+        : tool.input.kind === 'video'
+          ? 'video'
+          : tool.input.kind === 'dialogue'
+            ? 'dialogue'
+            : tool.input.kind === 'podcast'
+              ? 'podcast'
+              : tool.input.kind === 'chat'
+                ? 'chat'
+                : 'text';
 
 /**
  * What a tool's screen can run: the app has its screen, and the Hub lists it as on with a limit for what it takes. A tool that reads
@@ -91,6 +105,10 @@ export function toolReady(tool: AiTool | undefined): tool is AiTool {
   }
   // A Talking photo has no words to limit (a photo and a voice); the picture and video tools describe what they make (the Hub's limit), and `isDrawnTool` held their other options.
   if (tool.id === 'talking-photo') return true;
+  // The Receptionist is its own screen (set-up, what it knows, a chat): it needs only to be listed whole, which `isDrawnTool` held.
+  if (inputKindOf(tool) === 'chat') return true;
+  if (inputKindOf(tool) === 'dialogue') return tool.input.maxCharacters > 0 && tool.input.charactersPerUnit > 0 && tool.voices.length > 0;
+  if (inputKindOf(tool) === 'podcast') return tool.input.maxCharacters > 0 && tool.voices.length > 0 && (tool.input.podcast?.durations.length ?? 0) > 0;
   if (!(tool.input.maxCharacters > 0)) return false;
   if (inputKindOf(tool) === 'image' || inputKindOf(tool) === 'video') return true;
   return inputKindOf(tool) === 'prompt' || (tool.input.charactersPerUnit > 0 && tool.voices.length > 0);

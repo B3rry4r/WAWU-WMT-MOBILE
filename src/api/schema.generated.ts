@@ -8713,6 +8713,263 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/ai-tools/voice-changer/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The points quote for a Voice changer recording (AITOOLS-11, R-109): exactly `POST /ai-tools/captions/quote`, for the
+         *     action `voice_changer_per_min`. The Hub reads the recording's length itself. A video, or a file it cannot read, is
+         *     refused with nothing held. `503 ai_tool_unavailable` while the tool's switch `ai.listed.voice-changer` is off.
+         */
+        post: operations["AiToolsController_quoteVoiceChanger"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/voice-changer/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Voice changer job (AITOOLS-11, R-109): the `fileKey` of a recording the person uploaded (`ai/input-audio`),
+         *     the `voiceId` to hear it in (a voice from `GET /ai-tools`, or `own` for their saved voice) and the `quoteToken`
+         *     for the action `voice_changer_per_min`. The same words, timing and feeling come back in the new voice: the done
+         *     job's `audioUrl` and its `audio` output (`pieceFormat: audio`). Priced by the minute of the recording as the Hub
+         *     reads it. The request, the answer and every refusal are those of `POST /ai-tools/captions/jobs`, plus
+         *     `400 ai_voice_unknown`. The recording is deleted when the job ends.
+         */
+        post: operations["AiToolsController_createVoiceChanger"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/dialogue/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Dialogue job (AITOOLS-11, R-109): `lines`, each `{ text, voiceId }` (a voice from `GET /ai-tools`, or `own`
+         *     for the person's saved voice), and the `quoteToken` of the `POST /points/quote` for the action `dialogue_per_min`
+         *     (units = the minutes the characters make, `characters` the total). At most 10 different voices and the character
+         *     limit in `GET /ai-tools` (`input.maxCharacters`); an empty line, too many voices, too many characters or a voice not on
+         *     the person's list is refused with the reason and nothing held. The done job's `audioUrl` is the whole scene.
+         */
+        post: operations["AiToolsController_createDialogue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/my-voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * "Clone your own voice" (AITOOLS-11, R-109): whether the person keeps a clone of their voice (`state`: `none`,
+         *     `making`, `ready`), its name, the words they agree to (`consent.line`, with their own name) and what the recording
+         *     must be. Read-only. `available` is false while the tool's switch `ai.listed.my-voice` is off.
+         */
+        get: operations["AiToolsController_myVoice"];
+        put?: never;
+        /**
+         * Makes the clone (AITOOLS-11, R-109): the `fileKey` of the person's own recording (`ai/input-audio`), a `name` for
+         *     the voice, the `consentLine` they agreed to (`consent.line` from `GET /ai-tools/my-voice`, sent back unchanged) and
+         *     the `quoteToken` for the action `voice_clone_once`. One clone a person: a second is `409 clone_exists` with nothing
+         *     held, and two taps at once make one. The points are held and the job answers `202 working`; poll `GET
+         *     /ai-tools/jobs/{id}` and `GET /ai-tools/my-voice`. Done, "Your voice" (`own`) is a choice in the voice tools for
+         *     its owner only. The points are kept only when the clone is made. The recording is deleted when the job ends.
+         *     Refusals with nothing held: `409 own_voice_consent_line_changed`, `409 own_voice_name_required`, `422
+         *     ai_length_too_short`, `422 ai_length_too_long`, `422 ai_file_unreadable`.
+         */
+        post: operations["AiToolsController_createMyVoice"];
+        /**
+         * Removes the person's saved voice (AITOOLS-11): "Your voice" leaves every list at once, the agreement goes with it
+         *     and the Hub deletes the provider's copy. Always works (also while the tool's switch is off). `gone`: the provider
+         *     holds none; `pending`: the Hub is still removing it and keeps trying. Nothing is charged or given back.
+         */
+        delete: operations["AiToolsController_removeMyVoice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/my-voice/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The points quote for the recording a clone is made from (AITOOLS-11): exactly `POST /ai-tools/captions/quote`, priced once (units 1), for the action `voice_clone_once`. A recording that is too short or too long is refused here. */
+        post: operations["AiToolsController_quoteMyVoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/video-music/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The points quote for the video Music for a video is made for (AITOOLS-12, R-109): exactly `POST /ai-tools/captions/quote`, priced flat (units 1), for the action `video_music_per_track`. An audio file, a video over the length setting or over 200 MB is refused here. */
+        post: operations["AiToolsController_quoteVideoMusic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/video-music/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Music for a video job (AITOOLS-12, R-109): the `fileKey` of the person's own video (`ai/input-video`), an
+         *     optional `description` (the mood in words) and the `quoteToken` for the action `video_music_per_track`. Priced flat,
+         *     one track. The result is MUSIC as an audio file: the Hub does not put it on the video (the provider returns music
+         *     only), and the screen says so. A long job: the app polls `GET /ai-tools/jobs/{id}`. The request, the answer and
+         *     the refusals are those of `POST /ai-tools/captions/jobs`, plus `422 ai_length_too_long`, `422 ai_file_too_large` and
+         *     `422 ai_prompt_too_long`. If the provider's plan does not cover the route the job fails with "This isn't available
+         *     right now. No points were taken." The video is deleted when the job ends.
+         */
+        post: operations["AiToolsController_createVideoMusic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/stems/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The points quote for the song Split a song takes (AITOOLS-12, R-109): exactly `POST /ai-tools/captions/quote`, priced flat (units 1), for the action `stems_per_song`. */
+        post: operations["AiToolsController_quoteStems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/stems/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Split a song job (AITOOLS-12, R-109): the `fileKey` of the person's own song (`ai/input-audio`), `parts`
+         *     (2: the voice and the rest, or 6; left out: 2) and the `quoteToken` for the action `stems_per_song`. Priced flat,
+         *     one song. Done, `outputs` hold one `audio` file for each part with its plain `name` ("Voice", "Drums"), each with
+         *     `pieceFormat: audio`; `POST /ai-tools/jobs/{id}/piece` takes the `outputIndex` of the part the person picks. A long
+         *     job: the app polls `GET /ai-tools/jobs/{id}`. The request, the answer and the refusals are those of `POST
+         *     /ai-tools/video-music/jobs`. An answer from the provider the Hub cannot open safely fails the job and gives every
+         *     point back. The song is deleted when the job ends.
+         */
+        post: operations["AiToolsController_createStems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/audiobook/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts an Audiobook job (AITOOLS-13, R-109): the `text` (or the `fileKey` of a plain text file uploaded to
+         *     `ai/input-doc`), a `voiceId` from `GET /ai-tools` and the `quoteToken` for the action `audiobook_per_min` (units = the
+         *     minutes the characters make, `characters` the total). The points for the whole text are held up front; the Hub speaks
+         *     the chapters one after the other and joins them into one audio file: poll `GET /ai-tools/jobs/{id}`; the done job's
+         *     `audioUrl` is the whole book (`pieceFormat: audio`, one piece). An empty text, a text over the limit in `GET
+         *     /ai-tools` (`input.maxCharacters`), a voice off the list and a file that is not text are refused with the reason and
+         *     nothing held; the day's cap stops a longer book (`points_cap_reached`, with the reset time). `503
+         *     ai_tool_unavailable` while the tool's switch `ai.listed.audiobook` is off.
+         */
+        post: operations["AiToolsController_createAudiobook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/podcast/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Podcast maker job (AITOOLS-13, R-109): a `source` (`text`, or an `https` `url` of at most 2,000 characters,
+         *     which the Hub never opens), a `mode` (`conversation` with two `voiceIds`, `bulletin` with one), a `duration` (`short`,
+         *     `standard` or `long`, each its own plan action: the `quoteToken` is for that action, units 1) and a `language` from
+         *     `GET /ai-tools` (`input.podcast.languages`). The provider works for minutes: poll `GET /ai-tools/jobs/{id}`; the done
+         *     job's `audioUrl` is the podcast (`pieceFormat: audio`). A link that is not `https`, one over the limit, two voices that
+         *     are the same and a language off the list are refused with the reason and nothing held. If the provider does not take
+         *     our account (its Studio API is open to allowlisted accounts only) the job fails with "This isn't available right now.
+         *     No points were taken." The tool is listed only while `ai.listed.podcast` and `ai.podcast_studio_api_ok` are both on.
+         */
+        post: operations["AiToolsController_createPodcast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ai-tools/jobs": {
         parameters: {
             query?: never;
@@ -8878,6 +9135,137 @@ export interface paths {
         get: operations["AiVoiceSamplesController_sample"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/receptionist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's Receptionist: whether it is set up, its details, what it knows, and the limits and voices the screen draws. Read-only. */
+        get: operations["ReceptionistController_read"];
+        /**
+         * Sets up or changes the Receptionist (`businessName`, `offer`, optional `replyStyle`, `language`, `voiceId`). The
+         *     first save makes the agent; later saves edit it. A language or voice off the lists, or an empty name or offer, is
+         *     refused and nothing is created. `503` when it cannot be reached, with nothing changed.
+         */
+        put: operations["ReceptionistController_save"];
+        post?: never;
+        /**
+         * Clears the Receptionist: the agent, every document it knew and the earlier messages. `atProvider: pending` means the
+         *     Hub is still removing a copy: ask again. Always works, also while the tool is off.
+         */
+        delete: operations["ReceptionistController_clear"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/receptionist/knowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adds something it knows: `kind: text` (`text`), `url` (`url`, an `https` page) or `file` (`fileKey` of a text or PDF
+         *     uploaded to `ai/input-doc`), with a `name`. At most the limit in `GET /ai-tools/receptionist` (`limits.docsMax`);
+         *     a text, document or link over its limit, a link that is not `https`, a file type off the list and another person's
+         *     key are refused with the reason and nothing is created. The profile and listings are NOT read: what it knows is what
+         *     the person adds.
+         */
+        post: operations["ReceptionistController_addKnowledge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/receptionist/knowledge/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Makes it forget one thing: deleted at the provider, then the row. `404 not_found` for another person's. */
+        delete: operations["ReceptionistController_removeKnowledge"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/receptionist/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sends it a text message: `message` and the `quoteToken` of the `POST /points/quote` for the action
+         *     `receptionist_message` (units 1). The points are held; the job answers `202 working`; poll `GET /ai-tools/jobs/{id}`:
+         *     the reply is the done job's `text` output, the points are kept only then and every point goes back on a failure.
+         *     The same Idempotency-Key twice sends one message. `409 receptionist_not_set_up` before the first save.
+         */
+        post: operations["ReceptionistController_message"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/receptionist/voice-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a talking session: holds the points for the longest session (`limits.voiceMaxMinutes`, the quote is
+         *     `POST /points/quote` for `receptionist_voice_per_min` with that many units) and answers `{ id, signedUrl,
+         *     conversationId, maxSeconds }`. The phone talks to the provider on `signedUrl` (used once); the Hub carries no audio.
+         *     Call `end` when the talk is over.
+         */
+        post: operations["ReceptionistController_startVoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/receptionist/voice-sessions/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ends a talking session: the Hub reads how long it was, keeps the real minutes (rounded up, at most what was held)
+         *     and gives the rest back. `state: working` means the provider has not closed the conversation yet and the Hub settles
+         *     it within a minute. A second `end` changes nothing. A session nobody ends is settled at the longest by the sweep.
+         */
+        post: operations["ReceptionistController_endVoice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9694,7 +10082,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample" | "ai/input-audio" | "ai/input-video" | "ai/input-image";
+            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample" | "ai/input-audio" | "ai/input-video" | "ai/input-image" | "ai/input-doc";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -12010,7 +12398,7 @@ export interface components {
              * @description The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).
              * @enum {string}
              */
-            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min" | "image_per_use" | "photo_edit_per_use" | "video_per_sec" | "talking_photo_per_sec";
+            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min" | "image_per_use" | "photo_edit_per_use" | "video_per_sec" | "talking_photo_per_sec" | "voice_changer_per_min" | "dialogue_per_min" | "voice_clone_once" | "video_music_per_track" | "stems_per_song" | "audiobook_per_min" | "podcast_short" | "podcast_standard" | "podcast_long";
             /** @description How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which). */
             units: number;
             /** @description Dubbing only: how many languages (1 when left out). Any other action refuses more than 1. */
@@ -12023,7 +12411,7 @@ export interface components {
              * @description The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).
              * @enum {string}
              */
-            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min" | "image_per_use" | "photo_edit_per_use" | "video_per_sec" | "talking_photo_per_sec";
+            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min" | "image_per_use" | "photo_edit_per_use" | "video_per_sec" | "talking_photo_per_sec" | "voice_changer_per_min" | "dialogue_per_min" | "voice_clone_once" | "video_music_per_track" | "stems_per_song" | "audiobook_per_min" | "podcast_short" | "podcast_standard" | "podcast_long";
             /** @description How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which). */
             units: number;
             /** @description Dubbing only: how many languages (1 when left out). Any other action refuses more than 1. */
@@ -12153,12 +12541,124 @@ export interface components {
             /** @description `quoteToken` from `POST /ai-tools/talking-photo/quote` (sent with the same voice). A different cost now is `409 quote_changed`. */
             quoteToken: string;
         };
+        CreateVoiceChangerJobDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+            /** @description `quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+            /** @description The voice to hear it in: an id from `GET /ai-tools` (`voices`), `own` for the person's saved voice when `GET /ai-tools/my-voice` says `ready`. */
+            voiceId: string;
+        };
+        DialogueLineDto: {
+            /** @description The words. A line with no words in it is refused by the Hub with its own sentence and nothing held. */
+            text: string;
+            /** @description A voice id from `GET /ai-tools` (`voices`), or `own` for the person's saved voice. */
+            voiceId: string;
+        };
+        CreateDialogueJobDto: {
+            /** @description The lines of the scene, in order, up to 10 different voices and the character limit in `GET /ai-tools` (`input.maxCharacters`). */
+            lines: components["schemas"]["DialogueLineDto"][];
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (action `dialogue_per_min`, units = the minutes the characters make). */
+            quoteToken: string;
+        };
+        CreateMyVoiceJobDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+            /** @description `quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+            /** @description The name the person gives their voice. It stays on the Hub; the provider is told a plain name. */
+            name: string;
+            /** @description The words the person agreed to: `consent.line` from `GET /ai-tools/my-voice`, sent back unchanged. Any other words are `409 own_voice_consent_line_changed`. */
+            consentLine: string;
+        };
+        CreateVideoMusicJobDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+            /** @description `quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+            /** @description The mood in words, up to the limit in `GET /ai-tools`. Left out: the music follows the video alone. */
+            description?: string;
+        };
+        CreateStemsJobDto: {
+            /** @description The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`. */
+            fileKey: string;
+            /** @description `quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+            /**
+             * @description Two parts (the voice and the rest) or six. Left out: two.
+             * @enum {number}
+             */
+            parts?: 2 | 6;
+        };
+        CreateAudiobookJobDto: {
+            /** @description The words to read. Never stored beyond the job: the Hub keeps them in a private file until the job ends. */
+            text?: string;
+            /** @description Instead of `text`: the key of a plain text file the person uploaded (`POST /uploads/presign` with the folder `ai/input-doc`, then `POST /uploads/confirm`). */
+            fileKey?: string;
+            /** @description A voice id from `GET /ai-tools`. */
+            voiceId: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (action `audiobook_per_min`, units = the minutes the characters make). */
+            quoteToken: string;
+        };
+        PodcastSourceDto: {
+            text?: string;
+            /** @description A web link: `https` only, at most 2,000 characters. The Hub never opens it. */
+            url?: string;
+        };
+        CreatePodcastJobDto: {
+            source: components["schemas"]["PodcastSourceDto"];
+            /**
+             * @description `conversation`: two voices talk it over. `bulletin`: one host reads it.
+             * @enum {string}
+             */
+            mode: "conversation" | "bulletin";
+            /** @description Voice ids from `GET /ai-tools`: one for a bulletin, two for a conversation (host, then guest). */
+            voiceIds: string[];
+            /**
+             * @description How long: `short` (under 3 minutes), `standard` (about 3 to 7) or `long` (over 7).
+             * @enum {string}
+             */
+            duration: "short" | "standard" | "long";
+            /** @description Two letters from the list in `GET /ai-tools` (`input.podcast.languages`). */
+            language: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (the action for the length chosen, units 1). */
+            quoteToken: string;
+        };
         OwnVoiceConsentDto: {
             line: string;
         };
         MakePieceDto: {
             /** @description The place of the output in the job's `outputs`, from 0. */
             outputIndex: number;
+        };
+        SaveReceptionistDto: {
+            businessName: string;
+            /** @description What the business offers, in the person's own words. */
+            offer: string;
+            /** @description How it should reply (tone, length). Optional. */
+            replyStyle?: string;
+            /** @description A code from `limits.languages`; English when left out. */
+            language?: string;
+            /** @description A voice id from `voices`; the first when left out. */
+            voiceId?: string;
+        };
+        AddKnowledgeDto: {
+            /** @enum {string} */
+            kind: "text" | "url" | "file";
+            name: string;
+            text?: string;
+            url?: string;
+            fileKey?: string;
+        };
+        CreateReceptionistMessageDto: {
+            /** @description The person's message. Never logged by the Hub. */
+            message: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (action `receptionist_message`, units 1). */
+            quoteToken: string;
+        };
+        StartVoiceSessionDto: {
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (action `receptionist_voice_per_min`, units = `limits.voiceMaxMinutes`). */
+            quoteToken: string;
         };
         NamePreviewDto: {
             /** @description The name to say. */
@@ -18215,6 +18715,15 @@ export interface components {
             maxBytes: number;
             maxMinutes: number;
             languageCode: boolean;
+            /** @enum {string|null} */
+            only?: "video" | "audio" | null;
+            maxSeconds?: number | null;
+            voice?: boolean | null;
+            clone?: boolean | null;
+            description?: {
+                maxCharacters: number;
+            } | null;
+            parts?: number[] | null;
             dubbing?: components["schemas"]["AiToolDubbingView"];
         };
         AiToolOptionsView: {
@@ -18234,6 +18743,21 @@ export interface components {
                 fromJob: boolean;
             } | null;
         };
+        AiToolPodcastView: {
+            modes: ("conversation" | "bulletin")[];
+            maxVoices: number;
+            durations: {
+                /** @enum {string} */
+                id: "short" | "standard" | "long";
+                action: string;
+                costPoints: number;
+            }[];
+            maxLinkCharacters: number;
+            languages: {
+                code: string;
+                name: string;
+            }[];
+        };
         AiVoiceView: {
             id: string;
             name: string;
@@ -18242,22 +18766,26 @@ export interface components {
         };
         AiToolView: {
             /** @enum {string} */
-            id: "video" | "image" | "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing" | "photo-edit" | "talking-photo";
+            id: "video" | "image" | "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing" | "photo-edit" | "talking-photo" | "voice-changer" | "dialogue" | "my-voice" | "video-music" | "stems" | "audiobook" | "podcast" | "receptionist";
             action: string;
             name: string;
             description: string;
             /** @enum {string} */
-            unit: "use" | "minute" | "track" | "second";
+            unit: "use" | "minute" | "track" | "message" | "second";
             costPointsPerUnit: number;
             enabled: boolean;
             input: {
                 /** @enum {string} */
-                kind: "text" | "video" | "image" | "chat" | "file" | "prompt" | "dialogue";
+                kind: "text" | "video" | "image" | "chat" | "file" | "dialogue" | "podcast" | "prompt";
                 maxCharacters: number;
                 charactersPerUnit: number;
                 instrumental?: boolean | null;
                 file?: components["schemas"]["AiToolFileView"];
                 options?: components["schemas"]["AiToolOptionsView"];
+                dialogue?: {
+                    maxVoices: number;
+                } | null;
+                podcast?: components["schemas"]["AiToolPodcastView"];
             };
             voices: components["schemas"]["AiVoiceView"][];
         };
@@ -18285,7 +18813,7 @@ export interface components {
         AiJobView: {
             id: string;
             /** @enum {string} */
-            tool: "video" | "image" | "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing" | "photo-edit" | "talking-photo";
+            tool: "video" | "image" | "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing" | "photo-edit" | "talking-photo" | "voice-changer" | "dialogue" | "my-voice" | "video-music" | "stems" | "audiobook" | "podcast" | "receptionist";
             /** @enum {string} */
             state: "failed" | "done" | "working";
             voiceId: string;
@@ -18343,6 +18871,28 @@ export interface components {
             wallet: components["schemas"]["PointsShortfallOfferView"];
             walletNote: string | null;
         };
+        SavedVoiceView: {
+            available: boolean;
+            /** @enum {string} */
+            state: "none" | "ready" | "making";
+            name: string | null;
+            createdAt: string | null;
+            consent: {
+                line: string;
+            };
+            recording: {
+                folder: string;
+                accepts: string[];
+                minSeconds: number;
+                maxSeconds: number;
+                maxBytes: number;
+            };
+        };
+        SavedVoiceRemovedView: {
+            myVoice: components["schemas"]["SavedVoiceView"];
+            /** @enum {string} */
+            atProvider: "pending" | "gone";
+        };
         AiJobPage: {
             items: components["schemas"]["AiJobView"][];
             nextCursor: string | null;
@@ -18372,6 +18922,54 @@ export interface components {
                 name: string;
             };
             suggestedTitle: string;
+        };
+        ReceptionistKnowledgeView: {
+            id: string;
+            /** @enum {string} */
+            kind: "text" | "file" | "url";
+            name: string;
+            bytes: number;
+            createdAt: string;
+        };
+        ReceptionistView: {
+            available: boolean;
+            setUp: boolean;
+            details: {
+                businessName: string;
+                offer: string;
+                replyStyle: string;
+                language: string;
+                voiceId: string;
+            } | null;
+            knowledge: components["schemas"]["ReceptionistKnowledgeView"][];
+            limits: {
+                docsMax: number;
+                docMaxBytes: number;
+                textMaxChars: number;
+                messageMaxChars: number;
+                voiceMaxMinutes: number;
+                languages: {
+                    code: string;
+                    name: string;
+                }[];
+            };
+            voices: components["schemas"]["AiVoiceView"][];
+        };
+        ReceptionistRemovedView: {
+            receptionist: components["schemas"]["ReceptionistView"];
+            /** @enum {string} */
+            atProvider: "pending" | "gone";
+        };
+        VoiceSessionView: {
+            id: string;
+            /** @enum {string} */
+            state: "failed" | "done" | "working";
+            signedUrl: string | null;
+            conversationId: string | null;
+            maxSeconds: number;
+            heldPoints: number;
+            keptPoints: number;
+            minutes: number | null;
         };
         MovieCardView: {
             id: string;
@@ -36649,6 +37247,318 @@ export interface operations {
             };
         };
     };
+    AiToolsController_quoteVoiceChanger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteFileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFileQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createVoiceChanger: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVoiceChangerJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createDialogue: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDialogueJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_myVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedVoiceView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createMyVoice: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMyVoiceJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_removeMyVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedVoiceRemovedView"];
+                };
+            };
+        };
+    };
+    AiToolsController_quoteMyVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteFileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFileQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_quoteVideoMusic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteFileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFileQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createVideoMusic: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVideoMusicJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_quoteStems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteFileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFileQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createStems: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStemsJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createAudiobook: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAudiobookJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createPodcast: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePodcastJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
     AiToolsController_listJobs: {
         parameters: {
             query?: {
@@ -36863,6 +37773,184 @@ export interface operations {
                 };
                 content: {
                     "audio/mpeg": string;
+                };
+            };
+        };
+    };
+    ReceptionistController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceptionistView"];
+                };
+            };
+        };
+    };
+    ReceptionistController_save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveReceptionistDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceptionistView"];
+                };
+            };
+        };
+    };
+    ReceptionistController_clear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceptionistRemovedView"];
+                };
+            };
+        };
+    };
+    ReceptionistController_addKnowledge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddKnowledgeDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceptionistView"];
+                };
+            };
+        };
+    };
+    ReceptionistController_removeKnowledge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceptionistView"];
+                };
+            };
+        };
+    };
+    ReceptionistController_message: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per message. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReceptionistMessageDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    ReceptionistController_startVoice: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per session. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartVoiceSessionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceSessionView"];
+                };
+            };
+        };
+    };
+    ReceptionistController_endVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceSessionView"];
                 };
             };
         };

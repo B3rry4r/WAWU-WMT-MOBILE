@@ -23,7 +23,8 @@ export async function pickFile(types: readonly string[]): Promise<ChosenFile | n
     if (!asset) return null;
     const picked = await readPicked(asset);
     const name = asset.fileName ?? `${allOf(types, 'image/') ? 'photo' : 'video'}.${picked.extension}`;
-    return { blob: picked.blob, name, contentType: picked.contentType, extension: picked.extension, previewUri: picked.previewUri, discard: picked.discard };
+    const seconds = typeof asset.duration === 'number' && asset.duration > 0 ? asset.duration / 1000 : undefined;
+    return { blob: picked.blob, name, contentType: picked.contentType, extension: picked.extension, previewUri: picked.previewUri, ...(seconds ? { seconds } : {}), discard: picked.discard };
   }
   const result = await getDocumentAsync({ type: [...types], copyToCacheDirectory: true, multiple: false });
   const asset = result.canceled ? undefined : result.assets?.[0];

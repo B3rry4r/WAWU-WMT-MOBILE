@@ -9,6 +9,9 @@ import { barCountFor, playedBars, voiceClock, voicePlayerMetrics as m, waveShape
 import { AudioSource, type SeekRequest } from '@/features/feed/player';
 import { font, layout, radius, type, useWawu } from '@/theme';
 
+/** A screen reader's step on the wave: a tenth of the audio. */
+const SKIP_SHARE = 0.1;
+
 export type ResultPlayerProps = {
   /** The Hub's link to the finished audio. */
   uri: string;
@@ -41,6 +44,14 @@ export function ResultPlayer({ uri, name, testID }: ResultPlayerProps) {
     setSeek({ to: 0, at: Date.now() });
   }, []);
 
+  const seekTo = (to: number) => {
+    setPosition(to);
+    setSeek({ to, at: Date.now() });
+  };
+  const jump = (share: number) => {
+    if (length > 0) seekTo(Math.min(length, Math.max(0, position + share * length)));
+  };
+
   const bars = barCountFor(waveWidth);
   const progress = length > 0 ? position / length : 0;
   const played = playedBars(progress, bars);
@@ -63,18 +74,24 @@ export function ResultPlayer({ uri, name, testID }: ResultPlayerProps) {
       >
         <Icon name={playing ? 'Pause' : 'Play'} size={m.buttonIcon} color={colors.textOnAccent} strokeWidth={m.buttonIconStroke} fill={colors.textOnAccent} />
       </Pressable>
-      <View
+      <Pressable
         testID={testID ? `${testID}-wave` : undefined}
-        accessibilityRole="progressbar"
+        accessibilityRole="adjustable"
         accessibilityLabel={name}
         accessibilityValue={{ min: 0, max: 100, now: playedBars(progress, 100) }}
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        onAccessibilityAction={(e) => jump(e.nativeEvent.actionName === 'increment' ? SKIP_SHARE : -SKIP_SHARE)}
+        onPress={(e) => {
+          // A tap on the wave moves the sound to that place (a long audio, an audiobook, can be sought).
+          if (waveWidth && length > 0) seekTo(Math.min(1, Math.max(0, e.nativeEvent.locationX / waveWidth)) * length);
+        }}
         onLayout={(e) => setWaveWidth(e.nativeEvent.layout.width)}
         style={styles.wave}
       >
         {Array.from({ length: bars }, (_, i) => (
-          <View key={i} style={[styles.bar, { height: `${waveShape[i % waveShape.length]}%`, backgroundColor: i < played ? colors.accent : colors.borderStrong }]} />
+          <View key={i} pointerEvents="none" style={[styles.bar, { height: `${waveShape[i % waveShape.length]}%`, backgroundColor: i < played ? colors.accent : colors.borderStrong }]} />
         ))}
-      </View>
+      </Pressable>
       <Text variant="body" tone="textMuted" testID={testID ? `${testID}-time` : undefined} style={styles.time}>
         {clock}
       </Text>

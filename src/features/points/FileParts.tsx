@@ -9,6 +9,7 @@ import { formatBytes } from '@/features/create/model';
 import { canvasNormalLineHeight, font, space, useWawu } from '@/theme';
 
 import { DUB_WORDS, FILE_WORDS, type Cue } from './fileToolModel';
+import { MUSIC_WORDS } from './voiceToolsModel';
 
 /*
  * The parts of the file step (POINTS-10). No board draws them (G-POINTS-09-1): they are PT2's own words box turned into a
@@ -30,17 +31,33 @@ const statusOf = (r: Recording): string =>
  * The row where PT2 has the text box: "Choose a recording" until one is chosen, then its name and where it is. Once its job is done
  * (`settled`, PT2b) the row stays the way to a new recording, and says so to a screen reader, but does not write "Choose another" above the result.
  */
-export function RecordingBox({ recording, onChoose, enabled, settled = false }: { recording: Recording | null; onChoose: () => void; enabled: boolean; settled?: boolean }) {
+export type FileStepWords = { choose: string; chooseAnother: string; boxLabel: string; icon: 'AudioWaveform' | 'Video' };
+const FILE_STEP: FileStepWords = { choose: FILE_WORDS.choose, chooseAnother: FILE_WORDS.chooseAnother, boxLabel: FILE_WORDS.boxLabel, icon: 'AudioWaveform' };
+
+export function RecordingBox({
+  recording,
+  onChoose,
+  enabled,
+  settled = false,
+  words = FILE_STEP,
+}: {
+  recording: Recording | null;
+  onChoose: () => void;
+  enabled: boolean;
+  settled?: boolean;
+  /** The words of a tool whose file is not "a recording" (a video, a song): POINTS-17. */
+  words?: FileStepWords;
+}) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const empty = recording === null || recording.phase === 'refused';
   const edge = empty ? { width: BOX.ringOn, color: colors.accent } : { width: BOX.ringOff, color: colors.borderHairline };
-  const label = recording === null ? FILE_WORDS.choose : recording.phase === 'refused' ? FILE_WORDS.choose : FILE_WORDS.chooseAnother;
+  const label = recording === null ? words.choose : recording.phase === 'refused' ? words.choose : words.chooseAnother;
   return (
     <Pressable
       testID="tool-file"
       accessibilityRole="button"
-      accessibilityLabel={recording && recording.phase !== 'refused' ? `${FILE_WORDS.boxLabel}: ${statusOf(recording)}. ${label}` : label}
+      accessibilityLabel={recording && recording.phase !== 'refused' ? `${words.boxLabel}: ${statusOf(recording)}. ${label}` : label}
       accessibilityState={{ disabled: !enabled, busy: recording?.phase === 'uploading' || recording?.phase === 'checking' }}
       disabled={!enabled}
       onPress={onChoose}
@@ -52,7 +69,7 @@ export function RecordingBox({ recording, onChoose, enabled, settled = false }: 
         ring.style,
       ]}
     >
-      <Icon name={empty ? 'Upload' : 'AudioWaveform'} size={BOX.mark} color={empty ? colors.accentFg : colors.textSecondary} strokeWidth={2} />
+      <Icon name={empty ? 'Upload' : words.icon} size={BOX.mark} color={empty ? colors.accentFg : colors.textSecondary} strokeWidth={2} />
       <View style={styles.words}>
         <Text variant="body" numberOfLines={1} testID="tool-file-name" style={[font(600), { fontSize: BOX.name, lineHeight: canvasNormalLineHeight(BOX.name) }]}>
           {empty ? label : recording.name}
@@ -66,6 +83,17 @@ export function RecordingBox({ recording, onChoose, enabled, settled = false }: 
           {label}
         </Text>
       )}
+    </Pressable>
+  );
+}
+
+/** A big upload can be stopped (POINTS-17): a plain "Cancel" link under the row while the file is going up. Nothing is held until Run, so a stopped upload holds nothing. */
+export function CancelUpload({ onCancel }: { onCancel: () => void }) {
+  return (
+    <Pressable testID="tool-file-cancel" accessibilityRole="button" accessibilityLabel={MUSIC_WORDS.cancelUpload} onPress={onCancel} hitSlop={space.md} style={styles.cancel}>
+      <Text variant="body" tone="textMuted" style={[font(600), styles.underline, { fontSize: BOX.line, lineHeight: canvasNormalLineHeight(BOX.line) }]}>
+        {MUSIC_WORDS.cancelUpload}
+      </Text>
     </Pressable>
   );
 }
@@ -124,4 +152,6 @@ const styles = StyleSheet.create({
   box: { flexDirection: 'row', alignItems: 'center', gap: BOX.parts, minHeight: BOX.min, borderRadius: BOX.radius, paddingVertical: BOX.padV, paddingHorizontal: BOX.padH },
   words: { flex: 1, minWidth: 0, gap: BOX.lineGap },
   transcript: { gap: space.md },
+  cancel: { alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' },
+  underline: { textDecorationLine: 'underline' },
 });

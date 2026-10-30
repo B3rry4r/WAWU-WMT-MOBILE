@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
-import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
+import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
-import { IconTile } from '@/components/IconTile';
 import { formatPointsCount } from '@/components/PointsFigure';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -25,9 +24,18 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 import { canvasNormalLineHeight, font, space, useWawu, radius } from '@/theme';
 
 import { myPointsQuery } from './api';
+import { UPLOAD_CANCELLED } from '@/features/create/upload';
+import type { ChosenFile } from '@/features/create/chosen';
+
 import { fetchFileQuote, uploadRecording, type FileQuote } from './fileToolApi';
-import { DUB_WORDS, dubLanguages, FILE_WORDS, folderFor, isDubbing, limitsLine, readCues, refusalFor, subtitleFileName, typeOfRecording, acceptedTypes } from './fileToolModel';
-import { RecordingBox, SubtitlesCard, TranscriptCard, type Recording } from './FileParts';
+import { DUB_WORDS, dubLanguages, FILE_WORDS, folderFor, isDubbing, limitsLine, longestSeconds, readCues, refusalFor, spokenLength, subtitleFileName, typeOfRecording, acceptedTypes } from './fileToolModel';
+import { CancelUpload, RecordingBox, SubtitlesCard, TranscriptCard, type Recording } from './FileParts';
+import { SceneLines } from './DialogueParts';
+import { PartsList, PartsRow } from './PartsList';
+import { PodcastInputs, type PodcastChoice } from './PodcastParts';
+import { RecordSection } from './RecordRow';
+import { pickTextFile } from './textPick';
+import { BOOK_WORDS, DIALOGUE_WORDS, FILE_STEP_WORDS, isFlatFileTool, linkProblem, MUSIC_WORDS, nextVoice, PODCAST_WORDS, sceneCharacters, sceneFilled, sceneVoices, textFileProblem, voiceProblem, writeLine, type SceneLine } from './voiceToolsModel';
 import { LengthRow, PhotoRow, ShapeRow, VoiceRow as SpeechRow } from './MediaInputs';
 import { defaultShape, isTalking, lengthsOf, MEDIA_WORDS, shapesOf, thingOf, workingTitleFor } from './mediaToolModel';
 import type { AiPiece } from './mediaToolApi';
@@ -37,23 +45,23 @@ import { useMediaInputs } from './useMediaInputs';
 import { useJobCheck } from './JobCheck';
 import { PointsFrame } from './PointsFrame';
 import { ResultPlayer } from './ResultPlayer';
-import { aiToolsQuery, fetchJobQuote, type AiTool, type JobAction } from './studioApi';
+import { aiToolsQuery, fetchJobQuote, type AiTool, type JobAction, type JobInput } from './studioApi';
 import { giveOwnVoiceConsent, OWN_VOICE_ID, ownVoiceKey, ownVoiceQuery, removeOwnVoice } from './ownVoiceApi';
 import { capTitle } from './studioModel';
 import { canShareSubtitles, shareSubtitles } from './subtitleFile';
-import { DraftPicker, OwnVoiceConsent, PreviewPlay } from './VoiceExtras';
+import { DraftPicker, OwnVoiceConsent } from './VoiceExtras';
+import { Working } from './WorkingView';
+import { CloneVoiceScreen } from './CloneVoiceScreen';
+import { ReceptionistScreen } from './ReceptionistScreen';
+import { VOICE, VoiceList } from './VoiceRows';
 import { charactersOf, clampText, countLine, EXTRAS_WORDS, failedWords, inputKindOf, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine, type InputKind } from './voiceoverModel';
 import { dropJobIntent, findJobIntent, putJobIntent, type JobIntent, type MediaIntent } from './voiceoverIntent';
-import { hasResult, mediaResult, outputText, pollMsFor, startJob, voiceJobQuery, type JobRequest, type VoiceJob } from './voiceoverApi';
+import { hasResult, mediaResult, outputText, pollMsFor, resultFiles, startJob, voiceJobQuery, type JobRequest, type VoiceJob } from './voiceoverApi';
 
 /** design/_gen/points.js line 90, `pt2Body`: the parts stand 14 apart; the box and its count line 8 apart. */
 const BODY_GAP = 14;
 /** Line 90: a 20 corner box on the input colour, 14 by 16 padding, 15 type on a 1.5 line, 150 high while typing and 110 after; a 1.5 accent ring while typing, a 1 hairline after. The count line is 12.5, muted. */
-const BOX = { radius: 20, padV: 14, padH: 16, font: 15, leading: 1.5, tall: 150, short: 110, ringOn: 1.5, ringOff: 1, between: 8, meta: 12.5 } as const;
-/** Line 88, `voiceRow`: 10 between the parts, 10 by 12 padding, a 16 corner, a 1.5 accent ring on the picked voice; the name 14 semi-bold, the line 12; line 60, `radio`: 22 across, the picked one a 6.5 ring. The label above is kit.js line 43: 11, 700, .08em, capitals. */
-const VOICE = { parts: 10, padV: 10, padH: 12, radius: 16, name: 14, line: 12, radio: 22, radioOn: 6.5, radioOff: 1.5, between: 8, labelSize: 11, labelTracking: 0.08, ringOn: 1.5, ringOff: 1 } as const;
-/** Line 90, the working view: 12 between the parts, 20 above and below, a 64 mark, the title 20 bold, the line 13.5. */
-const WORKING = { parts: 12, padV: 20, mark: 64, title: 20, titleTracking: -0.03, titleLeading: 1.15, body: 13.5, bodyLeading: 1.45 } as const;
+const BOX = { radius: 20, padV: 14, padH: 16, font: 15, leading: 1.5, tall: 150, short: 110, big: 260, compact: 76, ringOn: 1.5, ringOff: 1, between: 8, meta: 12.5 } as const;
 /** Line 90, the done view: the player and the line 12 apart (line 91), the line 13 with a 15 mark 8 before it; line 91's foot: the cost row 8 between its parts, 14 type, a 16 mark. */
 const DONE = { parts: 12, line: 13, mark: 15, markGap: 8, footGap: 10, cost: 14, costMark: 16, costGap: 8 } as const;
 const SKELETON = { box: 150, voice: 56, voices: 2 } as const;
@@ -125,6 +133,9 @@ export function ToolScreen(props: ToolScreenProps) {
       </PointsFrame>
     );
   }
+  // The Receptionist and Clone your own voice are screens of their own (POINTS-12, POINTS-16): a set-up, what it knows and a chat; a consent, a recording and a saved voice.
+  if (tool.id === 'receptionist') return <ReceptionistScreen key={tool.id} owner={owner} tool={tool} balance={points.data.balance} onBack={props.onBack} onBuyPoints={props.onBuyPoints} onLeave={props.onLeave} />;
+  if (tool.id === 'my-voice') return <CloneVoiceScreen key={tool.id} owner={owner} tool={tool} balance={points.data.balance} onBack={props.onBack} onBuyPoints={props.onBuyPoints} onLeave={props.onLeave} />;
   return <Tool key={tool.id} {...props} owner={owner} tool={tool} balance={points.data.balance} />;
 }
 
@@ -138,7 +149,9 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   const { colors } = useWawu();
   const kind = inputKindOf(tool);
   const [text, setText] = useState('');
-  const [voiceId, setVoiceId] = useState(kind === 'text' ? (tool.voices[0]?.id ?? '') : '');
+  // A Voice changer picks the voice to hear a recording in, as VoiceOver does for words (POINTS-16).
+  const takesVoice = kind === 'text' || (kind === 'file' && tool.input.file?.voice === true);
+  const [voiceId, setVoiceId] = useState(takesVoice ? (tool.voices[0]?.id ?? '') : '');
   const [jobId, setJobId] = useState<string | null>(null);
   const [unsent, setUnsent] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -162,7 +175,9 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   const [voicePicking, setVoicePicking] = useState(false);
   const [original, setOriginal] = useState<string | null>(null);
   const [placesSheet, setPlacesSheet] = useState(false);
-  const offersOwn = kind === 'text' && own.data?.available === true && own.data.hasRecording === true;
+  // The Hub adds "Your voice" itself, as the first voice, once the person keeps a clone (POINTS-16): then the list is the Hub's as it comes.
+  const hubOwn = tool.voices.some((v) => v.id === OWN_VOICE_ID);
+  const offersOwn = kind === 'text' && !hubOwn && own.data?.available === true && own.data.hasRecording === true;
   const ownReady = offersOwn && own.data?.ready === true;
   // PT2 draws a play button on "Your voice" too. The Hub serves no sample of the recording itself (`sample.recorded` is a flag); what it does
   // serve is the person's own Voice Intro, read by their voice, and that plays here. Not drawn while there is none (R-47).
@@ -177,26 +192,83 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   // Dubbing: the language to hear it in, one of the Hub's list. Nothing is chosen until the person chooses: a dub costs points in every language.
   const [targetLanguage, setTargetLanguage] = useState('');
   const choosing = useRef(0);
+  /** The upload that is going up, so "Cancel" can stop it (POINTS-17). */
+  const uploading = useRef<AbortController | null>(null);
   const sending = useRef(false);
   const media = useMediaInputs(tool, starting);
+  // POINTS-16 to POINTS-18: Dialogue's lines, the Podcast maker's choices, Split a song's parts, the mood of Music for a video and the Audiobook's text file.
+  const nextLine = useRef(3);
+  const [lines, setLines] = useState<SceneLine[]>(() =>
+    inputKindOf(tool) === 'dialogue'
+      ? [
+          { id: 1, text: '', voiceId: tool.voices[0]?.id ?? '' },
+          { id: 2, text: '', voiceId: tool.voices[1]?.id ?? tool.voices[0]?.id ?? '' },
+        ]
+      : [],
+  );
+  const [sceneNote, setSceneNote] = useState<string | null>(null);
+  const pod = tool.input.podcast ?? null;
+  const [podcast, setPodcast] = useState<PodcastChoice>(() => ({
+    source: 'text',
+    text: '',
+    link: '',
+    hosts: pod?.modes.includes('conversation') ? 2 : 1,
+    voiceIds: [tool.voices[0]?.id ?? '', tool.voices[1]?.id ?? tool.voices[0]?.id ?? ''],
+    duration: pod?.durations.find((d) => d.id === 'standard')?.id ?? pod?.durations[0]?.id ?? '',
+    language: pod?.languages[0]?.code ?? '',
+  }));
+  const [parts, setParts] = useState(() => tool.input.file?.parts?.[0] ?? 2);
+  const [mood, setMood] = useState('');
+  const [bookFile, setBookFile] = useState<string | null>(null);
   /** The request the Hub has not answered: the same key and body go again on Try again. */
   const pending = useRef<JobIntent | null>(null);
   /** The key of the job on screen, so its record goes when the person has seen its end. */
   const activeKey = useRef<string | null>(null);
 
-  const characters = charactersOf(text);
+  const sceneChars = sceneCharacters(lines);
+  const podcastChars = podcast.source === 'text' ? charactersOf(podcast.text) : 0;
+  const characters = kind === 'dialogue' ? sceneChars : kind === 'podcast' ? podcastChars : charactersOf(text);
   /** A tool that takes a description (a sound, a track, a picture, a clip) rather than words to speak. */
   const describes = kind === 'prompt' || kind === 'image' || kind === 'video';
+  const maxVoices = tool.input.dialogue?.maxVoices ?? 0;
+  const linkIssue = kind === 'podcast' && podcast.source === 'link' ? linkProblem(podcast.link, pod?.maxLinkCharacters ?? 0) : null;
+  const hostIssue = kind === 'podcast' && podcast.hosts === 2 && podcast.voiceIds[0] === podcast.voiceIds[1] ? PODCAST_WORDS.sameVoice : null;
+  const podcastReady =
+    kind === 'podcast' &&
+    (podcast.source === 'text' ? podcastChars > 0 && podcastChars <= tool.input.maxCharacters : podcast.link.trim() !== '' && linkIssue === null) &&
+    hostIssue === null &&
+    podcast.duration !== '' &&
+    podcast.language !== '';
+  /** The plan action a quote is for: a podcast's is its length's, every other tool's is its own. */
+  const quoteAction = (kind === 'podcast' ? pod?.durations.find((d) => d.id === podcast.duration)?.action : undefined) ?? tool.action;
+  const flatFile = kind === 'file' && isFlatFileTool(tool);
   // A flat price is one use or one track whatever the length of the description; a read-aloud is billed in minutes.
   // A recording's minutes are the Hub's own reading of its length (the file quote), never worked out on the phone.
   // A picture is one use; a clip is its chosen seconds; a talking photo is the seconds the Hub read from the voice (never worked out here).
+  // A song, a video's music and a voice sample are one use or one track whatever their length: their units are the Hub's quote's own.
   const units =
-    kind === 'file' ? (fileQuote?.file.minutes ?? 0) : kind === 'prompt' || kind === 'image' ? 1 : kind === 'video' ? (talking ? (media.speech?.speech.seconds ?? 0) : seconds) : unitsFor(characters, tool.input.charactersPerUnit);
+    kind === 'file'
+      ? flatFile
+        ? (fileQuote?.units ?? 0)
+        : (fileQuote?.file.minutes ?? 0)
+      : kind === 'prompt' || kind === 'image' || kind === 'podcast'
+        ? 1
+        : kind === 'video'
+          ? talking
+            ? (media.speech?.speech.seconds ?? 0)
+            : seconds
+          : unitsFor(characters, tool.input.charactersPerUnit);
   const photoUp = media.photo?.phase === 'uploading' || media.voice?.phase === 'uploading' || media.voice?.phase === 'checking';
   /** What has to be in before Run: words (not for a talking photo), the photo an edit or a talking photo needs, the voice of a talking photo; nothing still going up. */
   const inputsReady =
     !photoUp &&
-    (talking ? media.photo?.phase === 'ready' && media.voice?.phase === 'ready' && media.speech !== null : characters > 0) &&
+    (talking
+      ? media.photo?.phase === 'ready' && media.voice?.phase === 'ready' && media.speech !== null
+      : kind === 'dialogue'
+        ? sceneFilled(lines) && sceneVoices(lines).size <= maxVoices && sceneChars <= tool.input.maxCharacters
+        : kind === 'podcast'
+          ? podcastReady
+          : characters > 0) &&
     (tool.id !== 'photo-edit' || media.photo?.phase === 'ready');
   const fileRule = tool.input.file ?? null;
   const dubbing = isDubbing(tool);
@@ -214,9 +286,15 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   const view: View_ = jobId ? (job.data?.state === 'done' && hasResult(job.data) ? 'done' : job.data?.state === 'failed' ? 'failed' : 'working') : unsent ? 'unsent' : 'input';
 
   // The cost before Run is the Hub's: one quote per length in minutes (it holds and takes nothing).
-  const costKey = ['points', 'job-quote', owner ?? '', tool.action, units] as const;
+  const costKey = ['points', 'job-quote', owner ?? '', quoteAction, units] as const;
+  const unwordedQuote = talking || kind === 'podcast';
   const cost = useQuery(
-    { queryKey: costKey, queryFn: () => fetchJobQuote(talking ? { action: tool.action as JobAction, units } : { action: tool.action as JobAction, units, characters }), enabled: Boolean(owner) && kind !== 'file' && (talking ? units > 0 : characters > 0) && view === 'input', staleTime: 30_000 },
+    {
+      queryKey: costKey,
+      queryFn: () => fetchJobQuote(unwordedQuote ? { action: quoteAction as JobAction, units } : { action: quoteAction as JobAction, units, characters }),
+      enabled: Boolean(owner) && kind !== 'file' && (talking ? units > 0 : kind === 'podcast' ? podcastReady : characters > 0) && view === 'input',
+      staleTime: 30_000,
+    },
     queryClient,
   );
   const shownCost = kind === 'file' ? (recording?.phase === 'ready' ? (fileQuote?.costPoints ?? null) : null) : (cost.data?.costPoints ?? null);
@@ -294,12 +372,37 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
         key: newRequestKey(),
         toolId: tool.id,
         action: tool.action,
-        voiceId: kind === 'text' ? voiceId : '',
-        text: kind === 'file' ? (recording?.name ?? 'recording') : talking ? tool.name : text.trim(),
+        voiceId: takesVoice ? voiceId : '',
+        text:
+          kind === 'file'
+            ? (recording?.name ?? 'recording')
+            : talking
+              ? tool.name
+              : kind === 'dialogue'
+                ? lines.map((l) => l.text.trim()).join('\n')
+                : kind === 'podcast'
+                  ? podcast.source === 'text'
+                    ? podcast.text.trim()
+                    : podcast.link.trim()
+                  : text.trim(),
         units: input.units,
-        characters: kind === 'file' || talking ? 0 : (input.characters ?? characters),
+        characters: kind === 'file' || talking ? 0 : kind === 'podcast' ? podcastChars : (input.characters ?? characters),
         quoteToken: quote.quoteToken,
         ...(kind === 'file' && fileKey ? { fileKey } : {}),
+        ...(tool.id === 'stems' ? { parts } : {}),
+        ...(tool.id === 'video-music' && mood.trim() ? { description: mood.trim() } : {}),
+        ...(kind === 'dialogue' ? { lines: lines.map((l) => ({ text: l.text.trim(), voiceId: l.voiceId })) } : {}),
+        ...(kind === 'podcast' && pod
+          ? {
+              podcast: {
+                source: podcast.source === 'text' ? { text: podcast.text.trim() } : { url: podcast.link.trim() },
+                mode: podcast.hosts === 2 ? ('conversation' as const) : ('bulletin' as const),
+                voiceIds: podcast.hosts === 2 ? [podcast.voiceIds[0], podcast.voiceIds[1]] : [podcast.voiceIds[0]],
+                duration: podcast.duration as 'short' | 'standard' | 'long',
+                language: podcast.language,
+              },
+            }
+          : {}),
         ...(dubbing && targetLanguage ? { targetLanguage } : {}),
         ...(chosen ? { media: chosen } : {}),
         jobId: null,
@@ -319,7 +422,7 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   }, [ownReady, jobId]);
 
   const pickVoice = (id: string) => {
-    if (id === OWN_VOICE_ID && !ownReady) {
+    if (id === OWN_VOICE_ID && !ownReady && !hubOwn) {
       setConsentFailure(null);
       setConsenting(true);
       return;
@@ -368,13 +471,30 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
         setRecording({ name: found.text, bytes: 0, phase: 'ready', share: 1 });
       } else if (found.media && talking) {
         // A talking photo has no words: its record holds the photo and the voice.
+      } else if (found.lines) {
+        setLines(found.lines.map((l, i) => ({ id: i + 1, ...l })));
+        nextLine.current = found.lines.length + 1;
+      } else if (found.podcast) {
+        const q = found.podcast;
+        setPodcast((was) => ({
+          ...was,
+          source: 'text' in q.source ? 'text' : 'link',
+          text: 'text' in q.source ? q.source.text : '',
+          link: 'url' in q.source ? q.source.url : '',
+          hosts: q.mode === 'conversation' ? 2 : 1,
+          voiceIds: [q.voiceIds[0] ?? was.voiceIds[0], q.voiceIds[1] ?? was.voiceIds[1]],
+          duration: q.duration,
+          language: q.language,
+        }));
       } else setText(found.text);
+      if (found.parts) setParts(found.parts);
+      if (found.description) setMood(found.description);
       if (found.media) {
         if (found.media.shape) setShape(found.media.shape);
         if (found.media.seconds) setSeconds(found.media.seconds);
         media.restore(found.media);
       }
-      if (kind === 'text') setVoiceId(found.voiceId);
+      if (takesVoice && found.voiceId) setVoiceId(found.voiceId);
       activeKey.current = found.key;
       if (found.jobId) setJobId(found.jobId);
       else void send(found);
@@ -414,26 +534,40 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     setRefusal(null);
     // A recording is priced by the minutes the Hub read from it; the phone sends no length and no characters.
     // A dub is priced for one language (a second language is a second job), so the quote says so.
-    check.check(kind === 'file' ? { action: tool.action as JobAction, units, ...(dubbing ? { languages: 1 } : {}) } : talking ? { action: tool.action as JobAction, units } : { action: tool.action as JobAction, units, characters });
+    const job: JobInput =
+      kind === 'file' ? { action: tool.action as JobAction, units, ...(dubbing ? { languages: 1 } : {}) } : unwordedQuote ? { action: quoteAction as JobAction, units } : { action: tool.action as JobAction, units, characters };
+    check.check(job);
   };
 
-  /** The person picks a recording: it is checked against the Hub's rule, goes up, and the Hub reads its length and quotes it. A refusal is the Hub's own words and nothing is held. */
+  /** The person picks a recording, a video or a song: the phone's picker opens, then it is taken like a recording made here. */
   const choose = async () => {
     if (!fileRule || starting || check.checking || recording?.phase === 'uploading' || recording?.phase === 'checking') return;
     const turn = ++choosing.current;
-    const live = () => choosing.current === turn;
     setRefusal(null);
     let picked;
     try {
       picked = await pickFile(acceptedTypes(fileRule));
     } catch {
-      if (live()) setFileRefusal({ title: FILE_WORDS.pickFailedTitle, body: FILE_WORDS.pickFailedBody });
+      if (choosing.current === turn) setFileRefusal({ title: FILE_WORDS.pickFailedTitle, body: FILE_WORDS.pickFailedBody });
       return;
     }
-    if (!picked || !live()) {
+    if (!picked || choosing.current !== turn) {
       picked?.discard?.();
       return;
     }
+    await takeFile(picked, turn);
+  };
+
+  /**
+   * A file in hand (picked, or recorded here): it is checked against the Hub's rule, goes up (and can be stopped), and the Hub reads its length
+   * and quotes it. A refusal is the Hub's own words and nothing is held.
+   */
+  const takeFile = async (picked: ChosenFile, turn: number) => {
+    if (!fileRule || starting || check.checking) {
+      picked.discard?.();
+      return;
+    }
+    const live = () => choosing.current === turn;
     // The old result (or failure) goes: this is a new job. The old file's key is the Hub's to let go when its job settles.
     if (jobId) {
       setJobId(null);
@@ -452,8 +586,10 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     }
     const base = { name: picked.name, bytes: picked.blob.size };
     setRecording({ ...base, phase: 'uploading', share: 0 });
+    const stop = new AbortController();
+    uploading.current = stop;
     try {
-      const up = await uploadRecording(file, folderFor(file.contentType, fileRule), (share) => live() && setRecording((r) => (r && r.phase === 'uploading' ? { ...r, share } : r)));
+      const up = await uploadRecording(file, folderFor(file.contentType, fileRule), (share) => live() && setRecording((r) => (r && r.phase === 'uploading' ? { ...r, share } : r)), stop.signal);
       if (!live()) return;
       setRecording({ ...base, phase: 'checking', share: 1 });
       const quote = await fetchFileQuote(tool.id, up.key);
@@ -469,12 +605,45 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
       setRecording({ ...base, phase: 'ready', share: 1 });
     } catch (error) {
       if (!live()) return;
+      if (isApiError(error) && error.code === UPLOAD_CANCELLED) {
+        // The person stopped it: the row is empty again, nothing was held, and the same file can be chosen again.
+        setRecording(null);
+        return;
+      }
       setRecording({ ...base, phase: 'refused', share: 0 });
       const said = isApiError(error) && error.message ? error.message : '';
       setFileRefusal(
         isApiError(error) && error.code === 'upload_failed' ? { title: FILE_WORDS.uploadFailedTitle, body: said || FILE_WORDS.uploadFailedBody } : { title: TOOL_WORDS.refusedTitle, body: said || FILE_WORDS.uploadFailedBody },
       );
+    } finally {
+      if (uploading.current === stop) uploading.current = null;
     }
+  };
+  /** "Cancel" on a big upload: it stops where it is. */
+  const cancelUpload = () => {
+    uploading.current?.abort();
+  };
+
+  /** The Audiobook's text file: its words fill the box (the file itself is never sent); a file that is not text, or is over the Hub's characters, is refused with the reason. */
+  const chooseTextFile = async () => {
+    if (starting || check.checking) return;
+    setFileRefusal(null);
+    let picked;
+    try {
+      picked = await pickTextFile(tool.input.maxCharacters);
+    } catch {
+      setFileRefusal({ title: BOOK_WORDS.pickFailedTitle, body: BOOK_WORDS.pickFailedBody });
+      return;
+    }
+    if (!picked) return;
+    const problem = picked.tooBig ? BOOK_WORDS.tooBig(tool.input.maxCharacters) : textFileProblem(picked, tool.input.maxCharacters);
+    if (problem) {
+      setBookFile(null);
+      setFileRefusal({ title: BOOK_WORDS.refusedTitle, body: problem });
+      return;
+    }
+    edit(picked.text);
+    setBookFile(BOOK_WORDS.fileLine(picked.name, charactersOf(picked.text)));
   };
 
   // The phone's share sheet is offered for the subtitle file only where the phone has one (the web draws no share row).
@@ -492,6 +661,9 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   // A dub's subtitles (WebVTT), read for the person; the Hub may send none (the dub is kept without them), and then no card is drawn.
   const doneJob = job.data && job.data.state === 'done' ? job.data : null;
   const doneMedia = doneJob ? mediaResult(doneJob) : null;
+  // The audio a done job made: the Hub's `audioUrl`, else its first audio file; Split a song gives several (its parts).
+  const audioParts = doneJob ? resultFiles(doneJob).filter((f) => f.output.kind === 'audio') : [];
+  const audioUri = doneJob ? (doneJob.audioUrl ?? audioParts[0]?.output.url ?? null) : null;
   const subtitleCues = dubbing && doneJob ? readCues(outputText(doneJob, 'subtitles') ?? '') : [];
 
   /** The words change after a result: the page goes back to typing (the old job's record is already gone). */
@@ -512,6 +684,42 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     }
     setRefusal(null);
   };
+  /** Dialogue: a line's words (kept inside the Hub's characters), its voice (kept inside the Hub's voices), a line added or taken out. */
+  const writeScene = (id: number, next: string) => {
+    const out = writeLine(lines, id, next, tool.input.maxCharacters);
+    startOver();
+    setLines(out.lines);
+    setSceneNote(out.note);
+  };
+  const pickSceneVoice = (id: number, picked: string) => {
+    const problem = voiceProblem(lines, id, picked, maxVoices);
+    if (problem) {
+      setSceneNote(problem);
+      return;
+    }
+    startOver();
+    setSceneNote(null);
+    setLines((all) => all.map((l) => (l.id === id ? { ...l, voiceId: picked } : l)));
+  };
+  const addSceneLine = () => {
+    if (sceneChars >= tool.input.maxCharacters) {
+      setSceneNote(DIALOGUE_WORDS.tooLong(tool.input.maxCharacters));
+      return;
+    }
+    startOver();
+    setSceneNote(null);
+    setLines((all) => [...all, { id: nextLine.current++, text: '', voiceId: nextVoice(all, tool.voices, maxVoices) }]);
+  };
+  const removeSceneLine = (id: number) => {
+    startOver();
+    setSceneNote(null);
+    setLines((all) => (all.length > 1 ? all.filter((l) => l.id !== id) : all));
+  };
+  /** The Podcast maker: any change goes back to the input and keeps the text inside the Hub's characters. */
+  const changePodcast = (next: Partial<PodcastChoice>) => {
+    startOver();
+    setPodcast((was) => ({ ...was, ...next, ...(next.text !== undefined ? { text: clampText(next.text, tool.input.maxCharacters) } : {}) }));
+  };
   /** The picture and video tools' next missing input, for Try again after a failure (the Hub let the photo go with the job). */
   const fillMissing = () => {
     if (talking && media.photo?.phase === 'ready' && media.voice?.phase !== 'ready') setVoicePicking(true);
@@ -527,18 +735,21 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     router.push('/create-preview');
   };
 
+  const pieceHandlers = { onPiece: openPiece, onReopen: () => router.push('/create-preview'), onNeedTier: () => router.push('/tiers'), onProductsFull: () => setPlacesSheet(true) };
   const typing = view === 'input' || view === 'done' || view === 'failed';
   // Under the row: the Hub's types and limits while a recording is to be chosen, its length once one is ready. A settled job (PT2b) shows
   // what was heard and how long it was, never the limits; a failed one shows nothing, its banner is next (SWEEP-APP-8 L3, POINTS-10).
+  // A recording is "About N minutes" (the minutes it is priced by); a song or a video, priced as one use, is how long the Hub read it to be.
+  const heardLength = flatFile && fileQuote ? spokenLength(fileQuote.file.seconds) : lengthLine(units);
   const fileMetaLine =
     !fileRule
       ? ''
       : ended
         ? view === 'done' && fileQuote
-          ? lengthLine(units)
+          ? heardLength
           : ''
         : shownRecording?.phase === 'ready' && fileQuote
-          ? lengthLine(units)
+          ? heardLength
           : limitsLine(fileRule);
   const failed = failedWords(job.data?.message);
   const foot =
@@ -565,23 +776,56 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     <PointsFrame title={tool.name} subtitle={`Points: ${formatPointsCount(balance)}`} onBack={onBack} gap={BODY_GAP} foot={foot} testID="tool-screen">
       {kind === 'file' && fileRule ? (
         <View style={styles.boxGroup}>
-          <RecordingBox recording={shownRecording} onChoose={() => void choose()} enabled={typing && !starting && !check.checking} settled={view === 'done'} />
+          <RecordingBox
+            recording={shownRecording}
+            onChoose={() => void choose()}
+            enabled={typing && !starting && !check.checking}
+            settled={view === 'done'}
+            words={FILE_STEP_WORDS[tool.id]}
+          />
+          {shownRecording?.phase === 'uploading' ? <CancelUpload onCancel={cancelUpload} /> : null}
           <View style={styles.meta}>
             <Text variant="body" tone="textMuted" testID="tool-length" style={[styles.metaText, styles.metaWide]}>
               {fileMetaLine}
             </Text>
           </View>
         </View>
-      ) : talking ? null : (
+      ) : talking ? null : kind === 'dialogue' ? (
+        <SceneLines
+          lines={lines}
+          voices={tool.voices}
+          characters={sceneChars}
+          max={tool.input.maxCharacters}
+          editable={typing}
+          onWrite={writeScene}
+          onVoice={pickSceneVoice}
+          onAdd={addSceneLine}
+          onRemove={removeSceneLine}
+          note={sceneNote}
+        />
+      ) : kind === 'podcast' && pod ? (
+        <PodcastInputs
+          podcast={pod}
+          voices={tool.voices}
+          choice={podcast}
+          maxCharacters={tool.input.maxCharacters}
+          characters={podcastChars}
+          linkProblem={linkIssue}
+          voiceProblem={hostIssue}
+          editable={typing}
+          onChange={changePodcast}
+        />
+      ) : (
         <View style={styles.boxGroup}>
           <WordsBox
             value={text}
             onChange={edit}
             editable={typing}
             tall={view === 'input'}
+            big={tool.id === 'audiobook'}
             max={tool.input.maxCharacters}
-            placeholder={describes ? tool.description || MEDIA_WORDS.placeholder : TOOL_WORDS.placeholder}
-            label={describes ? TOOL_WORDS.promptBoxLabel : TOOL_WORDS.boxLabel}
+            placeholder={describes ? tool.description || MEDIA_WORDS.placeholder : tool.id === 'audiobook' ? BOOK_WORDS.placeholder : TOOL_WORDS.placeholder}
+            label={describes ? TOOL_WORDS.promptBoxLabel : tool.id === 'audiobook' ? BOOK_WORDS.boxLabel : TOOL_WORDS.boxLabel}
           />
           <View style={styles.meta}>
             <Text variant="body" tone="textMuted" testID="tool-length" style={styles.metaText}>
@@ -593,6 +837,47 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
           </View>
         </View>
       )}
+      {view === 'input' && tool.id === 'audiobook' ? (
+        <View style={styles.boxGroup}>
+          <Button testID="tool-text-file" label={BOOK_WORDS.chooseFile} variant="secondary" icon="FileText" full disabled={starting || check.checking} onPress={() => void chooseTextFile()} />
+          {bookFile ? (
+            <Text variant="body" tone="textMuted" testID="tool-text-file-name" style={styles.metaText}>
+              {bookFile}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+      {view === 'input' && kind === 'file' && fileRule?.voice === true && fileRule.only === 'audio' ? (
+        <RecordSection
+          enabled={typing && !starting && !check.checking && recording?.phase !== 'uploading' && recording?.phase !== 'checking'}
+          maxSeconds={longestSeconds(fileRule)}
+          onFile={(file) => {
+            const turn = ++choosing.current;
+            void takeFile(file, turn);
+          }}
+        />
+      ) : null}
+      {view === 'input' && tool.id === 'video-music' && fileRule?.description ? (
+        <View style={styles.boxGroup}>
+          <WordsBox
+            value={mood}
+            onChange={(next) => setMood(clampText(next, fileRule.description?.maxCharacters ?? 0))}
+            editable={typing}
+            tall={false}
+            compact
+            max={fileRule.description.maxCharacters}
+            placeholder={MUSIC_WORDS.moodPlaceholder}
+            label={MUSIC_WORDS.moodBoxLabel}
+            testID="tool-mood"
+          />
+          <View style={styles.meta}>
+            <Text variant="body" tone="textMuted" testID="tool-mood-count" style={[styles.metaText, styles.metaWide, { textAlign: 'right' }]}>
+              {countLine(charactersOf(mood), fileRule.description.maxCharacters)}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+      {view === 'input' && tool.id === 'stems' && (fileRule?.parts?.length ?? 0) > 0 ? <PartsRow parts={fileRule?.parts ?? []} value={parts} onChange={setParts} /> : null}
       {view === 'input' && fileRefusal ? <Banner tone="danger" icon="CircleX" title={fileRefusal.title} body={fileRefusal.body} testID="tool-file-refused" /> : null}
       {view === 'input' && refusal ? <Banner tone="danger" icon="CircleX" title={TOOL_WORDS.refusedTitle} body={refusal} testID="tool-refused" /> : null}
       {(view === 'input' || view === 'failed') && (kind === 'image' || kind === 'video') ? (
@@ -639,7 +924,7 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
           ) : null}
         </>
       ) : null}
-      {view === 'input' && kind === 'text' ? (
+      {view === 'input' && takesVoice ? (
         <VoiceList
           voices={offersOwn ? [{ id: OWN_VOICE_ID, name: EXTRAS_WORDS.ownName, description: EXTRAS_WORDS.ownLine, sampleUrl: ownSample ?? null }, ...tool.voices] : tool.voices}
           value={voiceId}
@@ -663,16 +948,23 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
           rowPrefix="tool-language"
         />
       ) : null}
-      {view === 'working' ? <Working title={workingTitleFor(tool)} body={dubbing ? DUB_WORDS.workingBody : kind === 'video' ? MEDIA_WORDS.workingLong : TOOL_WORDS.workingBody} /> : null}
+      {view === 'working' ? <Working title={workingTitleFor(tool)} body={dubbing ? DUB_WORDS.workingBody : kind === 'video' ? MEDIA_WORDS.workingLong : tool.id === 'audiobook' || kind === 'podcast' ? PODCAST_WORDS.workingBody : TOOL_WORDS.workingBody} /> : null}
       {view === 'done' && job.data && hasResult(job.data) ? (
         <View style={styles.done}>
           {doneMedia ? (
             <ResultMedia file={doneMedia} name={thingOf(tool)} />
-          ) : job.data.audioUrl ? (
-            <ResultPlayer testID="tool-player" uri={job.data.audioUrl} name={tool.name} />
+          ) : tool.id === 'stems' && audioParts.length > 0 ? (
+            <PartsList job={job.data} parts={audioParts} creator={creator} handlers={pieceHandlers} />
+          ) : audioUri ? (
+            <ResultPlayer testID="tool-player" uri={audioUri} name={tool.name} />
           ) : (
             <TranscriptCard text={outputText(job.data, 'text') ?? ''} onShare={canShare && outputText(job.data, 'subtitles') ? () => shareFile(outputText(job.data as VoiceJob, 'subtitles') ?? '') : undefined} />
           )}
+          {tool.id === 'video-music' && audioUri ? (
+            <Text variant="body" tone="textMuted" testID="tool-music-separate" style={{ fontSize: DONE.line, lineHeight: canvasNormalLineHeight(DONE.line) }}>
+              {MUSIC_WORDS.separate}
+            </Text>
+          ) : null}
           {dubbing && subtitleCues.length > 0 ? <SubtitlesCard cues={subtitleCues} onShare={canShare ? () => shareFile(outputText(job.data as VoiceJob, 'subtitles') ?? '', 'vtt') : undefined} /> : null}
           {original && tool.id === 'photo-edit' ? (
             <View style={styles.usedRow} testID="tool-original">
@@ -699,10 +991,8 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
               toolName={thingOf(tool)}
               creator={creator}
               onUse={job.data.audioUrl ? () => setPicking(true) : undefined}
-              onPiece={openPiece}
-              onReopen={() => router.push('/create-preview')}
-              onNeedTier={() => router.push('/tiers')}
-              onProductsFull={() => setPlacesSheet(true)}
+              hidePiece={tool.id === 'stems' && audioParts.length > 0}
+              {...pieceHandlers}
               onNotice={(words, good) => (good ? setGoodNotice(words) : setNotice(words))}
             />
           )}
@@ -728,7 +1018,31 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
 }
 
 /** The words to speak, or the description of a sound or track: a multi-line box on the input colour; the ring is the accent while typing. */
-function WordsBox({ value, onChange, editable, tall, max, placeholder, label }: { value: string; onChange: (next: string) => void; editable: boolean; tall: boolean; max: number; placeholder: string; label: string }) {
+function WordsBox({
+  value,
+  onChange,
+  editable,
+  tall,
+  big = false,
+  compact = false,
+  max,
+  placeholder,
+  label,
+  testID = 'tool-text',
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  editable: boolean;
+  tall: boolean;
+  /** The Audiobook's box is the largest: a book is pasted in whole (POINTS-18). */
+  big?: boolean;
+  /** Music for a video's mood is a short optional line (POINTS-17). */
+  compact?: boolean;
+  max: number;
+  placeholder: string;
+  label: string;
+  testID?: string;
+}) {
   const { colors } = useWawu();
   // The box grows with the words (a browser's text area would scroll inside a fixed height).
   const [grown, setGrown] = useState(0);
@@ -737,11 +1051,11 @@ function WordsBox({ value, onChange, editable, tall, max, placeholder, label }: 
     <View
       style={[
         styles.box,
-        { minHeight: tall ? BOX.tall : BOX.short, backgroundColor: colors.surfaceInput, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: ring.width, color: ring.color, inset: true }] },
+        { minHeight: big ? (tall ? BOX.big : BOX.tall) : compact ? BOX.compact : tall ? BOX.tall : BOX.short, backgroundColor: colors.surfaceInput, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: ring.width, color: ring.color, inset: true }] },
       ]}
     >
       <TextInput
-        testID="tool-text"
+        testID={testID}
         accessibilityLabel={label}
         multiline
         editable={editable}
@@ -758,93 +1072,20 @@ function WordsBox({ value, onChange, editable, tall, max, placeholder, label }: 
   );
 }
 
-/** PT2's single-choice rows: the voices of a tool that reads words aloud, and (POINTS-11) the languages of Dubbing, the same row under another label. */
-function VoiceList({
-  voices,
-  value,
-  onChange,
-  label = TOOL_WORDS.voice,
-  testID = 'tool-voices',
-  rowPrefix = 'tool-voice',
-}: {
-  voices: AiTool['voices'];
-  value: string;
-  onChange: (id: string) => void;
-  label?: string;
-  testID?: string;
-  rowPrefix?: string;
-}) {
-  return (
-    <View style={styles.voices}>
-      <Text variant="body" tone="textMuted" accessibilityRole="header" style={[font(700), styles.label]}>
-        {label}
-      </Text>
-      <View accessibilityRole="radiogroup" testID={testID} style={styles.voiceList}>
-        {voices.map((voice) => (
-          <VoiceRow key={voice.id} voice={voice} on={voice.id === value} onPress={() => onChange(voice.id)} testID={`${rowPrefix}-${voice.id}`} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function VoiceRow({ voice, on, onPress, testID }: { voice: AiTool['voices'][number]; on: boolean; onPress: () => void; testID: string }) {
-  const { colors } = useWawu();
-  const ring = useFocusRing();
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="radio"
-      accessibilityState={{ checked: on }}
-      accessibilityLabel={voice.description ? `${voice.name}, ${voice.description}` : voice.name}
-      onPress={onPress}
-      {...ring.handlers}
-      style={[
-        styles.voice,
-        {
-          backgroundColor: on ? colors.accentTint : colors.surfaceCard,
-          boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: on ? VOICE.ringOn : VOICE.ringOff, color: on ? colors.accent : colors.borderHairline, inset: true }],
-        },
-        ring.style,
-      ]}
-    >
-      {voice.sampleUrl ? <PreviewPlay sampleUrl={voice.sampleUrl} name={voice.name} /> : null}
-      <View style={styles.voiceText}>
-        <Text variant="body" numberOfLines={1} style={[font(600), { fontSize: VOICE.name, lineHeight: canvasNormalLineHeight(VOICE.name) }]}>
-          {voice.name}
-        </Text>
-        {voice.description ? (
-          <Text variant="body" tone="textMuted" numberOfLines={2} style={{ fontSize: VOICE.line, lineHeight: canvasNormalLineHeight(VOICE.line) }}>
-            {voice.description}
-          </Text>
-        ) : null}
-      </View>
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={[styles.radio, { borderWidth: on ? VOICE.radioOn : VOICE.radioOff, borderColor: on ? colors.accent : colors.borderStrong }]}
-      />
-    </Pressable>
-  );
-}
-
-function Working({ title, body }: { title: string; body: string }) {
-  return (
-    <View testID="tool-working" accessibilityLiveRegion="polite" style={styles.working}>
-      <IconTile icon="Loader" tone="accent" size={WORKING.mark} />
-      <Text variant="body" accessibilityRole="header" style={[font(700), styles.workingTitle, { fontSize: WORKING.title, lineHeight: WORKING.title * WORKING.titleLeading, letterSpacing: WORKING.titleTracking * WORKING.title }]}>
-        {title}
-      </Text>
-      <Text variant="body" tone="textSecondary" style={[styles.workingBody, { fontSize: WORKING.body, lineHeight: WORKING.body * WORKING.bodyLeading }]}>
-        {body}
-      </Text>
-    </View>
-  );
-}
-
 /** The body the tool's job route takes, from the intent kept on the phone: the same intent gives the same request on every resend. */
 function requestOf(intent: JobIntent, kind: InputKind, talking: boolean): JobRequest {
-  if (intent.fileKey) return { kind: 'file', fileKey: intent.fileKey, ...(intent.targetLanguage ? { targetLanguage: intent.targetLanguage } : {}) };
+  if (intent.lines) return { kind: 'dialogue', lines: intent.lines };
+  if (intent.podcast) return { kind: 'podcast', ...intent.podcast };
+  if (intent.fileKey) {
+    return {
+      kind: 'file',
+      fileKey: intent.fileKey,
+      ...(intent.targetLanguage ? { targetLanguage: intent.targetLanguage } : {}),
+      ...(intent.voiceId ? { voiceId: intent.voiceId } : {}),
+      ...(intent.parts ? { parts: intent.parts } : {}),
+      ...(intent.description ? { description: intent.description } : {}),
+    };
+  }
   const m = intent.media ?? {};
   if (kind === 'image') return { kind: 'image', prompt: intent.text, ...(m.shape ? { shape: m.shape } : {}), ...(m.photoKey ? { photoKey: m.photoKey } : {}) };
   if (kind === 'video') {
@@ -876,15 +1117,6 @@ const styles = StyleSheet.create({
   meta: { flexDirection: 'row', justifyContent: 'space-between', gap: space.md },
   metaText: { fontSize: BOX.meta, lineHeight: canvasNormalLineHeight(BOX.meta) },
   metaWide: { flex: 1 },
-  voices: { gap: VOICE.between },
-  label: { fontSize: VOICE.labelSize, letterSpacing: VOICE.labelTracking * VOICE.labelSize, textTransform: 'uppercase' },
-  voiceList: { gap: VOICE.between },
-  voice: { flexDirection: 'row', alignItems: 'center', gap: VOICE.parts, paddingVertical: VOICE.padV, paddingHorizontal: VOICE.padH, borderRadius: VOICE.radius },
-  voiceText: { flex: 1, minWidth: 0 },
-  radio: { width: VOICE.radio, height: VOICE.radio, borderRadius: VOICE.radio / 2, flexShrink: 0 },
-  working: { alignItems: 'center', gap: WORKING.parts, paddingVertical: WORKING.padV },
-  workingTitle: { textAlign: 'center' },
-  workingBody: { textAlign: 'center' },
   done: { gap: DONE.parts },
   usedRow: { flexDirection: 'row', alignItems: 'center', gap: DONE.markGap },
   original: { width: 44, height: 44, borderRadius: radius.chip },

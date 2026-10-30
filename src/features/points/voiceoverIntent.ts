@@ -24,6 +24,11 @@ import { bounded } from '@/features/claim/localStore';
 /** The picture and video tools' added choices (POINTS-14, POINTS-15): the shape, the clip's seconds, the photo's `key`, and a Talking photo's voice (a recording's `key`, or one of the person's own finished results). */
 export type MediaIntent = { shape?: string; seconds?: number; photoKey?: string; audioKey?: string; sourceJobId?: string };
 
+/** Podcast maker (POINTS-18): what the person chose, kept with the key so a resend is the same request. */
+export type PodcastIntent = { source: { text: string } | { url: string }; mode: 'conversation' | 'bulletin'; voiceIds: string[]; duration: 'short' | 'standard' | 'long'; language: string };
+/** Dialogue (POINTS-16): one line and its voice. */
+export type DialogueLine = { text: string; voiceId: string };
+
 export type JobIntent = {
   key: string;
   toolId: string;
@@ -41,6 +46,14 @@ export type JobIntent = {
   targetLanguage?: string;
   /** Make an image, Edit a photo, Make a video, Talking photo: what the person chose besides the words. */
   media?: MediaIntent;
+  /** Dialogue: the lines, in order. `text` then holds them joined, for the list of what is running. */
+  lines?: DialogueLine[];
+  /** Podcast maker: the source, hosts, length and language. */
+  podcast?: PodcastIntent;
+  /** Split a song: two parts or six. */
+  parts?: number;
+  /** Music for a video: the mood, in words. */
+  description?: string;
   jobId: string | null;
   /** When the request was first sent (ms). */
   at: number;
@@ -70,6 +83,26 @@ function readMedia(value: unknown): MediaIntent | null {
   return Object.keys(out).length > 0 ? out : null;
 }
 
+const readLines = (value: unknown): DialogueLine[] | null => {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const lines: DialogueLine[] = [];
+  for (const row of value) {
+    const l = row as Partial<DialogueLine> | null;
+    if (!l || typeof l !== 'object' || !filled(l.text) || !filled(l.voiceId)) return null;
+    lines.push({ text: l.text, voiceId: l.voiceId });
+  }
+  return lines;
+};
+
+const readPodcast = (value: unknown): PodcastIntent | null => {
+  const p = value as Partial<PodcastIntent> | null;
+  if (!p || typeof p !== 'object') return null;
+  const src = p.source as { text?: unknown; url?: unknown } | undefined;
+  const source = src && filled(src.text) ? { text: src.text } : src && filled(src.url) ? { url: src.url } : null;
+  const ok = source && (p.mode === 'conversation' || p.mode === 'bulletin') && Array.isArray(p.voiceIds) && p.voiceIds.length > 0 && p.voiceIds.every(filled) && ['short', 'standard', 'long'].includes(p.duration as string) && filled(p.language);
+  return ok ? { source: source as PodcastIntent['source'], mode: p.mode as PodcastIntent['mode'], voiceIds: p.voiceIds as string[], duration: p.duration as PodcastIntent['duration'], language: p.language as string } : null;
+};
+
 /** The stored entry, or null when it is not whole (a half-written or foreign entry is dropped, never used). */
 export function readJobIntent(value: unknown): JobIntent | null {
   const v = value as Partial<JobIntent> | null;
@@ -78,7 +111,9 @@ export function readJobIntent(value: unknown): JobIntent | null {
   const file = filled(v.fileKey);
   const media = readMedia(v.media);
   // A recording's job counts minutes, not characters: its `characters` is 0. A Talking photo has no words either: its `text` names it and its `characters` is 0.
-  const charactersOk = file ? v.characters === 0 : media ? typeof v.characters === 'number' && Number.isSafeInteger(v.characters) && v.characters >= 0 : positive(v.characters);
+  const lines = readLines(v.lines);
+  const podcast = readPodcast(v.podcast);
+  const charactersOk = file ? v.characters === 0 : media || podcast ? typeof v.characters === 'number' && Number.isSafeInteger(v.characters) && v.characters >= 0 : positive(v.characters);
   if (!positive(v.units) || !charactersOk || typeof v.at !== 'number' || !Number.isFinite(v.at)) return null;
   return {
     key: v.key,
@@ -92,6 +127,10 @@ export function readJobIntent(value: unknown): JobIntent | null {
     ...(file ? { fileKey: v.fileKey as string } : {}),
     ...(file && filled(v.targetLanguage) ? { targetLanguage: v.targetLanguage } : {}),
     ...(media ? { media } : {}),
+    ...(lines ? { lines } : {}),
+    ...(podcast ? { podcast } : {}),
+    ...(file && (v.parts === 2 || v.parts === 6) ? { parts: v.parts } : {}),
+    ...(file && filled(v.description) ? { description: v.description } : {}),
     jobId: filled(v.jobId) ? v.jobId : null,
     at: v.at,
   };
