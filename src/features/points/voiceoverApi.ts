@@ -31,7 +31,7 @@ export function readVoiceJob(value: unknown): VoiceJob {
     ...(j as VoiceJob),
     audioUrl: filled(j.audioUrl) ? j.audioUrl : null,
     // What a done job made (POINTS-10): a transcript and its subtitle file are words, not a link. An output that is not whole is dropped, never drawn.
-    outputs: Array.isArray(j.outputs) ? j.outputs.filter((o): o is JobOutput => Boolean(o) && typeof o === 'object' && ['audio', 'text', 'subtitles'].includes(o.kind)) : [],
+    outputs: Array.isArray(j.outputs) ? j.outputs.filter((o): o is JobOutput => Boolean(o) && typeof o === 'object' && ['audio', 'text', 'subtitles', 'image', 'video'].includes(o.kind)) : [],
     message: filled(j.message) ? j.message : null,
     finishedAt: j.finishedAt ?? null,
   };
@@ -43,8 +43,23 @@ export function outputText(job: Pick<VoiceJob, 'outputs'>, kind: 'text' | 'subti
   return found?.text ?? null;
 }
 
-/** True when a done job has what it made to show: the audio link, or a transcript. A done job with neither is still being filed; the next read has it. */
-export const hasResult = (job: Pick<VoiceJob, 'audioUrl' | 'outputs'>): boolean => filled(job.audioUrl) || outputText(job, 'text') !== null;
+/** One file a done job made (audio, a picture or a video), with its place in `outputs` (POINTS-13: the Hub's piece route names an output by that place). */
+export type ResultFile = { index: number; output: JobOutput & { url: string } };
+
+/** The files a done job made, in the Hub's order. Words (a transcript, subtitles) are not files. */
+export function resultFiles(job: Pick<VoiceJob, 'outputs'>): ResultFile[] {
+  const found: ResultFile[] = [];
+  (job.outputs ?? []).forEach((output, index) => {
+    if ((output.kind === 'audio' || output.kind === 'image' || output.kind === 'video') && filled(output.url)) found.push({ index, output: output as ResultFile['output'] });
+  });
+  return found;
+}
+
+/** The picture or the video a done job made, or null (the audio of the older tools is `audioUrl`). */
+export const mediaResult = (job: Pick<VoiceJob, 'outputs'>): ResultFile | null => resultFiles(job).find((f) => f.output.kind === 'image' || f.output.kind === 'video') ?? null;
+
+/** True when a done job has what it made to show: the audio link, a picture or a video, or a transcript. A done job with none is still being filed; the next read has it. */
+export const hasResult = (job: Pick<VoiceJob, 'audioUrl' | 'outputs'>): boolean => filled(job.audioUrl) || mediaResult(job) !== null || outputText(job, 'text') !== null;
 
 /** GET /ai-tools/jobs/{id}. */
 export async function fetchVoiceJob(id: string): Promise<VoiceJob> {
@@ -81,7 +96,16 @@ export type StartOutcome =
   | { kind: 'refused'; code: string | null; message: string };
 
 /** What a job carries, by the kind of input the tool takes (`GET /ai-tools`, `input.kind`). */
-export type JobRequest = { kind: 'text'; text: string; voiceId: string } | { kind: 'prompt'; prompt: string } | { kind: 'file'; fileKey: string; targetLanguage?: string };
+export type JobRequest =
+  | { kind: 'text'; text: string; voiceId: string }
+  | { kind: 'prompt'; prompt: string }
+  | { kind: 'file'; fileKey: string; targetLanguage?: string }
+  /** Make an image (no photo) and Edit a photo (the photo's `key`), POINTS-14. */
+  | { kind: 'image'; prompt: string; shape?: string; photoKey?: string }
+  /** Make a video, with the length it is priced by and an optional photo to start from, POINTS-15. */
+  | { kind: 'video'; prompt: string; shape?: string; seconds: number; photoKey?: string }
+  /** Talking photo: the photo and the voice (an uploaded recording, or one of the person's own finished voice results), POINTS-15. */
+  | { kind: 'talking'; photoKey: string; audioKey?: string; sourceJobId?: string };
 
 export type StartInput = {
   /** The Hub's id for the tool (`GET /ai-tools`): it names the route. */
@@ -127,6 +151,21 @@ function post(input: StartInput) {
     // Dubbing (AITOOLS-05): the same file and quote, and the language to hear it in, one of the Hub's own list. The language spoken is left out: the Hub detects it.
     if (toolId === 'dubbing' && request.targetLanguage) return api.POST('/api/hub/ai-tools/dubbing/jobs', { ...options, body: { ...body, targetLanguage: request.targetLanguage } });
     return null;
+  }
+  if (request.kind === 'image') {
+    const body = { prompt: request.prompt, ...(request.shape ? { shape: request.shape } : {}), quoteToken };
+    if (toolId === 'image') return api.POST('/api/hub/ai-tools/image/jobs', { ...options, body });
+    if (toolId === 'photo-edit' && request.photoKey) return api.POST('/api/hub/ai-tools/photo-edit/jobs', { ...options, body: { ...body, photoKey: request.photoKey } });
+    return null;
+  }
+  if (request.kind === 'video') {
+    const body = { prompt: request.prompt, ...(request.shape ? { shape: request.shape } : {}), seconds: request.seconds, ...(request.photoKey ? { photoKey: request.photoKey } : {}), quoteToken };
+    return toolId === 'video' ? api.POST('/api/hub/ai-tools/video/jobs', { ...options, body }) : null;
+  }
+  if (request.kind === 'talking') {
+    const voice = request.audioKey ? { audioKey: request.audioKey } : request.sourceJobId ? { sourceJobId: request.sourceJobId } : null;
+    if (toolId !== 'talking-photo' || !voice) return null;
+    return api.POST('/api/hub/ai-tools/talking-photo/jobs', { ...options, body: { photoKey: request.photoKey, ...voice, quoteToken } });
   }
   const body = { prompt: request.prompt, quoteToken };
   if (toolId === 'sound-effect') return api.POST('/api/hub/ai-tools/sound-effect/jobs', { ...options, body });

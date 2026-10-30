@@ -8576,6 +8576,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/ai-tools/image/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Make an image job (AITOOLS-09, R-109): a `prompt`, an optional
+         *     `shape` (one of `input.options.shapes` from `GET /ai-tools`) and the
+         *     `quoteToken` of the `POST /points/quote` for the action `image_per_use`
+         *     (units 1). Priced flat, one picture. The points are held and the job
+         *     answers `202 working` at once; the picture is made in the background, so
+         *     the app polls `GET /ai-tools/jobs/{id}` and may leave. Done, `outputs` hold
+         *     the picture (`kind: image`, with `contentType`, `bytes`, `name`,
+         *     `downloadUrl` and `pieceFormat: image`). The points are kept only on
+         *     success; a refused or failed picture gives every point back with the Hub's
+         *     own sentence. The request, the answer and the `Idempotency-Key` rule are
+         *     those of `POST /ai-tools/sound-effect/jobs`, plus `422 ai_shape_unsupported`.
+         *     The tool is listed, and the route answers, only while its switch
+         *     `ai.listed.image` is on.
+         */
+        post: operations["AiToolsController_createImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/photo-edit/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts an Edit a photo job (AITOOLS-09, R-109): the same body as Make an
+         *     image plus the `photoKey` of the person's own photo (`POST /uploads/presign`
+         *     with the folder `ai/input-image`, then `POST /uploads/confirm`; a JPEG, PNG
+         *     or WebP picture up to 25 MB). The quote is for the action
+         *     `photo_edit_per_use`. Another person's key is `404 not_found`; a file the
+         *     Hub cannot open as a picture is `422 ai_photo_unreadable`; each with nothing
+         *     held. The photo is deleted when the job ends, and the provider's copy of it
+         *     too.
+         */
+        post: operations["AiToolsController_createPhotoEdit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/video/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Make a video job (AITOOLS-10, R-109): a `prompt`, an optional
+         *     `shape` (wide or tall), the clip's `seconds` (one of `input.options.lengths`:
+         *     4, 6 or 8), an optional `photoKey` to start from and the `quoteToken` of the
+         *     `POST /points/quote` for the action `video_per_sec` (units = `seconds`).
+         *     Priced by the second. A clip takes minutes: the job answers `202 working`,
+         *     the app polls `GET /ai-tools/jobs/{id}`, and a job that ran long writes an
+         *     `ai_job_ready` notification when it ends. Done, `outputs` hold the clip
+         *     (`kind: video`, `pieceFormat: video`). The request, the answer and the
+         *     refusals are those of `POST /ai-tools/photo-edit/jobs`, plus
+         *     `422 ai_length_unsupported`.
+         */
+        post: operations["AiToolsController_createVideo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/talking-photo/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The points quote for a Talking photo's voice (AITOOLS-10): the `audioKey` of
+         *     a recording the person uploaded (`ai/input-audio`, MP3 or WAV) or the
+         *     `sourceJobId` of one of their own finished voice results. The Hub reads the
+         *     voice's length itself and prices the seconds from that, so the phone sends no
+         *     length. Answers the same quote `POST /points/quote` does (with its
+         *     `quoteToken`, to send to the job route with the same voice), plus
+         *     `speech.seconds`. Nothing is held. `404 not_found`, `409 job_not_ready`,
+         *     `422 ai_speech_unreadable`, `422 ai_length_too_long` over the setting.
+         */
+        post: operations["AiToolsController_quoteTalkingPhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/talking-photo/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts a Talking photo job (AITOOLS-10, R-109): the `photoKey` of the
+         *     person's photo and exactly one voice, an `audioKey` or a `sourceJobId`, with
+         *     the `quoteToken` from `POST /ai-tools/talking-photo/quote` for the same
+         *     voice. Priced by the seconds of speech the Hub read; a voice longer than
+         *     `input.options.speech.maxSeconds` is `422 ai_length_too_long`, with nothing
+         *     held. The photo and the recording are deleted when the job ends, and the
+         *     provider's copies too. The request, the answer and the other refusals are
+         *     those of `POST /ai-tools/video/jobs`.
+         */
+        post: operations["AiToolsController_createTalkingPhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/ai-tools/jobs": {
         parameters: {
             query?: never;
@@ -8691,6 +8828,40 @@ export interface paths {
          *     Intro recording, `409 own_voice_name_required` with no name on the account.
          */
         post: operations["AiToolsController_giveOwnVoiceConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/ai-tools/jobs/{id}/piece": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * "Make it a piece": copies the chosen output of a finished job into the
+         *     person's own content folder (`content/full/<id>/...`) and answers what
+         *     Create's draft holds: `{ format, full: { key, fileUrl, contentType, bytes,
+         *     name }, suggestedTitle }`. Send `full` as the draft's file (`fullAsset`) and
+         *     the format as the piece's format; `POST /content` and its tier and place
+         *     gates run as today. Nothing is published, and no preview is made: the
+         *     preview stays the person's own step in Create.
+         *
+         *     Only the person's own finished job (`404 not_found` for another person's,
+         *     `409 job_not_ready` for one still working or failed). An output no Create
+         *     format takes (a FLAC dub, an AAC clip, words) is `409 no_format`. A person
+         *     who may not publish gets the presign's `402 tier_required`; one with no room
+         *     gets its `413 storage_limit_reached`, and nothing is copied. Needs an
+         *     `Idempotency-Key`; the same call again answers the same key (header
+         *     `Idempotent-Replayed: true`) until the person releases it with `POST
+         *     /uploads/release`, as for any abandoned upload.
+         */
+        post: operations["AiToolsPieceController_makePiece"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9523,7 +9694,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample" | "ai/input-audio" | "ai/input-video";
+            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample" | "ai/input-audio" | "ai/input-video" | "ai/input-image";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -11839,7 +12010,7 @@ export interface components {
              * @description The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).
              * @enum {string}
              */
-            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min";
+            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min" | "image_per_use" | "photo_edit_per_use" | "video_per_sec" | "talking_photo_per_sec";
             /** @description How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which). */
             units: number;
             /** @description Dubbing only: how many languages (1 when left out). Any other action refuses more than 1. */
@@ -11852,7 +12023,7 @@ export interface components {
              * @description The AI tool, by the plan's id (`GET /plans` `actions` lists them with their cost).
              * @enum {string}
              */
-            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min";
+            action: "say_my_name" | "voice_intro" | "voiceover_per_min" | "quick_voice_per_min" | "captions_per_min" | "clean_audio_per_min" | "music_per_track" | "sfx" | "dub_standard_per_min_lang" | "dub_premium_per_min_lang" | "receptionist_message" | "receptionist_voice_per_min" | "image_per_use" | "photo_edit_per_use" | "video_per_sec" | "talking_photo_per_sec";
             /** @description How many of the action's unit: minutes, tracks, messages or uses (`GET /plans` says which). */
             units: number;
             /** @description Dubbing only: how many languages (1 when left out). Any other action refuses more than 1. */
@@ -11930,8 +12101,64 @@ export interface components {
             /** @description `quoteToken` from the `POST /points/quote` the person saw (sent with the same `fileKey`). A different cost now is `409 quote_changed`. */
             quoteToken: string;
         };
+        CreateImageJobDto: {
+            /** @description What the picture shows, in words. */
+            prompt: string;
+            /** @description The shape: one of `input.options.shapes` from `GET /ai-tools` (`1:1`, `4:5`, `9:16`, `16:9`). Left out: square. */
+            shape?: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (action `image_per_use`, units 1). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
+        CreatePhotoEditJobDto: {
+            /** @description What the picture shows, in words. */
+            prompt: string;
+            /** @description The shape: one of `input.options.shapes` from `GET /ai-tools` (`1:1`, `4:5`, `9:16`, `16:9`). Left out: square. */
+            shape?: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (action `image_per_use`, units 1). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+            /** @description The `key` `POST /uploads/presign` gave for the person's photo (folder `ai/input-image`). Another person's key is `404 not_found`. */
+            photoKey: string;
+        };
+        CreateVideoJobDto: {
+            /** @description What happens in the clip, in words. */
+            prompt: string;
+            /** @description Wide (`16:9`) or tall (`9:16`): one of `input.options.shapes`. Left out: wide. */
+            shape?: string;
+            /** @description How long the clip is, in whole seconds: one of `input.options.lengths` (4, 6 or 8). It prices the job. */
+            seconds: number;
+            /** @description The `key` of a photo to start from (folder `ai/input-image`). Left out: the clip is made from the words alone. */
+            photoKey?: string;
+            /** @description `quoteToken` from the `POST /points/quote` the person saw (action `video_per_sec`, units = `seconds`). */
+            quoteToken: string;
+        };
+        QuoteTalkingPhotoDto: {
+            /** @description The `key` of a voice recording the person uploaded (folder `ai/input-audio`, MP3 or WAV). */
+            audioKey?: string;
+            /**
+             * Format: uuid
+             * @description The id of one of the person's own finished voice results whose audio is the voice.
+             */
+            sourceJobId?: string;
+        };
+        CreateTalkingPhotoJobDto: {
+            /** @description The `key` of a voice recording the person uploaded (folder `ai/input-audio`, MP3 or WAV). */
+            audioKey?: string;
+            /**
+             * Format: uuid
+             * @description The id of one of the person's own finished voice results whose audio is the voice.
+             */
+            sourceJobId?: string;
+            /** @description The `key` of the person's photo (folder `ai/input-image`). */
+            photoKey: string;
+            /** @description `quoteToken` from `POST /ai-tools/talking-photo/quote` (sent with the same voice). A different cost now is `409 quote_changed`. */
+            quoteToken: string;
+        };
         OwnVoiceConsentDto: {
             line: string;
+        };
+        MakePieceDto: {
+            /** @description The place of the output in the job's `outputs`, from 0. */
+            outputIndex: number;
         };
         NamePreviewDto: {
             /** @description The name to say. */
@@ -13643,7 +13870,7 @@ export interface components {
             id: string;
             points: number;
             /** @enum {string} */
-            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+            per: "use" | "minute" | "track" | "message" | "minute_per_language" | "second";
         };
         PlanCapsView: {
             dailyPoints: number;
@@ -17360,7 +17587,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "community" | "content" | "transaction" | "profile" | "paid_question";
+            kind: "community" | "content" | "transaction" | "profile" | "paid_question" | "ai_job";
             id: string;
             title: string | null;
             deadlineAt: string | null;
@@ -17936,7 +18163,7 @@ export interface components {
             action: string;
             title: string;
             /** @enum {string} */
-            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+            per: "use" | "minute" | "track" | "message" | "minute_per_language" | "second";
             units: number;
             languages: number;
             perUnitPoints: number;
@@ -17990,6 +18217,23 @@ export interface components {
             languageCode: boolean;
             dubbing?: components["schemas"]["AiToolDubbingView"];
         };
+        AiToolOptionsView: {
+            shapes: string[];
+            lengths?: number[] | null;
+            photo?: {
+                /** @enum {string} */
+                use: "required" | "optional";
+                folder: string;
+                accepts: string[];
+                maxBytes: number;
+            } | null;
+            speech?: {
+                audioFolder: string;
+                accepts: string[];
+                maxSeconds: number;
+                fromJob: boolean;
+            } | null;
+        };
         AiVoiceView: {
             id: string;
             name: string;
@@ -17998,21 +18242,22 @@ export interface components {
         };
         AiToolView: {
             /** @enum {string} */
-            id: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing";
+            id: "video" | "image" | "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing" | "photo-edit" | "talking-photo";
             action: string;
             name: string;
             description: string;
             /** @enum {string} */
-            unit: "use" | "minute" | "track";
+            unit: "use" | "minute" | "track" | "second";
             costPointsPerUnit: number;
             enabled: boolean;
             input: {
                 /** @enum {string} */
-                kind: "text" | "file" | "prompt";
+                kind: "text" | "video" | "image" | "chat" | "file" | "prompt" | "dialogue";
                 maxCharacters: number;
                 charactersPerUnit: number;
                 instrumental?: boolean | null;
                 file?: components["schemas"]["AiToolFileView"];
+                options?: components["schemas"]["AiToolOptionsView"];
             };
             voices: components["schemas"]["AiVoiceView"][];
         };
@@ -18027,14 +18272,20 @@ export interface components {
         };
         AiJobOutputView: {
             /** @enum {string} */
-            kind: "text" | "audio" | "subtitles";
+            kind: "text" | "video" | "audio" | "image" | "subtitles";
             url?: string | null;
             text?: string | null;
+            contentType?: string | null;
+            bytes?: number | null;
+            name?: string | null;
+            downloadUrl?: string | null;
+            /** @enum {string|null} */
+            pieceFormat?: "video" | "audio" | "image" | null;
         };
         AiJobView: {
             id: string;
             /** @enum {string} */
-            tool: "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing";
+            tool: "video" | "image" | "music" | "voiceover" | "quick-voice" | "sound-effect" | "captions" | "clean-audio" | "dubbing" | "photo-edit" | "talking-photo";
             /** @enum {string} */
             state: "failed" | "done" | "working";
             voiceId: string;
@@ -18057,7 +18308,28 @@ export interface components {
             action: string;
             title: string;
             /** @enum {string} */
-            per: "use" | "minute" | "track" | "message" | "minute_per_language";
+            per: "use" | "minute" | "track" | "message" | "minute_per_language" | "second";
+            units: number;
+            languages: number;
+            perUnitPoints: number;
+            costPoints: number;
+            balancePoints: number;
+            shortfallPoints: number;
+            useWallet: boolean;
+            quoteToken: string;
+            canRun: boolean;
+            cap: components["schemas"]["PointsCapView"];
+            wallet: components["schemas"]["PointsShortfallOfferView"];
+            walletNote: string | null;
+        };
+        AiSpeechQuoteView: {
+            speech: {
+                seconds: number;
+            };
+            action: string;
+            title: string;
+            /** @enum {string} */
+            per: "use" | "minute" | "track" | "message" | "minute_per_language" | "second";
             units: number;
             languages: number;
             perUnitPoints: number;
@@ -18088,6 +18360,18 @@ export interface components {
             own: components["schemas"]["OwnVoiceView"];
             /** @enum {string} */
             atProvider: "pending" | "gone";
+        };
+        AiPieceView: {
+            /** @enum {string} */
+            format: "video" | "audio" | "image";
+            full: {
+                key: string;
+                fileUrl: string;
+                contentType: string;
+                bytes: number;
+                name: string;
+            };
+            suggestedTitle: string;
         };
         MovieCardView: {
             id: string;
@@ -36238,6 +36522,133 @@ export interface operations {
             };
         };
     };
+    AiToolsController_createImage: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateImageJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createPhotoEdit: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePhotoEditJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createVideo: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVideoJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
+    AiToolsController_quoteTalkingPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteTalkingPhotoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSpeechQuoteView"];
+                };
+            };
+        };
+    };
+    AiToolsController_createTalkingPhoto: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _: one per job. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTalkingPhotoJobDto"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiJobView"];
+                };
+            };
+        };
+    };
     AiToolsController_listJobs: {
         parameters: {
             query?: {
@@ -36384,6 +36795,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnVoiceView"];
+                };
+            };
+        };
+    };
+    AiToolsPieceController_makePiece: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description 8 to 128 of letters, digits, - or _. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MakePieceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiPieceView"];
+                };
+            };
+            /** @description reason.code: tier_required, product_limit_reached */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TierGateErrorEnvelope"];
+                };
+            };
+            /** @description reason.code: identity_paused */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityPausedErrorEnvelope"];
                 };
             };
         };

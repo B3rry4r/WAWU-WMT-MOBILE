@@ -16,7 +16,7 @@ import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
 
 import { myPointsQuery } from './api';
 import { aiToolsQuery, type AiTool } from './studioApi';
-import { costLine, isDrawnTool, STUDIO_WORDS, toolIcon } from './studioModel';
+import { costLine, isDrawnTool, STUDIO_WORDS, studioLine, toolIcon } from './studioModel';
 import { PointsFrame } from './PointsFrame';
 import { BalanceCard } from './parts';
 
@@ -87,7 +87,7 @@ export function StudioScreen({ onBack, onHistory, onBuy, onOpenTool }: StudioScr
   return (
     <PointsFrame title={STUDIO_WORDS.title} onBack={onBack} action={action} gap={BODY_GAP} testID="studio-screen">
       <Text variant="secondary" tone="textSecondary" testID="studio-line">
-        {STUDIO_WORDS.line}
+        {studioLine(list)}
       </Text>
       <BalanceCard testID="studio-balance" points={balance} buy={{ label: STUDIO_WORDS.buyPoints, primary: none, onPress: onBuy, testID: 'studio-buy' }} />
       {none ? <Banner tone="info" icon="Sparkles" title={STUDIO_WORDS.noPointsTitle} body={STUDIO_WORDS.noPointsBody} testID="studio-no-points" /> : null}

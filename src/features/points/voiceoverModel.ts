@@ -72,8 +72,10 @@ export function failedWords(message: string | null | undefined): { title: string
 }
 
 /** What a tool takes in: the words to speak (`text`, the default of an entry that does not say), a description of a sound or track (`prompt`), or the person's own recording (`file`). */
-export type InputKind = 'text' | 'prompt' | 'file';
-export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind => (tool.input.kind === 'prompt' ? 'prompt' : tool.input.kind === 'file' ? 'file' : 'text');
+export type InputKind = 'text' | 'prompt' | 'file' | 'image' | 'video';
+/** `image` (Make an image, Edit a photo) and `video` (Make a video, Talking photo) are POINTS-14 and POINTS-15's kinds. */
+export const inputKindOf = (tool: Pick<AiTool, 'input'>): InputKind =>
+  tool.input.kind === 'prompt' ? 'prompt' : tool.input.kind === 'file' ? 'file' : tool.input.kind === 'image' ? 'image' : tool.input.kind === 'video' ? 'video' : 'text';
 
 /**
  * What a tool's screen can run: the app has its screen, and the Hub lists it as on with a limit for what it takes. A tool that reads
@@ -87,7 +89,10 @@ export function toolReady(tool: AiTool | undefined): tool is AiTool {
     const rule = tool.input.file;
     return Boolean(rule && rule.maxBytes > 0 && rule.maxMinutes > 0 && (rule.accepts.audio.length > 0 || rule.accepts.video.length > 0));
   }
+  // A Talking photo has no words to limit (a photo and a voice); the picture and video tools describe what they make (the Hub's limit), and `isDrawnTool` held their other options.
+  if (tool.id === 'talking-photo') return true;
   if (!(tool.input.maxCharacters > 0)) return false;
+  if (inputKindOf(tool) === 'image' || inputKindOf(tool) === 'video') return true;
   return inputKindOf(tool) === 'prompt' || (tool.input.charactersPerUnit > 0 && tool.voices.length > 0);
 }
 

@@ -138,266 +138,272 @@ Builder and verifier are always different sessions.
 120. [FIX-57](FIX-57.md) The local test stack never reports UP on a port it does not own
 121. [FIX-85](FIX-85.md) A failed send that Nuvion then reverses counts the fee once and gives it back once
 122. [FIX-55](FIX-55.md) Bank transfer only for a short wallet, and no pay sheet offers Add money until WALLET-05
-123. [FIX-51](FIX-51.md) ID and address documents leave the app with their files in them
-124. [HARNESS-NUV](HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double
-125. [FIX-48](FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test
-126. [OPS-01](OPS-01.md) Record the owner's rulings
-127. [OPS-02](OPS-02.md) Fintava test keys: the first real calls
-128. [OPS-03](OPS-03.md) Run the backend locally for testing
-129. [OPS-04](OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers
-130. [OPS-05](OPS-05.md) Update the other repos' CLAUDE.md for today's rulings
-131. [SCHOOLS-04](SCHOOLS-04.md) Schools: browse, search, course detail · needs SCHOOLS-02 from Developer 3 first
-132. [MONEY-01](MONEY-01.md) Protected route list and regression suite
-133. [CHECK-0](CHECK-0.md) Checkpoint 0: safe to start building · needs SETUP-01 from Developer first
-134. [LEGAL-01](LEGAL-01.md) Legal starts as a chat
-135. [MONEY-04](MONEY-04.md) Money conventions and the wallet contract
-136. [EVENTS-01](EVENTS-01.md) Events: list, filters, detail, sold out · needs SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02 from Developer first
-137. [OPS-R0](OPS-R0.md) Records pass and the approved workflow change
-138. [SCHOOLS-05](SCHOOLS-05.md) Admin screens: schools, courses, intakes · needs SCHOOLS-02 from Developer 3 first
-139. [OPS-08](OPS-08.md) Retire Shop on the backend
-140. [PROS-03](PROS-03.md) Get listed as a professional · needs PROS-02, UI-02 from Developer 3 first
-141. [MONEY-02](MONEY-02.md) The PIN sheet · needs UI-01, UI-02 from Developer first
-142. [ADS-02](ADS-02.md) Admin screens: ads · needs ADS-06, ADS-05 from Developer 2 first
-143. [PROS-01](PROS-01.md) Find a professional · needs PROS-02, UI-02, UI-03 from Developer 3 first
-144. [MONEY-03](MONEY-03.md) The pay-from-wallet sheet · needs UI-02 from Developer first
-145. [INBOX-03](INBOX-03.md) Phone push notifications · needs SETTINGS-07 from Developer first
-146. [EVENTS-03](EVENTS-03.md) My tickets, ticket QR, checked in · needs EVENTS-05, UI-02 from Developer 3 first
-147. [MONEY-06](MONEY-06.md) Fintava client
-148. [FIX-01](FIX-01.md) Fintava timeout covers the whole answer, garbage collection included
-149. [INBOX-21](INBOX-21.md) Turn on phone notifications in the app · needs SHELL-02 from Developer first
-150. [EVENTS-04](EVENTS-04.md) Host an event: basics, when and where, tickets, review · needs EVENTS-02, UI-02 from Developer 3 first
-151. [MONEY-07](MONEY-07.md) Fintava webhooks
-152. [OPS-11](OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy)
-153. [EVENTS-09](EVENTS-09.md) At the door: scan, let in, already used, not valid · needs EVENTS-05, UI-02 from Developer 3 first
-154. [MONEY-09](MONEY-09.md) Transaction PIN
-155. [INBOX-05](INBOX-05.md) Communities: list, room, sending · needs INBOX-01, INBOX-02, INBOX-04, UI-02, UI-03 from Developer 2 first
-156. [SCHOOLS-03](SCHOOLS-03.md) Schools: directory, school page, course page, no results · needs UI-02, UI-03 from Developer first
-157. [MONEY-10](MONEY-10.md) The ledger
-158. [INBOX-12](INBOX-12.md) Paid message settings, warning, switched off · needs INBOX-09, UI-02, INBOX-04 from Developer 2 first
-159. [LEGAL-02](LEGAL-02.md) Legal: chat, profiling, brief, consultant joins · needs INBOX-02, UI-02 from Developer 2 first
-160. [MONEY-08](MONEY-08.md) Status checks and the pending sweep
-161. [ME-04](ME-04.md) Create: pick a format, upload, preview · needs SHELL-01, SHELL-02, UI-02, ME-17 from Developer first
-162. [BILLS-01](BILLS-01.md) Pay a bill: choose biller, meter and amount · needs SHELL-02, UI-02 from Developer first
-163. [LEGAL-03](LEGAL-03.md) Legal consultations and deliverables
-164. [MONEY-11](MONEY-11.md) Balance
-165. [ME-08](ME-08.md) Create: details, price, in review, free piece · needs ME-09, ME-17, UI-02 from Developer first
-166. [LEGAL-07](LEGAL-07.md) Admin screens: legal prices
-167. [KYC-01](KYC-01.md) BVN check when someone opens a wallet
-168. [SCHOOLS-10](SCHOOLS-10.md) Link to a school's own site, with the click recorded
-169. [KYC-02](KYC-02.md) Selfie match to the BVN photo
-170. [MONEY-12](MONEY-12.md) Open a Fintava account when someone opens a wallet
-171. [FIX-02](FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy)
-172. [MONEY-13](MONEY-13.md) No wallet yet: money screens lead to Open your wallet
-173. [KYC-05](KYC-05.md) Open your wallet: enter your BVN and NIN · needs UI-02 from Developer first
-174. [HOME-02](HOME-02.md) For you feed: video, photo set, book, locked, audio · needs HOME-04, HOME-05, HOME-06, UI-02 from Developer first
-175. [KYC-03](KYC-03.md) Open your wallet: confirm details and address, selfie · needs UI-02 from Developer first
-176. [KYC-04](KYC-04.md) Open your wallet: account opened, create PIN · needs UI-02 from Developer first
-177. [WALLET-15](WALLET-15.md) Fee quotes
-178. [MONEY-17](MONEY-17.md) Pay from wallet
-179. [MONEY-18](MONEY-18.md) Hold, release and refund
-180. [SETTINGS-01](SETTINGS-01.md) Settings, notifications, privacy and blocked · needs SHELL-01, SHELL-02, UI-02, SETTINGS-03, SETTINGS-04, SETTINGS-07, HOME-11, SETTINGS-02 from Developer first
-181. [MONEY-19](MONEY-19.md) Not enough money, and still confirming
-182. [WALLET-16](WALLET-16.md) Earnings land in the wallet automatically
-183. [EXPLORE-05](EXPLORE-05.md) Search: communities, recent and popular searches, ticks
-184. [MONEY-16](MONEY-16.md) Nightly check against Fintava
-185. [EXPLORE-02](EXPLORE-02.md) All creators and search · needs EXPLORE-03, SETTINGS-04, UI-02, UI-03 from Developer first
-186. [INBOX-16](INBOX-16.md) Buy WAWU Credits from the wallet (backend)
-187. [EVENTS-07](EVENTS-07.md) Buy event tickets from the wallet (backend) · needs EVENTS-02 from Developer 3 first
-188. [MONEY-14](MONEY-14.md) Reset the PIN, and approve with fingerprint or face · needs AUTH-03 from Developer first
-189. [FIX-03](FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy)
-190. [EXPLORE-04](EXPLORE-04.md) Search: creators, communities, no results, failed · needs UI-02 from Developer first
-191. [INBOX-13](INBOX-13.md) Out of credits, buy credits, credits added · needs UI-02 from Developer first
-192. [EVENTS-06](EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming · needs UI-02 from Developer first
-193. [MONEY-15](MONEY-15.md) Transaction history and detail
-194. [EXPLORE-01](EXPLORE-01.md) Explore: browse, categories, loading, empty · needs EXPLORE-03, UI-02, UI-03 from Developer first
-195. [INBOX-17](INBOX-17.md) Paid questions: pay, hold, pay out and refund through the wallet (backend) · needs INBOX-08, INBOX-09 from Developer 2 first
-196. [LEGAL-05](LEGAL-05.md) Pay legal fees from the wallet (backend)
-197. [WALLET-04](WALLET-04.md) Transaction history and detail · needs UI-02 from Developer first
-198. [HOME-14](HOME-14.md) Pay tips from the wallet (backend)
-199. [BILLS-04](BILLS-04.md) Pay bills from the wallet (backend)
-200. [LEGAL-04](LEGAL-04.md) Legal: book and pay a consultation · needs UI-02 from Developer first
-201. [WALLET-14](WALLET-14.md) Saved recipients and payout account
-202. [HOME-13](HOME-13.md) Tip a creator · needs UI-02 from Developer first
-203. [FLIX-01](FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in)
-204. [LEGAL-06](LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price · needs UI-02 from Developer first
-205. [WALLET-11](WALLET-11.md) Payout bank account · needs UI-02 from Developer first
-206. [FIX-04](FIX-04.md) One person's cached answers are never shown to the next person
-207. [HOME-15](HOME-15.md) Pay for unlocks from the wallet (backend)
-208. [FLIX-02](FLIX-02.md) Flix movies: the Flixora adapter
-209. [SCHOOLS-07](SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend)
-210. [WALLET-06](WALLET-06.md) Wallet settings, change and reset the PIN · needs UI-02 from Developer first
-211. [HOME-12](HOME-12.md) Unlock from the feed · needs UI-02 from Developer first
-212. [FIX-54](FIX-54.md) A bank send on Nuvion shows its true outcome
-213. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full · needs UI-02 from Developer first
-214. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01 from Developer first
-215. [FIX-50](FIX-50.md) The BVN step names no checker
-216. [FIX-52](FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote
-217. [SCHOOLS-09](SCHOOLS-09.md) Enrolment report to the school, and My courses
-218. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients · needs SETTINGS-04 from Developer first
-219. [FIX-47](FIX-47.md) No blank page while Open your wallet sends the ID and address details
-220. [SCHOOLS-08](SCHOOLS-08.md) My courses and apply on the school's site · needs UI-02 from Developer first
-221. [WALLET-07](WALLET-07.md) Send money to a WAWU user · needs SETTINGS-04 from Developer first
-222. [ME-13](ME-13.md) Tick still confirming, wallet not opened, identity not matched
-223. [INBOX-15](INBOX-15.md) Money requests in chat · needs INBOX-06, INBOX-07 from Developer 2 first
-224. [WALLET-02](WALLET-02.md) Send to a WAWU user · needs UI-02, UI-03 from Developer first
-225. [HOME-03](HOME-03.md) Content detail: preview, unlocked, comments, share, rate · needs HOME-04, HOME-06, INBOX-06, UI-02 from Developer first
-226. [INBOX-19](INBOX-19.md) Chat and send money in a chat · needs INBOX-02, INBOX-06, UI-02, UI-03, INBOX-04 from Developer 2 first
-227. [WALLET-09](WALLET-09.md) Send money to a bank
-228. [HOME-08](HOME-08.md) Content detail: free video and course layouts · needs UI-02 from Developer first
-229. [INBOX-20](INBOX-20.md) Request money and pay a request · needs INBOX-04, UI-02 from Developer 2 first
-230. [SCHOOLS-11](SCHOOLS-11.md) Pay schools their share of course fees
-231. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
-232. [HOME-07](HOME-07.md) Feed: course, template, creator and professional cards, empty and error · needs HOME-04, HOME-05, PROS-02, UI-02, UI-03 from Developer first
-233. [EVENTS-10](EVENTS-10.md) Refund ticket buyers when an event is called off
-234. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs SETTINGS-07 from Developer first
-235. [EVENTS-08](EVENTS-08.md) My events, organiser dashboard, call it off, called off · needs EVENTS-05, UI-02 from Developer 3 first
-236. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02 from Developer first
-237. [HOME-09](HOME-09.md) TGIF reader · needs HOME-10, INBOX-06, UI-02 from Developer first
-238. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02 from Developer first
-239. [ME-10](ME-10.md) Saved, purchases, notifications, monthly earnings
-240. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
-241. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets
-242. [ME-11](ME-11.md) Featured works: all works, one work, add a work · needs ME-16, UI-02 from Developer first
-243. [SWEEP-FLOWS](SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16)
-244. [ME-07](ME-07.md) Creator dashboard, my content, rejected, uploads used · needs ME-09, ME-17, UI-02 from Developer first
-245. [ME-14](ME-14.md) Saved, purchases and notifications · needs UI-02 from Developer first
-246. [ME-01](ME-01.md) My profile: content, services, about · needs SHELL-01, ME-05, ME-16, UI-02, UI-03, ME-06 from Developer first
-247. [ME-02](ME-02.md) Someone else's profile and following · needs ME-16, SETTINGS-04, UI-02 from Developer first
-248. [INBOX-10](INBOX-10.md) Ask a creator a paid question · needs INBOX-02, UI-02, INBOX-04 from Developer 2 first
-249. [ME-03](ME-03.md) The Me menu · needs UI-02 from Developer first
-250. [INBOX-11](INBOX-11.md) Paid question: not enough money, refunded, messages off · needs INBOX-09, UI-02 from Developer 2 first
-251. [FIX-27](FIX-27.md) The schools list pages the same way on every database, so no school is skipped
-252. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs SHELL-01, UI-02, UI-03, HOME-10, HOME-11 from Developer first
-253. [INBOX-18](INBOX-18.md) Answer paid questions (creator) · needs INBOX-04, INBOX-08, UI-02 from Developer 2 first
-254. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
-255. [AUTH-06](AUTH-06.md) After sign-up: creator setup, interests, people to follow · needs AUTH-04, AUTH-05, UI-02, ME-06 from Developer first
-256. [SUPPORT-01](SUPPORT-01.md) Support chat that opens with the payment or piece it is about · needs INBOX-06 from Developer 2 first
-257. [SETTINGS-06](SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel
-258. [STACK-NUV](STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in
-259. [SETTINGS-08](SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in
-260. [ADS-01](ADS-01.md) TGIF sponsored card · needs ADS-04, ADS-05 from Developer 2 first
-261. [SETTINGS-05](SETTINGS-05.md) Delete account · needs UI-02 from Developer first
-262. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
-263. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
-264. [AUTH-08](AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in · needs AUTH-03 from Developer first
-265. [SHARED-02](SHARED-02.md) Shared-change pass for the four tab hubs
-266. [SHARED-03](SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder)
-267. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
-268. [FIX-06](FIX-06.md) An admin's unlist cannot be undone by the professional · needs PROS-02 from Developer 3 first
-269. [SETTINGS-09](SETTINGS-09.md) A deleted account's ID documents are kept hidden for 5 years, then deleted
-270. [FIX-07](FIX-07.md) Search answers 400, not 500, for a NUL in the query
-271. [FIX-08](FIX-08.md) A request body over the size limit answers 413, not 500
-272. [FIX-09](FIX-09.md) No em-dashes in any message a person can read from the backend or the web
-273. [FIX-10](FIX-10.md) Calls to WAWU ID give up after a bounded time
-274. [FIX-11](FIX-11.md) The legal thread's opener is written once, metered and locked
-275. [FIX-12](FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11
-276. [FIX-13](FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in
-277. [FIX-14](FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
-278. [FIX-17](FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub
-279. [NUV-01](NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion
-280. [NUV-07](NUV-07.md) Fees and limits as settings, and nothing moves before they are set
-281. [TIER-01](TIER-01.md) Prices, tiers and the billing currency: one config file
-282. [POINTS-01](POINTS-01.md) Points: lots that expire, and the points ledger
-283. [NUV-02](NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected
-284. [NUV-03](NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review
-285. [NUV-04](NUV-04.md) The account number, adding money by bank transfer, and the balance
-286. [NUV-05](NUV-05.md) Pay from the wallet and held money: book transfers and WAWU's operational account
-287. [NUV-06](NUV-06.md) Send to a bank and pay out, with the account name check
-288. [NUV-08](NUV-08.md) Reconciliation with Nuvion: missed deliveries, statements and the nightly figures
-289. [FIX-87](FIX-87.md) A PIN or money write the Hub never answers ends after 30 s, where its screen can send it again under the same key
-290. [TIER-02](TIER-02.md) Publishing needs a tier: the gate and the product count · needs ME-17 from Developer first
-291. [TIER-03](TIER-03.md) Buy, renew or upgrade a tier from the wallet
-292. [TIER-04](TIER-04.md) Add 5 more products
-293. [TIER-05](TIER-05.md) Pay by bank transfer at checkout
-294. [POINTS-02](POINTS-02.md) Buy points
-295. [POINTS-03](POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet
-296. [POINTS-04](POINTS-04.md) Convert points to cash
-297. [REF-01](REF-01.md) Referral points
-298. [FLIX-03](FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails
-299. [FIX-45](FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together
-300. [FIX-53](FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for)
-301. [FIX-86](FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick
-302. [AUTH-09](AUTH-09.md) WAWU ID emails the wallet PIN reset code
-303. [NUV-10](NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits
-304. [FIX-18](FIX-18.md) Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone
-305. [FIX-19](FIX-19.md) School and course names refuse control characters
-306. [FIX-20](FIX-20.md) Provider webhook deliveries are not kept forever
-307. [FIX-21](FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level
-308. [SHARED-04](SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy
-309. [SHARED-07](SHARED-07.md) The phone plays video and audio, reads PDFs in place, and shares the picture
-310. [SHARED-05](SHARED-05.md) The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch
-311. [SHARED-06](SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES
-312. [FIX-22](FIX-22.md) A profiling turn asks the model for one JSON object
-313. [OPS-R1](OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids
-314. [FIX-24](FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded
-315. [HOME-18](HOME-18.md) Today's bell and three spacings
-316. [FIX-26](FIX-26.md) The limits lock always runs in a real transaction, and the money-route checks pin what they read
-317. [BRAND-01](BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in
-318. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly
-319. [COMPLETE-01](COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest
-320. [COMPLETE-02](COMPLETE-02.md) Explore shows its whole design
-321. [FIX-29](FIX-29.md) Unbuilt screens' entries are not drawn (R-47)
-322. [JOIN-01](JOIN-01.md) Event registration link: register and pay the event fee (backend)
-323. [COMPLETE-05](COMPLETE-05.md) Wallet shows its whole design
-324. [JOIN-02](JOIN-02.md) Event registration link: the website page (wawuafrica.com/join)
-325. [JOIN-03](JOIN-03.md) Event registration: claim the paid plan in the app with the access code
-326. [FIX-30](FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording
-327. [AUTH-07](AUTH-07.md) Sign-up verifies by email code; no SMS · needs AUTH-03, AUTH-04, AUTH-05 from Developer first
-328. [FIX-31](FIX-31.md) The app's tests that fail only under load: make them deterministic
-329. [FIX-32](FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock
-330. [SWEEP-MONEY](SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
-331. [SWEEP-JOIN](SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail
-332. [SWEEP-INBOX](SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox
-333. [SWEEP-EVENTS](SWEEP-EVENTS.md) Events sweep: the low findings of events and the door
-334. [SWEEP-AUTH](SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in
-335. [DESIGN-V2-CUT](DESIGN-V2-CUT.md) Cut the 16 Oct 2026 designs and answers into rulings and tasks
-336. [GATES-02](GATES-02.md) Record the five gate lines in the backend baseline
-337. [WALLET-37](WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour
-338. [EXPLORE-06](EXPLORE-06.md) Popular communities need 10 members
-339. [ADS-07](ADS-07.md) Adverts: artwork required, and the Explore slider placement · needs ADS-04, ADS-06 from Developer 2 first
-340. [INBOX-22](INBOX-22.md) Community credits by kind of message (backend)
-341. [INBOX-24](INBOX-24.md) Private community monthly pass (backend)
-342. [HOME-16](HOME-16.md) Daily TGIF notification · needs HOME-11 from Developer first
-343. [WALLET-39](WALLET-39.md) A notice for all money in
-344. [TIER-06](TIER-06.md) The new money figures as admin settings
-345. [TIER-07](TIER-07.md) A person's tier badge on their public profile
-346. [REF-02](REF-02.md) Referral points: invite, claim and earn (backend)
-347. [EVENTS-12](EVENTS-12.md) Hosting an event needs an active tier (backend)
-348. [VOICE-01](VOICE-01.md) Hear your name and the Voice Intro (backend)
-349. [AITOOLS-01](AITOOLS-01.md) The AI tools catalogue and VoiceOver (backend)
-350. [DV2-COMP](DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro · needs UI-03 from Developer first
-351. [VERIFY-01](VERIFY-01.md) Your bonus is waiting, and the draft shop
-352. [ME-12](ME-12.md) Make it official: choose a tier and pay · needs ME-17, UI-02 from Developer first
-353. [VERIFY-02](VERIFY-02.md) Hear your name, and write your Voice Intro
-354. [VERIFY-03](VERIFY-03.md) Record your voice and hear yourself
-355. [VERIFY-04](VERIFY-04.md) Publish your first product, and the identity check
-356. [VERIFY-05](VERIFY-05.md) Your tier, and when you have used all your products
-357. [POINTS-05](POINTS-05.md) Your points, and convert them to cash
-358. [POINTS-06](POINTS-06.md) Buy points
-359. [POINTS-07](POINTS-07.md) Studio: the AI tools, not enough points, the daily limit
-360. [POINTS-08](POINTS-08.md) One AI tool: VoiceOver, working, done, failed
-361. [REF-03](REF-03.md) Invite and earn
-362. [KYC-06](KYC-06.md) Complete your account: ID document, proof of address, checking, rejected
-363. [KYC-07](KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4
-364. [EXPLORE-07](EXPLORE-07.md) The Explore slider: events and adverts take turns, and TGIF on Explore
-365. [INBOX-23](INBOX-23.md) Community messages by kind: the composer, the header and sending a photo
-366. [INBOX-14](INBOX-14.md) Private communities, hosting, join requests · needs INBOX-01, UI-02, UI-03, INBOX-04 from Developer 2 first
-367. [WALLET-38](WALLET-38.md) Your pass
-368. [DV2-01](DV2-01.md) Home follows the 16 Oct design: ad card, services row, reader count
-369. [DV2-02](DV2-02.md) Wallet follows the 16 Oct design: Cash, Points, Passes, no Bills
-370. [DV2-03](DV2-03.md) Me follows the 16 Oct design: the profile header
-371. [DV2-04](DV2-04.md) Create hub and event hosting: the tier gate
-372. [DV2-05](DV2-05.md) Sign-up and Open your wallet follow the 16 Oct design · needs AUTH-04 from Developer first
-373. [DV2-06](DV2-06.md) Settings: TGIF each morning, and the provider wording · needs SETTINGS-02 from Developer first
-374. [DV2-COPY](DV2-COPY.md) Brand copy sweep: "Who Made This?", "Bank charge", "Banking by Nuvion
-375. [DV2-RM](DV2-RM.md) Removals pass: Events tile, TGIF card and toggle, Bills entries, tick card
-376. [HOME-17](HOME-17.md) Settings move into admin (TGIF time, two thresholds, 30-day clean-up)
-377. [WALLET-40](WALLET-40.md) Alert when your account number is ready
-378. [INBOX-25](INBOX-25.md) A removed member gets the unused pass days back
-379. [EVENTS-13](EVENTS-13.md) Call-off: order cap, cancel once, free tickets
-380. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
-381. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
-382. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+123. [AITOOLS-08](AITOOLS-08.md) Studio media pipeline, the result into Create, and the listing gate (backend)
+124. [POINTS-13](POINTS-13.md) Studio: every result goes into Create as a piece, Save, and a quiet Download (app)
+125. [AITOOLS-09](AITOOLS-09.md) Make an image and Edit a photo (backend)
+126. [AITOOLS-10](AITOOLS-10.md) Make a video and Talking photo (backend)
+127. [POINTS-14](POINTS-14.md) Studio: Make an image and Edit a photo (app)
+128. [POINTS-15](POINTS-15.md) Studio: Make a video and Talking photo (app)
+129. [FIX-51](FIX-51.md) ID and address documents leave the app with their files in them
+130. [HARNESS-NUV](HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double
+131. [FIX-48](FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test
+132. [OPS-01](OPS-01.md) Record the owner's rulings
+133. [OPS-02](OPS-02.md) Fintava test keys: the first real calls
+134. [OPS-03](OPS-03.md) Run the backend locally for testing
+135. [OPS-04](OPS-04.md) Designer: Shop to Schools, the ₦ glyph, real numbers
+136. [OPS-05](OPS-05.md) Update the other repos' CLAUDE.md for today's rulings
+137. [SCHOOLS-04](SCHOOLS-04.md) Schools: browse, search, course detail · needs SCHOOLS-02 from Developer 3 first
+138. [MONEY-01](MONEY-01.md) Protected route list and regression suite
+139. [CHECK-0](CHECK-0.md) Checkpoint 0: safe to start building · needs SETUP-01 from Developer first
+140. [LEGAL-01](LEGAL-01.md) Legal starts as a chat
+141. [MONEY-04](MONEY-04.md) Money conventions and the wallet contract
+142. [EVENTS-01](EVENTS-01.md) Events: list, filters, detail, sold out · needs SHELL-01, SHELL-02, UI-02, UI-03, EVENTS-02 from Developer first
+143. [OPS-R0](OPS-R0.md) Records pass and the approved workflow change
+144. [SCHOOLS-05](SCHOOLS-05.md) Admin screens: schools, courses, intakes · needs SCHOOLS-02 from Developer 3 first
+145. [OPS-08](OPS-08.md) Retire Shop on the backend
+146. [PROS-03](PROS-03.md) Get listed as a professional · needs PROS-02, UI-02 from Developer 3 first
+147. [MONEY-02](MONEY-02.md) The PIN sheet · needs UI-01, UI-02 from Developer first
+148. [ADS-02](ADS-02.md) Admin screens: ads · needs ADS-06, ADS-05 from Developer 2 first
+149. [PROS-01](PROS-01.md) Find a professional · needs PROS-02, UI-02, UI-03 from Developer 3 first
+150. [MONEY-03](MONEY-03.md) The pay-from-wallet sheet · needs UI-02 from Developer first
+151. [INBOX-03](INBOX-03.md) Phone push notifications · needs SETTINGS-07 from Developer first
+152. [EVENTS-03](EVENTS-03.md) My tickets, ticket QR, checked in · needs EVENTS-05, UI-02 from Developer 3 first
+153. [MONEY-06](MONEY-06.md) Fintava client
+154. [FIX-01](FIX-01.md) Fintava timeout covers the whole answer, garbage collection included
+155. [INBOX-21](INBOX-21.md) Turn on phone notifications in the app · needs SHELL-02 from Developer first
+156. [EVENTS-04](EVENTS-04.md) Host an event: basics, when and where, tickets, review · needs EVENTS-02, UI-02 from Developer 3 first
+157. [MONEY-07](MONEY-07.md) Fintava webhooks
+158. [OPS-11](OPS-11.md) Rate limits behind nginx (Flutterwave webhook throttle, trust proxy)
+159. [EVENTS-09](EVENTS-09.md) At the door: scan, let in, already used, not valid · needs EVENTS-05, UI-02 from Developer 3 first
+160. [MONEY-09](MONEY-09.md) Transaction PIN
+161. [INBOX-05](INBOX-05.md) Communities: list, room, sending · needs INBOX-01, INBOX-02, INBOX-04, UI-02, UI-03 from Developer 2 first
+162. [SCHOOLS-03](SCHOOLS-03.md) Schools: directory, school page, course page, no results · needs UI-02, UI-03 from Developer first
+163. [MONEY-10](MONEY-10.md) The ledger
+164. [INBOX-12](INBOX-12.md) Paid message settings, warning, switched off · needs INBOX-09, UI-02, INBOX-04 from Developer 2 first
+165. [LEGAL-02](LEGAL-02.md) Legal: chat, profiling, brief, consultant joins · needs INBOX-02, UI-02 from Developer 2 first
+166. [MONEY-08](MONEY-08.md) Status checks and the pending sweep
+167. [ME-04](ME-04.md) Create: pick a format, upload, preview · needs SHELL-01, SHELL-02, UI-02, ME-17 from Developer first
+168. [BILLS-01](BILLS-01.md) Pay a bill: choose biller, meter and amount · needs SHELL-02, UI-02 from Developer first
+169. [LEGAL-03](LEGAL-03.md) Legal consultations and deliverables
+170. [MONEY-11](MONEY-11.md) Balance
+171. [ME-08](ME-08.md) Create: details, price, in review, free piece · needs ME-09, ME-17, UI-02 from Developer first
+172. [LEGAL-07](LEGAL-07.md) Admin screens: legal prices
+173. [KYC-01](KYC-01.md) BVN check when someone opens a wallet
+174. [SCHOOLS-10](SCHOOLS-10.md) Link to a school's own site, with the click recorded
+175. [KYC-02](KYC-02.md) Selfie match to the BVN photo
+176. [MONEY-12](MONEY-12.md) Open a Fintava account when someone opens a wallet
+177. [FIX-02](FIX-02.md) The concurrent-tap contract tests hold under load (backend main's deploy)
+178. [MONEY-13](MONEY-13.md) No wallet yet: money screens lead to Open your wallet
+179. [KYC-05](KYC-05.md) Open your wallet: enter your BVN and NIN · needs UI-02 from Developer first
+180. [HOME-02](HOME-02.md) For you feed: video, photo set, book, locked, audio · needs HOME-04, HOME-05, HOME-06, UI-02 from Developer first
+181. [KYC-03](KYC-03.md) Open your wallet: confirm details and address, selfie · needs UI-02 from Developer first
+182. [KYC-04](KYC-04.md) Open your wallet: account opened, create PIN · needs UI-02 from Developer first
+183. [WALLET-15](WALLET-15.md) Fee quotes
+184. [MONEY-17](MONEY-17.md) Pay from wallet
+185. [MONEY-18](MONEY-18.md) Hold, release and refund
+186. [SETTINGS-01](SETTINGS-01.md) Settings, notifications, privacy and blocked · needs SHELL-01, SHELL-02, UI-02, SETTINGS-03, SETTINGS-04, SETTINGS-07, HOME-11, SETTINGS-02 from Developer first
+187. [MONEY-19](MONEY-19.md) Not enough money, and still confirming
+188. [WALLET-16](WALLET-16.md) Earnings land in the wallet automatically
+189. [EXPLORE-05](EXPLORE-05.md) Search: communities, recent and popular searches, ticks
+190. [MONEY-16](MONEY-16.md) Nightly check against Fintava
+191. [EXPLORE-02](EXPLORE-02.md) All creators and search · needs EXPLORE-03, SETTINGS-04, UI-02, UI-03 from Developer first
+192. [INBOX-16](INBOX-16.md) Buy WAWU Credits from the wallet (backend)
+193. [EVENTS-07](EVENTS-07.md) Buy event tickets from the wallet (backend) · needs EVENTS-02 from Developer 3 first
+194. [MONEY-14](MONEY-14.md) Reset the PIN, and approve with fingerprint or face · needs AUTH-03 from Developer first
+195. [FIX-03](FIX-03.md) The PIN reset spec's leak scan never matches by chance (backend main's deploy)
+196. [EXPLORE-04](EXPLORE-04.md) Search: creators, communities, no results, failed · needs UI-02 from Developer first
+197. [INBOX-13](INBOX-13.md) Out of credits, buy credits, credits added · needs UI-02 from Developer first
+198. [EVENTS-06](EVENTS-06.md) Buy a ticket: pay, PIN, ticket, still confirming · needs UI-02 from Developer first
+199. [MONEY-15](MONEY-15.md) Transaction history and detail
+200. [EXPLORE-01](EXPLORE-01.md) Explore: browse, categories, loading, empty · needs EXPLORE-03, UI-02, UI-03 from Developer first
+201. [INBOX-17](INBOX-17.md) Paid questions: pay, hold, pay out and refund through the wallet (backend) · needs INBOX-08, INBOX-09 from Developer 2 first
+202. [LEGAL-05](LEGAL-05.md) Pay legal fees from the wallet (backend)
+203. [WALLET-04](WALLET-04.md) Transaction history and detail · needs UI-02 from Developer first
+204. [HOME-14](HOME-14.md) Pay tips from the wallet (backend)
+205. [BILLS-04](BILLS-04.md) Pay bills from the wallet (backend)
+206. [LEGAL-04](LEGAL-04.md) Legal: book and pay a consultation · needs UI-02 from Developer first
+207. [WALLET-14](WALLET-14.md) Saved recipients and payout account
+208. [HOME-13](HOME-13.md) Tip a creator · needs UI-02 from Developer first
+209. [FLIX-01](FLIX-01.md) Flix movies on the Hub: catalog, watch link and partner accounts (on a stand-in)
+210. [LEGAL-06](LEGAL-06.md) Legal: quote, pay to start, delivery, fixed price · needs UI-02 from Developer first
+211. [WALLET-11](WALLET-11.md) Payout bank account · needs UI-02 from Developer first
+212. [FIX-04](FIX-04.md) One person's cached answers are never shown to the next person
+213. [HOME-15](HOME-15.md) Pay for unlocks from the wallet (backend)
+214. [FLIX-02](FLIX-02.md) Flix movies: the Flixora adapter
+215. [SCHOOLS-07](SCHOOLS-07.md) Enrol in a course and pay from the wallet (backend)
+216. [WALLET-06](WALLET-06.md) Wallet settings, change and reset the PIN · needs UI-02 from Developer first
+217. [HOME-12](HOME-12.md) Unlock from the feed · needs UI-02 from Developer first
+218. [FIX-54](FIX-54.md) A bank send on Nuvion shows its true outcome
+219. [SCHOOLS-06](SCHOOLS-06.md) Enrol and pay, class full · needs UI-02 from Developer first
+220. [CHECK-1](CHECK-1.md) Checkpoint 1: the app talks to the real backend, screens match the design · needs SHELL-03, AUTH-01 from Developer first
+221. [FIX-50](FIX-50.md) The BVN step names no checker
+222. [FIX-52](FIX-52.md) On Nuvion, WAWU's fee on a send is collected, so the person pays exactly the quote
+223. [SCHOOLS-09](SCHOOLS-09.md) Enrolment report to the school, and My courses
+224. [WALLET-08](WALLET-08.md) Find a recipient, and recent recipients · needs SETTINGS-04 from Developer first
+225. [FIX-47](FIX-47.md) No blank page while Open your wallet sends the ID and address details
+226. [SCHOOLS-08](SCHOOLS-08.md) My courses and apply on the school's site · needs UI-02 from Developer first
+227. [WALLET-07](WALLET-07.md) Send money to a WAWU user · needs SETTINGS-04 from Developer first
+228. [ME-13](ME-13.md) Tick still confirming, wallet not opened, identity not matched
+229. [INBOX-15](INBOX-15.md) Money requests in chat · needs INBOX-06, INBOX-07 from Developer 2 first
+230. [WALLET-02](WALLET-02.md) Send to a WAWU user · needs UI-02, UI-03 from Developer first
+231. [HOME-03](HOME-03.md) Content detail: preview, unlocked, comments, share, rate · needs HOME-04, HOME-06, INBOX-06, UI-02 from Developer first
+232. [INBOX-19](INBOX-19.md) Chat and send money in a chat · needs INBOX-02, INBOX-06, UI-02, UI-03, INBOX-04 from Developer 2 first
+233. [WALLET-09](WALLET-09.md) Send money to a bank
+234. [HOME-08](HOME-08.md) Content detail: free video and course layouts · needs UI-02 from Developer first
+235. [INBOX-20](INBOX-20.md) Request money and pay a request · needs INBOX-04, UI-02 from Developer 2 first
+236. [SCHOOLS-11](SCHOOLS-11.md) Pay schools their share of course fees
+237. [WALLET-03](WALLET-03.md) Send to a bank, not enough money, failed send
+238. [HOME-07](HOME-07.md) Feed: course, template, creator and professional cards, empty and error · needs HOME-04, HOME-05, PROS-02, UI-02, UI-03 from Developer first
+239. [EVENTS-10](EVENTS-10.md) Refund ticket buyers when an event is called off
+240. [WALLET-10](WALLET-10.md) Money in: bank transfers to the account · needs SETTINGS-07 from Developer first
+241. [EVENTS-08](EVENTS-08.md) My events, organiser dashboard, call it off, called off · needs EVENTS-05, UI-02 from Developer 3 first
+242. [WALLET-05](WALLET-05.md) Add money and withdraw · needs UI-02 from Developer first
+243. [HOME-09](HOME-09.md) TGIF reader · needs HOME-10, INBOX-06, UI-02 from Developer first
+244. [WALLET-01](WALLET-01.md) Wallet home: Naira account and its states · needs UI-02 from Developer first
+245. [ME-10](ME-10.md) Saved, purchases, notifications, monthly earnings
+246. [WALLET-13](WALLET-13.md) Earnings breakdown · needs UI-02 from Developer first
+247. [WALLET-17](WALLET-17.md) Hosts receive their share: community credits and event tickets
+248. [ME-11](ME-11.md) Featured works: all works, one work, add a work · needs ME-16, UI-02 from Developer first
+249. [SWEEP-FLOWS](SWEEP-FLOWS.md) Flows sweep: the broken user flows of the 23 Oct full audit (B1 to B16)
+250. [ME-07](ME-07.md) Creator dashboard, my content, rejected, uploads used · needs ME-09, ME-17, UI-02 from Developer first
+251. [ME-14](ME-14.md) Saved, purchases and notifications · needs UI-02 from Developer first
+252. [ME-01](ME-01.md) My profile: content, services, about · needs SHELL-01, ME-05, ME-16, UI-02, UI-03, ME-06 from Developer first
+253. [ME-02](ME-02.md) Someone else's profile and following · needs ME-16, SETTINGS-04, UI-02 from Developer first
+254. [INBOX-10](INBOX-10.md) Ask a creator a paid question · needs INBOX-02, UI-02, INBOX-04 from Developer 2 first
+255. [ME-03](ME-03.md) The Me menu · needs UI-02 from Developer first
+256. [INBOX-11](INBOX-11.md) Paid question: not enough money, refunded, messages off · needs INBOX-09, UI-02 from Developer 2 first
+257. [FIX-27](FIX-27.md) The schools list pages the same way on every database, so no school is skipped
+258. [HOME-01](HOME-01.md) Today: home screen, loading, TGIF off · needs SHELL-01, UI-02, UI-03, HOME-10, HOME-11 from Developer first
+259. [INBOX-18](INBOX-18.md) Answer paid questions (creator) · needs INBOX-04, INBOX-08, UI-02 from Developer 2 first
+260. [RELEASE-01](RELEASE-01.md) Store listings and production builds · needs SHELL-03 from Developer first
+261. [AUTH-06](AUTH-06.md) After sign-up: creator setup, interests, people to follow · needs AUTH-04, AUTH-05, UI-02, ME-06 from Developer first
+262. [SUPPORT-01](SUPPORT-01.md) Support chat that opens with the payment or piece it is about · needs INBOX-06 from Developer 2 first
+263. [SETTINGS-06](SETTINGS-06.md) Delete account in the Hub: empty wallet first, freeze, restore on cancel
+264. [STACK-NUV](STACK-NUV.md) The local test stack runs the Hub on Nuvion, with a local Nuvion stand-in
+265. [SETTINGS-08](SETTINGS-08.md) Delete account in WAWU ID: 30 days, cancelled by signing in
+266. [ADS-01](ADS-01.md) TGIF sponsored card · needs ADS-04, ADS-05 from Developer 2 first
+267. [SETTINGS-05](SETTINGS-05.md) Delete account · needs UI-02 from Developer first
+268. [FIX-05](FIX-05.md) Global throttler, one address must not push others into 429
+269. [MONEY-20](MONEY-20.md) Wallet provider seam, one interface with Fintava behind a switch
+270. [AUTH-08](AUTH-08.md) Refreshing and signing out stay fast however many times a person has signed in · needs AUTH-03 from Developer first
+271. [SHARED-02](SHARED-02.md) Shared-change pass for the four tab hubs
+272. [SHARED-03](SHARED-03.md) Shared-change pass after the tab hubs (one toast, chip padding, card placeholder)
+273. [EVENTS-11](EVENTS-11.md) Changing ticket prices on a live event needs a current verification and goes back to review · needs EVENTS-02 from Developer 3 first
+274. [FIX-06](FIX-06.md) An admin's unlist cannot be undone by the professional · needs PROS-02 from Developer 3 first
+275. [SETTINGS-09](SETTINGS-09.md) A deleted account's ID documents are kept hidden for 5 years, then deleted
+276. [FIX-07](FIX-07.md) Search answers 400, not 500, for a NUL in the query
+277. [FIX-08](FIX-08.md) A request body over the size limit answers 413, not 500
+278. [FIX-09](FIX-09.md) No em-dashes in any message a person can read from the backend or the web
+279. [FIX-10](FIX-10.md) Calls to WAWU ID give up after a bounded time
+280. [FIX-11](FIX-11.md) The legal thread's opener is written once, metered and locked
+281. [FIX-12](FIX-12.md) Ticket price edits: the follow-ups from EVENTS-11
+282. [FIX-13](FIX-13.md) WAWU ID token rotation: a failed sweep never fails the sign-in
+283. [FIX-14](FIX-14.md) Shared UI follow-ups: chip outline, hidden decorations, the consent box, a hanging test, the fork gate
+284. [FIX-17](FIX-17.md) A bad character or value in any query answers 400, not 500, across the Hub
+285. [NUV-01](NUV-01.md) Nuvion client, webhook receiver and the switch to Nuvion
+286. [NUV-07](NUV-07.md) Fees and limits as settings, and nothing moves before they are set
+287. [TIER-01](TIER-01.md) Prices, tiers and the billing currency: one config file
+288. [POINTS-01](POINTS-01.md) Points: lots that expire, and the points ledger
+289. [NUV-02](NUV-02.md) Open a wallet on Nuvion: the person, BVN and NIN, review, approved or rejected
+290. [NUV-03](NUV-03.md) ID document, proof of address and the hosted selfie, then submit for review
+291. [NUV-04](NUV-04.md) The account number, adding money by bank transfer, and the balance
+292. [NUV-05](NUV-05.md) Pay from the wallet and held money: book transfers and WAWU's operational account
+293. [NUV-06](NUV-06.md) Send to a bank and pay out, with the account name check
+294. [NUV-08](NUV-08.md) Reconciliation with Nuvion: missed deliveries, statements and the nightly figures
+295. [FIX-87](FIX-87.md) A PIN or money write the Hub never answers ends after 30 s, where its screen can send it again under the same key
+296. [TIER-02](TIER-02.md) Publishing needs a tier: the gate and the product count · needs ME-17 from Developer first
+297. [TIER-03](TIER-03.md) Buy, renew or upgrade a tier from the wallet
+298. [TIER-04](TIER-04.md) Add 5 more products
+299. [TIER-05](TIER-05.md) Pay by bank transfer at checkout
+300. [POINTS-02](POINTS-02.md) Buy points
+301. [POINTS-03](POINTS-03.md) Spend points on AI tools: the cost first, caps, and paying the shortfall from the wallet
+302. [POINTS-04](POINTS-04.md) Convert points to cash
+303. [REF-01](REF-01.md) Referral points
+304. [FLIX-03](FLIX-03.md) Flix movies: MV1 to MV12 and the Home and Explore rails
+305. [FIX-45](FIX-45.md) Two backend specs stop failing at random: the PIN scan of a digest, and four publishes sent together
+306. [FIX-53](FIX-53.md) The privacy export email is sent (wawu-id gets the data-export route the Hub asks for)
+307. [FIX-86](FIX-86.md) One Nuvion webhook sweep drains what is due, so a burst of payments settles in one tick
+308. [AUTH-09](AUTH-09.md) WAWU ID emails the wallet PIN reset code
+309. [NUV-10](NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits
+310. [FIX-18](FIX-18.md) Three small 500s: wallet history paging, a repeated export token, a request whose socket has gone
+311. [FIX-19](FIX-19.md) School and course names refuse control characters
+312. [FIX-20](FIX-20.md) Provider webhook deliveries are not kept forever
+313. [FIX-21](FIX-21.md) The money-route checks see class-level guards, and the limits lock names its isolation level
+314. [SHARED-04](SHARED-04.md) Native modules: the phone can take the wallet selfie, pick photos and copy
+315. [SHARED-07](SHARED-07.md) The phone plays video and audio, reads PDFs in place, and shares the picture
+316. [SHARED-05](SHARED-05.md) The route graph: signed-in screens sit under the guard, and the chosen theme applies at launch
+317. [SHARED-06](SHARED-06.md) Shared components, theme tokens and the API client take the requests screens left in SHARED-CHANGES
+318. [FIX-22](FIX-22.md) A profiling turn asks the model for one JSON object
+319. [OPS-R1](OPS-R1.md) The app's name with its question mark on the logo and launcher, and unique gap ids
+320. [FIX-24](FIX-24.md) A delivered legal document can only be the client's own file or one the legal team uploaded
+321. [HOME-18](HOME-18.md) Today's bell and three spacings
+322. [FIX-26](FIX-26.md) The limits lock always runs in a real transaction, and the money-route checks pin what they read
+323. [BRAND-01](BRAND-01.md) The app icon fits the phone, the welcome page has a cover picture, and Settings has a way in
+324. [CHECK-2](CHECK-2.md) Checkpoint 2: money moves correctly
+325. [COMPLETE-01](COMPLETE-01.md) Unbuilt entries are drawn and inert, and a gate keeps them honest
+326. [COMPLETE-02](COMPLETE-02.md) Explore shows its whole design
+327. [FIX-29](FIX-29.md) Unbuilt screens' entries are not drawn (R-47)
+328. [JOIN-01](JOIN-01.md) Event registration link: register and pay the event fee (backend)
+329. [COMPLETE-05](COMPLETE-05.md) Wallet shows its whole design
+330. [JOIN-02](JOIN-02.md) Event registration link: the website page (wawuafrica.com/join)
+331. [JOIN-03](JOIN-03.md) Event registration: claim the paid plan in the app with the access code
+332. [FIX-30](FIX-30.md) FIX-29 follow-ups: the Inbox blank body, the ticket picker without a buy button, the R-46 wording
+333. [AUTH-07](AUTH-07.md) Sign-up verifies by email code; no SMS · needs AUTH-03, AUTH-04, AUTH-05 from Developer first
+334. [FIX-31](FIX-31.md) The app's tests that fail only under load: make them deterministic
+335. [FIX-32](FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock
+336. [SWEEP-MONEY](SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
+337. [SWEEP-JOIN](SWEEP-JOIN.md) Join sweep: the low findings of /join, referral codes and campaign mail
+338. [SWEEP-INBOX](SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox
+339. [SWEEP-EVENTS](SWEEP-EVENTS.md) Events sweep: the low findings of events and the door
+340. [SWEEP-AUTH](SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in
+341. [DESIGN-V2-CUT](DESIGN-V2-CUT.md) Cut the 16 Oct 2026 designs and answers into rulings and tasks
+342. [GATES-02](GATES-02.md) Record the five gate lines in the backend baseline
+343. [WALLET-37](WALLET-37.md) Withdraw only to your own name, and 30 name checks an hour
+344. [EXPLORE-06](EXPLORE-06.md) Popular communities need 10 members
+345. [ADS-07](ADS-07.md) Adverts: artwork required, and the Explore slider placement · needs ADS-04, ADS-06 from Developer 2 first
+346. [INBOX-22](INBOX-22.md) Community credits by kind of message (backend)
+347. [INBOX-24](INBOX-24.md) Private community monthly pass (backend)
+348. [HOME-16](HOME-16.md) Daily TGIF notification · needs HOME-11 from Developer first
+349. [WALLET-39](WALLET-39.md) A notice for all money in
+350. [TIER-06](TIER-06.md) The new money figures as admin settings
+351. [TIER-07](TIER-07.md) A person's tier badge on their public profile
+352. [REF-02](REF-02.md) Referral points: invite, claim and earn (backend)
+353. [EVENTS-12](EVENTS-12.md) Hosting an event needs an active tier (backend)
+354. [VOICE-01](VOICE-01.md) Hear your name and the Voice Intro (backend)
+355. [AITOOLS-01](AITOOLS-01.md) The AI tools catalogue and VoiceOver (backend)
+356. [DV2-COMP](DV2-COMP.md) Shared pieces for tiers, points and the Voice Intro · needs UI-03 from Developer first
+357. [VERIFY-01](VERIFY-01.md) Your bonus is waiting, and the draft shop
+358. [ME-12](ME-12.md) Make it official: choose a tier and pay · needs ME-17, UI-02 from Developer first
+359. [VERIFY-02](VERIFY-02.md) Hear your name, and write your Voice Intro
+360. [VERIFY-03](VERIFY-03.md) Record your voice and hear yourself
+361. [VERIFY-04](VERIFY-04.md) Publish your first product, and the identity check
+362. [VERIFY-05](VERIFY-05.md) Your tier, and when you have used all your products
+363. [POINTS-05](POINTS-05.md) Your points, and convert them to cash
+364. [POINTS-06](POINTS-06.md) Buy points
+365. [POINTS-07](POINTS-07.md) Studio: the AI tools, not enough points, the daily limit
+366. [POINTS-08](POINTS-08.md) One AI tool: VoiceOver, working, done, failed
+367. [REF-03](REF-03.md) Invite and earn
+368. [KYC-06](KYC-06.md) Complete your account: ID document, proof of address, checking, rejected
+369. [KYC-07](KYC-07.md) Complete your account: the flag on Home, and BVN and NIN as step 1 of 4
+370. [EXPLORE-07](EXPLORE-07.md) The Explore slider: events and adverts take turns, and TGIF on Explore
+371. [INBOX-23](INBOX-23.md) Community messages by kind: the composer, the header and sending a photo
+372. [INBOX-14](INBOX-14.md) Private communities, hosting, join requests · needs INBOX-01, UI-02, UI-03, INBOX-04 from Developer 2 first
+373. [WALLET-38](WALLET-38.md) Your pass
+374. [DV2-01](DV2-01.md) Home follows the 16 Oct design: ad card, services row, reader count
+375. [DV2-02](DV2-02.md) Wallet follows the 16 Oct design: Cash, Points, Passes, no Bills
+376. [DV2-03](DV2-03.md) Me follows the 16 Oct design: the profile header
+377. [DV2-04](DV2-04.md) Create hub and event hosting: the tier gate
+378. [DV2-05](DV2-05.md) Sign-up and Open your wallet follow the 16 Oct design · needs AUTH-04 from Developer first
+379. [DV2-06](DV2-06.md) Settings: TGIF each morning, and the provider wording · needs SETTINGS-02 from Developer first
+380. [DV2-COPY](DV2-COPY.md) Brand copy sweep: "Who Made This?", "Bank charge", "Banking by Nuvion
+381. [DV2-RM](DV2-RM.md) Removals pass: Events tile, TGIF card and toggle, Bills entries, tick card
+382. [HOME-17](HOME-17.md) Settings move into admin (TGIF time, two thresholds, 30-day clean-up)
+383. [WALLET-40](WALLET-40.md) Alert when your account number is ready
+384. [INBOX-25](INBOX-25.md) A removed member gets the unused pass days back
+385. [EVENTS-13](EVENTS-13.md) Call-off: order cap, cancel once, free tickets
+386. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
+387. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
+388. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
 
 ## You · after launch
 

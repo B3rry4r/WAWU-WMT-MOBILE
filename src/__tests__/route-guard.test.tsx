@@ -97,6 +97,7 @@ const PUBLIC: Record<string, string> = {
   '+not-found': 'an address no screen answers: it leaves, signed out to the welcome screen and signed in to Home (SWEEP-APP-1, CHECK-1 F-1)',
   'dev/components': 'development only, a release build leaves (LeaveDevRoute)',
   'dev/abroad': 'development only, a release build leaves (LeaveDevRoute); the pictures of Send abroad (NUV-11)',
+  'dev/studio': 'development only, a release build leaves (LeaveDevRoute); the pictures of the picture and video tools (POINTS-14, POINTS-15)',
   'preview/auth': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/pay-sheet': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/pin-sheet': 'development only, a release build leaves (LeaveDevRoute)',

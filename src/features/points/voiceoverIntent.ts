@@ -21,6 +21,9 @@ import { bounded } from '@/features/claim/localStore';
  * written over by a Run in another. VoiceOver's record stays where it always was; every other tool's sits beside it under its own id. Every call is bounded and never throws: a store that fails reads as "nothing
  * remembered", and this run's memory still holds it.
  */
+/** The picture and video tools' added choices (POINTS-14, POINTS-15): the shape, the clip's seconds, the photo's `key`, and a Talking photo's voice (a recording's `key`, or one of the person's own finished results). */
+export type MediaIntent = { shape?: string; seconds?: number; photoKey?: string; audioKey?: string; sourceJobId?: string };
+
 export type JobIntent = {
   key: string;
   toolId: string;
@@ -36,6 +39,8 @@ export type JobIntent = {
   fileKey?: string;
   /** Dubbing: the language to hear the recording in, one of the Hub's own list (`input.file.dubbing.languages`). */
   targetLanguage?: string;
+  /** Make an image, Edit a photo, Make a video, Talking photo: what the person chose besides the words. */
+  media?: MediaIntent;
   jobId: string | null;
   /** When the request was first sent (ms). */
   at: number;
@@ -52,14 +57,29 @@ export const jobIntentKey = (owner: string, toolId: string = 'voiceover') => (to
 const filled = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 
+/** The media choices as stored, or null when there are none (a half-written one is dropped). */
+function readMedia(value: unknown): MediaIntent | null {
+  const m = value as Partial<MediaIntent> | null;
+  if (!m || typeof m !== 'object') return null;
+  const out: MediaIntent = {};
+  if (filled(m.shape)) out.shape = m.shape;
+  if (positive(m.seconds)) out.seconds = m.seconds;
+  if (filled(m.photoKey)) out.photoKey = m.photoKey;
+  if (filled(m.audioKey)) out.audioKey = m.audioKey;
+  if (filled(m.sourceJobId)) out.sourceJobId = m.sourceJobId;
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 /** The stored entry, or null when it is not whole (a half-written or foreign entry is dropped, never used). */
 export function readJobIntent(value: unknown): JobIntent | null {
   const v = value as Partial<JobIntent> | null;
   if (!v || typeof v !== 'object') return null;
   if (!filled(v.key) || !filled(v.toolId) || !filled(v.action) || typeof v.voiceId !== 'string' || !filled(v.text) || !filled(v.quoteToken)) return null;
   const file = filled(v.fileKey);
-  // A recording's job counts minutes, not characters: its `characters` is 0.
-  if (!positive(v.units) || !(file ? v.characters === 0 : positive(v.characters)) || typeof v.at !== 'number' || !Number.isFinite(v.at)) return null;
+  const media = readMedia(v.media);
+  // A recording's job counts minutes, not characters: its `characters` is 0. A Talking photo has no words either: its `text` names it and its `characters` is 0.
+  const charactersOk = file ? v.characters === 0 : media ? typeof v.characters === 'number' && Number.isSafeInteger(v.characters) && v.characters >= 0 : positive(v.characters);
+  if (!positive(v.units) || !charactersOk || typeof v.at !== 'number' || !Number.isFinite(v.at)) return null;
   return {
     key: v.key,
     toolId: v.toolId,
@@ -71,6 +91,7 @@ export function readJobIntent(value: unknown): JobIntent | null {
     quoteToken: v.quoteToken,
     ...(file ? { fileKey: v.fileKey as string } : {}),
     ...(file && filled(v.targetLanguage) ? { targetLanguage: v.targetLanguage } : {}),
+    ...(media ? { media } : {}),
     jobId: filled(v.jobId) ? v.jobId : null,
     at: v.at,
   };

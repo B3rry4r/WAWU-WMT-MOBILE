@@ -406,7 +406,9 @@ describe('PT2 · the file step', () => {
     expect(screen.queryByTestId('tool-player')).toBeNull();
     // No share sheet on this phone: no share row is drawn.
     expect(screen.queryByTestId('tool-share-subtitles')).toBeNull();
-    expect(screen.queryByText(/Save|Use in a product|Bio/)).toBeNull();
+    // POINTS-13 (R-109): Save follows a transcript too; "Use in a product" stays for audio results only.
+    expect(screen.getByTestId('result-save')).toBeTruthy();
+    expect(screen.queryByText(/Use in a product|Bio/)).toBeNull();
   });
 
   it('a person can share the subtitle file through the phone’s share sheet', async () => {

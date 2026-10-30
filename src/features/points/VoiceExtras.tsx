@@ -75,8 +75,8 @@ export function OwnVoiceConsent({ line, busy, failure, onAgree, onCancel }: { li
   );
 }
 
-/** PT2b's card under the player: "Save, To your library" and "Use in a product, Attach to a draft". */
-export function ResultActions({ owner, job, onUse }: { owner: string | null; job: SavedJob; onUse: () => void }) {
+/** PT2b's card under the player: "Save, To your library" and "Use in a product, Attach to a draft" (audio results only, POINTS-13: drafts take audio). */
+export function ResultActions({ owner, job, onUse }: { owner: string | null; job: SavedJob; onUse?: () => void }) {
   const [saved, setSaved] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -107,7 +107,7 @@ export function ResultActions({ owner, job, onUse }: { owner: string | null; job
           accessibilityLabel={isSaved ? EXTRAS_WORDS.unsaveLabel : EXTRAS_WORDS.saveLabel}
           onPress={() => void toggle()}
         />
-        <ListRow testID="result-use" lead={<IconTile icon="Package" tone="neutral" size={ACTION.mark} />} title={EXTRAS_WORDS.useTitle} subtitle={EXTRAS_WORDS.useLine} onPress={onUse} />
+        {onUse ? <ListRow testID="result-use" lead={<IconTile icon="Package" tone="neutral" size={ACTION.mark} />} title={EXTRAS_WORDS.useTitle} subtitle={EXTRAS_WORDS.useLine} onPress={onUse} /> : null}
       </GroupedList>
       {failure ? <Banner tone="danger" icon="CircleX" title={EXTRAS_WORDS.saveFailedTitle} body={failure} testID="result-save-failure" /> : null}
     </View>

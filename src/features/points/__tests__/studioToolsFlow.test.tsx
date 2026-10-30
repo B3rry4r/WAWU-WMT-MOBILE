@@ -306,7 +306,11 @@ describe('PT2 · Quick voice, the words to speak', () => {
     await waitFor(() => expect(screen.getByTestId('tool-used')).toHaveTextContent('125 points used · 1,125 left'));
     await fireEvent.press(screen.getByTestId('tool-player-button'));
     expect(screen.getByTestId('tool-player-button')).toHaveAccessibleName('Pause Quick voice');
-    expect(screen.queryByText(/Bio|Save|Use in a product/)).toBeNull();
+    // POINTS-13 (R-109): every tool's done view has Save, and an audio result has "Use in a product"; a non-creator has no "Make it a piece".
+    expect(screen.queryByText(/Bio/)).toBeNull();
+    expect(screen.getByTestId('result-save')).toBeTruthy();
+    expect(screen.getByTestId('result-use')).toBeTruthy();
+    expect(screen.queryByTestId('result-piece')).toBeNull();
   });
 
   it('a lost answer then Try again sends the same request under the same key and makes one job', async () => {
@@ -363,7 +367,10 @@ describe('PT2 · Sound effect and Music track, a description and a flat price', 
     await waitFor(() => expect(screen.getByTestId('points-subtitle')).toHaveTextContent(`Points: ${n(1250 - spec.cost)}`));
     await fireEvent.press(screen.getByTestId('tool-player-button'));
     expect(screen.getByTestId('tool-player-button')).toHaveAccessibleName(`Pause ${spec.name}`);
-    expect(screen.queryByText(/Bio|Save|Use in a product/)).toBeNull();
+    // POINTS-13 (R-109): Save and "Use in a product" now follow every audio result.
+    expect(screen.queryByText(/Bio/)).toBeNull();
+    expect(screen.getByTestId('result-save')).toBeTruthy();
+    expect(screen.getByTestId('result-use')).toBeTruthy();
     expect(hub.made).toBe(1);
   });
 

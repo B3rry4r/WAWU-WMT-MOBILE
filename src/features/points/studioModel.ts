@@ -21,6 +21,8 @@ export const STUDIO_WORDS = {
   tryAgain: 'Check your connection and try again.',
 } as const;
 
+/** The line under Studio's bar: the voice tools' caption while every tool drawn is one of them, "Every AI tool" once a picture or video tool is drawn too (POINTS-14, R-47: the caption never says less than the tiles show). */
+export const studioLine = (drawn: readonly Pick<AiTool, 'id'>[]): string => (drawn.some(isMediaTool) ? 'Every AI tool, paid in points' : STUDIO_WORDS.line);
 export const SHEET_WORDS = {
   title: 'Not enough points',
   costs: 'This costs',
@@ -49,7 +51,29 @@ const LOOKS: Record<string, IconName> = {
   music: 'Music',
   'sound-effect': 'Volume2',
   dubbing: 'Languages',
+  // POINTS-14 and POINTS-15 (R-109): the picture and video tools. Each is drawn only when the Hub lists it (its own switch) and describes it whole (`hasMediaOptions`).
+  image: 'Image',
+  'photo-edit': 'ImagePlus',
+  video: 'Clapperboard',
+  'talking-photo': 'UserRound',
 };
+/** The tools whose input is a picture or a video, not words or a recording. */
+const MEDIA_TOOLS: readonly string[] = ['image', 'photo-edit', 'video', 'talking-photo'];
+type MediaOptions = NonNullable<AiTool['input']['options']>;
+const hasPhotoRule = (o: MediaOptions): boolean => Boolean(o.photo && o.photo.folder && o.photo.maxBytes > 0 && o.photo.accepts.length > 0);
+/**
+ * True when the Hub described a picture or video tool whole: the shapes it takes, and for each the options its screen reads (the lengths of a
+ * clip, the photo rule of an edit or a talking photo, the voice rule of a talking photo). A tool the Hub lists without them is not drawn (R-47).
+ */
+export function hasMediaOptions(tool: Pick<AiTool, 'id' | 'input'>): boolean {
+  const o = tool.input.options;
+  if (!o) return false;
+  if (tool.id === 'image') return o.shapes.length > 0;
+  if (tool.id === 'photo-edit') return o.shapes.length > 0 && hasPhotoRule(o);
+  if (tool.id === 'video') return o.shapes.length > 0 && (o.lengths?.length ?? 0) > 0;
+  if (tool.id === 'talking-photo') return hasPhotoRule(o) && Boolean(o.speech && o.speech.audioFolder && o.speech.accepts.length > 0 && o.speech.maxSeconds > 0);
+  return true;
+}
 /** True when the app has a screen for the tool. */
 export const isBuiltTool = (tool: Pick<AiTool, 'id'>): boolean => Object.prototype.hasOwnProperty.call(LOOKS, tool.id);
 /**
@@ -57,13 +81,15 @@ export const isBuiltTool = (tool: Pick<AiTool, 'id'>): boolean => Object.prototy
  * file rule and at least one language to choose from (POINTS-11). The tile and the Create hub's Studio card both ask this, and so does `toolReady`.
  */
 export const isDrawnTool = (tool: Pick<AiTool, 'id' | 'input'>): boolean =>
-  isBuiltTool(tool) && (tool.id !== 'dubbing' || (tool.input.file?.dubbing?.languages.length ?? 0) > 0);
+  isBuiltTool(tool) && (tool.id !== 'dubbing' || (tool.input.file?.dubbing?.languages.length ?? 0) > 0) && (!MEDIA_TOOLS.includes(tool.id) || hasMediaOptions(tool));
+/** True for the picture and video tools (POINTS-14, POINTS-15). */
+export const isMediaTool = (tool: Pick<AiTool, 'id'>): boolean => MEDIA_TOOLS.includes(tool.id);
 export const toolIcon = (tool: Pick<AiTool, 'id'>): IconName => LOOKS[tool.id] ?? 'Sparkles';
 
 /** "250 a minute": the Hub's cost for one unit and the unit it counts in. A flat price (a use, a track) is the count alone, as PT1 draws "75" and "500". */
 export function costLine(tool: Pick<AiTool, 'costPointsPerUnit' | 'unit'> & { id?: string }): string {
   const n = formatPointsCount(tool.costPointsPerUnit);
-  const per: Record<string, string> = { minute: 'a minute', message: 'a message', track: '', use: '' };
+  const per: Record<string, string> = { minute: 'a minute', message: 'a message', track: '', use: '', second: 'a second' };
   const word = per[tool.unit as string];
   const line = word ? `${n} ${word}` : n;
   // PT1 draws Dubbing as "From 1,500 a minute": the price is for each language, so the figure on the tile is where it starts (POINTS-11).
