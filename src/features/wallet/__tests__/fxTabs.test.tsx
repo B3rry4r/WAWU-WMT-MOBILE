@@ -129,7 +129,7 @@ describe('W6 · can\u2019t reach your account keeps the tab strip (R2-MONEY roun
     balanceDown = true;
     await boot();
     expect(await rtl.screen.findByTestId('wallet-unreachable')).toBeTruthy();
-    await rtl.waitFor(() => expect(tabNames()).toEqual(['Naira', 'Dollar', 'Euro', 'Pound', 'CAD', 'Dirham', 'Cedi', 'Crypto']));
+    await rtl.waitFor(() => expect(tabNames()).toEqual(['Naira', 'Dollar', 'Crypto']));
     expect(rtl.screen.getByText("We couldn't reach your account")).toBeTruthy();
     expect(rtl.screen.getByText('Your money is safe. This is a connection problem between us and the bank.')).toBeTruthy();
     expect(rtl.screen.queryByText(/API endpoint/)).toBeNull();
@@ -145,10 +145,10 @@ describe('W6 · can\u2019t reach your account keeps the tab strip (R2-MONEY roun
 });
 
 describe('W1 · the tabs', () => {
-  it('draws Naira, one tab for each currency the Hub serves, and Crypto; Naira is the one selected, as it was', async () => {
+  it('draws Naira, one tab for each currency the person has added, and Crypto when they hold a coin; Naira is the one selected, as it was (R-106)', async () => {
     await boot();
     await rtl.screen.findByTestId('wallet-balance-card');
-    await rtl.waitFor(() => expect(tabNames()).toEqual(['Naira', 'Dollar', 'Euro', 'Pound', 'CAD', 'Dirham', 'Cedi', 'Crypto']));
+    await rtl.waitFor(() => expect(tabNames()).toEqual(['Naira', 'Dollar', 'Crypto']));
     expect(rtl.screen.getByRole('tab', { name: 'Naira' }).props.accessibilityState.selected).toBe(true);
     expect(rtl.screen.getByText('Naira balance')).toBeTruthy();
   });
@@ -227,11 +227,14 @@ describe('W2 · a currency account', () => {
     expect(mockCopied).toEqual(['026000999']);
   });
 
-  it('offers to open an account the person has not got, and says the account is opening once it is asked for', async () => {
+  it('offers an account the person has not got only through + Add, and says the account is opening once it is asked for (R-106)', async () => {
     await boot();
-    await openTab('Euro');
-    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Open euro account' }));
+    await rtl.screen.findByTestId('wallet-tab-add');
+    expect(rtl.screen.queryByRole('tab', { name: 'Euro' })).toBeNull();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('wallet-tab-add'));
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('add-currency-EUR'));
     await rtl.waitFor(() => expect(hub.opened).toEqual([{ currency: 'EUR' }]));
+    await openTab('Euro');
     expect(await rtl.screen.findByTestId('fx-opening')).toBeTruthy();
   });
 
@@ -322,13 +325,21 @@ describe('W2 · a currency account', () => {
     expect(await rtl.screen.findByTestId('fx-no-transactions')).toBeTruthy();
   });
 
-  it('says the bank did not answer when the Hub could not reach the provider, and tries again on request', async () => {
+  it('draws no tab it cannot back when the Hub could not reach the provider, and the tabs come once it can be read again (R-106)', async () => {
     hub.accountsFault = { status: 503, code: 'provider_unreachable', message: 'We could not reach your account.' };
     await boot();
-    await openTab('Dollar');
-    expect(await rtl.screen.findByText('We couldn’t reach your account')).toBeTruthy();
+    await rtl.screen.findByTestId('wallet-balance-card');
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(tabNames()).toEqual([]);
+    expect(rtl.screen.queryByTestId('wallet-tab-add')).toBeNull();
     hub.accountsFault = null;
-    await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: /Try again/ }));
+    const { queryClient } = require('@/api/query') as typeof import('@/api/query');
+    await rtl.act(async () => {
+      await queryClient.invalidateQueries({ queryKey: ['money', 'fx'] });
+    });
+    await openTab('Dollar');
     expect(await rtl.screen.findByText('Dollar balance')).toBeTruthy();
   });
 
@@ -372,12 +383,13 @@ describe('W3 · Crypto', () => {
     expect(usdtAccount.balance.availableMinor).toBe(32_000);
   });
 
-  it('offers a person with no coin a way to get an address', async () => {
+  it('gives a person with no coin no Crypto tab, and a way to get an address through + Add (R-106)', async () => {
     hub.accounts = [hub.accounts[0] as never];
     await boot();
-    await openTab('Crypto');
-    await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Get an address' }));
-    expect(mockPushed).toEqual(['/crypto-receive']);
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('wallet-tab-add'));
+    expect(rtl.screen.queryByRole('tab', { name: 'Crypto' })).toBeNull();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('add-currency-USDT'));
+    expect(mockPushed).toEqual([{ pathname: '/crypto-receive', params: { coin: 'USDT' } }]);
   });
 });
 

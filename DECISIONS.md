@@ -740,3 +740,26 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 - The wallet bill routes (`/bills/wallet*`, BILLS-04) stay off (`409`) and the app does not call them. Bills are live: there is no switched-off screen (S13 is not built).
 - Updates R-52 (bills off, no bill entry) and R-45 (Fintava for bills).
 **Carried out by:** BILLS-02, BILLS-03 and BILLS-08 (app). There is no Hub task. The real test is the owner paying a small bill on TestFlight after the merge.
+
+### R-103 · The app has no points-to-cash; the Wallet's fifth action is Bills, and its row of bill tiles is gone
+*Owner, 30 Oct 2026 ("To cash, remove that rubbish and put bills payment ... stores doesn't support converting to cash"; on the five bill tiles: "You spread them all out here for what?").*
+- The stores do not allow points to be turned into cash, so the app has no Convert to cash. The Wallet's "To cash" action, the round button on Your points, the note about bought points, and the referral rules sentence "You can convert points to cash in your wallet" are gone. The route `/points-convert` stays only as a redirect to Your points; the Hub's convert routes stay until the removal task.
+- The Wallet's actions are Add money, Send, Withdraw, Buy points and Bills. Bills carries the Receipt icon, as Home's money card does, and opens Pay a bill (S2, `/bills`).
+- The Wallet draws no row of bill tiles (Airtime, Data, Power, TV, More). Bills open from the Bills action on the Wallet and on Home's money card.
+- Updates R-52 and R-102 (where they put bill entries on the Wallet), and R-43 and R-101 point 7 (nothing converts, bought or not).
+**Carried out by:** WALLET-BLANK (app).
+
+### R-104 · Cards stay off until Nuvion says they are back, then are tested on dev before they are turned on
+*Owner, 30 Oct 2026 (Nuvion has suspended the card; follows the 28 Oct ruling that the card waits on Nuvion).*
+- The app draws no card entry anywhere: no "Who Made This? card" row on the Wallet, no Cards row in Wallet settings, no link into `/cards`. The route files under `src/app/cards/` stay and redirect to the Wallet, so an old link lands safely. The card screens stay in `src/features/cards/` for the day cards return. The Hub is not touched.
+- Nuvion's word that cards are back comes first; a test on dev comes second; only then is the entry turned on again.
+- Updates R-84 (the card row and the Cards row).
+**Carried out by:** WALLET-BLANK (app).
+
+### R-106 · The Wallet's currency strip lists only the accounts the person has added, plus "+ Add"
+*Owner, 30 Oct 2026 ("can the currencies not show unless users add them? ... they click on add and they see the pop-up or the overlay and they select what they want and it adds").*
+- The strip on W1 is Naira, then one pill for each currency account the person has added (Crypto when they hold a coin), then "+ Add" at the end. A person with only a Naira account sees "Naira" and "+ Add" and nothing else. A currency not yet added is never a pill.
+- "+ Add" opens the add-a-currency choice (R-93). A currency picked there gets its pill at once, saying it is opening, then opened, as the add flow does. A coin still goes to its network picker (W22).
+- When the Hub offers nothing to add and the person holds only Naira, there is no strip (nothing that does nothing, R-47).
+- Amends R-87 and R-93 where they say the strip lists every currency the Hub serves.
+**Carried out by:** WALLET-BLANK (app).

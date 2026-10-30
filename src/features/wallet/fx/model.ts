@@ -32,19 +32,22 @@ export function canOpen(currencies: FxCurrencies | null, code: FxCode): boolean 
 
 export const accountsIn = (accounts: readonly FxAccount[] | null, code: FxCode): FxAccount[] => (accounts ?? []).filter((a) => a.currency === code);
 
+const NO_CODES: ReadonlySet<string> = new Set();
+
 /**
- * The tabs the Hub's answers draw (R-47): Naira always (the wallet is open), then one for each currency the person holds or can open,
- * then Crypto when they hold a stablecoin or can open one. Nothing is drawn for a currency an admin switched off that the person has no
- * account in. `accounts` is null while they are unread or could not be read: the tabs then follow what can be opened.
+ * The tabs W1's strip draws (R-106, owner, 30 Oct 2026, amending R-87 and R-93): Naira, then one for each currency the person has actually
+ * added (an account in it, whatever its state), then Crypto when they hold or are opening a stablecoin. A currency they have not added is
+ * never a tab: it is reached from "+ Add" at the end of the strip, which opens the add-a-currency choice. A currency picked there and still
+ * being opened (`opening`) counts as added and shows its tab at once. `accounts` is null while they are unread or could not be read: the
+ * strip is then Naira alone.
  */
-export function tabsOf(currencies: FxCurrencies | null, accounts: readonly FxAccount[] | null): WalletTab[] {
-  if (!currencies) return [];
+export function tabsOf(accounts: readonly FxAccount[] | null, opening: ReadonlySet<string> = NO_CODES): WalletTab[] {
   const tabs: WalletTab[] = [{ key: NAIRA_TAB, label: SHORT_NAME.NGN }];
+  const held = (code: FxCode) => accountsIn(accounts, code).length > 0 || opening.has(code);
   for (const code of FIAT_ORDER) {
-    if (accountsIn(accounts, code).length > 0 || canOpen(currencies, code)) tabs.push({ key: code, label: TAB_LABEL[code] ?? code });
+    if (held(code)) tabs.push({ key: code, label: TAB_LABEL[code] ?? code });
   }
-  const coins = COIN_ORDER.filter((code) => accountsIn(accounts, code).length > 0 || canOpen(currencies, code));
-  if (coins.length > 0) tabs.push({ key: CRYPTO_TAB, label: 'Crypto' });
+  if (COIN_ORDER.some(held)) tabs.push({ key: CRYPTO_TAB, label: 'Crypto' });
   return tabs;
 }
 

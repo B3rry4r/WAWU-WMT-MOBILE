@@ -10,7 +10,7 @@ import { useRowRoom } from './useRowRoom';
 /**
  * wallet.js line 43 (`actions`, DV2-02, the 16 Oct board): five columns spread edge to edge, each a 54 square at the tile corner on
  * the card colour with a hairline, its glyph 23, the word 12.5 semi-bold in the secondary colour 8 under it; the column is 16
- * wider than the square. Add money, Send, Withdraw, Buy points and To cash, in that order.
+ * wider than the square. Add money, Send, Withdraw, Buy points and Bills, in that order.
  *
  * 54 is the size that makes five columns exactly the 350 of a 390 screen. A narrower phone has less, so the size steps down by
  * the same rule until five columns fit (`actionTileSize`): 54 from 390 up, 51 at 375, 48 at 360, 44 at 340, 40 at 320.
@@ -32,7 +32,7 @@ export function actionGlyph(square: number): number {
 }
 
 export type WalletAction = {
-  key: 'add-money' | 'send' | 'withdraw' | 'buy-points' | 'to-cash';
+  key: 'add-money' | 'send' | 'withdraw' | 'buy-points' | 'bills';
   icon: IconName;
   label: string;
   onPress: () => void;

@@ -87,20 +87,27 @@ describe('WALLET-21 · figures that are not naira use their own places', () => {
   });
 });
 
-describe('WALLET-21 · what the Hub says decides the tabs and the holdings (R-47)', () => {
-  it('draws Naira, each currency held or openable, and Crypto', () => {
-    expect(tabsOf(currencies, accounts).map((t) => t.key)).toEqual(['naira', 'USD', 'EUR', 'GBP', 'CAD', 'AED', 'GHS', 'crypto']);
-    expect(tabsOf(null, accounts)).toEqual([]);
+describe('WALLET-21 · what the person has added decides the tabs and the holdings (R-47, R-106)', () => {
+  it('draws Naira, each currency the person holds an account in, and Crypto when they hold a coin: never one they have not added', () => {
+    expect(tabsOf(accounts).map((t) => t.key)).toEqual(['naira', 'USD', 'crypto']);
+    expect(tabsOf(null).map((t) => t.key)).toEqual(['naira']);
+    expect(tabsOf([]).map((t) => t.key)).toEqual(['naira']);
+    expect(tabsOf([usdAccount] as unknown as FxAccount[]).map((t) => t.key)).toEqual(['naira', 'USD']);
   });
 
-  it('draws no tab for a currency that is switched off and has no account, and none when opening is off', () => {
-    const off = currenciesBody({ off: ['EUR', 'AED'] }) as unknown as FxCurrencies;
-    expect(tabsOf(off, [usdAccount] as unknown as FxAccount[]).map((t) => t.key)).toEqual(['naira', 'USD', 'GBP', 'CAD', 'GHS', 'crypto']);
-    const closed = currenciesBody({ openAccount: false }) as unknown as FxCurrencies;
-    expect(tabsOf(closed, [usdAccount] as unknown as FxAccount[]).map((t) => t.key)).toEqual(['naira', 'USD']);
-    expect(tabsOf(closed, accounts).map((t) => t.key)).toEqual(['naira', 'USD', 'crypto']);
-    // A currency switched off keeps its tab for a person who holds an account in it.
-    expect(tabsOf(off, [{ ...usdAccount, currency: 'EUR' }] as unknown as FxAccount[]).map((t) => t.key)).toContain('EUR');
+  it('keeps the tabs in the board\'s order whatever order the Hub lists the accounts in, and draws a tab for an account in any state', () => {
+    const eur = { ...usdAccount, id: 'e1', currency: 'EUR', status: 'opening' };
+    const ghs = { ...usdAccount, id: 'g1', currency: 'GHS', status: 'frozen' };
+    expect(tabsOf([ghs, eur, usdAccount] as unknown as FxAccount[]).map((t) => t.key)).toEqual(['naira', 'USD', 'EUR', 'GHS']);
+  });
+
+  it('counts a currency being opened as added: its tab is there from the pick, and a coin being opened brings Crypto', () => {
+    expect(tabsOf([], new Set(['EUR'])).map((t) => t.key)).toEqual(['naira', 'EUR']);
+    expect(tabsOf([usdAccount] as unknown as FxAccount[], new Set(['USDC'])).map((t) => t.key)).toEqual(['naira', 'USD', 'crypto']);
+  });
+
+  it('does not look at what the Hub serves: an account in a currency an admin switched off keeps its tab', () => {
+    expect(tabsOf([{ ...usdAccount, currency: 'EUR' }] as unknown as FxAccount[]).map((t) => t.key)).toEqual(['naira', 'EUR']);
   });
 
   it('offers Swap only when the Hub has it on and an account is open', () => {

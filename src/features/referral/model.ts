@@ -60,7 +60,7 @@ export function nextCard(view: Pick<Referrals, 'nextMilestone' | 'milestones'>):
 export const NOBODY_YET = 'Nobody yet. Share your link to start.';
 
 /** RF4: the rules, with the Hub's hold days in the fourth. A hold of no days is not a rule, so it is left out. */
-export function rulesOf(view: Pick<Referrals, 'holdDays'>, canConvert = true): string[] {
+export function rulesOf(view: Pick<Referrals, 'holdDays'>): string[] {
   const days = view.holdDays;
   const hold = days > 0 ? [`Rewards are held for ${days} ${days === 1 ? 'day' : 'days'}.`] : [];
   return [
@@ -69,8 +69,8 @@ export function rulesOf(view: Pick<Referrals, 'holdDays'>, canConvert = true): s
     "One level only. You don't earn from the people they invite.",
     ...hold,
     'No reward if they get a refund.',
-    // Convert to cash is built (POINTS-05, PT6), so the board's second sentence is back (G-REF-03-2). A person billed in dollars cannot convert (G-741), so it is not said to them.
-    canConvert ? 'Rewards are points, never cash. You can convert points to cash in your wallet.' : 'Rewards are points, never cash.',
+    // The app has no points-to-cash (R-103), so the board's second sentence (G-REF-03-2) is not said to anyone.
+    'Rewards are points, never cash.',
   ];
 }
 

@@ -3,18 +3,19 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 419.**
+**Launch tasks done: 176 of 420.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 34 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
 | verifying | 20 | 0 | 0 | 0 |
-| review | 241 | 0 | 0 | 0 |
+| review | 242 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
+- [WALLET-BLANK](../tasks/WALLET-BLANK.md) The Wallet tab goes blank on the owner's phone, and the Wallet loses To cash, the bill tiles, the card row and the every-currency strip (You)
 - [DEPS-SDK](../tasks/DEPS-SDK.md) The app's packages match the installed Expo SDK, so CI's Expo SDK health step passes (You)
 - [IAP-02](../tasks/IAP-02.md) Points, WAWU Credits, ticks and tiers, and community passes are bought in the store sheet (Google Play Billing, Apple In-App Purchase); no wallet or naira path for them in the app (You)
 - [WALLET-31](../tasks/WALLET-31.md) WAWU card (first slice) (You)
