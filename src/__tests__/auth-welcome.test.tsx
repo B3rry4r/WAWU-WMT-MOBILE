@@ -4,7 +4,7 @@ import { useVideoPlayer } from 'expo-video';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { processColor, StatusBar, StyleSheet } from 'react-native';
+import { Platform, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import RootLayout from '@/app/_layout';
@@ -21,6 +21,7 @@ import Me from '@/app/(tabs)/me';
 import { resetSessionForTests, signIn, signOut } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
 import { AccountTypeScreen, pickByKey } from '@/features/auth/AccountTypeScreen';
+import { welcomeLift } from '@/features/auth/WelcomeScreen';
 import { pickedAccountType, clearAccountType } from '@/features/auth/accountType';
 import { darkColors } from '@/theme/tokens.generated';
 
@@ -108,18 +109,22 @@ describe('A1: welcome', () => {
    * words and the fade that started 180 above the headline (the whole-screen fill, `welcome-bottom`, the dark page colour behind it,
    * the 15 s file's hash and size) are changed to the box above a panel, the panel, the new token and the 8 s file's hash and size.
    * Round 3 (owner, 29 Oct 2026, WELCOME-TEXT): the owner's own 15 s file replaces the 8 s one; the file case pins its hash and size.
+   * Round 4 (owner, 30 Oct 2026, R-111, WELCOME-FULL): "remove the shade or container that pushes the video up and let the video be full
+   * screen". The panel, its fade and the box above it are gone; the video is the whole screen and the words and buttons sit over it. The
+   * cases that pinned the box and the panel are changed: the full-screen case (the root's children, no `welcome-stage`, no panel margin),
+   * the panel and fade case (now: no panel, no shade, no gradient) and the words case (no panel to be inside).
    */
   const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
   const PLAYER = () => jest.mocked(useVideoPlayer).mock.results.at(-1)?.value as { play: jest.Mock; pause: jest.Mock; loop: boolean; muted: boolean };
   const flat = (testID: string) => StyleSheet.flatten(native.getByTestId(testID, { includeHiddenElements: true }).props.style);
   const idsOf = (node: { children: unknown[] }) => node.children.map((child) => (typeof child === 'string' ? undefined : (child as { props: { testID?: string } }).props.testID));
 
-  it.each(['light', 'dark'] as const)('a user sees the approved video filling the screen above a bottom panel, with no logo drawn by the app, in the %s theme (R-98)', async (scheme) => {
+  it.each(['light', 'dark'] as const)('a person opening the app sees the welcome video fill the screen with the words and buttons over it, with no panel and no logo drawn by the app, in the %s theme (R-111)', async (scheme) => {
     mockScheme = scheme;
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
     const root = native.getByTestId('welcome');
-    // The screen is the video's own base purple behind everything, so nothing flashes before the first frame and any seam is purple.
+    // The screen is the video's own base purple behind everything, so nothing flashes before the first frame and any gap is purple, never black.
     expect(darkColors.surfaceWelcomeVideoBase).toBe('#280C41');
     expect(StyleSheet.flatten(root.props.style).backgroundColor).toBe(darkColors.surfaceWelcomeVideoBase);
     // The source is the approved asset itself, looping and silent.
@@ -128,25 +133,23 @@ describe('A1: welcome', () => {
     const fake = { loop: false, muted: false };
     setup(fake);
     expect(fake).toMatchObject({ loop: true, muted: true });
-    // The video's box is the room above the panel from the top of the screen (under the status bar), plus the overlap behind the
-    // panel's top edge; cropped to fill that box, never stretched; no controls.
-    expect(idsOf(root)).toEqual(['welcome-stage', 'welcome-panel']);
-    expect(flat('welcome-stage')).toMatchObject({ flex: 1 });
-    expect(flat('welcome-panel').marginTop).toBeLessThan(0);
-    expect(flat('welcome-panel').marginTop).toBeGreaterThanOrEqual(-24);
-    expect(idsOf(native.getByTestId('welcome-stage'))).toEqual(['welcome-video']);
+    // The video is the first layer and fills the whole screen from its top edge (under the status bar) to its foot; the words and buttons
+    // are the second layer, drawn over it. Cropped to fill and never stretched; no controls.
+    expect(idsOf(root)).toEqual(['welcome-video', 'welcome-content']);
+    expect(flat('welcome-video')).toEqual(FILL);
+    expect(flat('welcome-content')).toMatchObject({ flex: 1, justifyContent: 'flex-end' });
+    expect(idsOf(native.getByTestId('welcome-video'))).toEqual(['welcome-video-view']);
     const view = native.getByTestId('welcome-video-view', { includeHiddenElements: true });
     expect(view.props.contentFit).toBe('cover');
     expect(view.props.nativeControls).toBe(false);
     expect(view.props.pointerEvents).toBe('none');
     expect(view.props.player).toBe(PLAYER());
     expect(flat('welcome-video-view')).toEqual({ ...FILL, width: '100%', height: '100%' });
-    expect(flat('welcome-video')).toEqual(FILL);
     // Named for the app, once, as an image; the layer takes no touches.
     expect(screen.getAllByRole('image', { name: 'Who Made This?' })).toHaveLength(1);
     expect(native.getByTestId('welcome-video').props.pointerEvents).toBe('none');
-    // R-90's mark, its spacers and its glow, and the photo before it, are not drawn; nor the whole-screen layer of round 1.
-    for (const gone of ['welcome-mark', 'welcome-mark-art', 'welcome-above', 'welcome-below', 'welcome-cover', 'welcome-bottom']) {
+    // R-90's mark, its spacers and its glow, the photo before it, round 1's whole-screen layer and round 2's box, panel and fade are not drawn.
+    for (const gone of ['welcome-mark', 'welcome-mark-art', 'welcome-above', 'welcome-below', 'welcome-cover', 'welcome-bottom', 'welcome-stage', 'welcome-panel', 'welcome-fade']) {
       expect(native.queryByTestId(gone, { includeHiddenElements: true })).toBeNull();
     }
   });
@@ -172,37 +175,118 @@ describe('A1: welcome', () => {
     expect(PLAYER().pause).toHaveBeenCalledTimes(1);
   });
 
-  it('the words and buttons sit in a solid panel at the bottom in the video\'s base purple, with a short fade from clear to that colour above its top edge, and no blur (R-98)', async () => {
+  it('nothing sits between the video and the words: no panel, no shade, no gradient, no blur (R-111)', async () => {
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    const panel = native.getByTestId('welcome-panel');
-    // The fade is the lowest of the panel's three parts, so the words and the buttons are drawn over it; the panel is drawn over the video.
-    expect(idsOf(panel)).toEqual(['welcome-fade', 'welcome-words', undefined]);
-    expect(flat('welcome-panel')).toMatchObject({ backgroundColor: darkColors.surfaceWelcomeVideoBase });
-    const fade = native.getByTestId('welcome-fade', { includeHiddenElements: true });
-    // Clear at the top and the panel's colour at the foot (the same colour at strength 0, never the word "transparent": it blends through black).
-    expect(fade.props.colors[0]).toBe(processColor(`${darkColors.surfaceWelcomeVideoBase}00`));
-    expect(fade.props.colors.at(-1)).toBe(processColor(`${darkColors.surfaceWelcomeVideoBase}FF`));
-    expect(fade.props.locations[0]).toBe(0);
-    expect(fade.props.locations.at(-1)).toBe(1);
-    expect(fade.props.startPoint[1]).toBeCloseTo(0);
-    expect(fade.props.endPoint[1]).toBeCloseTo(1);
-    // It only ever darkens: each stop is at least as strong as the one above it.
-    const strengths = fade.props.colors.map((c: number) => (c >>> 24) & 0xff);
-    expect([...strengths].sort((x, y) => x - y)).toEqual(strengths);
-    // It is short, sits on the video and ends at the panel's top edge, and takes no touches.
-    const { top, height } = flat('welcome-fade');
-    expect(height).toBeGreaterThan(0);
-    expect(height).toBeLessThanOrEqual(24);
-    expect(top).toBe(-height);
-    expect(flat('welcome-fade')).toMatchObject({ position: 'absolute', left: 0, right: 0 });
-    expect(fade.props.pointerEvents).toBe('none');
-    // No blur anywhere on the screen.
-    expect(JSON.stringify(native.toJSON())).not.toMatch(/blur/i);
+    // The words' layers carry no colour of their own: the video shows straight through them.
+    for (const id of ['welcome-content', 'welcome-words']) {
+      const style = flat(id);
+      expect(style.backgroundColor).toBeUndefined();
+      expect(style.opacity).toBeUndefined();
+    }
+    // The only coloured thing on the whole screen besides the two buttons is the base purple behind the video.
+    const tree = JSON.stringify(native.toJSON());
+    expect(tree).not.toMatch(/blur/i);
+    expect(tree).not.toMatch(/LinearGradient/);
     expect(native.queryByTestId('welcome-blur', { includeHiddenElements: true })).toBeNull();
+    expect(native.queryByTestId('welcome-fade', { includeHiddenElements: true })).toBeNull();
+    expect(native.queryByTestId('welcome-panel', { includeHiddenElements: true })).toBeNull();
+    // The words and both buttons are drawn over the video: later in the screen than the video's layer.
+    const kids = idsOf(native.getByTestId('welcome'));
+    expect(kids.indexOf('welcome-content')).toBeGreaterThan(kids.indexOf('welcome-video'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-words'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-create'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-sign-in'));
   });
 
-  it('the words and buttons keep their copy, sizes and spacing, now inside the panel (R-98)', async () => {
+  describe('the mark and its orbit stay above the title (R-111)', () => {
+    /** Phones the owner named, with the title's top edge as the screen lays it out with no home bar (measured in the web export). */
+    const PHONES = [
+      { width: 320, height: 568, wordsTop: 319.84, lift: 113 },
+      { width: 360, height: 780, wordsTop: 531.84, lift: 58 },
+      { width: 390, height: 844, wordsTop: 595.84, lift: 41 },
+      { width: 430, height: 932, wordsTop: 683.84, lift: 18 },
+    ];
+    /** The foot of the lowest sticker as a share of the video's height: measured over the 15 s (0.729), and with a sticker's soft edge (0.74, what the screen uses). */
+    const MEASURED_FOOT = 0.729;
+    const WITH_EDGE = 0.74;
+    const footOnScreen = ({ width, height }: { width: number; height: number }, lift: number, share: number) => {
+      const shown = Math.max(height, (width * 1920) / 1080);
+      return (height - shown) / 2 + share * shown - lift;
+    };
+
+    it.each(PHONES)('lifts the video by the room it is short on at $width x $height, so the lowest sticker ends above the title', (phone) => {
+      const lift = welcomeLift(phone);
+      expect(lift).toBe(phone.lift);
+      // The measured foot, and its soft edge, end at least 12 above the title's top edge...
+      expect(footOnScreen(phone, lift, MEASURED_FOOT)).toBeLessThanOrEqual(phone.wordsTop - 12);
+      expect(footOnScreen(phone, lift, WITH_EDGE)).toBeLessThanOrEqual(phone.wordsTop - 12);
+      // ...and the lift is no more than that needs: one pixel less would leave the soft edge inside the 12.
+      expect(footOnScreen(phone, lift - 1, WITH_EDGE)).toBeGreaterThan(phone.wordsTop - 12);
+    });
+
+    it('never lowers the video: a screen with room to spare, and a title that sits far below, lift nothing', () => {
+      expect(welcomeLift({ width: 390, height: 844, wordsTop: 700 })).toBe(0);
+      expect(welcomeLift({ width: 430, height: 932, wordsTop: 900 })).toBe(0);
+    });
+
+    it('lifts more when the words stand higher (a home bar, a bigger system font), and the video is only moved, never scaled or cropped', async () => {
+      expect(welcomeLift({ width: 390, height: 844, wordsTop: 595.84 - 34 })).toBeGreaterThan(welcomeLift({ width: 390, height: 844, wordsTop: 595.84 }));
+      await renderRouter(routes);
+      await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+      // Before the screen has been laid out the video sits at the top, as the one full-screen layer.
+      expect(flat('welcome-video')).toEqual(FILL);
+      const layout = (id: string, frame: { x: number; y: number; width: number; height: number }) =>
+        act(() => {
+          fireEvent(native.getByTestId(id), 'layout', { nativeEvent: { layout: frame } });
+        });
+      await layout('welcome', { x: 0, y: 0, width: 390, height: 844 });
+      expect(flat('welcome-video')).toEqual(FILL);
+      await layout('welcome-words', { x: 0, y: 595.84, width: 390, height: 114.16 });
+      expect(flat('welcome-video')).toEqual({ ...FILL, transform: [{ translateY: -41 }] });
+      // A home bar of 34 raises the words by 34 on a phone like that: the video follows by the same.
+      await layout('welcome-words', { x: 0, y: 561.84, width: 390, height: 114.16 });
+      expect(flat('welcome-video')).toEqual({ ...FILL, transform: [{ translateY: -75 }] });
+      // The layer keeps its size on every lift: still the screen's four edges, the video inside still cover at 100%.
+      expect(flat('welcome-video-view')).toEqual({ ...FILL, width: '100%', height: '100%' });
+      expect(native.getByTestId('welcome-video-view', { includeHiddenElements: true }).props.contentFit).toBe('cover');
+      // Roomy enough again: back to the top.
+      await layout('welcome-words', { x: 0, y: 700, width: 390, height: 114.16 });
+      expect(flat('welcome-video')).toEqual(FILL);
+    });
+  });
+
+  describe('on Android (R-111, phone paths)', () => {
+    let android: { restore: () => void };
+    afterEach(() => android?.restore());
+
+    it('the video fills the screen from the top edge, under the status bar, with no black showing anywhere, on a phone with a navigation bar', async () => {
+      android = jest.replaceProperty(Platform, 'OS', 'android');
+      await renderRouter(routes);
+      await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+      // The layer is the screen's four edges from the top (the status bar is drawn over it, the app is edge to edge), with no margin or inset.
+      expect(flat('welcome-video')).toEqual(FILL);
+      expect(flat('welcome')).toMatchObject({ flex: 1, backgroundColor: darkColors.surfaceWelcomeVideoBase });
+      // A texture view (it moves with the screen and takes the lift), covering its layer at full size.
+      const view = native.getByTestId('welcome-video-view', { includeHiddenElements: true });
+      expect(view.props.surfaceType).toBe('textureView');
+      expect(view.props.contentFit).toBe('cover');
+      expect(flat('welcome-video-view')).toEqual({ ...FILL, width: '100%', height: '100%' });
+      // Lifted by a short phone's navigation bar, the video is moved and the strip it leaves is the base purple, not black.
+      await act(async () => {
+        fireEvent(native.getByTestId('welcome'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 780 } } });
+        fireEvent(native.getByTestId('welcome-words'), 'layout', { nativeEvent: { layout: { x: 0, y: 499.84, width: 360, height: 114.16 } } });
+      });
+      expect(flat('welcome-video').transform).toEqual([{ translateY: -90 }]);
+      const colours = JSON.stringify(native.toJSON()).match(/"backgroundColor":"[^"]+"/g) ?? [];
+      expect(colours.every((c) => !/#000(000)?"|black|rgba\(0, ?0, ?0/i.test(c))).toBe(true);
+      // The status bar is light and the words and buttons are over the video on Android too.
+      await waitFor(() => expect((StatusBar as unknown as { _currentValues: { barStyle: { value: string } } | null })._currentValues?.barStyle.value).toBe('light-content'));
+      expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-sign-in'));
+    });
+  });
+
+  it('the words and buttons keep their copy, sizes and spacing, now straight over the video (R-98, R-111)', async () => {
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
     expect(flat('welcome-words')).toMatchObject({ paddingHorizontal: 24, paddingBottom: 28 });
@@ -214,10 +298,10 @@ describe('A1: welcome', () => {
     expect(line.color).toBe(darkColors.textOnAccent);
     expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
-    // The panel is the words and the two buttons (and the fade); both are in it, none beside it.
-    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-create'));
-    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-sign-in'));
-    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-words'));
+    // The words and the two buttons are in the one layer over the video, none beside it.
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-create'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-sign-in'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-words'));
   });
 
   it('says nothing that no source backs: no bank claim', async () => {
