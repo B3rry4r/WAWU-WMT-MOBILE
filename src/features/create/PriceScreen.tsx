@@ -25,6 +25,7 @@ import { fullFileOf, resetDraft, setMade, useDraft, useLessons, useMade, type Dr
 import { priceOf, priceReady, setDetails, setSent, useDetails, type AccessType } from './details';
 import { formatBytes, iconOf, labelOf, type FormatId } from './model';
 import { Stepper } from './parts';
+import { stillOf } from './still';
 
 /** The cover 52 by 66 with 10 corners; the summary card 12 by 14 (the picker's own measures are in `PricePicker`). */
 const priceMetrics = { coverW: 52, coverH: 66, coverCorner: 10, title: 14.5, meta: 12.5, metaGap: 3, padV: space.md, padH: 14, note: 12.5 } as const;
@@ -208,17 +209,18 @@ function NoteLine() {
   );
 }
 
-/** The piece as a buyer will meet it: its cover (the preview, when that is a picture), its title, and what was uploaded. */
+/** The piece as a buyer will meet it: its cover (the preview, when that is a picture, or a frame of it when it is a video), its title, and what was uploaded. */
 function PieceCard({ format, title, meta, cover }: { format: FormatId; title: string; meta: string; cover: UploadedFile }) {
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);
-  const still = cover.previewUri && cover.contentType.startsWith('image/') && !broken ? cover.previewUri : null;
+  const picture = stillOf(cover);
+  const still = picture && !broken ? picture : null;
   return (
     <Card padded testID="price-piece" style={styles.piece}>
       <View style={styles.pieceRow}>
         <View style={[styles.cover, { backgroundColor: colors.surfaceSunken }]}>
           {still ? (
-            <Image source={{ uri: still }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+            <Image testID="price-piece-image" source={still} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
           ) : (
             <View style={[StyleSheet.absoluteFill, styles.centre]}>
               <Icon name={iconOf(format)} size={space.s2xl} color={colors.textMuted} />
