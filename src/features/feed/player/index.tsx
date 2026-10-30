@@ -8,6 +8,7 @@ import { pieceStartedSound } from '@/features/music/pieceSound';
 import { metrics } from '../look';
 
 import { holdContentAudio } from './audioMode';
+import { bufferFor, PLAY_BUFFER, readAhead } from './buffer';
 
 import type { AudioSourceProps, PlayerEvents, SeekRequest, VideoSurfaceProps } from './types';
 
@@ -15,6 +16,7 @@ export type { AudioSourceProps, SeekRequest, VideoSurfaceProps } from './types';
 
 /** The phone plays through `expo-video` and `expo-audio` (SHARED-CHANGES HOME-02 #2, installed by SHARED-04). */
 export const canPlay = true;
+export { FRAME_BUFFER, PLAY_BUFFER } from './buffer';
 
 /** Seconds between the position reports; the scrubber and the clock follow them. */
 const TICK_SECONDS = 0.25;
@@ -52,8 +54,10 @@ function moveTo(player: VideoPlayer, to: number) {
 }
 
 /** H2 and H5: a video that fills the frame. */
-export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, testID }: VideoSurfaceProps) {
+export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, onFirstFrame, testID }: VideoSurfaceProps) {
   const player = useVideoPlayer(uri, (p) => {
+    // A surface that only shows its first picture reads two seconds ahead, not the player's stock 50 (`buffer.ts`).
+    p.bufferOptions = bufferFor(playing);
     p.loop = false;
     p.timeUpdateEventInterval = TICK_SECONDS;
     p.staysActiveInBackground = false;
@@ -77,6 +81,8 @@ export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, tes
 
   useEffect(() => {
     if (playing) {
+      // The read widens once, when the person (or the feed) starts it; a pause afterwards keeps it.
+      readAhead(player, PLAY_BUFFER);
       // R-99: a piece with sound takes the floor from the WAWU theme.
       pieceStartedSound();
       player.play();
@@ -91,6 +97,7 @@ export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, tes
       contentFit="cover"
       allowsPictureInPicture={false}
       playsInline
+      onFirstFrameRender={onFirstFrame}
       // A texture view, not the default surface: it can be blurred and scaled, and it sits in a paged list.
       surfaceType="textureView"
       style={frosted ? [styles.fill, styles.frost] : styles.fill}

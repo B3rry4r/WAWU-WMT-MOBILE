@@ -15,6 +15,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { AllowanceMeter } from '@/features/create/UploadsMeter';
+import { rowPicture } from '@/features/feed/model';
 import { kindIcon } from '@/features/me/model';
 import { font, space, useWawu } from '@/theme';
 
@@ -118,14 +119,16 @@ function PieceRow({ piece, line, onSeeWhy }: { piece: LibraryPiece; line: string
   // neither row is pressed (R-47, G-ME-07-1).
   const opens = piece.status === 'rejected';
   const [broken, setBroken] = useState(false);
-  const still = piece.contentType === 'image' && piece.previewAssetUrl && !broken ? piece.previewAssetUrl : null;
+  const still = broken ? null : rowPicture(piece.contentType, piece.previewAssetUrl);
   const body = (
     <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
         {still ? (
-          <Image source={{ uri: still }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+          <Image testID="library-thumb-image" source={{ uri: still }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
         ) : (
-          <Icon name={kindIcon(piece.contentType)} size={rowMetrics.mark} color={colors.textMuted} />
+          <View testID="library-thumb-mark">
+            <Icon name={kindIcon(piece.contentType)} size={rowMetrics.mark} color={colors.textMuted} />
+          </View>
         )}
       </View>
       <View style={styles.words}>

@@ -71,6 +71,7 @@ function Tile({ tile, onOpenDraft, onOpenPiece }: { tile: GridTile; onOpenDraft?
     >
       {still ? (
         <Image
+          testID="grid-thumb-image"
           source={{ uri: still }}
           contentFit="cover"
           blurRadius={tile.locked ? gridMetrics.frost : 0}
@@ -78,7 +79,7 @@ function Tile({ tile, onOpenDraft, onOpenPiece }: { tile: GridTile; onOpenDraft?
           onError={() => setBroken(true)}
         />
       ) : (
-        <View style={[StyleSheet.absoluteFill, styles.centre]}>
+        <View testID="grid-thumb-mark" style={[StyleSheet.absoluteFill, styles.centre]}>
           <Icon name={kindIcon(tile.kind)} size={gridMetrics.kindIcon} color={colors.textMuted} />
         </View>
       )}

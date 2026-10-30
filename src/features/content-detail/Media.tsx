@@ -7,7 +7,7 @@ import { Icon, ICON_STROKE, type IconName } from '@/components/icon';
 import { radius, useWawu } from '@/theme';
 import type { FeedItem } from '@/features/feed/api';
 import { media, words } from '@/features/feed/look';
-import { playableUrl } from '@/features/feed/model';
+import { isPdfFile, isPicture, isVideoFile, playableUrl } from '@/features/feed/model';
 import { Pill } from '@/features/feed/parts';
 import { AudioSource, canPlay, VideoSurface } from '@/features/feed/player';
 import { PdfReader } from '@/features/feed/reader';
@@ -20,6 +20,10 @@ import { BAR_TITLE, kindOf, type Kind } from './model';
  * is locked, all of them once it is the viewer's); a video plays in place (the public preview while locked); a course and a
  * photo set show the picture the Hub serves. A course plays the lesson the page opened (`lesson`: the Hub's short-lived link for it,
  * FIX-107) in the same frame, and says when it ends.
+ *
+ * The Hub gives each piece one public file, not a cover (PREVIEWS-APP): the clip of a course, the PDF of a template. Before a lesson is
+ * tapped the frame draws what the piece has, never an empty box: a course's first frame (paused, quiet, from its own clip), a template's
+ * generated book, a picture, or the kind's mark (while the frame loads, when a file will not open, and when there is nothing to draw).
  */
 const metrics = {
   pdf: 250,
@@ -94,16 +98,7 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         {...ring.handlers}
         style={[styles.center, ring.style]}
       >
-        <View style={[styles.cover, { backgroundColor: media.cover, boxShadow: `0 30px 50px -10px ${media.coverShadow}` }]}>
-          <View style={[styles.spine, { backgroundColor: media.spine }]} />
-          <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
-            {by ?? ''}
-          </Text>
-          <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
-            {piece.title}
-          </Text>
-          <Text style={[words.bookPages, { color: media.ink }]}>{piece.pageCount ? `${piece.pageCount} pages` : ''}</Text>
-        </View>
+        <Book title={piece.title} by={by} pages={piece.pageCount} />
       </Pressable>
     );
   } else if (kind === 'video' || kind === 'audio') {
@@ -162,14 +157,8 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         ) : null}
       </Pressable>
     );
-  } else if (piece.previewAssetUrl) {
-    body = <Image testID={`${testID}-image`} source={{ uri: piece.previewAssetUrl }} contentFit="cover" accessibilityLabel={piece.title} style={StyleSheet.absoluteFill} />;
   } else {
-    body = (
-      <View style={styles.center}>
-        <Icon name={tag.icon} size={metrics.playDisc} color={colors.textMuted} />
-      </View>
-    );
+    body = <Cover piece={piece} kind={kind} tag={tag} by={by} testID={testID} />;
   }
 
   return (
@@ -181,6 +170,70 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
       {kind === 'pdf' ? <PdfReader uri={uri} title={piece.title} visible={reading} onClose={() => setReading(false)} testID={`${testID}-reader`} /> : null}
     </View>
   );
+}
+
+/** The generated book of a PDF (H4 in the feed, H19 and H20 on the page): the title, who made it and how many pages. */
+function Book({ title, by, pages }: { title: string; by: string | null; pages: number | null }) {
+  return (
+    <View style={[styles.cover, { backgroundColor: media.cover, boxShadow: `0 30px 50px -10px ${media.coverShadow}` }]}>
+      <View style={[styles.spine, { backgroundColor: media.spine }]} />
+      <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
+        {by ?? ''}
+      </Text>
+      <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
+        {title}
+      </Text>
+      <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+    </View>
+  );
+}
+
+/**
+ * What fills the frame when nothing is playing: the piece's picture, the first frame of its clip, the book of its PDF, or the kind's
+ * mark. The address that failed to load, or whose frame is not in yet, shows the mark; a file is never handed to something that cannot
+ * draw it (an mp4 or a PDF to `Image`).
+ */
+function Cover({ piece, kind, tag, by, testID }: { piece: FeedItem; kind: Kind; tag: MediaProps['tag']; by: string | null; testID: string }) {
+  const { colors } = useWawu();
+  const url = piece.previewAssetUrl || null;
+  // The address that failed to load, and the one whose first frame is on screen: a new address starts again.
+  const [broken, setBroken] = useState<string | null>(null);
+  const [framed, setFramed] = useState<string | null>(null);
+  const mark = (
+    <View testID={`${testID}-mark`} pointerEvents="none" style={[StyleSheet.absoluteFill, styles.center]}>
+      <Icon name={tag.icon} size={metrics.playDisc} color={colors.textMuted} />
+    </View>
+  );
+  if (!url || broken === url) return mark;
+  if (isPdfFile(url)) {
+    return (
+      <View testID={`${testID}-book`} style={styles.center}>
+        <Book title={piece.title} by={by} pages={piece.pageCount} />
+      </View>
+    );
+  }
+  // A photo set's picture is a picture whatever its address says; elsewhere the file type decides.
+  if (isPicture(url) || kind === 'photos') {
+    return <Image testID={`${testID}-image`} source={{ uri: url }} contentFit="cover" accessibilityLabel={piece.title} onError={() => setBroken(url)} style={StyleSheet.absoluteFill} />;
+  }
+  // A course's preview is a lesson, an mp4 by the Hub's rule: its first frame, from a paused player (the mark shows until it is in).
+  if (canPlay && (isVideoFile(url) || kind === 'course')) {
+    return (
+      <>
+        {framed === url ? null : mark}
+        <VideoSurface uri={url} playing={false} seek={null} frosted={false} onTime={noTime} onEnded={noEnd} onFirstFrame={() => setFramed(url)} testID={`${testID}-frame-video`} />
+      </>
+    );
+  }
+  return mark;
+}
+
+function noTime() {
+  return undefined;
+}
+
+function noEnd() {
+  return undefined;
 }
 
 const styles = StyleSheet.create({

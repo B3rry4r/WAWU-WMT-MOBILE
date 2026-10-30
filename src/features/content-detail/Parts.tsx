@@ -15,7 +15,7 @@ import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, space, useWawu } from '@/theme';
-import { compactCount, UNNAMED_CREATOR } from '@/features/feed/model';
+import { compactCount, isPicture, UNNAMED_CREATOR } from '@/features/feed/model';
 
 import type { Comment, PieceDetail } from './api';
 import { ago, commenterName, lessonLength, plural, type Thread } from './model';
@@ -140,7 +140,7 @@ export function ParentCourseRow({ course, onPress }: { course: NonNullable<Piece
     >
       <Card padded style={styles.courseCard}>
         <View style={styles.courseRow}>
-          {course.previewAssetUrl && !broken ? (
+          {course.previewAssetUrl && isPicture(course.previewAssetUrl) && !broken ? (
             <View style={[styles.coursePicture, { backgroundColor: colors.surfaceSunken }]}>
               <Image source={{ uri: course.previewAssetUrl }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
             </View>

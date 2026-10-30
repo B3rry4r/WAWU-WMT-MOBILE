@@ -15,6 +15,7 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { countsKey } from '@/features/me/counts';
+import { rowPicture } from '@/features/feed/model';
 import { kindIcon } from '@/features/me/model';
 import { font, space, useWawu } from '@/theme';
 import { useShownPrice } from '@/features/store/ladder/usePrice';
@@ -181,7 +182,8 @@ function openerOf(
 }
 
 function pictureOf(entry: SavedEntry): string | null {
-  if (entry.kind === 'content') return entry.content?.thumbnailUrl ?? null;
+  // The Hub's thumbnail is the piece's public file: a clip or a PDF for most kinds, which is never handed to Image (it would be fetched to fail).
+  if (entry.kind === 'content') return rowPicture(entry.content?.contentType, entry.content?.thumbnailUrl);
   if (entry.kind === 'event') return entry.event?.bannerUrl ?? null;
   if (entry.kind === 'course') return entry.course?.schoolLogo ?? null;
   return null;
@@ -204,11 +206,13 @@ function Tile({ entry, meta, onOpen, onRemove }: { entry: SavedEntry; meta: stri
     <>
       <View style={[styles.picture, { backgroundColor: colors.surfaceSunken }]}>
         {picture && !broken ? (
-          <Image source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+          <Image testID="saved-thumb-image" source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
         ) : creator ? (
           <Avatar name={title} size={72} source={creator.avatarUrl ?? undefined} decorative />
         ) : (
-          <Icon name={glyphOf(entry)} size={32} color={colors.textMuted} />
+          <View testID="saved-thumb-mark">
+            <Icon name={glyphOf(entry)} size={32} color={colors.textMuted} />
+          </View>
         )}
       </View>
       <Text variant="body" numberOfLines={2} style={[font(600), styles.title]}>

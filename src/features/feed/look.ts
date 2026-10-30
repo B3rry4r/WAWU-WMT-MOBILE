@@ -201,6 +201,8 @@ export const metrics = {
   controlIcon: 24,
   /** The play mark in the middle of a paused video. */
   pausedIcon: 64,
+  /** The kind's mark behind a video or a course while its first frame loads (PREVIEWS-APP): not drawn on any board, so a quiet size, under the paused disc. */
+  loadingMark: 44,
   /** The template's mark in the frame of a template with no picture. */
   templateMark: 64,
 } as const;

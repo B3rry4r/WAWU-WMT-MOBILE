@@ -3,7 +3,7 @@ id: MIC-PERMS
 title: The microphone is asked for on Android and iPhone (app.json stops blocking it), and a gate reads the built permissions
 owner: YOU
 area: APP
-order: -10980
+order: -10981
 priority: launch
 repo: wawu-wmt-mobile
 type: setup

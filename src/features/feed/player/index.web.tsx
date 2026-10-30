@@ -8,6 +8,7 @@ import { peaksFrom } from '../model';
 import type { AudioSourceProps, PlayerEvents, VideoSurfaceProps } from './types';
 
 export type { AudioSourceProps, SeekRequest, VideoSurfaceProps } from './types';
+export { FRAME_BUFFER, PLAY_BUFFER } from './buffer';
 
 /** The web build plays through the browser's own `<video>` and `<audio>`. */
 export const canPlay = true;
@@ -69,7 +70,7 @@ const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', hei
 /** H5: the frame frosts, and grows past the edges so the blur has no rim. */
 const frost: CSSProperties = { filter: `blur(${metrics.backdropBlur}px)`, transform: 'scale(1.15)' };
 
-export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, testID }: VideoSurfaceProps) {
+export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, onFirstFrame, testID }: VideoSurfaceProps) {
   const ref = useRef<HTMLVideoElement>(null);
   usePlayback(ref, playing, uri);
   useEvents(ref, { onTime, onEnded });
@@ -81,6 +82,7 @@ export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, tes
       data-testid={testID}
       playsInline
       preload="metadata"
+      onLoadedData={onFirstFrame}
       style={frosted ? { ...fill, ...frost } : fill}
     />
   );

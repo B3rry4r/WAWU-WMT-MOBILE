@@ -72,17 +72,42 @@ export function feedRows(entries: readonly FeedEntry[]): FeedRow[] {
 }
 
 const PICTURE_FILE = /\.(?:jpe?g|png|webp|gif|avif|heic|bmp)$/i;
+const VIDEO_FILE = /\.(?:mp4|m4v|mov|webm|mkv)$/i;
+const PDF_FILE = /\.pdf$/i;
+
+/** The path of an address, whatever signs it (`?sig=` and the like are left off). */
+function pathOf(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url.split('?')[0] ?? url;
+  }
+}
 
 /** Whether an address is a still picture (by its file type, whatever signs it): else a video or a document. */
 export function isPicture(url: string | null | undefined): boolean {
-  if (!url) return false;
-  let path = url;
-  try {
-    path = new URL(url).pathname;
-  } catch {
-    path = url.split('?')[0] ?? url;
-  }
-  return PICTURE_FILE.test(path);
+  return Boolean(url) && PICTURE_FILE.test(pathOf(url as string));
+}
+
+/** Whether an address is a video file (by its file type, whatever signs it). */
+export function isVideoFile(url: string | null | undefined): boolean {
+  return Boolean(url) && VIDEO_FILE.test(pathOf(url as string));
+}
+
+/** Whether an address is a PDF (by its file type, whatever signs it). */
+export function isPdfFile(url: string | null | undefined): boolean {
+  return Boolean(url) && PDF_FILE.test(pathOf(url as string));
+}
+
+/**
+ * The picture a row or a tile can draw for a piece, from the address the Hub gave for it (its preview or its thumbnail), or null when
+ * there is none to draw (the row then draws the kind's mark). The Hub gives the preview FILE: a clip, a sound or a PDF for most kinds,
+ * and none of those is a picture, so `Image` never gets one (it would fetch it to fail). A photo is always a picture, whatever its
+ * address says; anything else only when its file type is one.
+ */
+export function rowPicture(contentType: string | null | undefined, url: string | null | undefined): string | null {
+  if (!url) return null;
+  return contentType === 'image' || isPicture(url) ? url : null;
 }
 
 /** Paid and not yet bought (or not the viewer's own): the full file is held back. */

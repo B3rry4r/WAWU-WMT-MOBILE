@@ -11,7 +11,8 @@ import { Text } from '@/components/Text';
 import { GroupTile, tileMetrics } from '@/features/communities/GroupTile';
 import { tickOf } from '@/features/explore/CreatorCard';
 import { useInterestLabel } from '@/features/explore/interestLabel';
-import { hueFor } from '@/features/feed/model';
+import { hueFor, rowPicture } from '@/features/feed/model';
+import { kindIcon } from '@/features/me/model';
 import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
@@ -43,7 +44,12 @@ export const rowMetrics = {
   line: 13,
   thumb: 64,
   thumbCorner: 14,
+  /** The kind's mark on a row whose file is not a picture (the other lists draw theirs at 24 to 28). */
+  mark: 26,
   lock: 16,
+  /** The lock on a row with no picture: small, in the corner, apart from the kind's mark. */
+  lockCorner: 13,
+  lockInset: 6,
   /** The black over a locked picture, as `cRes` draws it: 25%. */
   price: 14.5,
   room: 52,
@@ -253,13 +259,30 @@ export function ContentRow({ row, testID, onPress }: { row: ContentRowModel; tes
   const shown = useShownPrice();
   const shownKobo = row.priceKobo === null ? null : shown.forKobo(row.priceKobo);
   const label = `${row.title}, ${row.byline}, ${row.priceKobo === null ? 'free' : 'paid'}`;
+  // The Hub gives the piece's public file, a clip, a sound or a PDF for most kinds: only a picture is drawn as one, and a picture that
+  // will not load gives way to the kind's mark, so the square is never empty.
+  const [broken, setBroken] = useState(false);
+  const picture = broken ? null : rowPicture(row.kind, row.thumb);
   const inner = (
     <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
-        {row.thumb ? <Image source={{ uri: row.thumb }} contentFit="cover" blurRadius={row.locked ? 6 : 0} style={StyleSheet.absoluteFill} /> : null}
-        {row.locked ? (
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.veil, { backgroundColor: colors.mediaBlack25 }]}>
+        {picture ? (
+          <Image testID="search-thumb-image" source={{ uri: picture }} contentFit="cover" blurRadius={row.locked ? 6 : 0} onError={() => setBroken(true)} style={StyleSheet.absoluteFill} />
+        ) : (
+          <View testID="search-thumb-mark" style={[StyleSheet.absoluteFill, styles.mark]}>
+            <Icon name={kindIcon(row.kind ?? 'image')} size={rowMetrics.mark} color={colors.textMuted} />
+          </View>
+        )}
+        {row.locked && picture ? (
+          // The board's lock: centred over the blurred picture.
+          <View testID="search-thumb-lock" pointerEvents="none" style={[StyleSheet.absoluteFill, styles.veil, { backgroundColor: colors.mediaBlack25 }]}>
             <Icon name="Lock" size={rowMetrics.lock} color={colors.textOnAccent} />
+          </View>
+        ) : null}
+        {row.locked && !picture ? (
+          // Over a kind mark the lock would read as one muddled glyph: it sits in the corner, as the grid's tiles carry theirs.
+          <View testID="search-thumb-lock" pointerEvents="none" style={styles.lockCorner}>
+            <Icon name="Lock" size={rowMetrics.lockCorner} color={colors.textMuted} />
           </View>
         ) : null}
       </View>
@@ -343,4 +366,6 @@ const styles = StyleSheet.create({
   byline: { marginTop: rowMetrics.bylineTop },
   thumb: { width: rowMetrics.thumb, height: rowMetrics.thumb, borderRadius: rowMetrics.thumbCorner, overflow: 'hidden' },
   veil: { alignItems: 'center', justifyContent: 'center' },
+  mark: { alignItems: 'center', justifyContent: 'center' },
+  lockCorner: { position: 'absolute', top: rowMetrics.lockInset, right: rowMetrics.lockInset },
 });
