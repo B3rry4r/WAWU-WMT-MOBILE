@@ -237,7 +237,7 @@ describe('a person the Hub offers the tiers to sees them before Home (TIER-OFFER
 
 describe('a person the Hub does not offer the tiers to goes straight to Home', () => {
   it.each([
-    ['a fan, or a person already shown it, or one who holds a tier', ok({ show: false, closeButton: true })],
+    ['a person the Hub does not offer it to (one who holds a running tier, or has been shown it with the every-start setting off, or a Hub that has not been updated)', ok({ show: false, closeButton: true })],
     ['the Hub cannot be reached', 'offline'],
   ])('%s', async (_name, answer) => {
     hub['GET /api/hub/me/tier-offer'] = answer;

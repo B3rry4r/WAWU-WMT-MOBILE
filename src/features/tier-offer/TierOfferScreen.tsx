@@ -50,7 +50,7 @@ export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOffer
   const owner = useSessionAccount(undefined);
   const plans = useQuery(plansQuery(owner), queryClient);
   const store = useStoreCatalog(['tier']);
-  // Drawn once is enough: the Hub is told as it appears, so closing the app on this screen never brings it back.
+  // The Hub is told as it appears (once per start); whether it comes again is the Hub's setting (R-105).
   useEffect(() => {
     settleTierOffer();
   }, []);

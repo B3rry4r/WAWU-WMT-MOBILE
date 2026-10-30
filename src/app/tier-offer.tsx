@@ -5,7 +5,7 @@ import { finishTierOffer, useTierOfferCloseButton } from '@/features/tier-offer/
 import { TierOfferScreen } from '@/features/tier-offer/TierOfferScreen';
 
 /**
- * The tier offer (`/tier-offer`, TIER-OFFER, R-94), shown once right after sign-up by the root layout's guard, after the sign-up's own steps and
+ * The tier offer (`/tier-offer`, TIER-OFFER, R-94), shown by the root layout's guard when the Hub says so (right after sign-up for a new person, and on every app start for a person with no running tier, R-105), after the sign-up's own steps and
  * before Home. The close X (or "Not now", by the admin setting) ends it and Home opens; a tier's Subscribe ends it and the store checkout (VF6,
  * R-86) opens on top of Home, whatever currency the person is billed in: every tier is bought in the store sheet. It never blocks anything: the guard drops it as soon as either is pressed. Signed in only; the route graph guards it.
  */
