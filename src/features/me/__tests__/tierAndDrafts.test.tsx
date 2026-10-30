@@ -140,13 +140,13 @@ describe('M1 · tier badge and products meter (DV2-03)', () => {
     await waitFor(() => expect((StyleSheet.flatten(screen.getByTestId('me-scroll').props.contentContainerStyle) as { paddingBottom: number }).paddingBottom).toBeGreaterThanOrEqual(83));
   });
 
-  it('a person with a running tier sees its badge by their name and "N of M" with the tier chip and when it renews, all from the Hub', async () => {
+  it('a person with a running tier sees its badge by their name and "N of M" with the tier chip and the day it runs until, all from the Hub', async () => {
     answers = base();
     await boot();
     expect(await screen.findByTestId('me-products')).toBeTruthy();
     expect(screen.getByTestId('me-products')).toHaveTextContent(/2 of 7/);
     expect(screen.getByTestId('me-products-tier')).toHaveTextContent('Verify Plus');
-    expect(screen.getByTestId('me-products-renewal')).toHaveTextContent('Renews 26 Nov');
+    expect(screen.getByTestId('me-products-renewal')).toHaveTextContent('Until 26 Nov');
     expect(screen.getByTestId('me-products').props.accessibilityValue).toEqual({ min: 0, max: 7, now: 2 });
     expect(within(screen.getByTestId('me-tier-badge')).getByText('Verify Plus')).toBeTruthy();
     expect(asked).toContain(`GET ${TIER}`);
@@ -156,7 +156,7 @@ describe('M1 · tier badge and products meter (DV2-03)', () => {
   it('a 12-month tier bought today shows its year, so it never reads as ending today (FIX-78 F-3)', async () => {
     answers = base({ [`GET ${TIER}`]: ok(tierView({ tier: { id: 'founding_maker', name: 'Founding Maker', badge: null }, activeFrom: '2026-10-18T09:00:00.000Z', activeUntil: '2027-10-18T09:00:00.000Z' })) });
     await boot();
-    expect(await screen.findByTestId('me-products')).toHaveTextContent(/Renews 18 Oct 2027/);
+    expect(await screen.findByTestId('me-products')).toHaveTextContent(/Until 18 Oct 2027/);
     expect(screen.getByTestId('me-products-tier')).toHaveTextContent('Founding Maker');
   });
 

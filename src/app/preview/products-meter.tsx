@@ -11,7 +11,7 @@ import { layout, space, useWawu } from '@/theme';
  * /preview/products-meter?state=<name>, or no state for every one. The figures and the date are the brief's example values, not
  * allowances: the app reads them from the Hub (`GET /me/tier`). A release build redirects home.
  */
-// The gallery's own end day (26 Nov 2026): "Renews 26 Nov" while the tier is active. The year is read against the day it is opened on.
+// The gallery's own end day (26 Nov 2026): "Until 26 Nov" while the tier is active. The year is read against the day it is opened on.
 const tier: MeterTier = { name: 'Verify', state: 'active', endsAt: '2026-11-26T12:00:00Z' };
 
 const cases: Record<string, { props: ProductsMeterProps; note: string }> = {

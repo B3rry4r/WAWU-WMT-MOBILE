@@ -10,7 +10,7 @@ import { TierBadge, tierBadgeMetrics } from './TierBadge';
 /**
  * R-110 point 2 (owner, 30 Oct 2026; it replaces the 12 by 14 strip of design/_gen/me.js line 17, `prodMeter`, for M1, M19 and the tier
  * screens): a tidy card with 16 all round. Top row: "Products" (13, muted) at the start, the tier's chip at the end. Then the count
- * large (22 at 700, tabular), a 6 high rounded bar (the sunken track, the accent fill), and one muted line under it.
+ * large (22 at 700, tabular), a 6 high rounded bar (the sunken track, the accent fill), and one muted line under it ("Until 30 Oct 2027", or "Ends").
  */
 export const productsMeterMetrics = { pad: 16, label: 13, figure: 22, track: 6, trackRadius: 3, figureGap: 4, barGap: 12, lineGap: 12 } as const;
 
@@ -36,24 +36,25 @@ export function productsMeterFigure(used: number, allowed: number): string {
 /** What the card needs of the person's tier (`GET /me/tier`): its name for the chip, and its state and end date for the line under the bar. */
 export type MeterTier = {
   name?: string | null;
-  /** The Hub's `state`: `active` renews, anything else ("ending") ends. */
+  /** The Hub's `state`: `active` runs "Until" its end day, anything else ("ending") "Ends" on it. */
   state?: string | null;
   /** The Hub's `activeUntil`. */
   endsAt?: string | Date | null;
 };
 
 /**
- * The line under the bar: "Renews 30 Oct 2027" while the tier is `active`, "Ends 30 Oct 2027" once it is `ending` (the Hub's own word for the
- * last days of a term, which the Your tier screen answers with "Renew to keep publishing"). A tier is an auto-renewing store subscription
- * (the Hub's `isSubscriptionKind`), so `active` renews on its end day; the Hub carries no other renewal flag, so `state` is the one field that
- * decides, and `activeUntil` is the date. The day is read in Lagos time, where the tier is sold and renewed, in the board's three-letter month
+ * The line under the bar: "Until 30 Oct 2027" while the tier is `active`, "Ends 30 Oct 2027" once it is `ending` (the Hub's own word for the
+ * last days of a term, which the Your tier screen answers with "Renew to keep publishing"). The meter never says "Renews": the Hub carries no
+ * renewal flag (G-POLISH-1-1), so it cannot tell a store subscription that renews from a tier granted by a code or a claim that does not
+ * (lead ruling, 30 Oct 2026, POLISH-1 patch r1). When the Hub adds `renews`, "Renews" comes back for a running store subscription. `state` and
+ * `activeUntil` are the fields read. The day is read in Lagos time, where the tier is sold and renewed, in the board's three-letter month
  * (never Intl, which writes "Sept"); the year is added when the date is not in the current Lagos year, so a 12-month tier never reads as
  * ending today. A tier with no end date (or one that is not a date) has no line.
  */
 export function productsMeterRenewal(tier: MeterTier | null | undefined, now: Date = new Date()): string | undefined {
   const day = tier?.endsAt ? new Date(tier.endsAt) : undefined;
   if (!day || Number.isNaN(day.getTime())) return undefined;
-  return `${tier?.state === 'active' ? 'Renews' : 'Ends'} ${dateWords(day, now)}`;
+  return `${tier?.state === 'active' ? 'Until' : 'Ends'} ${dateWords(day, now)}`;
 }
 
 export type ProductsMeterProps = {

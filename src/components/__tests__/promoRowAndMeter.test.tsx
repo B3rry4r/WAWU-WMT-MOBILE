@@ -54,12 +54,13 @@ describe('R-110 point 1 · the promo row', () => {
 describe('R-110 point 2 · the products meter card', () => {
   const NOW = new Date('2026-10-30T09:00:00Z');
 
-  it('reads "Products", "0 of 10", the tier chip and "Renews 30 Oct 2027", with the bar track on the sunken token', async () => {
+  it('reads "Products", "0 of 10", the tier chip and "Until 30 Oct 2027" (never "Renews": the Hub names no renewal), with the bar track on the sunken token', async () => {
     await render(<ProductsMeter used={0} allowed={10} tier={{ name: 'Founding Maker', state: 'active', endsAt: '2027-10-30T09:00:00.000Z' }} now={NOW} testID="meter" />);
     expect(screen.getByText('Products')).toBeTruthy();
     expect(screen.getByText('0 of 10')).toBeTruthy();
     expect(screen.getByTestId('meter-tier')).toHaveTextContent('Founding Maker');
-    expect(screen.getByText('Renews 30 Oct 2027')).toBeTruthy();
+    expect(screen.getByText('Until 30 Oct 2027')).toBeTruthy();
+    expect(screen.queryByText(/Renews/)).toBeNull();
     // The card pads 16; the figure is 22 at 700, tabular; the bar is 6 high and its empty track still shows (the sunken token).
     expect(flat(screen.getByTestId('meter').props.style).padding).toBe(16);
     const figure = flat(screen.getByTestId('meter-figure').props.style);
@@ -73,7 +74,7 @@ describe('R-110 point 2 · the products meter card', () => {
     expect(flat(fill.props.style).backgroundColor).toBe(lightColors.accent);
   });
 
-  it('says Ends, not Renews, once the tier is ending; and no line when the Hub names no end day', async () => {
+  it('says Ends, not Until, once the tier is ending; and no line when the Hub names no end day', async () => {
     const { rerender } = await render(<ProductsMeter used={3} allowed={10} tier={{ name: 'Founding Maker', state: 'ending', endsAt: '2027-10-30T09:00:00.000Z' }} now={NOW} testID="meter" />);
     expect(screen.getByText('Ends 30 Oct 2027')).toBeTruthy();
     await rerender(<ProductsMeter used={3} allowed={10} tier={{ name: 'Founding Maker', state: 'active', endsAt: null }} now={NOW} testID="meter" />);

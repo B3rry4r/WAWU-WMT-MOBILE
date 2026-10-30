@@ -50,17 +50,17 @@ describe('productsMeterOf', () => {
     expect(productsMeterOf(tier())).toEqual({ used: 2, allowed: 3, tier: { name: 'Verify', state: 'active', endsAt: '2026-11-26T10:00:00.000Z' } });
     // 23:30 UTC on the 25th is 00:30 on the 26th in Lagos.
     const lagos = productsMeterOf(tier({ activeUntil: '2026-11-25T23:30:00.000Z' }));
-    expect(productsMeterRenewal(lagos?.tier, NOW)).toBe('Renews 26 Nov');
+    expect(productsMeterRenewal(lagos?.tier, NOW)).toBe('Until 26 Nov');
   });
 
-  it('says Renews while the tier is active and Ends once it is ending (the Hub\'s state decides)', () => {
-    expect(productsMeterRenewal(productsMeterOf(tier({ state: 'active' }))?.tier, NOW)).toBe('Renews 26 Nov');
+  it('says Until while the tier is active and Ends once it is ending, never Renews (the Hub\'s state decides, G-POLISH-1-1)', () => {
+    expect(productsMeterRenewal(productsMeterOf(tier({ state: 'active' }))?.tier, NOW)).toBe('Until 26 Nov');
     expect(productsMeterRenewal(productsMeterOf(tier({ state: 'ending' }))?.tier, NOW)).toBe('Ends 26 Nov');
   });
 
   it('carries the year for a 12-month tier, whose end is next year (FIX-78 F-3)', () => {
     const founding = tier({ tier: { id: 'founding', name: 'Founding Maker', badge: null }, activeFrom: '2026-10-18T09:00:00.000Z', activeUntil: '2027-10-18T09:00:00.000Z' });
-    expect(productsMeterRenewal(productsMeterOf(founding)?.tier, NOW)).toBe('Renews 18 Oct 2027');
+    expect(productsMeterRenewal(productsMeterOf(founding)?.tier, NOW)).toBe('Until 18 Oct 2027');
   });
 
   it('is null with no running tier or no allowance', () => {

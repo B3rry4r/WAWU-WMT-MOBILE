@@ -104,15 +104,15 @@ describe('M19 · Create', () => {
     });
     const none = { state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
 
-    it('a person with a tier sees "2 of 3" with the tier chip and "Renews 26 Nov" from the Hub, in place of the uploads count', async () => {
+    it('a person with a tier sees "2 of 3" with the tier chip and "Until 26 Nov" from the Hub, in place of the uploads count', async () => {
       hub.answers[`GET ${TIER}`] = ok(running('active'));
       hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(2, 3, true));
       await open();
       const meter = await screen.findByTestId('create-products');
-      expect(meter).toHaveAccessibleName('2 of 3 products. Verify. Renews 26 Nov');
+      expect(meter).toHaveAccessibleName('2 of 3 products. Verify. Until 26 Nov');
       expect(screen.getByText('2 of 3')).toBeTruthy();
       expect(screen.getByText('Verify')).toBeTruthy();
-      expect(screen.getByText('Renews 26 Nov')).toBeTruthy();
+      expect(screen.getByText('Until 26 Nov')).toBeTruthy();
       expect(screen.queryByTestId('create-meter')).toBeNull();
       expect(screen.queryByText('Get verified')).toBeNull();
     });

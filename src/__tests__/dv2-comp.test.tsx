@@ -95,13 +95,13 @@ describe('TierBadge', () => {
 });
 
 describe('ProductsMeter', () => {
-  it('says "Products", "2 of 3", the tier chip and the renewal line, and fills two thirds of the bar', async () => {
+  it('says "Products", "2 of 3", the tier chip and the "Until" line, and fills two thirds of the bar', async () => {
     await render(<ProductsMeter used={2} allowed={3} tier={{ name: 'Verify', state: 'active', endsAt: '2026-11-26T12:00:00Z' }} testID="meter" />);
     expect(screen.getByText('Products')).toBeTruthy();
     expect(screen.getByText('2 of 3')).toBeTruthy();
     expect(screen.getByText('Verify')).toBeTruthy();
-    expect(screen.getByText(/^Renews 26 Nov( 2026)?$/)).toBeTruthy();
-    expect(screen.getByTestId('meter').props.accessibilityLabel).toMatch(/^2 of 3 products\. Verify\. Renews 26 Nov/);
+    expect(screen.getByText(/^Until 26 Nov( 2026)?$/)).toBeTruthy();
+    expect(screen.getByTestId('meter').props.accessibilityLabel).toMatch(/^2 of 3 products\. Verify\. Until 26 Nov/);
     expect(String(styleOf(screen.getByTestId('meter-fill')).width).startsWith('66.6')).toBe(true);
     expect(styleOf(screen.getByTestId('meter-fill')).backgroundColor).toBe(darkColors.accent);
     expect(screen.getByTestId('meter').props.accessibilityValue).toEqual({ min: 0, max: 3, now: 2 });

@@ -92,7 +92,7 @@ describe('M28 · My content', () => {
     await open();
     expect(await screen.findByText('3 of 3')).toBeTruthy();
     expect(screen.getByText('Verify')).toBeTruthy();
-    expect(screen.getByText(/^(Renews|Ends) /)).toBeTruthy();
+    expect(screen.getByText(/^(Until|Ends) /)).toBeTruthy();
     expect(screen.queryByText(/Get verified/)).toBeNull();
     expect(screen.queryByText(/more reach/)).toBeNull();
   });
