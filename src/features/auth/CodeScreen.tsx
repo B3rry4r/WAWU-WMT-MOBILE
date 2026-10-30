@@ -156,7 +156,10 @@ export function CodeScreen({
       onDigit(incoming);
       return;
     }
-    const next = incoming.slice(0, CODE_LENGTH);
+    // A message with a number before the code ("2 min, code 123456") holds the code as a run of exactly six digits: take that run.
+    // With no such run ("123 456", a code written in groups) the first six digits are the code.
+    const standalone = /(?:^|\D)(\d{6})(?!\d)/.exec(text);
+    const next = standalone ? standalone[1] : incoming.slice(0, CODE_LENGTH);
     setDigits(next);
     setNotice(null);
     setPhase({ kind: 'entering' });
