@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 47 | 0 | 0 | 0 |
+| todo | 44 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 18 | 0 | 0 | 0 |
+| verifying | 21 | 0 | 0 | 0 |
 | review | 239 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -267,6 +267,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALK4-FIX](../tasks/WALK4-FIX.md) Money walk 4 findings (account number never asked for, no ready notice for a dollar account, swap bank charge hidden, swap credit named as a person) (You)
 - [SWEEP-R2](../tasks/SWEEP-R2.md) App sweep: three low rows from R2-MONEY and R2-AUTHME2 (beneficiary switch, tier checkout ring, selfie portrait guide) (You)
 - [TIER-OFFER](../tasks/TIER-OFFER.md) Right after sign-up a full screen offers the three tiers, once; it always has a way out (R-94) (You)
+- [AITOOLS-08](../tasks/AITOOLS-08.md) Studio media pipeline, the result into Create, and the listing gate (backend) (You)
+- [AITOOLS-09](../tasks/AITOOLS-09.md) Make an image and Edit a photo (backend) (You)
+- [AITOOLS-10](../tasks/AITOOLS-10.md) Make a video and Talking photo (backend) (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
@@ -465,7 +468,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [AITOOLS-08](../tasks/AITOOLS-08.md) Studio media pipeline, the result into Create, and the listing gate (backend), [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
+- **You:** [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked

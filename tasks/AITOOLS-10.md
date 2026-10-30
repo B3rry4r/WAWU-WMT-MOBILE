@@ -7,7 +7,7 @@ order: -51
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: verifying
 depends_on: [AITOOLS-09]
 decisions: [R-109, R-78, R-79, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,6 +17,15 @@ tier: T2
 # AITOOLS-10 · Make a video and Talking photo (backend)
 
 ## Current state
+
+**Built 30 Oct 2026 (S2-HUB-1, Sonnet builder, T2; backend branch `wmt/S2-HUB-1` (head `5789a0a`) on `origin/main` `b8627925`; status verifying).** Done on the stand-in only (no real provider call, the owner's credits are not bought yet):
+- Tools `video` ("Make a video", `input.kind: video`, unit `second`) and `talking-photo` ("Talking photo", `input.kind: video`, photo and voice, unit `second`), one file each. `points.action.video_per_sec` 250 and `points.action.talking_photo_per_sec` 200 as the labelled placeholders (**PROVISIONAL `STUDIO2-PLACEHOLDER`, points cost: owner sets**; a 4 second clip 1,000, an 8 second clip 2,000 against the daily cap of 5,000; the owner decides whether video has its own cap). The catalogue carries `input.options` (`shapes` 16:9 and 9:16, `lengths` 4, 6, 8, `photo` optional for a clip and required for a talking photo, `speech` with the longest voice from `ai.talking_photo_max_seconds`, 60, NOT KNOWN from the provider).
+- Routes: `POST /ai-tools/video/jobs` (`prompt`, `shape`, `seconds`, optional `photoKey`), `POST /ai-tools/talking-photo/quote` (reads the voice's length, answers the quote shape plus `speech.seconds`), `POST /ai-tools/talking-photo/jobs` (`photoKey` and one of `audioKey` or `sourceJobId`). Seam `startVideo`, `readVideo`. Models by setting, never shown: `ai.video_model` (`veo-3.1-fast-generate-001`), `ai.talking_photo_model` (`creatify-aurora`), `ai.video_resolution` (`720p`), `ai.talking_photo_resolution` (`720p`), `ai.video_with_sound` (1, the provider's own default; its credit effect is NOT KNOWN). No ByteDance model.
+- The photo (`ai/input-image`) goes up as the clip's `start_frame` asset; a talking photo sends the photo and the voice as assets (one after the other: the read gate gives an account one place at a time), both deleted when the job ends. The voice is the person's own MP3 or WAV recording (`ai/input-audio`) or the audio of a finished voice result of theirs (read from the stored file, left alone afterwards). The Hub reads the voice's length itself (as Captions) and prices the job; over the setting it is refused before anything is held. Output `video/mp4` streamed to `ai/video`, `pieceFormat: video`.
+- A finished long job writes the `ai_job_ready` notification (AITOOLS-08). The follower reads a video every 5 s, ceiling `ai.video_max_run_seconds` (600).
+- Specs: the same three files as AITOOLS-09 (clip held per second and polled while pending and generating, photo to video, talking photo from a recording and from a voice result, refusals, 50 MB clip flat, a type the Hub does not serve fails and releases, the notice once and only once).
+
+**Proof calls (one per tool): NOT RUN, waiting for credits.** The smallest requests, when the lead names them: (1) Make a video: ONE `POST /v1/flows/video` with `model_id veo-3.1-fast-generate-001`, `prompt "a red ball rolls across a table"`, `duration_secs "4"`, `aspect_ratio 16:9`, `resolution 720p`, `generate_audio false`, one read loop of `GET /v1/flows/video/{id}`, one fetch of `content_url` (set `ai.video_with_sound` to 0 for it). (2) Talking photo: `model_id creatify-aurora`, `resolution 480p` (set `ai.talking_photo_resolution` to `480p`), one 512 px photo uploaded with `POST /v1/assets`, one speech clip of about 2 seconds (a recorded fixture, not a provider voice call) uploaded the same way, `image` and `audio` as asset references. Log for each: credits before and after, `content_mime_type`, byte size, seconds taken, whether Flows is enabled for the key. Expected credits: NOT KNOWN for both. Delete the assets afterwards (the Hub does).
 
 - As of 30 Oct 2026, cut (STUDIO2-CUT, lead, from the owner's R-109). Status: todo. Tier T2. Bundle S2-HUB-1. Order -51 (launch, before CHECK-3); the build order is in `scratchpad/studio2/PLAN.md`.
 - **Bundle:** S2-HUB-1 (T2, backend), tasks AITOOLS-08, AITOOLS-09, AITOOLS-10 in that order, one builder, branch `wmt/AITOOLS-08`, budget 210 steps (130 plus 40 for each extra task); one lean-to-full T2 verifier, 90 steps plus 20 per extra task.

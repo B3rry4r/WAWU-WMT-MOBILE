@@ -7,7 +7,7 @@ order: -52
 priority: launch
 repo: wawu-backend
 type: third-party
-status: todo
+status: verifying
 depends_on: [AITOOLS-08]
 decisions: [R-109, R-78, R-79, R-43, R-61, R-65, R-68, R-47]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,6 +17,16 @@ tier: T2
 # AITOOLS-09 · Make an image and Edit a photo (backend)
 
 ## Current state
+
+**Built 30 Oct 2026 (S2-HUB-1, Sonnet builder, T2; backend branch `wmt/S2-HUB-1` (head `5789a0a`) on `origin/main` `b8627925`; status verifying).** Done on the stand-in only (no real provider call, the owner's credits are not bought yet):
+- Tools `image` ("Make an image") and `photo-edit` ("Edit a photo"), one file each (`tools/image.tool.ts`, `tools/photo-edit.tool.ts`), `input.kind: image`, unit `use`, flat price per picture: `points.action.image_per_use` and `points.action.photo_edit_per_use`, both 100 as the labelled placeholder (**PROVISIONAL `STUDIO2-PLACEHOLDER`, points cost: owner sets**, not derived from anything). The catalogue carries `input.options` (`shapes` 1:1, 4:5, 9:16, 16:9; `photo` required for an edit) and `input.maxCharacters` from `ai.image_max_prompt_chars` (1,000, PROVISIONAL `STUDIO2-LIMITS`: the longest prompt per model is NOT KNOWN).
+- Routes: `POST /ai-tools/image/jobs`, `POST /ai-tools/photo-edit/jobs` (202 working, 200 replay), the quote is the existing `POST /points/quote` with the tool's action. Seam methods `startImage`, `readImage`, `uploadAsset`, `removeAsset`, `openGeneration` on `AiVoiceProvider` (one seam, `HttpVoiceProvider`). Model, size and resolution are settings, never shown: `ai.image_model` (`gemini-3.1-flash-image`), `ai.image_resolution` (`1K`).
+- Edit: the photo is uploaded as a provider asset for the one run and deleted when the job ends, however it ends; a delete the provider refuses stays noted on the row (`asset:<ids>`) and the copy sweep retries it; account deletion waits until none is left. A photo the Hub cannot open as a picture is refused before anything is held.
+- Failures: `moderated` is "That picture can't be made. No points were taken."; every other failure is "That didn't work. No points were taken. Try again."; every failure RELEASES; `invalid_parameters` is logged as the Hub's own bug.
+- Stand-in: `POST /v1/assets`, `DELETE /v1/assets/<id>`, `POST /v1/flows/image|video`, `GET /v1/flows/image|video/<id>`, the file link, with `[[fail]]`, `[[reject]]`, `[[moderated]]`, `[[slow:n]]`, `[[stuck]]`, `[[invalid]]`, `[[type:..]]`, `[[bytes:n]]`, `[[outfail]]`, `[[asset-fail]]`, `[[asset-delete-fail]]` markers read from the input.
+- Specs: `src/ai-tools/tests/ai-media-pipeline.contract.spec.ts` (32 tests: hold and keep, every failure gives back, idempotency, two at once, restart, late finish after the sweep, 60 MB flat, refusals hold nothing, assets deleted), `ai-media-provider.spec.ts` (13), `src/storage/tests/ai-media-storage.contract.spec.ts` (11).
+
+**Proof call (the one real provider call per tool): NOT RUN, waiting for credits.** The smallest request, when the lead names it: ONE `POST /v1/flows/image` with `model_id gemini-3.1-flash-image`, `prompt "a red circle on white"`, `aspect_ratio 1:1`, `resolution 512`, no `images`, one read of `GET /v1/flows/image/{id}` until `completed`, one fetch of `content_url`. Log: credits before and after (needs the key's `user_read` permission or the owner's dashboard number), `content_mime_type`, byte size, seconds taken, whether Flows is enabled for the key. Expected credits: NOT KNOWN. (Run it by setting `ai.image_resolution` to `512` for that one call; the Hub's default is `1K`.) Edit a photo, only if named separately: one 512 px photo of about 100 KB, "make it black and white"; delete the asset afterwards.
 
 - As of 30 Oct 2026, cut (STUDIO2-CUT, lead, from the owner's R-109). Status: todo. Tier T2. Bundle S2-HUB-1. Order -52 (launch, before CHECK-3); the build order is in `scratchpad/studio2/PLAN.md`.
 - **Bundle:** S2-HUB-1 (T2, backend), tasks AITOOLS-08, AITOOLS-09, AITOOLS-10 in that order, one builder, branch `wmt/AITOOLS-08`, budget 210 steps (130 plus 40 for each extra task); one lean-to-full T2 verifier, 90 steps plus 20 per extra task.
