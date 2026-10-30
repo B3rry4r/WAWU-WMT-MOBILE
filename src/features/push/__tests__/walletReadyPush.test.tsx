@@ -133,7 +133,9 @@ describe('the notice landing while the app is open', () => {
         </SafeAreaProvider>
       </QueryClientProvider>,
     );
-    expect(await view.findByText('Checking your details')).toBeTruthy();
+    // A28 is up. Its title is "Checking your details" until the first ask answers and "Your account number is being made" once it has
+    // (the number is on its way), and which one a slow runner sees first is a race (FIX-TESTCLOCK): either is the screen this test means.
+    expect(await view.findByText(/^(Checking your details|Your account number is being made)$/)).toBeTruthy();
     await waitFor(() => expect(asks).toBe(1));
     expect(props.onOpened).not.toHaveBeenCalled();
 
