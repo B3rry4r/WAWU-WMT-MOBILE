@@ -63,6 +63,8 @@ Owner, 30 Oct 2026: "if videos don't show preview what else doesn't show preview
 - A template with a PDF preview: the book. A template with a picture cover: the picture.
 - Search, My content, Purchases, Saved: marks for clips and pdfs, pictures for photos and picture covers, no flash of a failed picture.
 - Create, a 100 MB video: Back during the frame read leaves no copy in the app's cache (needs a file browser or the storage figure for the app).
+- The welcome loop passes its loop point with no stall.
+- A feed swipe on a slow connection does not stall more than before (neighbours now hold a 2 s head start).
 
 ## Not done
 

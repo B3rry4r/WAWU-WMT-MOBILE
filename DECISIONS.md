@@ -808,3 +808,7 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 ### R-112 · Products each tier allows: Verify 4, Verify Plus 8, Founding Maker 15
 *Owner, 27 Oct 2026 message forwarded 30 Oct.* Products each tier allows: Verify 4, Verify Plus 8, Founding Maker 15 (they were 3, 6 and 10). A running tier gets the new count at once, never lower (lead ruling). Prices, lengths, points and every other figure stay as they are.
 **Carried out by:** TIER-COUNTS (Hub, data migration and defaults).
+
+### R-115 · Audio a person presses play on keeps playing when the screen locks or the app is left
+*Lead ruling, 30 Oct 2026, from the owner's "check for everything" on the store build's native settings.* Audio a person presses play on keeps playing when the screen locks or the app is left (audio pieces, audiobooks, podcasts, Studio results), with the iPhone silent switch not muting it. Short voice clips and the WAWU theme stop as before.
+**Carried out by:** MIC-PERMS / NATIVE-FIX.
