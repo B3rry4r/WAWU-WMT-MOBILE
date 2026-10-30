@@ -40,8 +40,11 @@ const PROMPT_CHIPS: readonly { id: string; label: string; placeholder: string }[
   { id: 'sound-effect', label: 'Sound effect', placeholder: 'Describe a sound' },
 ];
 
-/** What to type once a file is in the box: the chips are then tools that take that file, and the words are what to do with it. */
-export const FILE_PLACEHOLDER = 'Say what you want done (optional)';
+/**
+ * What the words in the box do once a file is in it (R-113 #3): only two file tools take words, and the box says what each does with them. Every
+ * other file tool takes the file alone, so its chip shows no box (a box that does nothing would be a dead control, R-47).
+ */
+export const FILE_WORDS = { 'photo-edit': 'Say what to change (optional)', 'video-music': 'Describe the mood (optional)' } as const;
 
 /** The file tools a chip can name once a file is attached, in this order, with the short label of the chip. */
 const FILE_CHIPS: readonly { id: string; label: string }[] = [
@@ -66,7 +69,8 @@ const MAIN_TILES: readonly { id: string; label: string }[] = [
   { id: 'voice-changer', label: 'Voice changer' },
 ];
 
-export type Chip = { id: string; label: string; placeholder: string };
+/** A chip. `placeholder` is what the box says for it; null means the tool takes no words, so the box is not drawn while the chip is chosen. */
+export type Chip = { id: string; label: string; placeholder: string | null };
 export type Tile = { tool: AiTool; label: string };
 
 /** The tools the Hub lists and the app can draw (R-47), in the Hub's order. A listed tool that is switched off is still drawn, dimmed, as Studio always drew it. */
@@ -134,6 +138,16 @@ export function kindOfFile(file: Pick<ChosenFile, 'name' | 'contentType'>): Atta
   return null;
 }
 
+/** What the box says for a file tool that takes words, from the Hub's rule for it, or null when the tool takes the file alone. */
+function wordsFor(tool: AiTool): string | null {
+  if (tool.id === 'photo-edit') return tool.input.maxCharacters > 0 ? FILE_WORDS['photo-edit'] : null;
+  if (tool.id === 'video-music') return tool.input.file?.description ? FILE_WORDS['video-music'] : null;
+  return null;
+}
+
+/** True when the chosen chip takes the words in the box (every prompt tool does; a file tool only where `wordsFor` says so). */
+export const takesWords = (chip: Chip | undefined): boolean => chip?.placeholder != null;
+
 /** The chips for a file in the box: the ready tools whose rule takes this file's type. */
 export function fileChips(tools: readonly AiTool[], file: Pick<ChosenFile, 'name' | 'contentType'>): Chip[] {
   const type = typeOfRecording(file);
@@ -141,7 +155,7 @@ export function fileChips(tools: readonly AiTool[], file: Pick<ChosenFile, 'name
   const out: Chip[] = [];
   for (const chip of FILE_CHIPS) {
     const tool = byId(tools, chip.id);
-    if (tool && kind && toolReady(tool) && typesFor(tool, kind).includes(type)) out.push({ ...chip, placeholder: FILE_PLACEHOLDER });
+    if (tool && kind && toolReady(tool) && typesFor(tool, kind).includes(type)) out.push({ ...chip, placeholder: wordsFor(tool) });
   }
   return out;
 }

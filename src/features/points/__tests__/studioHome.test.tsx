@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
-import { Platform, ScrollView, Text, View } from 'react-native';
+import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
+import { Dimensions, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
 
@@ -60,6 +60,21 @@ const SPECS: Record<string, Spec> = {
   image: { id: 'image', action: 'image_per_use', name: 'Make an image', description: 'Describe a picture and see it.', unit: 'use', cost: 100, input: { kind: 'image', maxCharacters: 1000, charactersPerUnit: 0, options: { shapes: ['1:1', '16:9'] } } },
   'photo-edit': { id: 'photo-edit', action: 'photo_edit_per_use', name: 'Edit a photo', description: 'Say what to change in your photo.', unit: 'use', cost: 100, input: { kind: 'image', maxCharacters: 1000, charactersPerUnit: 0, options: { shapes: ['1:1'], photo: PHOTO } } },
 };
+// The tools added after launch (the Hub's own names and lines), so a test can list every tool or any set of them.
+const AUDIO_FILE = { ...FILE_RULE, only: 'audio' };
+const FILE = { kind: 'file', maxCharacters: 0, charactersPerUnit: 0 };
+Object.assign(SPECS, {
+  video: { id: 'video', action: 'video_per_second', name: 'Make a video', description: 'Describe a short clip and watch it.', unit: 'second', cost: 250, input: { kind: 'video', maxCharacters: 1000, charactersPerUnit: 0, options: { shapes: ['16:9'], lengths: [4, 8] } } },
+  'talking-photo': { id: 'talking-photo', action: 'talking_photo_per_second', name: 'Talking photo', description: 'Make your photo speak with a voice.', unit: 'second', cost: 200, input: { kind: 'video', maxCharacters: 0, charactersPerUnit: 0, options: { shapes: [], photo: PHOTO, speech: { audioFolder: 'ai/input-audio', accepts: ['audio/mpeg', 'audio/wav'], maxSeconds: 60 } } } },
+  'voice-changer': { id: 'voice-changer', action: 'voice_changer_per_min', name: 'Voice changer', description: 'Say it again in another voice.', unit: 'minute', cost: 400, voices: VOICES, input: { ...FILE, file: { ...AUDIO_FILE, voice: true } } },
+  'video-music': { id: 'video-music', action: 'video_music_per_track', name: 'Music for a video', description: 'Get music made for your video.', unit: 'track', cost: 500, input: { ...FILE, file: { ...FILE_RULE, only: 'video', description: { maxCharacters: 200 } } } },
+  stems: { id: 'stems', action: 'stems_per_use', name: 'Split a song', description: 'Pull a song apart into its voice and instruments.', unit: 'use', cost: 300, input: { ...FILE, file: { ...AUDIO_FILE, parts: [2, 6] } } },
+  audiobook: { id: 'audiobook', action: 'audiobook_per_min', name: 'Audiobook', description: 'Turn a long text into an audiobook.', unit: 'minute', cost: 250, voices: VOICES, input: text },
+  dialogue: { id: 'dialogue', action: 'dialogue_per_min', name: 'Dialogue', description: 'Write a scene and hear it in several voices.', unit: 'minute', cost: 250, voices: VOICES, input: { kind: 'dialogue', maxCharacters: 400, charactersPerUnit: 900, dialogue: { maxVoices: 2 } } },
+  'my-voice': { id: 'my-voice', action: 'my_voice_per_use', name: 'Clone your own voice', description: 'Keep a copy of your voice for your voice tools.', unit: 'use', cost: 100, input: { ...FILE, file: { ...AUDIO_FILE, clone: true } } },
+  podcast: { id: 'podcast', action: 'podcast_per_use', name: 'Podcast maker', description: 'Turn a text or a web page into a podcast.', unit: 'use', cost: 1250, voices: VOICES, input: { kind: 'podcast', maxCharacters: 2000, charactersPerUnit: 0, podcast: { modes: ['conversation', 'bulletin'], maxVoices: 2, durations: [{ id: 'short', action: 'podcast_short', costPoints: 750 }, { id: 'standard', action: 'podcast_standard', costPoints: 1250 }, { id: 'long', action: 'podcast_long', costPoints: 2500 }], maxLinkCharacters: 200, languages: [{ code: 'en', name: 'English' }, { code: 'fr', name: 'French' }] } } },
+  receptionist: { id: 'receptionist', action: 'receptionist_per_message', name: 'Receptionist', description: 'Your own agent that answers from what you give it.', unit: 'message', cost: 20, input: { kind: 'chat', maxCharacters: 2000, charactersPerUnit: 0 } },
+});
 const LAUNCH = ['voiceover', 'quick-voice', 'sound-effect', 'music', 'captions', 'clean-audio', 'dubbing'];
 
 const hub = {
@@ -403,5 +418,220 @@ describe('STUDIO-HOME · on the phone (Platform.OS android, the real handlers)',
     expect(mockPick).toHaveBeenCalledWith(['video/mp4', 'video/quicktime', 'video/webm']);
     expect(screen.queryByTestId('studio-attached')).toBeNull();
     expect(chipIds()).toEqual(['voiceover', 'music', 'sound-effect']);
+  });
+});
+
+/*
+ * Round 1 of the patch (the verifier's findings 1 to 3): the words box is there only for a file tool that takes words, and the More pop-over
+ * never leaves the screen, with every tool the Hub lists or the four after-launch pictures and clips switched off.
+ */
+const ALL = Object.keys(SPECS);
+const OFF4 = ALL.filter((id) => !['image', 'photo-edit', 'video', 'talking-photo'].includes(id));
+const MORE_ROWS = (listed: string[]) => listed.filter((id) => !['voiceover', 'music', 'image', 'video', 'dubbing', 'talking-photo', 'voice-changer'].includes(id));
+
+describe('STUDIO-HOME · the words box with a file in it', () => {
+  const handoff = () => require('../studioHandoff') as typeof import('../studioHandoff');
+  const attach = async (kind: 'photo' | 'video' | 'audio', picked: ReturnType<typeof file>) => {
+    mockPick.mockResolvedValueOnce(picked);
+    await fireEvent.press(screen.getByTestId('studio-attach'));
+    await fireEvent.press(await screen.findByTestId(`studio-attach-${kind}`));
+    await screen.findByTestId('studio-attached');
+  };
+
+  it('a user with a recording in the box is offered no words box for Dubbing, Captions or Clean audio, and Make still opens Captions without the words typed earlier', async () => {
+    const put = jest.spyOn(handoff(), 'putHandoff');
+    await toHome();
+    await fireEvent.changeText(screen.getByTestId('studio-prompt'), 'in Spanish please');
+    await attach('audio', file('talk.mp3', 'audio/mpeg'));
+    expect(chipIds()).toEqual(['dubbing', 'captions', 'clean-audio']);
+    for (const id of ['dubbing', 'captions', 'clean-audio']) {
+      await fireEvent.press(screen.getByTestId(`studio-chip-${id}`));
+      expect(screen.queryByTestId('studio-prompt')).toBeNull();
+      expect(screen.getByTestId('studio-make')).toBeEnabled();
+    }
+    await fireEvent.press(screen.getByTestId('studio-chip-captions'));
+    await fireEvent.press(screen.getByTestId('studio-make'));
+    expect(await screen.findByTestId('tool-cost')).toHaveTextContent('30 points', { exact: false });
+    expect(screen.queryByTestId('tool-text')).toBeNull();
+    expect(put).toHaveBeenCalledWith(expect.objectContaining({ toolId: 'captions', text: '' }));
+    put.mockRestore();
+  });
+
+  it('a user with a photo in the box gets the box for Edit a photo ("Say what to change"), none for Talking photo, and the words come back with Edit a photo and arrive on its screen', async () => {
+    hub.listed = [...LAUNCH, 'image', 'photo-edit', 'talking-photo'];
+    await toHome();
+    await attach('photo', file('me.jpg', 'image/jpeg'));
+    expect(chipIds()).toEqual(['photo-edit', 'talking-photo']);
+    expect(screen.getByTestId('studio-prompt').props.placeholder).toBe('Say what to change (optional)');
+    await fireEvent.changeText(screen.getByTestId('studio-prompt'), 'Make the sky orange');
+    await fireEvent.press(screen.getByTestId('studio-chip-talking-photo'));
+    expect(screen.queryByTestId('studio-prompt')).toBeNull();
+    expect(screen.getByTestId('studio-make')).toBeEnabled();
+    await fireEvent.press(screen.getByTestId('studio-chip-photo-edit'));
+    expect(screen.getByTestId('studio-prompt').props.value).toBe('Make the sky orange');
+    await fireEvent.press(screen.getByTestId('studio-make'));
+    await screen.findByTestId('tool-photo');
+    await waitFor(() => expect(screen.getByTestId('tool-text').props.value).toBe('Make the sky orange'));
+    expect(screen.getByRole('header', { name: 'Edit a photo' })).toBeTruthy();
+  });
+
+  it('Talking photo is opened with the photo and no words, even when words were typed beside the photo for Edit a photo', async () => {
+    hub.listed = [...LAUNCH, 'photo-edit', 'talking-photo'];
+    const put = jest.spyOn(handoff(), 'putHandoff');
+    await toHome();
+    await attach('photo', file('me.jpg', 'image/jpeg'));
+    await fireEvent.changeText(screen.getByTestId('studio-prompt'), 'Make the sky orange');
+    await fireEvent.press(screen.getByTestId('studio-chip-talking-photo'));
+    await fireEvent.press(screen.getByTestId('studio-make'));
+    expect(put).toHaveBeenCalledWith(expect.objectContaining({ toolId: 'talking-photo', text: '' }));
+    put.mockRestore();
+  });
+
+  it('a user with a clip in the box gets the box for Music for a video ("Describe the mood"), none for Captions, and the mood arrives on its screen', async () => {
+    hub.listed = [...LAUNCH, 'video-music'];
+    await toHome();
+    await attach('video', file('clip.mp4', 'video/mp4'));
+    expect(chipIds()).toEqual(['video-music', 'dubbing', 'captions', 'clean-audio']);
+    expect(screen.getByTestId('studio-prompt').props.placeholder).toBe('Describe the mood (optional)');
+    await fireEvent.changeText(screen.getByTestId('studio-prompt'), 'Warm and hopeful');
+    await fireEvent.press(screen.getByTestId('studio-chip-captions'));
+    expect(screen.queryByTestId('studio-prompt')).toBeNull();
+    await fireEvent.press(screen.getByTestId('studio-chip-video-music'));
+    await fireEvent.press(screen.getByTestId('studio-make'));
+    await waitFor(() => expect(screen.getByTestId('tool-mood').props.value).toBe('Warm and hopeful'));
+    expect(screen.getByRole('header', { name: 'Music for a video' })).toBeTruthy();
+  });
+
+  it('a Music for a video the Hub lists with no mood line gets no words box (nothing would take the words)', async () => {
+    const was = SPECS['video-music'];
+    SPECS['video-music'] = { ...was, input: { kind: 'file', maxCharacters: 0, charactersPerUnit: 0, file: { ...FILE_RULE, only: 'video' } } };
+    try {
+      hub.listed = [...LAUNCH, 'video-music'];
+      await toHome();
+      await attach('video', file('clip.mp4', 'video/mp4'));
+      expect(chipIds()[0]).toBe('video-music');
+      expect(screen.queryByTestId('studio-prompt')).toBeNull();
+      expect(screen.getByTestId('studio-make')).toBeEnabled();
+    } finally {
+      SPECS['video-music'] = was;
+    }
+  });
+
+  it('taking the file out brings the box back, with the words typed before, for the prompt tools', async () => {
+    await toHome();
+    await fireEvent.changeText(screen.getByTestId('studio-prompt'), 'Welcome to the show');
+    await attach('audio', file('talk.mp3', 'audio/mpeg'));
+    expect(screen.queryByTestId('studio-prompt')).toBeNull();
+    await fireEvent.press(screen.getByTestId('studio-attached-remove'));
+    expect(screen.getByTestId('studio-prompt').props.value).toBe('Welcome to the show');
+    expect(screen.getByTestId('studio-prompt').props.placeholder).toBe('Type what to say');
+  });
+});
+
+describe('STUDIO-HOME · the More pop-over stays inside the screen', () => {
+  const methods = (require('@react-native/jest-preset/jest/MockNativeMethods') as { default: { measureInWindow: jest.Mock } }).default;
+  const SIDE = 16;
+  const ROW = 52;
+  const original = Dimensions.get('window');
+  const setWindow = (width: number, height: number) =>
+    act(async () => {
+      Dimensions.set({ window: { width, height, scale: 2, fontScale: 1 }, screen: { width, height, scale: 2, fontScale: 1 } });
+    });
+  // The More tile as the phone reports it: the fourth cell of a line at 390 wide, `y` down the window (the page scrolled or not).
+  const moreAt = (y: number) =>
+    methods.measureInWindow.mockImplementation(function (this: { props?: { testID?: string } }, callback: (x: number, y: number, width: number, height: number) => void) {
+      if (this?.props?.testID === 'studio-more') callback(292, y, 82, 107);
+    });
+  const close = async () => {
+    await fireEvent(screen.getByTestId('studio-more-menu'), 'requestClose');
+    await waitFor(() => expect(screen.queryByTestId('studio-more-menu')).toBeNull());
+  };
+  /** Opens More with the tile at `y`, and checks the panel is inside the screen with every row in the scrolling list. */
+  const checkFits = async (listed: string[], height: number, y: number) => {
+    await setWindow(390, height);
+    moreAt(y);
+    await fireEvent.press(screen.getByTestId('studio-more'));
+    const menu = await screen.findByTestId('studio-more-menu');
+    const style = StyleSheet.flatten(menu.props.style) as { maxHeight: number; top?: number; bottom?: number };
+    const bottom = style.bottom !== undefined ? height - style.bottom : (style.top as number) + style.maxHeight;
+    const top = style.top !== undefined ? style.top : bottom - style.maxHeight;
+    expect(top).toBeGreaterThanOrEqual(SIDE);
+    expect(bottom).toBeLessThanOrEqual(height - SIDE);
+    const rows = screen.getByTestId('studio-more-menu-rows');
+    expect(rows.props.scrollEnabled).not.toBe(false);
+    for (const id of MORE_ROWS(listed)) expect(within(rows).getByTestId(`studio-tool-${id}`)).toBeTruthy();
+    // The list is taller than the room it has been given, so the cap is what keeps it on the screen (it scrolls inside).
+    expect(style.maxHeight).toBeLessThan(MORE_ROWS(listed).length * ROW + 16);
+    return { menu, style };
+  };
+
+  afterAll(async () => {
+    await setWindow(original.width, original.height);
+    methods.measureInWindow.mockReset();
+  });
+
+  it.each([
+    ['390x844, page unscrolled', 844, 560],
+    ['390x844, page scrolled a thumb', 844, 440],
+    ['390x667, page unscrolled', 667, 500],
+    ['390x667, page scrolled a thumb', 667, 380],
+  ])('a user opens More with every tool the Hub lists on %s: the panel fits the window and all 12 rows are in its scroll list', async (_name, height, y) => {
+    hub.listed = ALL.slice();
+    await toHome();
+    expect(MORE_ROWS(hub.listed)).toHaveLength(12);
+    await checkFits(hub.listed, height, y);
+    await close();
+  });
+
+  it.each([
+    ['390x844, page unscrolled', 844, 560],
+    ['390x844, page scrolled a thumb', 844, 440],
+    ['390x667, page unscrolled', 667, 500],
+    ['390x667, page scrolled a thumb', 667, 380],
+  ])('a user opens More with the picture, clip and photo tools off (11 rows) on %s: the panel fits the window and all 11 rows are in its scroll list', async (_name, height, y) => {
+    hub.listed = OFF4;
+    await toHome();
+    expect(MORE_ROWS(hub.listed)).toHaveLength(11);
+    await checkFits(hub.listed, height, y);
+    await close();
+  });
+
+  it('a list too tall for the room above the tile drops below it once the rows are laid out, and still fits', async () => {
+    hub.listed = ALL.slice();
+    await toHome();
+    const { menu } = await checkFits(hub.listed, 844, 140);
+    await fireEvent(screen.getByTestId('studio-more-menu-rows'), 'contentSizeChange', 288, 12 * ROW);
+    const style = StyleSheet.flatten(screen.getByTestId('studio-more-menu').props.style) as { maxHeight: number; top?: number; bottom?: number };
+    expect(menu).toBeTruthy();
+    expect(style.bottom).toBeUndefined();
+    expect(style.top).toBe(140 + 107 + 8);
+    expect(style.top! + style.maxHeight).toBeLessThanOrEqual(844 - SIDE);
+    await close();
+  });
+
+  it('on the phone (Platform.OS android) the panel fits at 390x667 too, and the back button still closes it', async () => {
+    const was = Platform.OS;
+    Platform.OS = 'android';
+    try {
+      hub.listed = ALL.slice();
+      await toHome();
+      await checkFits(hub.listed, 667, 500);
+      await close();
+      expect(screen.getByTestId('studio-prompt')).toBeTruthy();
+    } finally {
+      Platform.OS = was;
+    }
+  });
+
+  it('a short menu keeps its own height and its rows read in two lines: Quick voice and the other launch rows are whole', async () => {
+    await toHome();
+    await setWindow(390, 844);
+    moreAt(560);
+    await fireEvent.press(screen.getByTestId('studio-more'));
+    await screen.findByTestId('studio-more-menu');
+    for (const id of MORE_ROWS(LAUNCH)) expect(within(screen.getByTestId('studio-more-menu-rows')).getByTestId(`studio-tool-${id}`)).toBeTruthy();
+    // The Hub's one-line description may take two lines on a row, never cut after the first.
+    for (const line of screen.getAllByText(/^(A fast voice|Describe a sound|Turn what is said|Take the noise)/)) expect(line.props.numberOfLines).toBe(2);
+    await close();
   });
 });

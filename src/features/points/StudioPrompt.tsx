@@ -13,7 +13,7 @@ import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/
 import { Popover, usePopover } from './StudioPopover';
 import type { AiTool } from './studioApi';
 import { putHandoff } from './studioHandoff';
-import { attachKinds, canMake, fileChips, HOME_WORDS, kindOfFile, pickTypes, promptChips, voiceInitial, type AttachKind, type Chip } from './studioHomeModel';
+import { attachKinds, canMake, fileChips, HOME_WORDS, kindOfFile, pickTypes, promptChips, takesWords, voiceInitial, type AttachKind, type Chip } from './studioHomeModel';
 import { toolIcon } from './studioModel';
 import { clampText } from './voiceoverModel';
 
@@ -61,6 +61,8 @@ export function StudioPrompt({ tools, onOpenTool, onFocusBox }: StudioPromptProp
   const speech = tool?.id === 'voiceover' && tool.voices.length > 0 ? tool : null;
   const voice = speech ? (speech.voices.find((v) => v.id === voiceId) ?? speech.voices[0]) : null;
   const ready = canMake(chip, text, shown);
+  // With a file in, the box is there only for a chip whose tool takes words (Edit a photo, Music for a video); for the rest the chip and Make are enough.
+  const words = !shown || takesWords(chip);
 
   if (promptChips(tools).length === 0) return null;
 
@@ -84,16 +86,19 @@ export function StudioPrompt({ tools, onOpenTool, onFocusBox }: StudioPromptProp
     file?.discard?.();
     setFile(chosen);
     setPicked(null);
+    // A box taken away while it had the cursor reports no blur: its ring goes with it.
+    setFocused(false);
   };
   const removeFile = () => {
     file?.discard?.();
     setFile(null);
     setPicked(null);
     setNote(null);
+    setFocused(false);
   };
   const make = () => {
     if (!ready || !tool) return;
-    putHandoff({ toolId: tool.id, text: clampText(text.trim(), tool.input.maxCharacters), file: shown, voiceId: speech ? (voice?.id ?? null) : null });
+    putHandoff({ toolId: tool.id, text: words ? clampText(text.trim(), tool.input.maxCharacters) : '', file: shown, voiceId: speech ? (voice?.id ?? null) : null });
     // The tool's screen has the file from here.
     setFile(null);
     setText('');
@@ -107,24 +112,26 @@ export function StudioPrompt({ tools, onOpenTool, onFocusBox }: StudioPromptProp
       <Text variant="body" accessibilityRole="header" testID="studio-title" style={[font(700), styles.title, { fontSize: LOOK.title, lineHeight: canvasNormalLineHeight(LOOK.title) * 1.04, letterSpacing: -0.02 * LOOK.title }]}>
         {HOME_WORDS.title}
       </Text>
-      <View testID="studio-box" style={[styles.box, { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: focused ? LOOK.ring : 1, color: focused ? colors.accent : colors.borderHairline, inset: true }] }]}>
+      <View testID="studio-box" style={[styles.box, { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: focused && words ? LOOK.ring : 1, color: focused && words ? colors.accent : colors.borderHairline, inset: true }] }]}>
         {shown ? <Attached file={shown} onRemove={removeFile} /> : null}
-        <TextInput
-          testID="studio-prompt"
-          accessibilityLabel={HOME_WORDS.boxLabel}
-          multiline
-          value={text}
-          onChangeText={(next) => setText(tool ? clampText(next, tool.input.maxCharacters) : next)}
-          placeholder={chip?.placeholder ?? ''}
-          placeholderTextColor={colors.textMuted}
-          textAlignVertical="top"
-          onFocus={() => {
-            setFocused(true);
-            onFocusBox?.();
-          }}
-          onBlur={() => setFocused(false)}
-          style={[styles.input, font(400), browserOutlineOff, { color: colors.textPrimary, fontSize: LOOK.text, lineHeight: LOOK.text * LOOK.leading }]}
-        />
+        {words ? (
+          <TextInput
+            testID="studio-prompt"
+            accessibilityLabel={HOME_WORDS.boxLabel}
+            multiline
+            value={text}
+            onChangeText={(next) => setText(tool ? clampText(next, tool.input.maxCharacters) : next)}
+            placeholder={chip?.placeholder ?? ''}
+            placeholderTextColor={colors.textMuted}
+            textAlignVertical="top"
+            onFocus={() => {
+              setFocused(true);
+              onFocusBox?.();
+            }}
+            onBlur={() => setFocused(false)}
+            style={[styles.input, font(400), browserOutlineOff, { color: colors.textPrimary, fontSize: LOOK.text, lineHeight: LOOK.text * LOOK.leading }]}
+          />
+        ) : null}
         <View style={styles.row}>
           {kinds.length > 0 ? (
             <View ref={attachRef} collapsable={false}>
@@ -151,7 +158,16 @@ export function StudioPrompt({ tools, onOpenTool, onFocusBox }: StudioPromptProp
       ) : null}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" testID="studio-chips" style={styles.chipScroll} contentContainerStyle={styles.chips}>
         {chips.map((c) => (
-          <ChipPill key={c.id} chip={c} selected={c.id === chip?.id} icon={toolIcon({ id: c.id as AiTool['id'] })} onPress={() => setPicked(c.id)} />
+          <ChipPill
+            key={c.id}
+            chip={c}
+            selected={c.id === chip?.id}
+            icon={toolIcon({ id: c.id as AiTool['id'] })}
+            onPress={() => {
+              setPicked(c.id);
+              if (c.placeholder === null) setFocused(false);
+            }}
+          />
         ))}
       </ScrollView>
       <Popover visible={attach.open} onClose={attach.hide} anchor={attach.anchor} align="left" label={HOME_WORDS.attach} testID="studio-attach-menu">
@@ -194,7 +210,7 @@ export function MenuRow({ icon, initial, title, line, label, selected, dim, onPr
           {title}
         </Text>
         {line ? (
-          <Text variant="body" tone="textMuted" numberOfLines={1} style={{ fontSize: 12.5, lineHeight: canvasNormalLineHeight(12.5) }}>
+          <Text variant="body" tone="textMuted" numberOfLines={2} style={{ fontSize: 12.5, lineHeight: canvasNormalLineHeight(12.5) }}>
             {line}
           </Text>
         ) : null}
