@@ -109,3 +109,99 @@ serves today: `audio/mpeg`, `audio/wav`, `audio/mp4`, `audio/aac`; video: `video
 - Whether the key's scopes cover every generate route above.
 - The exact bodies of a failed call on each route (the Hub treats 429 and 5xx as `unavailable`, other 4xx as `rejected`, as AITOOLS-01 does).
 - The real time a music track, a dub and a long transcript take.
+
+---
+
+# Studio 2: the new tools (R-109, 30 Oct 2026)
+
+Read 30 Oct 2026 from the owner's boss's file (`api-reference-2.json`, the main API, 288 paths) with the public description (`openapi-30oct.json`) as the cross-check. Nothing was called (no key used). Where the two differ it is said. Every route below is reached only through the one seam `AI_VOICE_PROVIDER` (no provider name reaches a person, R-68). Facts for a builder come from here or from a real response, never from the design.
+
+## Credits are limited: how every task uses the real provider
+- Builders and verifiers use the stand-in (`scripts/dev/voice-standin.cjs`) for every test. Each task adds its routes and failure markers to it.
+- A task makes at most ONE real provider call per tool, at the smallest input that proves it (the shortest text, one 512 px image, the shortest video, the cheapest model that works), and only when the lead names that call in the brief. No real call is ever repeated to debug a problem: read the stand-in, the logs and this file instead.
+- Each real call is logged in the task's Current state with the credits it used. **The files show no credit field in any request or response and no cost header** (searched: no `x-character-count`, no usage header on any route). So credits are measured as the account's balance before and after the call: `GET /v1/user/subscription` (`character_count` and `character_limit`), which needs the key's `user_read` permission (the 23 Oct read got 401 for it), or the provider's dashboard number read by the owner before and after. Until one of those is in place a proof call's cost is NOT KNOWN and the task says so.
+- The proof call for each tool is written in its task file, with its expected cost (a number where the files give one, otherwise NOT KNOWN).
+
+## What the account must have (everything below)
+| Need | Tools | Known? |
+|---|---|---|
+| Enough credits; the plan and credits cannot be read with this key | all | NOT KNOWN (owner has requested a purchase) |
+| Key permission `user_read` (to measure credits); each route's own scope (only its own call proves it) | all | NOT KNOWN |
+| A plan that allows instant voice cloning (voice slots on the account) | Clone your own voice | NOT KNOWN (the number of voice slots is not in the files) |
+| "Music API is for paid subscribers" (a 403 `Subscription required` is documented on video to music) | Music for a video, Split a song | NOT KNOWN for our plan |
+| The Studio API: "Only specifically whitelisted accounts can access the Studio API. If you need access please contact our sales team." (the file's `studio` tag) | Podcast maker (Audiobook does NOT use it, see below) | NOT KNOWN; the owner asks the provider |
+| ByteDance approval: the Seedream and Seedance models are "disabled by default and require explicit approval before use. Contact support" | none by default (no task uses them) | not requested |
+| Flows (image, video) enabled for the key | Make an image, Edit a photo, Make a video, Talking photo | NOT KNOWN (the 23 Oct read calls did not test it) |
+| Agents write scope, and a plan that allows agents (a 23 Oct read showed the agent list readable and empty) | Receptionist | NOT KNOWN |
+
+## Make an image, Edit a photo (AITOOLS-09)
+- Routes: `POST /v1/flows/image` (start), `GET /v1/flows/image/{generation_id}` (read), `GET /v1/flows/image` (list; not used). Files and public file agree on every model, enum and default.
+- **Asynchronous, polled.** The POST answers at once `{ id, status: "pending" }`. The read answers `pending`, `generating`, `completed` (`content_url`, `content_mime_type`) or `failed` (`failure_reason`: `timeout`, `model_error`, `moderated`, `invalid_parameters`, `dependency_failed`, `charging_failed`, `internal_error`; `error_message`). `content_url` is signed and lasts about an hour (read again for a fresh one). `webhook` (`{type:"all"}` or `{type:"ids",ids:[...]}`) sends the same body to the workspace's flows webhooks instead; the Hub polls. "Failed generations are not charged."
+- Request: `model_id` and `prompt` required (the 11 image models are a oneOf by `model_id`). The model the Hub uses by default is `gemini-3.1-flash-image`: up to 14 reference `images`, no mask, `aspect_ratio` auto, 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9, 1:4, 4:1, 1:8, 8:1; `resolution` 512, 1K (default), 2K, 4K. It needs no approval. Other models are in the setting's reach: `gemini-3.1-flash-lite-image` (1K only, up to 14 images), `gemini-3-pro-image`, `gemini-2.5-flash-image` (5 images), five GPT-image models (up to 5 or 10 images, a `mask`, `quality`), two Seedream models (ByteDance, approval).
+- **No output-format field and no pixel size**: the size follows `aspect_ratio` and `resolution` (or `quality`). The example type is `image/png`; the real type is read from `content_mime_type`. File size of an output: NOT KNOWN (read from the first real response).
+- **Edit a photo** is the same route with `images`: each reference is `{type:"asset", asset_id}` (a file uploaded first with `POST /v1/assets`, multipart `asset` and `name`, answers `asset_id`; `DELETE /v1/assets/{asset_id}` exists), `{type:"generation", generation_id}` (an earlier output) or `{type:"inline_base64", content_base64, mime_type}` (up to 25 MB decoded; jpeg, png, webp, heic, heif; kept only as an ephemeral asset with no guaranteed retention). The Gemini models edit by prompt only. Default (lead): the Hub uploads the person's photo as an asset, uses it, and deletes the asset afterwards (as it deletes transcripts), so the Hub's memory stays flat and the provider keeps no copy.
+- Not known: credits per image (any model); prompt length limit per model; whether our key may use Flows.
+
+## Make a video, Talking photo (AITOOLS-10)
+- Routes: `POST /v1/flows/video`, `GET /v1/flows/video/{generation_id}` (same lifecycle, failure reasons and one-hour link as images), `GET /v1/flows/video`.
+- Default model for Make a video: `veo-3.1-fast-generate-001` (no approval): `prompt` required, `duration_secs` "4", "6" or "8" (a string), `aspect_ratio` 16:9 or 9:16, `resolution` 720p (default), 1080p, 4K, `generate_audio` (default true), `negative_prompt`, `seed`, `enhance_prompt`, `start_frame` and `end_frame` (an image reference each; this is photo to video), `images` (up to 3 references, needs the 8 second length, cannot be mixed with start or end frame). The 4 second, 720p, no-audio request is the smallest.
+- Video editing of a person's own clip does not exist in the files (only Seedance takes reference videos, as references for a new clip).
+- **Talking photo**: `creatify-aurora`, `image` (one) and `audio` (one speech file, mpeg or wav) both required, no prompt; `resolution` 480p or 720p (default 720p); `guidance_scale` and `audio_guidance_scale` 0 to 5. The video's length is the audio's. The longest audio it takes: NOT KNOWN. Output shape follows the photo.
+- Output: `video/mp4` in the examples; size and frame rate NOT KNOWN. A video piece takes `video/mp4` and `video/quicktime` up to 512 MB (the Hub's rule).
+- Not used, by default: Seedance (needs approval; also reference videos and audios). Not known: credits per second or per clip (any model); the time a clip takes.
+
+## Dialogue (AITOOLS-11)
+- `POST /v1/text-to-dialogue` (also `/stream` and `/with-timestamps` variants, not used), JSON: `inputs` (a list of `{text, voice_id}`, both required; at most 10 different voices; "keep the total character count across all inputs at or below 2,000 per request"), `model_id` (default `eleven_v3`), `language_code`, `settings`, `seed`, `apply_text_normalization` (auto, on, off), `pronunciation_dictionary_locators` (up to 3), `previous_text` and `future_text` (100 characters each), `previous_request_ids` and `next_request_ids` (up to 3, to continue a longer scene). Query `output_format` (default `mp3_44100_128`).
+- **Synchronous**: the answer is the audio file (`application/octet-stream`; mp3 for the default format). Credits: charged per character on the speech models (the speech flow says "charged per character"); the rate for `eleven_v3`: NOT KNOWN.
+
+## Voice changer (AITOOLS-11)
+- The boss's file names it `POST /v1/speech-to-speech/{voice_id}` (also `/stream`); the public file names the same capability `/v1/voice-changer/{voice_id}`. The Hub follows the boss's file and reads the public name when it changes.
+- Multipart: `audio` (required; the recording whose words, timing and emotion are kept), `model_id` (default `eleven_english_sts_v2`; the model must be able to convert voices: `can_do_voice_conversion` in `GET /v1/models`; the account listed two speech to speech models on 23 Oct, their ids were not recorded), `voice_settings` (a JSON string), `seed`, `remove_background_noise` (default false), `file_format` (`other` or `pcm_s16le_16`). Query `output_format` (default mp3_44100_128), `enable_logging`.
+- **Synchronous**; the answer is the audio. Input length and size limits, and credits per minute: NOT in the files (NOT KNOWN).
+
+## Clone your own voice, quick (AITOOLS-11)
+- `POST /v1/voices/add`, multipart `name`, `files` (one or more recordings), `remove_background_noise`, `description`, `labels`; answers `{ voice_id, requires_verification }`. `DELETE /v1/voices/{voice_id}` removes it. Already built for one run only (AITOOLS-07, "Your voice" in VoiceOver); this tool keeps the clone for the person until they remove it.
+- Not known: the shortest and longest sample the route takes; credits for a clone (if any); how many voices the plan holds. The first proof call reads the answer's error text for the first two.
+
+## Music for a video (AITOOLS-12)
+- `POST /v1/music/video-to-music`, multipart: `videos` (a list, at most 10, combined in order; **total 200 MB, up to 600 seconds in all**), `description` (optional, up to 1,000 characters in the boss's file, 4,100 in the public file: the Hub uses 1,000), `tags` (up to 10), `model_id` (`music_v1` default, `music_v2`, `music_v2_5`), `sign_with_c2pa`. Query `output_format`. Errors: 403 `Subscription required`, 422.
+- **Synchronous and long**; the answer is the audio (type by `output_format`). The provider returns music only: no video with sound comes back, and the Hub has no tool to mix them, so the person gets an audio file.
+- Credits: NOT KNOWN.
+
+## Split a song, stems (AITOOLS-12)
+- `POST /v1/music/stem-separation`, multipart `file` (the audio), `stem_variation_id` (`two_stems_v1` or `six_stems_v1`, default `six_stems_v1`), `output_format` (query), `sign_with_c2pa`. "This endpoint might have high latency, depending on the length of the audio file."
+- **Synchronous; the answer is a ZIP** (`application/octet-stream`) with one audio file per stem in the requested format. The Hub unzips it and stores each stem as its own file. The names inside the zip and the size and length limits of the input: NOT in the files (NOT KNOWN; the first proof call reads them).
+- Credits: NOT KNOWN.
+
+## Audiobook (AITOOLS-13)
+- Default (lead): the Hub makes an audiobook on the speech route it already runs (`POST /v1/text-to-speech/{voice_id}`, API-FACTS above), one chapter at a time, each request's `previous_text` and `next_text` (the route has them, with `previous_request_ids` and `next_request_ids`) carrying the voice across the joins, and joins the mp3 pieces into one file. Why: the provider's Studio projects API (`POST /v1/studio/projects` with `from_document` .epub .pdf .txt, `from_url` or `from_content_json`, then `POST .../convert`, then a snapshot stream or archive) is allowlist-only (above), and the speech route is the one VoiceOver already proved on the real key (24 Oct). The Studio API stays an option behind the same seam if the owner is allowlisted.
+- Limits: the text limit per request is per model (`eleven_v4` and `eleven_multilingual_v2` 10,000 characters; the Hub's job cap is a setting). An mp3 at 128 kbps is about 56 MB an hour; a piece file is at most 512 MB. Credits: per character, rate per model NOT KNOWN.
+
+## Podcast maker (AITOOLS-13)
+- `POST /v1/studio/podcasts` (Studio API, allowlisted), JSON: `model_id`, `mode` (`{type:"conversation", conversation:{host_voice_id, guest_voice_id}}` or `{type:"bulletin", bulletin:{host_voice_id}}`), `source` (`{type:"text", text}` or `{type:"url", url}` or a list of them), `quality_preset` (standard 128 kbps 44.1 kHz, or high 192 kbps), `duration_scale` (`short` under 3 minutes, `default` about 3 to 7, `long` over 7), `language` (two letters), `intro` and `outro` (1,500 characters each), `instructions_prompt` (3,000), `highlights`, `callback_url`, `apply_text_normalization`. Header `safety-identifier` (moderation) "Your workspace must be allowlisted to use this feature".
+- "Create and auto-convert": the answer is the project (`project_id`, `can_be_downloaded`, ...). **Asynchronous**: read `GET /v1/studio/projects/{project_id}` until it can be downloaded, list `.../snapshots`, take the audio from `POST .../snapshots/{id}/stream` (or `/archive`), then `DELETE /v1/studio/projects/{project_id}`. The provider says its language model cost is covered for now and "you will still be charged for the audio generation", later both.
+- Credits: NOT KNOWN (audio is per character on the speech models; the language model part is covered today and unpriced later).
+
+## Receptionist: the talking agent (AITOOLS-06, POINTS-12, POINTS-19)
+Built from the agents platform only. Not used: phone numbers, Twilio, SIP, WhatsApp, batch calling, the small-business receptionist routes, tools and MCP servers (R-109).
+- **The agent:** `POST /v1/convai/agents/create` (`conversation_config` required; `name`, `tags`, `platform_settings`, `workflow` optional) answers `{ agent_id }`; `PATCH /v1/convai/agents/{agent_id}` edits; `DELETE` removes. In the config: `agent.prompt.prompt` (the instructions), `agent.prompt.llm` (a long list of model ids; the Hub picks one by a setting), `agent.first_message`, `agent.language` (default `en`; the files list no Yoruba, Igbo, Hausa or Pidgin code), `tts.voice_id` and `tts.model_id` (default `eleven_v4_turbo`), `conversation.text_only`.
+- **What it knows (the knowledge base):** `POST /v1/convai/knowledge-base/text` (`text`, `name`), `/url` (`url`, `name`, optional auto-sync), `/file` (multipart `file`, `name`); each answers `{ id, name, folder_path }`. A document is then attached in the agent's config at `agent.prompt.knowledge_base`: a list of `{ type: file | url | text | folder, name, id, usage_mode: prompt | auto }`. `DELETE /v1/convai/knowledge-base/{documentation_id}` (with `force=true` it also leaves every agent that uses it). Which file types the route takes, the size per document and the number of documents per agent: NOT in the files (NOT KNOWN).
+- **Talking to it, text:** over the agent socket (`wss`), with the text-only setting so no audio is used and no audio is priced. A signed link comes from `GET /v1/convai/conversation/get-signed-url?agent_id=` (hyphen spelling; `include_conversation_id=true` returns the conversation id and makes the link single use). How long a signed link lasts: NOT in the files.
+- **Talking to it, voice:** the same socket (audio chunks both ways) or WebRTC: `GET /v1/convai/conversation/token?agent_id=` answers `{ token, conversation_id }`. The phone must capture the microphone and play the agent's voice live; whether the app's current audio package can stream (it records to a file and plays files) is NOT KNOWN and is POINTS-19's first question. WebRTC would need a native module and so a new build.
+- **After it ends:** `GET /v1/convai/conversations/{conversation_id}` (status, metadata with the length) is how the Hub reads the real minutes. `POST /v1/convai/agents/{id}/simulate-conversation` goes away on 31 Oct 2026 and is not used.
+- Credits per text message and per voice minute: NOT KNOWN (the language model and the voice are each priced; text-only "avoids audio pricing").
+
+## Points ratio: what the provider charges, what we charge, and so the ratio
+R-65: 1,000 points are ₦500 (note: `plans.config.json` `price_per_1000_points` holds 100000 kobo, which is ₦1,000: the builder of the first pricing task reads the live setting and says which is true). The ratio below is points we charge per provider credit. The plan's price per credit is NOT KNOWN (the key cannot read the plan), so the margin in naira waits for the owner's plan figure.
+
+| Current tool | Provider cost per unit (source) | We charge today | Points per credit |
+|---|---|---|---|
+| Clean audio | 1,000 credits per minute (the isolator, this file's "Voice isolator") | 400 a minute | 0.400 |
+| VoiceOver | 900 characters per minute (the Hub's setting) at 1 credit a character on the standard models = 900 (the files say only "charged per character"; the factor is NOT in the files) | 250 a minute | 0.278 if 1 credit a character |
+| Quick voice | the same 900 characters on the faster model; its factor is NOT in the files (half would give 450 credits) | 125 a minute | 0.278 if half, 0.139 if equal |
+| Sound effect | 40 credits per second when a duration is given (this file); the Hub sends one only if the person does | 75 a use | 0.375 at 5 s, 0.0625 at 30 s (flat price, so a cross-check only) |
+| Captions | NOT KNOWN (the files have no price) | 15 a minute | NOT KNOWN |
+| Music track | NOT KNOWN | 500 a track | NOT KNOWN |
+| Dubbing | NOT KNOWN | from 1,500 a minute per language | NOT KNOWN |
+
+Reading: where the provider cost is known the ratio is 0.28 to 0.40 points per credit. Two bases are used: **by character (speech): 0.278** and **by audio minute: 0.400**. A new tool is priced on the basis its provider bills; where its provider cost is NOT KNOWN its first proof call measures it (credits before and after, above) and the price is then cost times the basis ratio. The per-tool working is in each task's Provisional figures and in `scratchpad/studio2/PLAN.md`. The owner reviews every figure before the app ships.
