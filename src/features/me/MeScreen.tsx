@@ -100,6 +100,8 @@ export type MeScreenProps = {
   onOpenTier?: () => void;
   /** A draft tile in the Content grid (M1) opens Your shop (VF2, VERIFY-01). A draft is not pressed without it. */
   onOpenShop?: () => void;
+  /** A published tile in the Content grid (M1) opens that piece's page (WALK-FIX H1). Not pressed without it. */
+  onOpenPiece?: (id: string) => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
   /** Creator dashboard (M18, ME-07): the menu's first row for a creator account, drawn only when given. */
@@ -136,7 +138,7 @@ export type MeScreenProps = {
  * bio instead (M1, "Bio" with the "AI voice" tag, R-66, FIX-103), playing `audioUrl` from the same read. A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onOpenPiece, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -250,7 +252,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
               <Counts counts={countsOf(ready.counts)} />
               <TierMeter tier={tier} />
               <ProfileTabs value={tab} onChange={setTab} />
-              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} /> : null}
+              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} onOpenPiece={onOpenPiece} /> : null}
               {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} /> : null}
               {tab === 'about' ? (
                 <AboutBody
@@ -362,7 +364,7 @@ function TierMeter({ tier }: { tier: TierQuery }) {
   return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} caption={meter.caption} testID="me-products" /> : null;
 }
 
-function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void }) {
+function ContentBody({ query, drafts, creator, onOpenShop, onOpenPiece }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void; onOpenPiece?: (id: string) => void }) {
   if (query.isError && !query.data) {
     return <ErrorState testID="me-grid-error" title="Your content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
@@ -390,7 +392,7 @@ function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery;
   return (
     <View style={styles.gridWrap}>
       {note ? <View style={styles.note}>{note}</View> : null}
-      <ContentGrid tiles={tiles} onOpenDraft={onOpenShop} />
+      <ContentGrid tiles={tiles} onOpenDraft={onOpenShop} onOpenPiece={onOpenPiece} />
       {query.isFetchingNextPage ? <GridSkeleton /> : null}
       {query.isFetchNextPageError ? (
         <ErrorState testID="me-grid-more-error" title="More content did not load" message={readFailure(query.error)} onRetry={() => void query.fetchNextPage()} />

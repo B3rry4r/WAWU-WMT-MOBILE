@@ -9,15 +9,18 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
-import { useWawu } from '@/theme';
+import { space, useWawu } from '@/theme';
 
 import { banksQuery, failureMessage, type Bank } from './api/payoutAccount';
+import { popularBanks } from './popularBanks';
 import { filterBanks } from './payoutForm';
 
 /** The list takes at most this share of the window, so the sheet never covers the whole screen. */
 const LIST_SHARE = 0.5;
 /** kit.js `Check` beside a chosen row: 18 at stroke 2.6. */
 const pickedMetrics = { icon: 18, stroke: 2.6 } as const;
+
+type Row = { kind: 'label'; key: string; text: string; testID: string } | { kind: 'bank'; key: string; bank: Bank; testID: string };
 
 export type BankSheetProps = {
   visible: boolean;
@@ -69,31 +72,48 @@ export function BankSheet({ visible, onClose, selectedCode, onPick }: BankSheetP
   } else if (shown.length === 0) {
     body = <EmptyState testID="bank-sheet-no-match" icon="Search" title="No bank by that name" message="Check the spelling, or try part of the name." />;
   } else {
+    // WALK-FIX M6: with nothing typed, the popular banks lead and the whole list follows, A to Z. A search shows one plain list.
+    const popular = search.trim() === '' ? popularBanks(shown) : [];
+    const rows: Row[] =
+      popular.length > 0
+        ? [
+            { kind: 'label', key: 'label-popular', text: 'Popular', testID: 'bank-sheet-popular-label' },
+            ...popular.map((bank): Row => ({ kind: 'bank', key: `popular-${bank.code}`, bank, testID: `bank-popular-${bank.code}` })),
+            { kind: 'label', key: 'label-all', text: 'All banks', testID: 'bank-sheet-all-label' },
+            ...shown.map((bank): Row => ({ kind: 'bank', key: bank.code, bank, testID: `bank-${bank.code}` })),
+          ]
+        : shown.map((bank): Row => ({ kind: 'bank', key: bank.code, bank, testID: `bank-${bank.code}` }));
     body = (
       <FlatList
         testID="bank-sheet-list"
-        data={shown}
-        keyExtractor={(bank) => bank.code}
+        data={rows}
+        keyExtractor={(row) => row.key}
         keyboardShouldPersistTaps="handled"
         style={{ maxHeight: height * LIST_SHARE }}
-        renderItem={({ item }) => (
-          <ListRow
-            testID={`bank-${item.code}`}
-            title={item.name}
-            accessibilityLabel={item.code === selectedCode ? `${item.name}, chosen` : item.name}
-            trailing={
-              item.code === selectedCode ? (
-                <Icon name="Check" size={pickedMetrics.icon} color={colors.accentFg} strokeWidth={pickedMetrics.stroke} />
-              ) : (
-                <View />
-              )
-            }
-            onPress={() => {
-              setSearch('');
-              onPick(item);
-            }}
-          />
-        )}
+        renderItem={({ item }) =>
+          item.kind === 'label' ? (
+            <Text variant="label" testID={item.testID} accessibilityRole="header" style={styles.label}>
+              {item.text}
+            </Text>
+          ) : (
+            <ListRow
+              testID={item.testID}
+              title={item.bank.name}
+              accessibilityLabel={item.bank.code === selectedCode ? `${item.bank.name}, chosen` : item.bank.name}
+              trailing={
+                item.bank.code === selectedCode ? (
+                  <Icon name="Check" size={pickedMetrics.icon} color={colors.accentFg} strokeWidth={pickedMetrics.stroke} />
+                ) : (
+                  <View />
+                )
+              }
+              onPress={() => {
+                setSearch('');
+                onPick(item.bank);
+              }}
+            />
+          )
+        }
       />
     );
   }
@@ -121,4 +141,5 @@ export function BankSheet({ visible, onClose, selectedCode, onPick }: BankSheetP
 
 const styles = StyleSheet.create({
   body: { flexShrink: 1 },
+  label: { paddingTop: space.sm, paddingBottom: space.xs },
 });

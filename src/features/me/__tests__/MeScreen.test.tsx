@@ -564,3 +564,13 @@ describe('Z1 · Creator dashboard and My content (ME-07)', () => {
     expect(screen.queryByText(/uploads/)).toBeNull();
   });
 });
+
+describe('WALK-FIX H1 · the creator opens their own piece from their grid', () => {
+  it('pressing a published tile hands the piece id to onOpenPiece', async () => {
+    answers = header();
+    const onOpenPiece = jest.fn();
+    await render(frame(<MeScreen onEditProfile={jest.fn()} onAddWork={jest.fn()} onOpenWork={jest.fn()} onOpenSettings={jest.fn()} onOpenPiece={onOpenPiece} />));
+    await fireEvent.press(await screen.findByTestId('me-tile-p1'));
+    expect(onOpenPiece).toHaveBeenCalledWith('p1');
+  });
+});

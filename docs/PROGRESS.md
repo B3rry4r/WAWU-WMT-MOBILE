@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 421.**
+**Launch tasks done: 176 of 422.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 34 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 20 | 0 | 0 | 0 |
+| verifying | 21 | 0 | 0 | 0 |
 | review | 243 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -262,6 +262,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 ## Being verified
 
 - [OPEN-UPLOAD](../tasks/OPEN-UPLOAD.md) Open your wallet on Android: the ID and bill upload reaches the Hub, a lost photo is asked for again, ID photos are brought down in size, and a failed upload keeps the saved details in view (You)
+- [WALK-FIX](../tasks/WALK-FIX.md) Full user walk of 29 Oct (grid opens a piece, region read, "No connection" only for the network, bills off, Done on Sent, paste a code, consent tap, popular banks, price strips, Legal once) (You)
 - [STORE-QUESTION](../tasks/STORE-QUESTION.md) A paid question bought in the store, earned when answered, a question credit when not (Hub) (You)
 - [STORE-SALE-NOTICE](../tasks/STORE-SALE-NOTICE.md) The creator is told of each store sale, with their 85% in naira (Hub) (You)
 - [STORE-PAYOUT](../tasks/STORE-PAYOUT.md) Pay a creator their 85% of a store sale from WAWU's own wallet, 3 working days on (Hub) (You)

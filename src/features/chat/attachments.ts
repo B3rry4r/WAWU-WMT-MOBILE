@@ -1,5 +1,5 @@
 import { api, unwrap } from '@/api/client';
-import { ApiError } from '@/api/errors';
+import { ApiError, failureOf } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { formatBytes } from '@/features/create/model';
 import { filled } from '@/features/money-attempt/refusal';
@@ -70,8 +70,6 @@ export type ChatFileKind = 'image' | 'video' | 'file';
 
 export const kindOfType = (contentType: string): ChatFileKind => (contentType.startsWith('image/') ? 'image' : contentType.startsWith('video/') ? 'video' : 'file');
 
-const noConnection = () => new ApiError('network', 0, 'No connection. Check your internet and try again.');
-
 /** Where the Hub said to upload one file: the address to PUT to and the key the send takes. */
 type UploadTarget = { uploadUrl?: string; key?: string };
 
@@ -86,8 +84,8 @@ async function putAndConfirm(target: UploadTarget | null | undefined, file: Pick
   let response: Response;
   try {
     response = await fetch(target.uploadUrl as string, { method: 'PUT', headers: { 'content-type': file.contentType }, body: file.blob });
-  } catch {
-    throw noConnection();
+  } catch (error) {
+    throw failureOf(error);
   }
   if (!response.ok) throw new ApiError('server', response.status, 'That file did not upload. Try again.', ATTACHMENT_UPLOAD_FAILED);
   const settled = (await unwrap(api.POST('/api/hub/uploads/confirm', { body: { key: target.key as string } }))) as unknown as Envelope<{ status?: unknown }>;

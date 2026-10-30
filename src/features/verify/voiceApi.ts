@@ -1,5 +1,5 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
-import { ApiError } from '@/api/errors';
+import { ApiError, failureOf } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
 /**
@@ -165,9 +165,9 @@ export async function uploadVoiceSample(file: RecordingFile): Promise<string> {
   const timer = setTimeout(() => stop.abort(), UPLOAD_PUT_MS);
   try {
     sent = await fetch(target.uploadUrl, { method: 'PUT', headers: { 'content-type': file.contentType }, body: blob, signal: stop.signal });
-  } catch {
+  } catch (error) {
     if (stop.signal.aborted) throw new ApiError('network', 0, UPLOAD_SLOW, RECORDING_UPLOAD_FAILED);
-    throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+    throw failureOf(error);
   } finally {
     clearTimeout(timer);
   }

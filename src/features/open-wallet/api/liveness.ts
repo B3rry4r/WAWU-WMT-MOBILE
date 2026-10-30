@@ -1,5 +1,5 @@
 import { api } from '@/api/client';
-import { ApiError, isApiError, networkError, toApiError } from '@/api/errors';
+import { ApiError, failureOf, isApiError, toApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { selfieReturnUrl } from '@/lib/appLinks';
 
@@ -44,7 +44,7 @@ async function send(request: Promise<Answer>): Promise<unknown> {
   try {
     answer = await request;
   } catch (error) {
-    throw isApiError(error) ? error : networkError();
+    throw failureOf(error);
   }
   if (!answer.response.ok) throw toApiError(answer.response.status, answer.error);
   const body = answer.data as Envelope<unknown> | undefined;

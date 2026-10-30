@@ -1,4 +1,4 @@
-import { ApiError } from '@/api/errors';
+import { ApiError, isApiError } from '@/api/errors';
 import { formatMoney } from '@/components/Money';
 
 /**
@@ -271,4 +271,29 @@ export function meterLine(digits: string, settled: string, check: CheckState, mi
     return { kind: 'problem', message: check.error instanceof Error ? check.error.message : 'We could not check this number. Try again.' };
   }
   return check.isFetching ? { kind: 'checking' } : { kind: 'none' };
+}
+
+/** What the screens say when the Hub says bills are not switched on (WALK-FIX M2). Said once, with no Try again: trying again changes nothing. */
+export const BILLS_UNAVAILABLE_LINE = 'Bills are not available right now. Please check back soon.';
+
+/**
+ * True when the Hub's answer is "bills are not on": the money side's `bills_unavailable` (503), or the bill provider not set up on the
+ * server (a 502 or 503 whose sentence is "Bill payments are not configured on this server", which carries no code). A provider that
+ * did not answer ("Could not reach the bill payment provider", also 502) is NOT this: that one can come back, so it keeps its Try again.
+ */
+export function billsUnavailable(error: unknown): boolean {
+  if (!isApiError(error)) return false;
+  if (error.code === 'bills_unavailable') return true;
+  return (error.status === 502 || error.status === 503) && /not configured/i.test(error.message);
+}
+
+/** The line under a bills list that failed to load: the unavailable line, the offline line, or "could not reach", with whether Try again is offered. */
+export function billsLoadFailure(error: unknown): { message: string; offline: boolean; canRetry: boolean } {
+  if (billsUnavailable(error)) return { message: BILLS_UNAVAILABLE_LINE, offline: false, canRetry: false };
+  const offline = isApiError(error) && error.kind === 'network';
+  return {
+    message: offline ? 'No connection. Check your internet and try again.' : 'We could not reach the bills service. Try again in a moment.',
+    offline,
+    canRetry: true,
+  };
 }

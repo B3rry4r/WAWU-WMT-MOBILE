@@ -87,6 +87,8 @@ export type VisitorProfileScreenProps = {
   onOpenWork: (wawuId: string, workId: string) => void;
   /** A professional listing on Services opens that professional's page. */
   onOpenListing: (listingId: string) => void;
+  /** A published tile in the Content grid (M5) opens that piece's page (WALK-FIX H1). Not pressed without it. */
+  onOpenContent?: (id: string) => void;
   /** After Block: the profile is gone for both people, so the route leaves it. */
   onBlocked: () => void;
   /** Where the tip's and the question's wallet steps lead (Open your wallet, a PIN to set, Forgot PIN, add money). The ₦ button is drawn only when given (R-47). */
@@ -118,7 +120,7 @@ const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () =>
  * screen adds it, R-47): nothing. A person with a Voice Intro has the Bio player under the bio (M5, R-66, FIX-103), read from
  * `GET /users/{wawuId}/voice-intro` after the profile loads; a person with none, or a read that fails or is still on its way, draws no player.
  */
-export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread, onOpenChat, focused = true }: VisitorProfileScreenProps) {
+export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onOpenContent, onBlocked, pay, onOpenPaidThread, onOpenChat, focused = true }: VisitorProfileScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -392,7 +394,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
               <Actions following={view.following} busy={follow.isPending} onToggleFollow={toggleFollow} onTip={tipHandler} ask={askAction} />
               {terms?.kind === 'off' ? <Banner tone="info" icon="Info" title={offTitle(name)} body={offBody(name)} testID="visitor-messages-off" /> : null}
               <ProfileTabs value={tab} onChange={setTab} />
-              {tab === 'content' ? <ContentBody query={grid} /> : null}
+              {tab === 'content' ? <ContentBody query={grid} onOpenContent={onOpenContent} /> : null}
               {tab === 'services' ? <ServicesBody view={view} onOpenListing={onOpenListing} /> : null}
             </>
           )}
@@ -406,7 +408,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
 
 type GridQuery = ReturnType<typeof useInfiniteQuery<Awaited<ReturnType<typeof fetchGridPage>>>>;
 
-function ContentBody({ query }: { query: GridQuery }) {
+function ContentBody({ query, onOpenContent }: { query: GridQuery; onOpenContent?: (id: string) => void }) {
   // R-101 point 10: on a phone with a store a locked tile's caption is the store's price, never the list price.
   const shown = useShownPrice();
   if (query.isError && !query.data) {
@@ -425,7 +427,7 @@ function ContentBody({ query }: { query: GridQuery }) {
   }
   return (
     <View style={styles.gridWrap}>
-      <ContentGrid tiles={tiles} />
+      <ContentGrid tiles={tiles} onOpenPiece={onOpenContent} />
       {query.isFetchingNextPage ? <GridSkeleton /> : null}
       {query.isFetchNextPageError ? (
         <ErrorState testID="visitor-grid-more-error" title="More content did not load" message={readFailure(query.error)} onRetry={() => void query.fetchNextPage()} />

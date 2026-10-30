@@ -70,8 +70,7 @@ async function open() {
           onOpenPrivacy={noop}
           onOpenPassword={noop}
           onOpenAbout={noop}
-          onOpenTerms={noop}
-          onOpenPolicy={noop}
+          onOpenLegal={noop}
           onSignedOut={noop}
         />
       </QueryClientProvider>

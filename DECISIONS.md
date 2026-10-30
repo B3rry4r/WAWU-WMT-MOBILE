@@ -763,3 +763,8 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 - When the Hub offers nothing to add and the person holds only Naira, there is no strip (nothing that does nothing, R-47).
 - Amends R-87 and R-93 where they say the strip lists every currency the Hub serves.
 **Carried out by:** WALLET-BLANK (app).
+
+### R-107 · Settings shows Legal once; Terms and Privacy policy live inside it
+*Owner, 30 Oct 2026 ("why is there privacy policy and terms separate from legal, and they are still inside legal?").*
+- Settings shows Legal once; Terms and Privacy policy live inside it (owner, 30 Oct 2026). The Terms and Privacy policy rows are gone from Settings; the Legal row is always drawn. The "Privacy" row (account privacy) is a different screen and stays. The `/terms` and `/privacy-policy` routes stay for the links that point at them (the movie consent sentence, account privacy).
+**Carried out by:** WALK-FIX S1 (app).

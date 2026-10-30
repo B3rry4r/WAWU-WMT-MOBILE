@@ -1,5 +1,5 @@
 import { api, unwrap } from '@/api/client';
-import { ApiError } from '@/api/errors';
+import { ApiError, failureOf } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
 import type { ShareCard } from './tgif';
@@ -64,8 +64,8 @@ export async function sendCardToChat(chatId: string, card: ShareCard, fileName: 
   let put: Response;
   try {
     put = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'content-type': 'image/png' }, body: card.blob });
-  } catch {
-    throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+  } catch (error) {
+    throw failureOf(error);
   }
   if (!put.ok) throw new ApiError('server', put.status, 'The card did not upload. Try again.', UPLOAD_FAILED);
   dataOf<{ id: string }>(

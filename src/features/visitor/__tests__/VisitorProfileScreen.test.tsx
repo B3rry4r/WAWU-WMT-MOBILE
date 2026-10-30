@@ -501,3 +501,14 @@ describe('SWEEP-FLOWS L1 · a piece the viewer bought is not drawn as locked on 
     expect(screen.getByTestId('me-tile-silent-veil')).toBeTruthy();
   });
 });
+
+describe('WALK-FIX H1 · a visitor opens a creator\'s piece from the profile grid', () => {
+  it('pressing a published tile hands the piece id to onOpenContent', async () => {
+    answers = page();
+    const onOpenContent = jest.fn();
+    const h = { onBack: jest.fn(), onOwn: jest.fn(), onOpenAllWorks: jest.fn(), onOpenWork: jest.fn(), onOpenListing: jest.fn(), onBlocked: jest.fn() };
+    await render(frame(<VisitorProfileScreen wawuId="u2" {...h} onOpenContent={onOpenContent} />));
+    await fireEvent.press(await screen.findByTestId('me-tile-p2'));
+    expect(onOpenContent).toHaveBeenCalledWith('p2');
+  });
+});

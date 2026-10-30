@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Button } from '@/components/Button';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -25,6 +24,7 @@ import {
   groupPhone,
   limitsOf,
   NAIRA_SIGN,
+  billsLoadFailure,
   ownPhone,
   PHONE_INVALID_WORDS,
   PHONE_OK_WORDS,
@@ -84,14 +84,14 @@ export function PhoneBillScreen({ kind, onBack, onChangeCategory, onContinue }: 
 
   const failed = categories.isError ? categories : billers.isError ? billers : null;
   if (failed) {
-    const offline = isApiError(failed.error) && failed.error.kind === 'network';
+    const failure = billsLoadFailure(failed.error);
     return (
       <AuthFrame testID="phone-bill-error" navTitle={BILLS_TITLE} onBack={onBack}>
         <ErrorState
           title="Couldn't load this"
-          message={offline ? 'No connection. Check your internet and try again.' : 'We could not reach the bills service. Try again in a moment.'}
-          icon={offline ? 'WifiOff' : 'TriangleAlert'}
-          onRetry={() => void failed.refetch()}
+          message={failure.message}
+          icon={failure.offline ? 'WifiOff' : 'TriangleAlert'}
+          onRetry={failure.canRetry ? () => void failed.refetch() : undefined}
         />
       </AuthFrame>
     );
@@ -182,9 +182,9 @@ export function PhoneBillScreen({ kind, onBack, onChangeCategory, onContinue }: 
           <ErrorState
             testID="items-error"
             title="Couldn't load what they sell"
-            message="We could not reach the bills service. Try again in a moment."
+            message={billsLoadFailure(items.error).message}
             icon="TriangleAlert"
-            onRetry={() => void items.refetch()}
+            onRetry={billsLoadFailure(items.error).canRetry ? () => void items.refetch() : undefined}
           />
         ) : null}
         {network !== null && items.isPending ? <Skeleton height={billMetrics.fieldValue * 3} radius={billMetrics.chipRadius} /> : null}

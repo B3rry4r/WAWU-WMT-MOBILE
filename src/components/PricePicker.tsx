@@ -165,10 +165,21 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
   );
   const at = selected === null ? -1 : list.indexOf(selected);
   useEffect(() => {
-    if (at < 0 || width === 0 || placed.current === at) return;
+    // WALK-FIX M8: with no price chosen the strip stays at its start (the first price) and does not scroll itself to the design's stop,
+    // which left the first chips (₦100 to ₦1,500) off the left edge on opening.
+    if (value === null || at < 0 || width === 0 || placed.current === at) return;
     glideTo(at * stepWidth, placed.current !== null);
     placed.current = at;
-  }, [at, width, glideTo]);
+  }, [value, at, width, glideTo]);
+  // WALK-FIX M8: the first placement above runs before the strip has the padding that centres its first stop, and a phone clamps a scroll
+  // to the content it has laid out, so a chosen price far along the strip opened at the start. Once the content is laid out at the measured
+  // width, the chosen price is placed again, at once.
+  const laidOut = useRef(false);
+  const onContentSizeChange = () => {
+    if (laidOut.current || width === 0) return;
+    laidOut.current = true;
+    if (value !== null && at >= 0) glideTo(at * stepWidth, false);
+  };
   useEffect(
     () => () => {
       if (settle.current) clearTimeout(settle.current);
@@ -302,6 +313,7 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
           decelerationRate="fast"
           scrollEventThrottle={16}
           onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
           onScrollBeginDrag={lift}
           onTouchStart={lift}
           onMomentumScrollEnd={onEnd}

@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { Button } from '@/components/Button';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -14,6 +13,7 @@ import { billsKeys, fetchItems, type BillItem } from './api';
 import { billDraft, useBillDraft } from './draft';
 import { BILLS_TITLE } from './BillsScreen';
 import { kindInfo } from './kinds';
+import { billsLoadFailure } from './model';
 import { PackageRow, SectionLabel, StepChip, billMetrics } from './parts';
 
 const PART_GAP = 14;
@@ -68,14 +68,14 @@ export function ItemsScreen({ onBack, onChangeCategory, onChangeBiller, onMissin
 
   let list;
   if (items.isError) {
-    const offline = isApiError(items.error) && items.error.kind === 'network';
+    const failure = billsLoadFailure(items.error);
     list = (
       <ErrorState
         testID="items-error"
         title="Couldn't load what they sell"
-        message={offline ? 'No connection. Check your internet and try again.' : 'We could not reach the bills service. Try again in a moment.'}
-        icon={offline ? 'WifiOff' : 'TriangleAlert'}
-        onRetry={() => void items.refetch()}
+        message={failure.message}
+        icon={failure.offline ? 'WifiOff' : 'TriangleAlert'}
+        onRetry={failure.canRetry ? () => void items.refetch() : undefined}
       />
     );
   } else if (rows && rows.length === 0) {

@@ -754,6 +754,36 @@ describe('the phone\'s Back', () => {
   });
 });
 
+describe('WALK-FIX M3 · the phone\'s Back on the Sent screen (Android)', () => {
+  it('does what Done does: it leaves, and is not swallowed by the form that is no longer on screen', async () => {
+    const { BackHandler, Platform } = require('react-native') as typeof import('react-native');
+    const realOs = Platform.OS;
+    Platform.OS = 'android';
+    let backPress: (() => boolean) | undefined;
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, cb) => {
+      backPress = cb as () => boolean;
+      return { remove: jest.fn() };
+    });
+    try {
+      serve(true, (c) => (c.method === 'POST' && c.path === '/events' ? ok(created) : undefined));
+      const props = await bootHost();
+      await fillBasics();
+      await fillWhen();
+      await fillTickets();
+      await press('host-send');
+      expect(await rtl.screen.findByText('Sent for review')).toBeTruthy();
+      await rtl.act(async () => {
+        expect(backPress?.()).toBe(true);
+      });
+      expect(props.onDone).toHaveBeenCalledTimes(1);
+      expect(props.onBack).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+      Platform.OS = realOs;
+    }
+  });
+});
+
 describe('ticket prices on an event (PUT /events/{id}/tickets)', () => {
   const { saveTicketTypes } = require('../../organiser/organiserApi') as typeof import('../../organiser/organiserApi');
   const { HostTierRefusal, isHostTierRefusal } = require('../hostTier') as typeof import('../hostTier');

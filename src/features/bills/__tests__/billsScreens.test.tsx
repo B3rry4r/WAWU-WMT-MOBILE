@@ -686,3 +686,69 @@ describe('S7 · the receipt, and S12', () => {
     await rtl.screen.findByTestId('receipt-card');
   });
 });
+
+// WALK-FIX M2 (29 Oct walk): a Hub that says "Bill payments are not configured" (502) or `bills_unavailable` (503) was shown as "We could not
+// reach the bills service. Try again in a moment." It is not a thing that comes back in a moment: the screen says bills are off, with no Try again.
+describe('WALK-FIX M2 · bills that are switched off', () => {
+  const OFF = 'Bills are not available right now. Please check back soon.';
+  const COULD_NOT_REACH = 'We could not reach the bills service. Try again in a moment.';
+  const notConfigured = refusal(502, 'Bill payments are not configured on this server.');
+  const unavailable: Answer = { status: 503, body: { statusCode: 503, message: 'Bills cannot be paid right now.', data: null, reason: { code: 'bills_unavailable' } } };
+
+  it('the Bills list says bills are not available, and offers no Try again', async () => {
+    answers['GET /bills/categories'] = [notConfigured];
+    answers['GET /bills/mine'] = [ok({ items: [], currentPage: 1, perPage: 50, total: 0 })];
+    await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpen={jest.fn()} onOpenBill={jest.fn()} />));
+    await rtl.screen.findByTestId('bills-error');
+    expect(rtl.screen.getByText(OFF)).toBeTruthy();
+    expect(rtl.screen.queryByText(COULD_NOT_REACH)).toBeNull();
+    expect(rtl.screen.queryByText('Try again')).toBeNull();
+  });
+
+  it('the code bills_unavailable says the same, on the companies list', async () => {
+    billDraft.start({ kind: 'electricity', categoryName: 'Utility Bills', categoryCode: 'UTILITYBILLS', biller: undefined } as never);
+    answers['GET /bills/categories'] = [ok(CATEGORIES)];
+    answers['GET /bills/categories/UTILITYBILLS/billers'] = [unavailable];
+    await rtl.render(wrap(<BillersScreen kind="electricity" onBack={jest.fn()} onChangeCategory={jest.fn()} onPick={jest.fn()} />));
+    await rtl.screen.findByTestId('billers-error');
+    expect(rtl.screen.getByText(OFF)).toBeTruthy();
+    expect(rtl.screen.queryByText('Try again')).toBeNull();
+  });
+
+  it('the packages list says it too', async () => {
+    billDraft.start({ kind: 'cable', categoryName: 'Cable Bill Payment', categoryCode: 'CABLEBILLS', biller: { code: 'BIL_DSTV', name: 'DStv' } });
+    answers['GET /bills/billers/BIL_DSTV/items'] = [notConfigured];
+    await rtl.render(
+      wrap(<ItemsScreen onBack={jest.fn()} onChangeCategory={jest.fn()} onChangeBiller={jest.fn()} onMissing={jest.fn()} onContinue={jest.fn()} />),
+    );
+    await rtl.screen.findByTestId('items-error');
+    expect(rtl.screen.getByText(OFF)).toBeTruthy();
+    expect(rtl.screen.queryByText('Try again')).toBeNull();
+  });
+
+  it('the airtime screen says it too', async () => {
+    answers['GET /bills/categories'] = [notConfigured];
+    await rtl.render(wrap(<PhoneBillScreen kind="airtime" onBack={jest.fn()} onChangeCategory={jest.fn()} onContinue={jest.fn()} />));
+    await rtl.screen.findByTestId('phone-bill-error');
+    expect(rtl.screen.getByText(OFF)).toBeTruthy();
+    expect(rtl.screen.queryByText('Try again')).toBeNull();
+  });
+
+  it('a provider that did not answer (also a 502) keeps its words and its Try again', async () => {
+    answers['GET /bills/categories'] = [refusal(502, 'Could not reach the bill payment provider.')];
+    answers['GET /bills/mine'] = [ok({ items: [], currentPage: 1, perPage: 50, total: 0 })];
+    await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpen={jest.fn()} onOpenBill={jest.fn()} />));
+    await rtl.screen.findByTestId('bills-error');
+    expect(rtl.screen.getByText(COULD_NOT_REACH)).toBeTruthy();
+    expect(rtl.screen.getByText('Try again')).toBeTruthy();
+  });
+
+  it('a real network failure keeps its words and its Try again', async () => {
+    answers['GET /bills/categories'] = ['offline'];
+    answers['GET /bills/mine'] = [ok({ items: [], currentPage: 1, perPage: 50, total: 0 })];
+    await rtl.render(wrap(<BillsScreen onBack={jest.fn()} onOpen={jest.fn()} onOpenBill={jest.fn()} />));
+    await rtl.screen.findByTestId('bills-error');
+    expect(rtl.screen.getByText('No connection. Check your internet and try again.')).toBeTruthy();
+    expect(rtl.screen.getByText('Try again')).toBeTruthy();
+  });
+});

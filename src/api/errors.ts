@@ -12,6 +12,8 @@ export type ApiErrorKind =
   | 'validation'
   | 'rate_limited'
   | 'server'
+  /** A throw on the phone itself, before any request left or after the answer came (a body that would not build, an answer that would not read). Never "No connection". */
+  | 'client'
   | 'unknown';
 
 export class ApiError extends Error {
@@ -153,6 +155,53 @@ export function toApiError(status: number, body: unknown, headers?: Headers): Ap
 /** The request never reached the server (offline, DNS, timeout). */
 export function networkError(): ApiError {
   return new ApiError('network', 0, 'No connection. Check your internet and try again.');
+}
+
+/** What a person reads when the phone itself threw (WALK-FIX H4): not the network, and not the Hub. */
+export const CLIENT_TITLE = 'Something went wrong on this phone';
+export const CLIENT_HELP = 'Try again, and if it keeps happening, tell us.';
+export const CLIENT_LINE = `${CLIENT_TITLE}. ${CLIENT_HELP}`;
+/** The `code` of the error `clientError` makes. */
+export const CLIENT_CODE = 'client_error';
+
+/**
+ * Words a real network failure carries: React Native's fetch ("Network request failed", "Network request timed out"), the browsers'
+ * ("Failed to fetch", "Load failed", "NetworkError when attempting to fetch resource"), Node's ("fetch failed") and the system's own
+ * ("The Internet connection appears to be offline", "The network connection was lost").
+ */
+const NETWORK_WORDS =
+  /network request (failed|timed out)|failed to fetch|fetch failed|load failed|networkerror when attempting to fetch|internet connection appears to be offline|network connection was lost|the request timed out|econnrefused|econnreset|enotfound|etimedout/i;
+
+/**
+ * True when the request could not reach the server: the fetch rejected the way a dead connection makes it reject, or it was aborted
+ * or timed out. Any other throw (a body that would not serialize, a bad URL, a bug) is the phone's own and is not "No connection".
+ */
+export function isNetworkFailure(error: unknown): boolean {
+  if (error instanceof ApiError) return error.kind === 'network';
+  if (typeof error !== 'object' || error === null) return false;
+  const { name, message } = error as { name?: unknown; message?: unknown };
+  if (name === 'AbortError' || name === 'TimeoutError') return true;
+  return typeof message === 'string' && NETWORK_WORDS.test(message);
+}
+
+/**
+ * The phone's own throw as the one error screens read (`kind` 'client', the line above). The name and message go to the console so a
+ * report can be traced; long digit runs are masked, and nothing else from the request is logged.
+ */
+export function clientError(error: unknown): ApiError {
+  const { name, message } = (typeof error === 'object' && error !== null ? error : {}) as { name?: unknown; message?: unknown };
+  const said = typeof message === 'string' ? message.replace(/\d{6,}/g, '#').slice(0, 160) : '';
+  console.error('client error', typeof name === 'string' ? name : typeof error, said);
+  return new ApiError('client', 0, CLIENT_LINE, CLIENT_CODE);
+}
+
+/**
+ * Any failure as an ApiError: one already is, a real network failure is the "No connection" error, and anything else is the phone's
+ * own throw (`clientError`). The one place that decides, for the client and for every screen's own wrapper.
+ */
+export function failureOf(error: unknown): ApiError {
+  if (error instanceof ApiError) return error;
+  return isNetworkFailure(error) ? networkError() : clientError(error);
 }
 
 /** The `code` of the error `noAnswerError` makes: a screen that wants to tell "the Hub did not answer" from "no connection" reads it. */

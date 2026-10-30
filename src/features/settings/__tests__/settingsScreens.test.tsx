@@ -479,8 +479,7 @@ describe('Z2 · Settings', () => {
     onOpenPrivacy: jest.fn(),
     onOpenPassword: jest.fn(),
     onOpenAbout: jest.fn(),
-    onOpenTerms: jest.fn(),
-    onOpenPolicy: jest.fn(),
+    onOpenLegal: jest.fn(),
     onSignedOut: jest.fn(),
   });
   const boot = async () => {
@@ -510,7 +509,9 @@ describe('Z2 · Settings', () => {
     expect(screen.getByText('About Who Made This?')).toBeTruthy();
   });
 
-  it('a user can open Notifications, Privacy, Password, About, Terms and Privacy policy, and their own details', async () => {
+  // WALK-FIX S1 (R-107, owner 30 Oct 2026): the Terms and the Privacy policy rows are gone from Settings (they live inside the Legal list), so
+  // this test no longer taps them and taps the one Legal row instead.
+  it('a user can open Notifications, Privacy, Password, About, Legal, and their own details', async () => {
     serve();
     const p = await boot();
     await screen.findByText('Lennox Emmanuel');
@@ -518,36 +519,28 @@ describe('Z2 · Settings', () => {
     await tap('settings-privacy');
     await tap('settings-password');
     await tap('settings-about-app');
-    await tap('settings-terms');
-    await tap('settings-policy');
+    await tap('settings-legal');
     await tap('settings-header');
     expect(p.onOpenNotifications).toHaveBeenCalledTimes(1);
     expect(p.onOpenPrivacy).toHaveBeenCalledTimes(1);
     expect(p.onOpenPassword).toHaveBeenCalledTimes(1);
     expect(p.onOpenAbout).toHaveBeenCalledTimes(1);
-    expect(p.onOpenTerms).toHaveBeenCalledTimes(1);
-    expect(p.onOpenPolicy).toHaveBeenCalledTimes(1);
+    expect(p.onOpenLegal).toHaveBeenCalledTimes(1);
     expect(p.onOpenProfile).toHaveBeenCalledTimes(1);
   });
 
-  it('LEGAL-DOCS · a user can open the Legal list from a Legal row, and Privacy policy stays reachable beside it', async () => {
+  // WALK-FIX S1: was "a user can open the Legal list from a Legal row, and Privacy policy stays reachable beside it" (it tapped settings-policy and
+  // expected onOpenPolicy) and "draws no Legal row where the route gives no place to open it (R-47)". Legal is now always drawn, and nothing
+  // sits beside it.
+  it('LEGAL-DOCS · a user can open the Legal list from the one Legal row, and Terms and Privacy policy have no rows beside it (R-107)', async () => {
     serve();
-    const { SettingsScreen } = mod<typeof import('../SettingsScreen')>('../SettingsScreen');
-    const p = { ...props(), onOpenLegal: jest.fn() };
-    await render(frame(<SettingsScreen {...p} />));
+    const p = await boot();
     await screen.findByText('Lennox Emmanuel');
-    expect(screen.getByText('Legal')).toBeTruthy();
+    expect(screen.getAllByText('Legal')).toHaveLength(1);
     await tap('settings-legal');
     expect(p.onOpenLegal).toHaveBeenCalledTimes(1);
-    await tap('settings-policy');
-    expect(p.onOpenPolicy).toHaveBeenCalledTimes(1);
-  });
-
-  it('LEGAL-DOCS · draws no Legal row where the route gives no place to open it (R-47)', async () => {
-    serve();
-    await boot();
-    await screen.findByText('Lennox Emmanuel');
-    expect(screen.queryByTestId('settings-legal')).toBeNull();
+    expect(screen.queryByTestId('settings-terms')).toBeNull();
+    expect(screen.queryByTestId('settings-policy')).toBeNull();
   });
 
   it('DV2-06 · the switch reads "TGIF each morning" with the notification line, names no time, and keeps writing /settings/tgif', async () => {
@@ -991,8 +984,7 @@ describe('no screen shows the server\'s own words', () => {
           onOpenPrivacy={jest.fn()}
           onOpenPassword={jest.fn()}
           onOpenAbout={jest.fn()}
-          onOpenTerms={jest.fn()}
-          onOpenPolicy={jest.fn()}
+          onOpenLegal={jest.fn()}
           onSignedOut={jest.fn()}
         />,
       ),
@@ -1054,8 +1046,7 @@ describe('R-86 · no wallet path for points in Settings', () => {
           onOpenPrivacy={jest.fn()}
           onOpenPassword={jest.fn()}
           onOpenAbout={jest.fn()}
-          onOpenTerms={jest.fn()}
-          onOpenPolicy={jest.fn()}
+          onOpenLegal={jest.fn()}
           onSignedOut={jest.fn()}
         />,
       ),

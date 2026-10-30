@@ -1,5 +1,5 @@
 import { api, unwrap } from '@/api/client';
-import { ApiError } from '@/api/errors';
+import { ApiError, failureOf } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { filled } from '@/features/money-attempt/refusal';
 import { presign } from '@/features/profile-edit/api';
@@ -45,8 +45,8 @@ export async function uploadCover(picked: PickedImage): Promise<string> {
     let response: Response;
     try {
       response = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': picked.contentType }, body: picked.blob });
-    } catch {
-      throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+    } catch (error) {
+      throw failureOf(error);
     }
     if (!response.ok) throw new ApiError('server', response.status, 'Your picture did not upload. Try again.', COVER_UPLOAD_FAILED);
     return fileUrl;

@@ -1,4 +1,4 @@
-import { isApiError } from '@/api/errors';
+import { CLIENT_HELP, CLIENT_TITLE, isApiError } from '@/api/errors';
 
 import type { Failure } from './signInFailure';
 
@@ -33,6 +33,7 @@ const notice = (title: string, body: string, tone: Failure['tone'] = 'danger'): 
 });
 
 const offline = () => notice('No connection', 'Check your internet and try again.');
+const phoneSide = () => notice(CLIENT_TITLE, CLIENT_HELP);
 const broken = () => notice('Something went wrong on our side', 'Try again in a moment.');
 const unsent = () => notice("We couldn't send the code", 'Try again in a moment.', 'warning');
 /** WAWU ID changed the way it sends codes while this sign-up waited: the old one cannot finish, a new one can. */
@@ -50,6 +51,7 @@ const waitOf = (retry: number | null | undefined) => (typeof retry === 'number' 
 export function phoneOutcome(error: unknown): Outcome {
   if (!isApiError(error)) return broken();
   if (error.kind === 'network') return offline();
+  if (error.kind === 'client') return phoneSide();
   switch (error.code) {
     case 'PHONE_CODE_INVALID':
       return { kind: 'wrong' };
@@ -82,6 +84,7 @@ export function phoneOutcome(error: unknown): Outcome {
 export function emailOutcome(error: unknown): Outcome {
   if (!isApiError(error)) return broken();
   if (error.kind === 'network') return offline();
+  if (error.kind === 'client') return phoneSide();
   switch (error.code) {
     case 'EMAIL_CODE_INVALID':
       return { kind: 'wrong' };
@@ -123,6 +126,7 @@ export function signupFailure(error: unknown, place: PhonePlace = null): SignupF
   const plain = (title: string, body: string, tone: Failure['tone'] = 'danger'): SignupFailure => ({ tone, title, body, credentials: false });
   if (!isApiError(error)) return plain('Something went wrong on our side', 'Try again in a moment.');
   if (error.kind === 'network') return plain('No connection', 'Check your internet and try again.');
+  if (error.kind === 'client') return plain(CLIENT_TITLE, CLIENT_HELP);
   switch (error.code) {
     case 'PHONE_INVALID': {
       const like = place?.exampleNational ? `, like ${place.exampleNational}` : '';

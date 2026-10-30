@@ -1,5 +1,5 @@
 import { api, unwrap } from '@/api/client';
-import { ApiError, isApiError, networkError, toApiError } from '@/api/errors';
+import { ApiError, failureOf, toApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
 import { OPEN_WALLET_KEY, type WalletState } from './account';
@@ -131,7 +131,7 @@ async function send(request: Promise<Answer>): Promise<unknown> {
   try {
     answer = await request;
   } catch (error) {
-    throw isApiError(error) ? error : networkError();
+    throw failureOf(error);
   }
   if (!answer.response.ok) throw toApiError(answer.response.status, answer.error);
   return (answer.data as Envelope<unknown> | undefined)?.data;

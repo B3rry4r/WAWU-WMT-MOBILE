@@ -1,4 +1,4 @@
-import { ApiError } from '@/api/errors';
+import { ApiError, failureOf } from '@/api/errors';
 
 import { presign } from './api';
 import type { PickedDocument } from './pickDocument';
@@ -17,8 +17,8 @@ export async function uploadDocument(picked: PickedDocument): Promise<string> {
   let response: Response;
   try {
     response = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': picked.contentType }, body: picked.blob });
-  } catch {
-    throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+  } catch (error) {
+    throw failureOf(error);
   }
   if (!response.ok) throw new ApiError('server', response.status, 'Your file did not upload. Try again.', UPLOAD_FAILED);
   return fileUrl;

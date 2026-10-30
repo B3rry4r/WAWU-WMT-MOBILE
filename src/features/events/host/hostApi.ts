@@ -1,5 +1,5 @@
 import { api, unwrap } from '@/api/client';
-import { ApiError } from '@/api/errors';
+import { ApiError, failureOf } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { presign } from '@/features/profile-edit/api';
 import type { PickedImage } from '@/features/profile-edit/pickImage';
@@ -65,8 +65,8 @@ export async function uploadBanner(picked: PickedImage): Promise<string> {
   let response: Response;
   try {
     response = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': picked.contentType }, body: picked.blob });
-  } catch {
-    throw new ApiError('network', 0, 'No connection. Check your internet and try again.');
+  } catch (error) {
+    throw failureOf(error);
   }
   if (!response.ok) throw new ApiError('server', response.status, 'The banner did not upload. Try again.');
   return fileUrl;
