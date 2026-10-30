@@ -39,6 +39,38 @@ ask for one; don't pick work yourself.
    in chat or in a hand-back; the lead reads every branch and carries owner
    asks to the progress page.
 
+## Owner hard rules (owner, 30 Oct 2026: "never break them. Never.")
+
+These came from real failures: a wallet that went blank on the owner's phone, uploads
+that failed only on phones, bill tiles and a card row no design drew, a ruling half
+carried out, causes guessed instead of checked. They outrank speed, every brief, and
+any "do it fast".
+
+1. **Pictures or nothing ships.** Every screen a task touches gets a screenshot (390 px,
+   dark and light) beside its artboard, and a pay screen gets every drawn state. A
+   verifier whose pictures are NOT RUN hands back FIX, never MERGE. Nothing is drawn
+   that is not built and live (R-47).
+2. **Phone paths are tested as a phone.** Photo, file and camera picks, uploads and
+   FormData, scrolling and gestures, the Android back button, the keyboard, permissions
+   and offline are proven in jest on the native platform (`Platform.OS` android) with
+   the real handlers. What only a real phone can prove is listed in the task file as
+   PHONE CHECK and goes to the owner before the update, never after.
+3. **Every ruling ends with proof.** A ruling is done only when a grep of the code and a
+   screenshot show it carried out everywhere ("card off" means no card entry anywhere).
+4. **The live system first.** A cause told to the owner was checked on the real system
+   (Hub, provider, store, server), never guessed.
+5. **Batches, not drip fixes.** Fixes ship in batches: `npm run check` on the batch head,
+   then a full user walk, then the over-the-air update.
+6. **A full walk before every build.** No TestFlight or Play build starts until a fresh
+   walk of the whole app as users, with the phone-gap analysis, passes on that code.
+7. **One code line.** The branch the phones run is merged back into main after every
+   batch.
+8. **Research covers the whole source.** A provider study lists everything the source
+   offers, not only what the design draws; the owner's own files come first.
+9. **The tiered workflow in full** (`docs/WORKFLOW.md`: tiers, bundles, verifier passes
+   per tier, at most two rounds, batches, the full check per batch). When a rule and
+   speed conflict, the rule wins and the owner is told the time it costs.
+
 ## Code
 
 - Colours, spacing, radii and type come from `@/theme` (generated from
