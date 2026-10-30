@@ -45,6 +45,8 @@ export function SceneLines({
 }) {
   const { colors } = useWawu();
   const [open, setOpen] = useState<number | null>(null);
+  // Only the line the person is writing in carries the accent ring (S2-APP-2 patch, F4); the others rest on the hairline.
+  const [focused, setFocused] = useState<number | null>(null);
   return (
     <View testID="scene" style={styles.scene}>
       <Text variant="body" tone="textMuted" accessibilityRole="header" style={[font(700), styles.label]}>
@@ -54,7 +56,7 @@ export function SceneLines({
         const voice = voices.find((v) => v.id === line.voiceId);
         return (
           <View key={line.id} testID={`scene-line-${i}`} style={styles.line}>
-            <View style={[styles.box, { backgroundColor: colors.surfaceInput, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: line.text === '' ? LINE.ringOn : LINE.ringOff, color: line.text === '' ? colors.accent : colors.borderHairline, inset: true }] }]}>
+            <View testID={`scene-box-${i}`} style={[styles.box, { backgroundColor: colors.surfaceInput, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: focused === line.id ? LINE.ringOn : LINE.ringOff, color: focused === line.id ? colors.accent : colors.borderHairline, inset: true }] }]}>
               <View style={styles.head}>
                 <Text variant="body" tone="textMuted" style={[font(600), { fontSize: 12.5, lineHeight: canvasNormalLineHeight(12.5) }]}>
                   {DIALOGUE_WORDS.line(i + 1)}
@@ -68,6 +70,8 @@ export function SceneLines({
                 editable={editable}
                 value={line.text}
                 onChangeText={(next) => onWrite(line.id, next)}
+                onFocus={() => setFocused(line.id)}
+                onBlur={() => setFocused((was) => (was === line.id ? null : was))}
                 placeholder={DIALOGUE_WORDS.placeholder}
                 placeholderTextColor={colors.textMuted}
                 textAlignVertical="top"

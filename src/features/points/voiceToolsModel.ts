@@ -146,6 +146,18 @@ export const BOOK_WORDS = {
   workingBody: 'This can take a few minutes. You can leave this screen. We will tell you when it is ready.',
 } as const;
 
+/** The one row an Audiobook or a Podcast folds its input into once Run is pressed (POINTS-18, S2-APP-2 patch): what was given, and how it was set. */
+export const SUMMARY_WORDS = {
+  edit: 'Edit',
+  bookTitle: 'Your text',
+  bookLine: (chars: number) => (chars === 1 ? '1 character' : `${formatPointsCount(chars)} characters`),
+  podcastText: 'Your text',
+  podcastLink: 'From your link',
+  /** Opened from a ready notice, the phone holds no record of what was chosen: the row says only what it is. */
+  podcastUnknown: 'Your podcast',
+  podcastLine: (hosts: 1 | 2, length: string) => `${hosts === 2 ? PODCAST_WORDS.twoHosts : PODCAST_WORDS.oneHost}. ${length}`,
+} as const;
+
 /** The text a chosen file fills the box with, or the sentence that refuses it. The Hub counts characters; the file's bytes are not the count. */
 export function textFileProblem(file: { name: string; mimeType?: string | null; text: string }, max: number): string | null {
   const named = /\.txt$/i.test(file.name);

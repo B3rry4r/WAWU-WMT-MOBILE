@@ -34,8 +34,9 @@ import { SceneLines } from './DialogueParts';
 import { PartsList, PartsRow } from './PartsList';
 import { PodcastInputs, type PodcastChoice } from './PodcastParts';
 import { RecordSection } from './RecordRow';
+import { RunSummary } from './RunSummary';
 import { pickTextFile } from './textPick';
-import { BOOK_WORDS, DIALOGUE_WORDS, FILE_STEP_WORDS, isFlatFileTool, linkProblem, MUSIC_WORDS, nextVoice, PODCAST_WORDS, sceneCharacters, sceneFilled, sceneVoices, textFileProblem, voiceProblem, writeLine, type SceneLine } from './voiceToolsModel';
+import { BOOK_WORDS, DIALOGUE_WORDS, FILE_STEP_WORDS, isFlatFileTool, linkProblem, MUSIC_WORDS, nextVoice, PODCAST_WORDS, sceneCharacters, sceneFilled, sceneVoices, SUMMARY_WORDS, textFileProblem, voiceProblem, writeLine, type SceneLine } from './voiceToolsModel';
 import { LengthRow, PhotoRow, ShapeRow, VoiceRow as SpeechRow } from './MediaInputs';
 import { defaultShape, isTalking, lengthsOf, MEDIA_WORDS, shapesOf, thingOf, workingTitleFor } from './mediaToolModel';
 import type { AiPiece } from './mediaToolApi';
@@ -220,6 +221,10 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   const [parts, setParts] = useState(() => tool.input.file?.parts?.[0] ?? 2);
   const [mood, setMood] = useState('');
   const [bookFile, setBookFile] = useState<string | null>(null);
+  /** The job whose "Edit" was pressed: its input is unfolded again, with its result kept below, until the words change or a new run starts (S2-APP-2 patch, F1). */
+  const [editFor, setEditFor] = useState<string | null>(null);
+  /** False when the screen was opened on a job from a ready notice and the phone holds no record of what was chosen for it. */
+  const [choicesKnown, setChoicesKnown] = useState(true);
   /** The request the Hub has not answered: the same key and body go again on Try again. */
   const pending = useRef<JobIntent | null>(null);
   /** The key of the job on screen, so its record goes when the person has seen its end. */
@@ -285,6 +290,11 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   }, queryClient);
   const view: View_ = jobId ? (job.data?.state === 'done' && hasResult(job.data) ? 'done' : job.data?.state === 'failed' ? 'failed' : 'working') : unsent ? 'unsent' : 'input';
 
+  /** The Audiobook and the Podcast maker fold their input into one row once Run is pressed, so the job's view sits in the first screen (S2-APP-2 patch, F1). */
+  const foldsInput = kind === 'podcast' || tool.id === 'audiobook';
+  const reopened = jobId !== null && editFor === jobId;
+  const folded = foldsInput && (view === 'working' || view === 'unsent' || ((view === 'done' || view === 'failed') && !reopened));
+
   // The cost before Run is the Hub's: one quote per length in minutes (it holds and takes nothing).
   const costKey = ['points', 'job-quote', owner ?? '', quoteAction, units] as const;
   const unwordedQuote = talking || kind === 'podcast';
@@ -307,6 +317,7 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
       setStarting(true);
       setUnsent(false);
       setRefusal(null);
+      setChoicesKnown(true);
       activeKey.current = intent.key;
       pending.current = intent;
       try {
@@ -462,7 +473,10 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     if (!owner) return;
     let alive = true;
     void findJobIntent(owner, tool.id).then((found) => {
-      if (alive && !found && openJobId && !sending.current) setJobId(openJobId);
+      if (alive && !found && openJobId && !sending.current) {
+        setChoicesKnown(false);
+        setJobId(openJobId);
+      }
       if (!alive || !found || found.toolId !== tool.id || sending.current) return;
       if (found.fileKey) {
         // The recording was uploaded and the job sent: only its name is kept here (the file is on the Hub, and goes when the job settles).
@@ -752,6 +766,24 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
           ? heardLength
           : limitsLine(fileRule);
   const failed = failedWords(job.data?.message);
+  /** The folded input: what was given and how it was set, from the choices the phone holds (or only what it is, when it holds none). */
+  const summary = folded ? (
+    kind === 'podcast' ? (
+      <RunSummary
+        icon={podcast.source === 'link' ? 'Link' : 'Mic'}
+        title={!choicesKnown ? SUMMARY_WORDS.podcastUnknown : podcast.source === 'link' ? SUMMARY_WORDS.podcastLink : SUMMARY_WORDS.podcastText}
+        line={choicesKnown ? SUMMARY_WORDS.podcastLine(podcast.hosts, PODCAST_WORDS.duration[podcast.duration as 'short' | 'standard' | 'long'] ?? podcast.duration) : ''}
+        onEdit={view === 'done' || view === 'failed' ? () => setEditFor(jobId) : undefined}
+      />
+    ) : (
+      <RunSummary
+        icon="FileText"
+        title={SUMMARY_WORDS.bookTitle}
+        line={SUMMARY_WORDS.bookLine(characters > 0 ? characters : (job.data?.characters ?? 0))}
+        onEdit={view === 'done' || view === 'failed' ? () => setEditFor(jobId) : undefined}
+      />
+    )
+  ) : null;
   const foot =
     view === 'input' ? (
       <View style={styles.foot}>
@@ -773,7 +805,7 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     ) : undefined;
 
   return (
-    <PointsFrame title={tool.name} subtitle={`Points: ${formatPointsCount(balance)}`} onBack={onBack} gap={BODY_GAP} foot={foot} testID="tool-screen">
+    <PointsFrame title={tool.name} subtitle={`Points: ${formatPointsCount(balance)}`} onBack={onBack} gap={BODY_GAP} foot={foot} scrollTopKey={folded} testID="tool-screen">
       {kind === 'file' && fileRule ? (
         <View style={styles.boxGroup}>
           <RecordingBox
@@ -803,6 +835,8 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
           onRemove={removeSceneLine}
           note={sceneNote}
         />
+      ) : folded ? (
+        summary
       ) : kind === 'podcast' && pod ? (
         <PodcastInputs
           podcast={pod}
@@ -821,7 +855,7 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
             value={text}
             onChange={edit}
             editable={typing}
-            tall={view === 'input'}
+            tall={view === 'input' || reopened}
             big={tool.id === 'audiobook'}
             max={tool.input.maxCharacters}
             placeholder={describes ? tool.description || MEDIA_WORDS.placeholder : tool.id === 'audiobook' ? BOOK_WORDS.placeholder : TOOL_WORDS.placeholder}

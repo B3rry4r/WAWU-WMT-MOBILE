@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter } from 'expo-router';
-import { act, renderRouter, screen } from 'expo-router/testing-library';
-import { AppState, Pressable, Text, View } from 'react-native';
+import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { AppState, BackHandler, Modal, Pressable, Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
 
@@ -82,6 +82,8 @@ export const hub = {
   fileSeconds: 20,
   fileRefusal: null as null | { code: string; message: string },
   holdUploads: false,
+  /** A job stays working until the test lets it go (the Back button's "the job is kept" proof). */
+  holdJobs: false,
   saved: { state: 'none' as 'none' | 'making' | 'ready', name: null as string | null },
   receptionist: { setUp: false, details: null as null | Record<string, unknown>, knowledge: [] as Knowledge[], available: true },
   quotes: [] as Record<string, unknown>[],
@@ -238,7 +240,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (read && method === 'GET') {
     const job = hub.jobs[read[1]];
     if (!job) return refuse(404, { code: 'not_found', message: "We couldn't find that job." });
-    if (job.state === 'working') {
+    if (job.state === 'working' && !hub.holdJobs) {
       if (hub.fail) {
         hub.points += Number(job.costPoints);
         Object.assign(job, { state: 'failed', message: "That didn't work. No points were taken. Try again.", finishedAt: new Date().toISOString() });
@@ -383,6 +385,8 @@ export function resetHub(vault: Map<string, string>) {
     fileSeconds: 20,
     fileRefusal: null,
     holdUploads: false,
+  /** A job stays working until the test lets it go (the Back button's "the job is kept" proof). */
+  holdJobs: false,
     saved: { state: 'none', name: null },
     receptionist: { setUp: false, details: null, knowledge: [], available: true },
     quotes: [],
@@ -431,4 +435,65 @@ export async function openTool(id: string, ready: string, extra = '') {
   const rendered = await renderRouter(routes, { initialUrl: `/studio-tool?tool=${id}${extra}` });
   await screen.findByTestId(ready);
   return rendered;
+}
+
+/**
+ * The phone's Back button (S2-APP-2 patch, F2). On Android a sheet (a native dialog) takes the press first and calls its `onRequestClose`; with none open
+ * the press goes to the JavaScript listeners, last registered first, and the first that answers true has it: the router's own listener pops the route. A
+ * press nobody takes would close the app, which the helper reports as 'exit'. `watchBackButton` must run before the router renders.
+ */
+const backListeners: (() => boolean | null | undefined)[] = [];
+export function watchBackButton() {
+  backListeners.length = 0;
+  jest.spyOn(BackHandler, 'addEventListener').mockImplementation(((_type: string, cb: () => boolean | null | undefined) => {
+    backListeners.push(cb);
+    return {
+      remove: () => {
+        const at = backListeners.indexOf(cb);
+        if (at !== -1) backListeners.splice(at, 1);
+      },
+    };
+  }) as never);
+}
+type FiberLike = { stateNode?: { current?: FiberLike } | null; alternate?: FiberLike | null; type?: unknown; memoizedProps?: { visible?: boolean; onRequestClose?: () => void }; child?: FiberLike | null; sibling?: FiberLike | null; return?: FiberLike | null };
+/** The sheets (native dialogs) that are open right now, read from the rendered tree. */
+function openSheets(): { visible?: boolean; onRequestClose?: () => void }[] {
+  let top = (screen.root as unknown as { unstable_fiber?: FiberLike }).unstable_fiber;
+  while (top?.return) top = top.return;
+  // The tree as it is now: the root's `current` (the other copy of each fiber is the one React is not showing).
+  top = top?.stateNode?.current ?? top;
+  const out: { visible?: boolean; onRequestClose?: () => void }[] = [];
+  const walk = (first: FiberLike | null | undefined) => {
+    for (let at = first; at; at = at.sibling) {
+      if (at.type === Modal && at.memoizedProps?.visible) out.push(at.memoizedProps);
+      walk(at.child);
+    }
+  };
+  walk(top);
+  return out;
+}
+export const openSheetCount = () => openSheets().length;
+export async function pressAndroidBack(): Promise<'sheet' | 'screen' | 'exit'> {
+  const open = openSheets();
+  if (open.length > 0) {
+    await act(async () => {
+      open[open.length - 1].onRequestClose?.();
+    });
+    return 'sheet';
+  }
+  let took = false;
+  await act(async () => {
+    for (let i = backListeners.length - 1; i >= 0 && !took; i--) took = Boolean(backListeners[i]());
+  });
+  return took ? 'screen' : 'exit';
+}
+/** Studio first, then the tool's tile: the tool is a screen on top of Studio, as it is on the phone, so Back has somewhere to go. */
+export async function openToolFromStudio(id: string, ready: string) {
+  const rendered = await renderRouter(routes, { initialUrl: '/studio' });
+  await pressTile(id, ready);
+  return rendered;
+}
+export async function pressTile(id: string, ready: string) {
+  await fireEvent.press(await screen.findByTestId(`studio-tool-${id}`));
+  await screen.findByTestId(ready);
 }
