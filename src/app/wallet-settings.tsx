@@ -1,7 +1,6 @@
 import { Redirect, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
-import { useCardsSummary } from '@/features/cards/CardRow';
 import { OPEN_WALLET_PIN_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { WalletSettingsScreen } from '@/features/wallet/settings/WalletSettingsScreen';
 
@@ -14,7 +13,6 @@ export default function WalletSettingsRoute() {
   const router = useRouter();
   const entry = useOpenWalletEntry();
   const { status } = useSession();
-  const cards = useCardsSummary();
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
@@ -27,7 +25,6 @@ export default function WalletSettingsRoute() {
       onOpenStatements={() => router.push('/wallet-statement')}
       onOpenBeneficiaries={() => router.push('/send/bank')}
       onOpenAccounts={() => router.push('/accounts')}
-      cards={cards ? { subtitle: cards.subtitle, onOpen: () => router.push('/cards') } : undefined}
     />
   );
 }

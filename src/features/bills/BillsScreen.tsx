@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
-import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -11,6 +10,7 @@ import { space, useWawu } from '@/theme';
 
 import { billsKeys, fetchCategories, mineQuery } from './api';
 import { kindInfo, kindOfRecord, kindsListed, recentNumber, type BillKind } from './kinds';
+import { billsLoadFailure } from './model';
 import { CategoryTile, RecentRow, SectionLabel, billMetrics } from './parts';
 
 export const BILLS_TITLE = 'Pay a bill';
@@ -70,14 +70,14 @@ export function BillsScreen({ onBack, onOpen, onOpenBill }: BillsScreenProps) {
       </LoadingView>
     );
   } else if (categories.isError) {
-    const offline = isApiError(categories.error) && categories.error.kind === 'network';
+    const failure = billsLoadFailure(categories.error);
     body = (
       <ErrorState
         testID="bills-error"
         title="Bills didn't load"
-        message={offline ? 'No connection. Check your internet and try again.' : 'We could not reach the bills service. Try again in a moment.'}
-        icon={offline ? 'WifiOff' : 'TriangleAlert'}
-        onRetry={() => void categories.refetch()}
+        message={failure.message}
+        icon={failure.offline ? 'WifiOff' : 'TriangleAlert'}
+        onRetry={failure.canRetry ? () => void categories.refetch() : undefined}
       />
     );
   } else {

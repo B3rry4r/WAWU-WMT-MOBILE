@@ -5,6 +5,9 @@ import { userEvent } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// R-101: this file tests the wallet path (the website's and the web export's); on a phone the same actions are store purchases (store/__tests__/ladder*).
+import '@/features/store/testing/webPath';
+
 /*
  * A piece's own page (HOME-03: H19 to H23, HOME-08: H24, H25), with the Hub as a stand-in `fetch` that answers in the Hub's shapes
  * and records every write. It is told what it holds (a paid PDF, a free video, a paid course) and what the viewer has done.

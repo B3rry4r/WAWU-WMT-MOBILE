@@ -238,16 +238,20 @@ describe('ME-13: Verification', () => {
     await open();
     const row = await screen.findByTestId('verification-get-tick');
     expect(row).toHaveTextContent(/Get your tick/);
-    expect(row).toHaveTextContent(/Verify · ₦1,000 for 30 days/);
+    expect(row).toHaveTextContent(/Verify for 30 days/);
+    // G-IAP-02-5: the Hub's plan price is not drawn; the store's own is, once the store has answered.
+    expect(row).not.toHaveTextContent(/₦|1,000/);
     expect(screen.getByText('Your ticks')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('verification-get-tick-button'));
     await waitFor(() => expect(pathname()).toBe('/tiers'));
   });
 
-  it('D-7: a person billed in dollars is shown the dollar price with the dollar sign', async () => {
+  it('D-7: a person billed in dollars is shown no plan price either (the store prices in their own currency, G-IAP-02-5)', async () => {
     hub.plans = 'usd';
     await open();
-    expect(await screen.findByTestId('verification-get-tick')).toHaveTextContent(/Verify · \$3 for 30 days/);
+    const row = await screen.findByTestId('verification-get-tick');
+    expect(row).toHaveTextContent(/Verify for 30 days/);
+    expect(row).not.toHaveTextContent(/\$/);
   });
 
   it('D-7: a person whose tier is running sees it, and Upgrade while a higher tier exists', async () => {

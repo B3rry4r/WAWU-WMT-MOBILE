@@ -65,7 +65,8 @@ describe('How it works (RF4)', () => {
     expect(await screen.findByText('Rewards are held for 10 days.')).toBeTruthy();
     expect(screen.getByTestId('invite-rule-4')).toHaveTextContent('4Rewards are held for 10 days.');
     expect(screen.getByText('Only verified people earn.')).toBeTruthy();
-    expect(screen.getByText('Rewards are points, never cash. You can convert points to cash in your wallet.')).toBeTruthy();
+    expect(screen.getByText('Rewards are points, never cash.')).toBeTruthy();
+    expect(screen.queryByText(/convert/i)).toBeNull();
     expect(screen.queryByText(/7 days/)).toBeNull();
     expect(screen.getAllByTestId(/^invite-rule-\d$/)).toHaveLength(6);
   });

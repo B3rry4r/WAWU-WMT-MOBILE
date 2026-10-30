@@ -88,12 +88,14 @@ describe('where the button sits', () => {
   const create = createButtonMetrics;
   const centre = (p: { right: number; width: number }) => p.right + p.width / 2;
 
-  it('for a creator it stands above Create on the same vertical line, with a gap', async () => {
+  it('for a creator it stands beside Create, to its left on the same line, with a gap (R-110: it no longer stands above it)', async () => {
     mockCreator = true;
     await render(<MusicLayer />);
     const p = place();
-    expect(centre(p)).toBe(create.right + create.size / 2);
-    expect(p.bottom).toBe(layout.tabbarH + create.bottom + create.size + musicMetrics.gap);
+    // Same horizontal centre line as Create: the button's middle is Create's middle.
+    expect(p.bottom + SIZE / 2).toBe(layout.tabbarH + create.bottom + create.size / 2);
+    // Its right edge is Create's left edge and a gap away, so the two never touch.
+    expect(p.right).toBe(create.right + create.size + musicMetrics.gap);
     expect(musicMetrics.gap).toBeGreaterThan(0);
   });
 

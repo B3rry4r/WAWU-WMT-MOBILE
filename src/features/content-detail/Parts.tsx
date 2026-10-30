@@ -13,6 +13,7 @@ import { Money } from '@/components/Money';
 import { formatNaira } from '@/components/pay-sheet';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, space, useWawu } from '@/theme';
 import { compactCount, UNNAMED_CREATOR } from '@/features/feed/model';
 
@@ -122,13 +123,16 @@ export function ParentCourseRow({ course, onPress }: { course: NonNullable<Piece
   const { colors } = useWawu();
   const ring = useFocusRing();
   const [broken, setBroken] = useState(false);
-  const amount = course.price > 0 ? formatNaira(nairaToKobo(course.price)) : 'Free';
+  // R-101 point 10: on a phone with a store the course shows the store's price, and none where no rung sells it.
+  const shown = useShownPrice();
+  const shownKobo = course.price > 0 ? shown.forKobo(nairaToKobo(course.price)) : null;
+  const amount = course.price > 0 ? (shownKobo === null ? null : formatNaira(shownKobo)) : 'Free';
   const lines = plural(course.lessonCount, 'lesson', 'lessons');
   return (
     <Pressable
       testID="detail-parent-course"
       accessibilityRole="button"
-      accessibilityLabel={`From the course ${course.title}, ${lines}, ${amount}`}
+      accessibilityLabel={[`From the course ${course.title}`, lines, amount].filter(Boolean).join(', ')}
       accessibilityHint="Opens the course"
       onPress={onPress}
       {...ring.handlers}
@@ -151,14 +155,14 @@ export function ParentCourseRow({ course, onPress }: { course: NonNullable<Piece
               {lines}
             </Text>
           </View>
-          {course.price > 0 ? <Money minorUnits={nairaToKobo(course.price)} decimals={false} size={courseRow.amount} weight={700} /> : <Text variant="body" style={[font(700), { fontSize: courseRow.amount }]}>Free</Text>}
+          {course.price > 0 ? shownKobo === null ? null : <Money minorUnits={shownKobo} decimals={false} size={courseRow.amount} weight={700} /> : <Text variant="body" style={[font(700), { fontSize: courseRow.amount }]}>Free</Text>}
         </View>
       </Card>
     </Pressable>
   );
 }
 
-/** H19's price card: what unlocking gives, the price, Unlock, and what it is paid from. */
+/** H19's price card: what unlocking gives, the price, Unlock, and what it is paid from. In the app the price is the store's and the card says it is paid with the store (R-101). */
 export function PriceCard({
   label,
   priceKobo,
@@ -166,14 +170,18 @@ export function PriceCard({
   balanceKobo,
   loading,
   onUnlock,
+  store = false,
 }: {
   label: string;
-  priceKobo: number;
+  /** The price a buyer pays, in kobo. In the app (`store`) it is the STORE's and null while it is not known: no price and no button are drawn then. */
+  priceKobo: number | null;
   actionLabel?: string;
   /** The wallet's balance when the Hub gave one; the line then says what is available. */
   balanceKobo: number | null;
   loading: boolean;
   onUnlock: () => void;
+  /** A phone with a store: the piece is bought in the store sheet, so there is no wallet line. */
+  store?: boolean;
 }) {
   return (
     <Card padded style={styles.price} testID="detail-price-card">
@@ -182,13 +190,13 @@ export function PriceCard({
           <Text variant="meta" style={styles.priceLabel}>
             {label}
           </Text>
-          <Money minorUnits={priceKobo} decimals={false} size={m.priceSize} weight={700} />
+          {priceKobo === null ? null : <Money minorUnits={priceKobo} decimals={false} size={m.priceSize} weight={700} />}
         </View>
         {/* H19: a purchase never ends (no expiry exists on a bought piece, and R-50 keeps what buyers paid for), so this is a fact, not a promise. */}
         <StatusPill testID="detail-yours-forever" label="Yours forever" tone="positive" icon="Check" />
       </View>
-      <Button testID="detail-unlock" label={`${actionLabel} · ${formatNaira(priceKobo)}`} onPress={onUnlock} loading={loading} full />
-      <WalletLine balanceKobo={balanceKobo} />
+      {priceKobo === null ? null : <Button testID="detail-unlock" label={`${actionLabel} · ${formatNaira(priceKobo)}`} onPress={onUnlock} loading={loading} full />}
+      {store ? null : <WalletLine balanceKobo={balanceKobo} />}
     </Card>
   );
 }

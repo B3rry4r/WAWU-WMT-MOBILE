@@ -4,6 +4,9 @@ import * as rtl from '@testing-library/react-native';
 import { userEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// R-101: this file tests the wallet path (the website's and the web export's); on a phone the same actions are store purchases (store/__tests__/ladder*).
+import '@/features/store/testing/webPath';
+
 /*
  * Tipping from the feed (HOME-13): the rail's ₦ Tip, H26 (amount, note, breakdown), H27 (PIN) and H28 (Tip sent), on the real feed
  * with the Hub as a stand-in `fetch`. The stand-in answers in the Hub's shapes, records every quote and every payment (headers and

@@ -8,21 +8,18 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
-import { Money } from '@/components/Money';
-import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
-import { PayPinSheet } from '@/features/device-approval';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { Toast } from '@/components/Toast';
 import { fetchMyTier, tierKey } from '@/features/me/api';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { buyLabel } from '@/features/store/model';
+import { SaidBanner, StoreUnready } from '@/features/store/StoreParts';
+import { useStoreBuyer, useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space } from '@/theme';
 
-import { plansQuery } from './purchaseApi';
-import { QuoteBreakdown } from './planParts';
-import { naira, nextTiers, PACK_CAP_LINE, PACK_NOT_ALLOWED, PACK_TAKE_DOWN_LINE, PACK_TIERS_LINE, pinPurposeOf } from './purchaseModel';
-import { usePlanPurchase } from './usePlanPurchase';
+import { askPackOffered, plansQuery } from './purchaseApi';
+import { nextTiers, PACK_CAP_LINE, PACK_CHECK_FAILED_LINE, PACK_NOT_ALLOWED, PACK_TAKE_DOWN_LINE, PACK_TIERS_LINE, packOffered, packVerdictOf } from './purchaseModel';
 
 const HEAD = { title: 24, tracking: -0.03 } as const;
 const MARK = 72;
@@ -33,39 +30,57 @@ export type ProductsFullSheetProps = {
   onUpgrade: () => void;
   /** The way to take something down: My content (M28). Not drawn without it. */
   onOpenLibrary?: () => void;
-  /** Forgot PIN? (W37). */
-  onForgotPin: () => void;
-  /** No PIN is set yet: A9 sets one and comes back. */
-  onSetPin: () => void;
-  /** Add ₦X (W15): opens Add money with what is missing. */
-  onAddMoney: (shortfallKobo: number) => void;
 };
 
 /**
- * VF13 · You have used N of N. At the limit a person adds five more products for the Hub's price (`GET /plans` `extraProducts`, R-65)
- * or moves up a tier. "Add 5" is `POST /plans/purchases` `kind: extra_products` (TIER-04) through the same one-attempt payment as
- * the tier (`usePlanPurchase`): a fresh quote at every tap, the shared PIN sheet, one `Idempotency-Key`, so one tap pair is one debit.
- * A short wallet turns the button into "Add ₦X" (the pay sheets' own, WALLET-05), which opens Add money. The dollar offer (VF13a) is
- * not built at launch (R-16).
+ * VF13 · You have used N of N. At the limit of a tier's products the sheet says so with the Hub's own count (`GET /me/tier`), and offers the
+ * ways on: "Add 5 more products", "Upgrade instead" to a tier above the one held (the tiers the Hub lists in `GET /plans` that cost more and
+ * leave room, none for the top tier) and the way to take something down (My content). It is worded from the tier and the Hub's limits, and
+ * never tells a person who holds a tier to "Get verified" (RELEASE-02 second pass, M-3, L-p2-12).
  *
- * RELEASE-02 second pass (M-3, L-p2-12): the sheet is worded from the tier and the Hub's limits and never tells a person who holds a tier to
- * "Get verified". "Upgrade instead" is drawn only while the Hub lists a higher tier that leaves room (none for the top tier), and "Open library"
- * is the way to take something down. The offer is a payment review, so it draws the fee as its parts and the total (BRIEF rules 3 to 5): the
- * price, the Bank charge, WAWU's fee and the Total from the quote, even at ₦0, with the button and the PIN sheet showing the total. The pack
- * keeps its wallet path until IAP-02 moves it and the tiers to the app stores (R-86; lead ruling, 25 Oct 2026).
+ * "Add 5 more products" (IAP-03, R-65) is an in-app digital unlock, so it is bought in the store sheet with the same parts as points and
+ * credits (`useStoreCatalog`, `useStoreBuyer`, R-86): the Hub's upload-pack product (`kind: extra_products`, the count it adds), the store's own
+ * price in the person's own currency, and the Hub checks the purchase with the store before it adds the products. While the store is
+ * loading there is no price, never a wrong one; a store that is not open, or has no such pack, draws no offer (R-47). The offer is drawn
+ * only when the Hub would sell it (`packOffered`: a running tier, and the pack lifts the limit), never to a person with only a tick or no tier,
+ * whom the Hub refuses after the store has taken the payment (F1). The wallet is not used and no naira figure is drawn. The dollar offer
+ * (VF13a) is not built at launch (R-16).
  */
-export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotPin, onSetPin, onAddMoney }: ProductsFullSheetProps) {
+export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: ProductsFullSheetProps) {
   const owner = useSessionAccount(undefined);
   const mine = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
   const plans = useQuery(plansQuery(owner), queryClient);
-  // PACK-CAP (R-100): the pack is drawn and sold only while the Hub's quote of it is not refused `pack_not_allowed`. The quote is asked
-  // when the sheet opens and again at Pay (before the PIN); a refusal at Pay takes the pack away here, with the Hub's own sentence.
-  const [refusal, setRefusal] = useState<string | null>(null);
-  const purchase = usePlanPurchase({ kind: 'extra_products' }, { onSetPin, onPackRefused: setRefusal });
-  const { quote, done } = purchase;
-  const extra = plans.data?.extraProducts ?? null;
+  const store = useStoreCatalog(['extra_products']);
+  const buyer = useStoreBuyer(store.catalog);
   const used = mine.data?.productsUsed ?? null;
   const allowed = mine.data?.productsAllowed ?? null;
+  // What the person could publish when the store sheet opened, so the result never says a count from before the grant.
+  const [before, setBefore] = useState<number | null>(null);
+  const pack = store.state.kind === 'ready' ? (store.state.items[0] ?? null) : null;
+  // PACK-CAP (R-100): the pack is drawn only while the Hub's quote of it is not refused, and asked again just before the store sheet opens.
+  // Asked only when the store sells the pack: with none there is no offer to check.
+  const check = useQuery({ queryKey: ['plans', 'pack-check', owner ?? ''], queryFn: askPackOffered, enabled: Boolean(owner) && pack !== null, retry: false, staleTime: 0, gcTime: 0 }, queryClient);
+  const verdict = packVerdictOf(check);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const [checkFailed, setCheckFailed] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const askThenBuy = async (offer: NonNullable<typeof pack>, now: number | null) => {
+    if (asking) return;
+    setAsking(true);
+    setCheckFailed(false);
+    try {
+      await askPackOffered();
+    } catch (error) {
+      const again = packVerdictOf({ isPending: false, isError: true, error });
+      setAsking(false);
+      if (again.kind === 'refused') setRefusal(again.message);
+      else if (again.kind !== 'offered') setCheckFailed(true);
+      if (again.kind !== 'offered') return;
+    }
+    setAsking(false);
+    setBefore(now);
+    void buyer.buy(offer);
+  };
 
   let body;
   if ((mine.isError && !mine.data) || (plans.isError && !plans.data)) {
@@ -82,13 +97,14 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotP
         }}
       />
     );
-  } else if (done) {
-    const now = done.productsAllowed ?? quote?.productsAllowedAfter ?? null;
+  } else if (buyer.granted) {
+    const added = buyer.granted.grant.extraProducts ?? 0;
+    const now = allowed !== null && before !== null && allowed >= before + added ? allowed : null;
     body = (
       <View testID="full-added" style={styles.result}>
         <IconTile icon="Plus" tone="accent" size={MARK} strokeWidth={2.2} />
         <Text variant="display" accessibilityRole="header" testID="full-added-title" style={[styles.centre, { fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }]}>
-          {`${done.products ?? extra?.count ?? 0} more products added`}
+          {added > 0 ? `${added} more products added` : 'More products added'}
         </Text>
         {now !== null ? (
           <Text variant="body" tone="textSecondary" testID="full-added-line" style={styles.centre}>
@@ -98,7 +114,7 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotP
         <Button testID="full-done" label="Done" full onPress={onClose} />
       </View>
     );
-  } else if (used === null || allowed === null || !extra || !purchase.looked || (purchase.quoteLoading && refusal === null)) {
+  } else if (!mine.data || !plans.data || used === null || allowed === null) {
     body = (
       <View testID="full-loading" style={styles.stack}>
         <Skeleton height={32} width="60%" radius={radius.tile} />
@@ -107,116 +123,84 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary, onForgotP
       </View>
     );
   } else {
-    const count = extra.count;
-    const total = quote?.totalKobo ?? null;
-    const up = nextTiers(plans.data?.tiers ?? [], mine.data?.tier?.id ?? null, mine.data?.extraProducts ?? 0, used).length > 0;
-    // The Hub answers eligibility first (R-100): `pack_not_allowed` (tier or cap) or `tier_required` (no running tier) hides the pack.
-    const quoteCode = isApiError(purchase.quoteError) ? purchase.quoteError.code : null;
-    const noTier = refusal === null && quoteCode === 'tier_required';
-    const packRefused = refusal !== null || quoteCode === PACK_NOT_ALLOWED || noTier;
-    const refusedLine = up ? PACK_TIERS_LINE : noTier ? PACK_TAKE_DOWN_LINE : PACK_CAP_LINE;
-    body = packRefused ? (
+    const count = pack?.product.grants.extraProducts ?? 0;
+    const running = mine.data.state === 'active' || mine.data.state === 'ending';
+    // The pack only where the Hub would sell it (its quote is not refused) AND this person has a running tier with room: the check is kept
+    // beside the Hub's answer so the store sheet never opens for no tier or an ended one, even when the Hub is an old one (R-100, round 4).
+    const offer = pack !== null && count > 0 && packOffered(mine.data, count) && verdict.kind === 'offered' && refusal === null ? pack : null;
+    const packRefusedByRule = refusal !== null || (verdict.kind === 'refused' && verdict.code === PACK_NOT_ALLOWED);
+    const up = nextTiers(plans.data.tiers, mine.data.tier?.id ?? null, mine.data.extraProducts, used).length > 0;
+    body = (
       <>
         <View>
           <Text variant="display" accessibilityRole="header" testID="full-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
             {`You have used ${used} of ${allowed}`}
           </Text>
           <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
-            {refusedLine}
+            {offer
+              ? up
+                ? 'Add more products, or move up a tier.'
+                : 'Add more products, or take something down.'
+              : packRefusedByRule
+                ? up
+                  ? PACK_TIERS_LINE
+                  : PACK_CAP_LINE
+                : up
+                  ? 'Move up a tier, or take something down.'
+                  : PACK_TAKE_DOWN_LINE}
           </Text>
-          {refusal !== null && refusal !== refusedLine ? (
+          {refusal !== null && refusal !== (up ? PACK_TIERS_LINE : PACK_CAP_LINE) ? (
             <Text variant="meta" tone="danger" testID="full-refused" accessibilityLiveRegion="polite" style={styles.blurb}>
               {refusal}
             </Text>
           ) : null}
         </View>
-        {up ? <Button testID="full-upgrade" label="Upgrade instead" full onPress={onUpgrade} /> : null}
-        {onOpenLibrary ? <Button testID="full-library" label="Open library" variant="outline" full onPress={onOpenLibrary} /> : null}
-      </>
-    ) : (
-      <>
-        <View>
-          <Text variant="display" accessibilityRole="header" testID="full-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
-            {`You have used ${used} of ${allowed}`}
-          </Text>
-          <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
-            {up ? 'Add more products, or move up a tier.' : 'Add more products, or take something down.'}
-          </Text>
-        </View>
-        <Card padded testID="full-offer">
-          <View style={styles.offer}>
-            <IconTile icon="Plus" tone="accent" size={44} />
-            <View style={styles.offerWords}>
-              <Text variant="body" style={font(700)}>
-                {`Add ${count} more products`}
-              </Text>
-              <Text variant="secondary" tone="textMuted">
-                Until your tier ends
+        {running && (store.state.kind === 'loading' || (pack !== null && verdict.kind === 'checking')) ? <Skeleton testID="full-offer-loading" height={72} radius={radius.card} /> : null}
+        {offer ? (
+          <Card padded testID="full-offer">
+            <View style={styles.offer}>
+              <IconTile icon="Plus" tone="accent" size={44} />
+              <View style={styles.offerWords}>
+                <Text variant="body" style={font(700)}>
+                  {`Add ${count} more products`}
+                </Text>
+                <Text variant="secondary" tone="textMuted">
+                  Until your tier ends
+                </Text>
+              </View>
+              <Text variant="body" testID="full-offer-price" style={font(700)}>
+                {offer.price}
               </Text>
             </View>
-            <Money minorUnits={extra.priceMinor} currency={plans.data?.currency ?? 'NGN'} size={16} weight={700} decimals={extra.priceMinor % 100 !== 0} />
-          </View>
-        </Card>
-        {quote ? <QuoteBreakdown quote={quote} prefix="full" /> : null}
-        {purchase.short && quote ? (
-          <Text variant="meta" tone="danger" testID="full-short" accessibilityLiveRegion="polite" style={styles.centre}>
-            {`You need ${naira(quote.shortfallKobo ?? 0)} more in your wallet.`}
+          </Card>
+        ) : null}
+        {running && store.state.kind !== 'loading' && store.state.kind !== 'ready' ? <StoreUnready state={store.state} onRetry={store.refetch} testID="full-store" /> : null}
+        <SaidBanner said={buyer.said} testID="full-said" />
+        {checkFailed ? (
+          <Text variant="meta" tone="danger" testID="full-check-failed" accessibilityLiveRegion="polite" style={styles.centre}>
+            {PACK_CHECK_FAILED_LINE}
           </Text>
         ) : null}
-        {purchase.failure ? (
-          <Text variant="meta" tone="danger" testID="full-failure" accessibilityLiveRegion="polite" style={styles.centre}>
-            {purchase.failure}
-          </Text>
-        ) : null}
-        {purchase.resend ? (
-          <Text variant="meta" tone="textMuted" testID="full-resend" style={styles.centre}>
-            Your last try got no answer. Paying again checks it first, so you are not charged twice.
-          </Text>
-        ) : null}
-        {purchase.short && quote ? (
-          <Button testID="full-add-money" label={`Add ${naira(quote.shortfallKobo ?? 0)}`} full onPress={() => onAddMoney(quote.shortfallKobo ?? 0)} />
-        ) : (
+        {offer ? (
           <Button
             testID="full-add"
-            label={purchase.paying ? 'Paying...' : total !== null ? `Add ${count} for ${naira(total)}` : `Add ${count}`}
+            label={buyer.busy ? 'Buying...' : buyLabel(offer, `Add ${count}`)}
             full
-            disabled={purchase.paying || quote === null}
-            loading={purchase.busy}
-            onPress={purchase.pay}
+            loading={buyer.busy || asking}
+            disabled={buyer.busy || asking}
+            onPress={() => void askThenBuy(offer, allowed)}
           />
-        )}
-        {up ? <Button testID="full-upgrade" label="Upgrade instead" variant="outline" full disabled={purchase.paying} onPress={onUpgrade} /> : null}
-        {onOpenLibrary ? <Button testID="full-library" label="Open library" variant="outline" full disabled={purchase.paying} onPress={onOpenLibrary} /> : null}
-        {purchase.quoteError ? (
-          <Text variant="meta" tone="danger" testID="full-quote-error" style={styles.centre}>
-            {isApiError(purchase.quoteError) && purchase.quoteError.message ? purchase.quoteError.message : 'We could not work out the price. Try again.'}
-          </Text>
         ) : null}
+        {up ? <Button testID="full-upgrade" label="Upgrade instead" variant="outline" full disabled={buyer.busy} onPress={onUpgrade} /> : null}
+        {onOpenLibrary ? <Button testID="full-library" label="Open library" variant="outline" full disabled={buyer.busy} onPress={onOpenLibrary} /> : null}
       </>
     );
   }
 
   return (
-    <>
-      <BottomSheet visible onClose={onClose} label="All products used" dismissible={!purchase.paying}>
-        {body}
-      </BottomSheet>
-      {quote ? (
-        <PayPinSheet
-          visible={purchase.pinOpen}
-          onClose={purchase.closePin}
-          approval={{ totalKobo: quote.totalKobo, purpose: pinPurposeOf({ kind: 'extra_products' }, null, quote.products) }}
-          run={purchase.run}
-          unansweredLine={PAYMENT_UNANSWERED_LINE}
-          onForgotPin={() => {
-            purchase.closePin();
-            onForgotPin();
-          }}
-          lockedUntil={purchase.lockedUntil}
-        />
-      ) : null}
-      {purchase.notice ? <Toast message={purchase.notice} tone="alert" placement="top" lines={2} onHide={purchase.clearNotice} testID="full-notice" /> : null}
-    </>
+    <BottomSheet visible onClose={onClose} label="All products used" dismissible={!buyer.busy}>
+      {body}
+    </BottomSheet>
   );
 }
 

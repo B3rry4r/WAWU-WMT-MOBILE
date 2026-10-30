@@ -430,7 +430,9 @@ export const reviewsText = (count: number): string => `${count} ${count === 1 ? 
 export const nairaText = (naira: number): string => formatMoney(nairaToKobo(naira), { decimals: !Number.isInteger(naira) });
 
 /** H10's note: "No reply in 24 hours and your ₦1,500 comes back." The hours are the professional's own window, the price their own. */
-export function refundNote(dmPrice: number, hours: number): string {
+export function refundNote(dmPrice: number, hours: number, store = false): string {
+  // R-101: a question bought in a store that goes unanswered gives a question credit (never cash), and the line names no list price.
+  if (store) return `No reply in ${hours} ${hours === 1 ? 'hour' : 'hours'} and you get a question credit.`;
   return `No reply in ${hours} ${hours === 1 ? 'hour' : 'hours'} and your ${nairaText(dmPrice)} comes back.`;
 }
 
@@ -449,11 +451,19 @@ const workIcons: Record<string, IconName> = {
 const workNames: Record<string, string> = { video: 'Video', course: 'Course', pdf: 'PDF', image: 'Photos', audio: 'Audio', template: 'Template' };
 
 /** What one piece of a creator card's strip draws (H9): its kind, a lock and the price when locked, else views and a length. */
-export function workTile(work: CardWork): { icon: IconName; locked: boolean; left: string; right: string | null; label: string } {
+export function workTile(
+  work: CardWork,
+  /** On a phone with a store (R-101 point 10) the locked price is the store's, and none where no rung sells it. Left out, the list price. */
+  shown?: { forKobo: (listKobo: number) => number | null },
+): { icon: IconName; locked: boolean; left: string; right: string | null; label: string } {
   const icon = workIcons[work.contentType] ?? 'FileText';
   const name = workNames[work.contentType] ?? null;
   const locked = work.locked && work.accessType === 'paid';
-  if (locked) return { icon, locked, left: nairaText(work.price), right: name, label: `${work.title}, locked, ${nairaText(work.price)}` };
+  if (locked) {
+    const kobo = shown ? shown.forKobo(Math.round(work.price * 100)) : Math.round(work.price * 100);
+    const price = kobo === null ? null : nairaText(kobo / 100);
+    return { icon, locked, left: price ?? '', right: name, label: price === null ? `${work.title}, locked` : `${work.title}, locked, ${price}` };
+  }
   const views = `${compactCount(work.views)} ${work.views === 1 ? 'view' : 'views'}`;
   let right: string | null = name;
   if (work.contentType === 'video' || work.contentType === 'audio') right = durationText(work.durationLabel);

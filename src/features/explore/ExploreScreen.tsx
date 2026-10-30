@@ -9,7 +9,7 @@ import { queryClient } from '@/api/query';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
-import { CreateEntry } from '@/features/create/CreateEntry';
+import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { useAdList } from '@/features/ads/useAd';
 import { ExploreEventsRail, useExploreEvents } from '@/features/events/ExploreEvents';
 import { fetchMyId, meKey } from '@/features/feed/api';
@@ -100,6 +100,7 @@ export type ExploreScreenProps = {
  */
 export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onFindProfessional, onFindSchool, onListServices, servicesDoor, onCreate, onOpenTgif, onSearch, onSeeAllCreators, onOpenNotifications, onOpenCreator, onSeeAllMovies, onOpenMovie }: ExploreScreenProps) {
   const insets = useSafeAreaInsets();
+  const room = useFloatingRoom();
   const { colors } = useWawu();
   const focused = useIsFocused();
   const categories = useQuery({ queryKey: categoriesKey, queryFn: fetchCategories }, queryClient);
@@ -232,7 +233,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
       <ScrollView
         testID="explore-scroll"
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: Math.max(exploreMetrics.bodyBottom, room) }]}
         // No scrollbar on the web build: its 15 px came out of the ad slide's width (335 against the Today card's 350, FIX-P5, L3). Today hides it too.
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={pulled} onRefresh={() => void onRefresh()} tintColor={colors.accent} />}

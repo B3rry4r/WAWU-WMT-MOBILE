@@ -1,5 +1,5 @@
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { Avatar } from '@/components/Avatar';
 import { Banner } from '@/components/Banner';
@@ -18,10 +18,13 @@ import { WALLET_NAME } from '@/features/events/buyModel';
 import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } from '@/theme';
 
-import { heldLine, refundLine, shortLine, SHORT_TITLE, usualReplyLine, whoOf, windowLine } from './model';
+import { creditLine, heldLine, refundLine, shortLine, SHORT_TITLE, usualReplyLine, whoOf, windowLine } from './model';
 import { MAX_QUESTION, type AskState } from './useAsk';
 import { usePaySource } from '@/features/pay-source/usePaySource';
 import { usePaySourceCode } from '@/api/paySource';
+import { StoreUnready } from '@/features/store/StoreParts';
+import { StoreBuySheet } from '@/features/store/ladder/StoreBuySheet';
+import type { Ladder } from '@/features/store/ladder/useLadder';
 
 /** design/_gen/inbox.js `composeSheet`: the sheet's parts 16 apart; the head 12 between; the field 110 high, 18 corner, 14 by 16 inside, 15 on a 1.45 line; the three lines 10 apart with a 17 mark; the avatar 44. */
 const SHEET_GAP = space.lg;
@@ -213,6 +216,99 @@ function AskSheet({ ask, onAddMoney, source }: { ask: AskState; onAddMoney: (sho
 }
 
 /**
+ * I3 for a phone with a store (R-101): "Ask Chidi", the words, what the Hub says about replying, what happens with no reply (a question
+ * credit, never cash), and one button at the STORE's price. There is no wallet, PIN or bank charge. A question credit that covers the price is
+ * offered first ("Use your credit", no store sheet). The Hub checks the creator takes questions, is not paused and has none waiting before the
+ * store sheet opens, so nobody is charged for a question that cannot be sent. A sent question ends the flow and the screen opens the thread.
+ */
+function StoreAskSheet({ ask, ladder }: { ask: AskState; ladder: Ladder }) {
+  const { colors } = useWawu();
+  const lift = useKeyboardLift();
+  const [focused, setFocused] = useState(false);
+  const { buyer } = ladder;
+  const { target } = ask;
+  const name = target?.name ?? null;
+  const naira = target?.priceKobo != null && target.priceKobo % 100 === 0 ? target.priceKobo / 100 : null;
+  const entry = ladder.itemFor(naira);
+  const credit = ladder.creditFor('question', naira);
+  const words = ask.text.trim();
+  const usual = usualReplyLine(undefined);
+  const spec = (): { kind: 'question'; creatorWawuId: string; text: string; listPriceNaira: number } | null =>
+    target && naira !== null && words.length > 0 ? { kind: 'question', creatorWawuId: target.wawuId, text: words, listPriceNaira: naira } : null;
+  let unready: ReactNode = null;
+  if (ladder.state.kind === 'ready') {
+    if (naira === null || entry === null) unready = <StoreUnready state={{ kind: 'not_open', why: 'not_configured' }} onRetry={ladder.refetch} testID="ask-store" />;
+  } else if (ladder.state.kind !== 'loading') {
+    unready = <StoreUnready state={ladder.state} onRetry={ladder.refetch} testID="ask-store" />;
+  }
+  return (
+    <StoreBuySheet
+      visible
+      testID="ask-sheet"
+      label={`Ask ${whoOf(name)}`}
+      head={{ title: `Ask ${whoOf(name)}`, verified: usual ? target?.tick : undefined, subtitle: usual ?? undefined, image: target?.avatarUrl ?? undefined }}
+      price={entry?.price ?? null}
+      priceLabel="Question"
+      actionLabel="Send"
+      disabled={words.length === 0}
+      busy={buyer.busy}
+      said={buyer.said}
+      credit={credit ? { line: 'A question credit pays for this question.' } : null}
+      unready={unready}
+      onBuy={() => {
+        const s = spec();
+        if (s) void buyer.buyLadder(s);
+      }}
+      onUseCredit={() => {
+        const s = spec();
+        if (s) void buyer.buyLadder(s, 'credit');
+      }}
+      onCancel={ask.close}
+    >
+      <TextInput
+        testID="ask-text"
+        value={ask.text}
+        onChangeText={ask.setText}
+        multiline
+        maxLength={MAX_QUESTION}
+        placeholder={`Write your question for ${whoOf(name)}`}
+        placeholderTextColor={colors.textMuted}
+        accessibilityLabel="Your question"
+        selectionColor={colors.accent}
+        cursorColor={colors.accent}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={[
+          styles.field,
+          Platform.OS === 'web' ? browserOutlineOff : null,
+          {
+            color: colors.textPrimary,
+            backgroundColor: colors.surfaceInput,
+            boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: focused || ask.text.length > 0 ? FIELD_RING : 1, color: focused || ask.text.length > 0 ? colors.accent : colors.borderHairline, inset: true }],
+          },
+        ]}
+      />
+      <View style={styles.lines}>
+        {(
+          [
+            { icon: 'Clock', key: 'window', words: windowLine(name, target?.windowHours ?? null) },
+            { icon: 'RotateCcw', key: 'credit', words: creditLine },
+          ] as const
+        ).map(({ icon, key, words: line }) => (
+          <View key={key} style={styles.line} testID={`ask-line-${key}`}>
+            <Icon name={icon} size={MARK} color={colors.accentFg} strokeWidth={2.2} />
+            <Text variant="secondary" tone="textSecondary" style={styles.lineText}>
+              {line}
+            </Text>
+          </View>
+        ))}
+      </View>
+      {lift > 0 ? <View style={{ height: lift }} /> : null}
+    </StoreBuySheet>
+  );
+}
+
+/**
  * I3, I6, W11 and the states between: the ask sheet while the person writes and reviews; the shared pay sheet when the payment is
  * still confirming, did not go through or cannot be tried; the shared PIN sheet over either. A paid question is not drawn here: it
  * ends the flow and the screen opens the thread (I4).
@@ -231,6 +327,8 @@ export function AskSheets({
   const { flow, quote, target } = ask;
   const paySource = usePaySource({ payment: quote?.payment ?? null, open: ask.open, requote: flow.ask });
   if (!ask.open || !target) return null;
+  // R-101: on a phone with a store a paid question is a store purchase; the wallet sheets below are the web's.
+  if (ask.store) return <StoreAskSheet ask={ask} ladder={ask.store.ladder} />;
   const name = whoOf(target.name);
   const reviewing = flow.status.kind === 'review' && flow.stage === null;
   return (

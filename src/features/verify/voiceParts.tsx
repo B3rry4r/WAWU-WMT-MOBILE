@@ -3,11 +3,9 @@ import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Press
 import Svg, { Circle } from 'react-native-svg';
 
 import { pressScale } from '@/components/Button';
-import { Card } from '@/components/Card';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
-import { IconTile } from '@/components/IconTile';
-import { ListRow } from '@/components/ListRow';
+import { PromoRow } from '@/components/PromoRow';
 import { Text } from '@/components/Text';
 import { playedBars, voicePlayerMetrics, waveShape } from '@/components/VoicePlayer';
 import { font, layout, useWawu } from '@/theme';
@@ -76,9 +74,6 @@ export function NameWave({ progress, testID }: { progress: number; testID?: stri
   );
 }
 
-/** design/_gen/verify.js line 88 (the "Hear your name" row on VF2): a card holding one row, an accent 44 tile, a title, a line and a chevron, 76 high. */
-const entry = { tile: 44, padV: 14 } as const;
-
 export type EntryRowProps = {
   icon: IconName;
   title: string;
@@ -87,13 +82,12 @@ export type EntryRowProps = {
   testID?: string;
 };
 
-/** A card with one `ListRow` that opens one of the Voice screens: VF2's "Hear your name" and Me's Voice Intro prompt. */
+/**
+ * A card with one row that opens one of the Voice screens: VF2's "Hear your name" and Me's Voice Intro prompt. It is the shared promo row
+ * (R-110 point 1): a 40 rounded accent tile, the title, one line, a chevron, 72 high (design/_gen/verify.js line 88 drew a 44 round tile at 76).
+ */
 export function EntryRow({ icon, title, line, onPress, testID }: EntryRowProps) {
-  return (
-    <Card>
-      <ListRow testID={testID} lead={<IconTile icon={icon} tone="accent" size={entry.tile} />} title={title} subtitle={line} padV={entry.padV} onPress={onPress} accessibilityLabel={`${title}. ${line}`} />
-    </Card>
-  );
+  return <PromoRow testID={testID} icon={icon} title={title} subtitle={line} onPress={onPress} />;
 }
 
 /**

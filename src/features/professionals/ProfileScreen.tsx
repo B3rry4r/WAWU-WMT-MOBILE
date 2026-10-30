@@ -18,6 +18,7 @@ import { AskSheets } from '@/features/paid-ask/AskSheets';
 import { askButtonLabel, firstName, windowWords } from '@/features/paid-ask/model';
 import { useAsk } from '@/features/paid-ask/useAsk';
 import { useAskTerms } from '@/features/paid-ask/useAskTerms';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { fetchMe, meKey } from '@/features/profile-edit/api';
 import { canvasNormalLineHeight, font, layout, radius, space, type, useWawu } from '@/theme';
 
@@ -198,6 +199,8 @@ type AskState = { kind: 'on'; priceKobo: number; windowHours: number | null; onP
 
 function ProfileBody({ profile, ask }: { profile: DirectoryProfile; ask: AskState }) {
   const { colors } = useWawu();
+  // R-101 point 10: on a phone with a store the button says the store's price, never the list price.
+  const shown = useShownPrice();
   const credential = credentialTitle(profile.credentialKind);
   const services = profile.services.filter((s) => s.trim() !== '');
   return (
@@ -221,9 +224,9 @@ function ProfileBody({ profile, ask }: { profile: DirectoryProfile; ask: AskStat
       </View>
       {ask.kind === 'on' ? (
         <View style={styles.stack} testID="pro-ask-block">
-          <Button testID="pro-ask" label={askButtonLabel(ask.priceKobo, 'Ask a question')} icon="MessageCircle" size="lg" full onPress={ask.onPress} />
+          <Button testID="pro-ask" label={askButtonLabel(shown.forKobo(ask.priceKobo), 'Ask a question')} icon="MessageCircle" size="lg" full onPress={ask.onPress} />
           <Text variant="body" tone="textMuted" style={styles.note} testID="pro-ask-promise">
-            {replyPromise(profile.name, ask.windowHours)}
+            {replyPromise(profile.name, ask.windowHours, shown.native)}
           </Text>
         </View>
       ) : ask.kind === 'waiting' || (ask.kind === 'unwired' && !ask.closed && takesMessages(profile)) ? null : (
@@ -292,8 +295,10 @@ function ProfileBody({ profile, ask }: { profile: DirectoryProfile; ask: AskStat
 }
 
 /** P2's line under the button: "Funmi replies within 24 hours, or you're refunded automatically." The window is the Hub's. */
-function replyPromise(name: string, windowHours: number | null): string {
+export function replyPromise(name: string, windowHours: number | null, store = false): string {
   const who = firstName(name) || 'They';
+  // R-101 point 6: a question bought in a store that is not answered in time gives a question credit, never money back.
+  if (store) return windowHours === null ? `If ${who === 'They' ? 'they do' : `${who} does`} not reply in time, you get a question credit.` : `${who} ${who === 'They' ? 'reply' : 'replies'} within ${windowWords(windowHours)}, or you get a question credit.`;
   return windowHours === null ? `If ${who === 'They' ? 'they do' : `${who} does`} not reply in time, you're refunded automatically.` : `${who} ${who === 'They' ? 'reply' : 'replies'} within ${windowWords(windowHours)}, or you're refunded automatically.`;
 }
 

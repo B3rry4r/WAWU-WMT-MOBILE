@@ -83,9 +83,16 @@ export function routeForPush(raw: unknown): Href | null {
   const data = raw as PushTap;
   switch (data.kind) {
     // A sale or a tip: the earnings screen (W39), which the Hub's own button "View earnings" names, and which a creator with no wallet yet can read too (R-11).
+    // A pass sold and a paid question answered (R-101, bought in a store) are earnings too, and carry the same button.
     case 'sale':
     case 'tip_received':
+    case 'pass_sold':
+    case 'question_answered':
       return '/earnings';
+    // The asker's question credit (R-101 point 6): a question nobody answered in time. The credit pays for the next question at that price or
+    // less, asked from a creator's page, and the asker's questions are in the Inbox. Never a wallet screen: the credit is not money.
+    case 'question_credit':
+      return '/inbox';
     // A paid question: the Inbox lists it. The list row opens the asker's conversation itself when the Hub names who asked (`routeOf`).
     case 'dm_received':
     case 'dm_deadline':

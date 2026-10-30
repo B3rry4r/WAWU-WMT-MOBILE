@@ -10,7 +10,7 @@ import { Card } from '@/components/Card';
 import { FilterChips } from '@/components/FilterChips';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
-import { ProductsMeter, productsMeterCaption, productsMeterMetrics } from '@/components/ProductsMeter';
+import { ProductsMeter, productsMeterMetrics } from '@/components/ProductsMeter';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -44,7 +44,7 @@ const PREVIEW_HEIGHT = 190;
 /** One file the person adds before publishing: nothing yet, on its way (the real share that has gone up), ready, or refused. */
 type Slot = { state: 'empty' } | { state: 'uploading'; name: string; share: number } | { state: 'ready'; file: UploadedFile } | { state: 'failed'; message: string };
 
-export type PublishScreenProps = Pick<ProductsFullSheetProps, 'onForgotPin' | 'onSetPin' | 'onAddMoney' | 'onOpenLibrary'> & {
+export type PublishScreenProps = Pick<ProductsFullSheetProps, 'onOpenLibrary'> & {
   draftId: string;
   onBack: () => void;
   /** No tier is running: VF5. */
@@ -216,7 +216,6 @@ export function PublishScreen(props: PublishScreenProps) {
 
   const failed = (draft.isError && !draft.data) || (tier.isError && !tier.data) || (formats.isError && !formats.data) || (progress.isError && !progress.data);
   const loading = !draft.data || !tier.data || !formats.data || !progress.data;
-  const caption = tier.data ? productsMeterCaption(tier.data.tier?.name, tier.data.activeUntil) : undefined;
 
   let body;
   let foot;
@@ -303,7 +302,7 @@ export function PublishScreen(props: PublishScreenProps) {
         <Text variant="secondary" tone="textMuted" testID="publish-draft-title" numberOfLines={1}>
           {d.title}
         </Text>
-        {tier.data ? <ProductsMeter testID="publish-meter" used={tier.data.productsUsed} allowed={tier.data.productsAllowed} caption={caption} /> : null}
+        {tier.data ? <ProductsMeter testID="publish-meter" used={tier.data.productsUsed} allowed={tier.data.productsAllowed} tier={{ name: tier.data.tier?.name, state: tier.data.state, endsAt: tier.data.activeUntil }} /> : null}
         {needsCategory && published === null ? (
           <View style={styles.group}>
             <Text variant="secondary" tone="textSecondary">
@@ -387,9 +386,6 @@ export function PublishScreen(props: PublishScreenProps) {
             setLimit(false);
             props.onUpgrade();
           }}
-          onForgotPin={props.onForgotPin}
-          onSetPin={props.onSetPin}
-          onAddMoney={props.onAddMoney}
           onOpenLibrary={
             props.onOpenLibrary
               ? () => {

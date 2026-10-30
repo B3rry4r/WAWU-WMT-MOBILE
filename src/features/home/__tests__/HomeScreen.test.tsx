@@ -694,14 +694,15 @@ describe('H1 · three spacings the board draws (HOME-18)', () => {
     expect(bottom.paddingBottom as number).toBeGreaterThanOrEqual(createButtonMetrics.bottom + createButtonMetrics.size + 16);
   });
 
-  it('anyone else keeps the board\'s gap of 32 under the rail', async () => {
+  it('anyone else ends under the rail with the theme button\'s room (83), no longer the board\'s 32 (R-110)', async () => {
     const screen = await boot({ onCreate: jest.fn() });
     await rtl.waitFor(() => expect(screen.getByTestId('today-service-schools')).toBeTruthy());
     await rtl.act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 30));
     });
     const bottom = flat({ props: { style: screen.getByTestId('today-scroll').props.contentContainerStyle } });
-    expect(bottom.paddingBottom).toBe(32);
+    expect(bottom.paddingBottom).toBe(83);
+    expect(bottom.paddingBottom).toBeGreaterThan(32);
   });
 });
 

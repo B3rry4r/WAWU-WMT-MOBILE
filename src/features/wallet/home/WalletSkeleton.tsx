@@ -5,7 +5,6 @@ import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { radius } from '@/theme';
 
 import { RECENT_ROWS } from '../api/home';
-import { BILL_TILE, BILLS_DRAWN, billTileSize } from './BillTiles';
 import { ACTION_TILE, actionTileSize } from './WalletActions';
 import { ACCT } from './BalanceCard';
 import { useRowRoom } from './useRowRoom';
@@ -70,7 +69,6 @@ export function WalletSkeleton({ tiles = 0 }: { tiles?: number }) {
   // The tiles are the size the real ones will be (54 on a 390 screen, less on a narrower phone), so nothing jumps when the wallet loads.
   const room = useRowRoom();
   const tile = actionTileSize(room);
-  const billTile = billTileSize(room);
   return (
     <LoadingView label="Loading your wallet" testID="wallet-loading">
       <View style={styles.body}>
@@ -82,14 +80,6 @@ export function WalletSkeleton({ tiles = 0 }: { tiles?: number }) {
             <View key={i} style={[styles.tile, { width: tile + ACTION_TILE.extra }]}>
               <Skeleton width={tile} height={tile} radius={radius.tile} />
               <Skeleton width={Math.min(W4.tileBar, tile)} height={W4.tileBarH} radius={W4.tileBarRadius} />
-            </View>
-          ))}
-        </View>
-        <View testID="wallet-loading-bills" style={styles.tiles}>
-          {Array.from({ length: BILLS_DRAWN }, (_, i) => (
-            <View key={i} style={[styles.tile, { width: billTile + BILL_TILE.extra }]}>
-              <Skeleton width={billTile} height={billTile} radius={radius.tile} />
-              <Skeleton width={Math.min(W4.tileBar, billTile)} height={W4.tileBarH} radius={W4.tileBarRadius} />
             </View>
           ))}
         </View>

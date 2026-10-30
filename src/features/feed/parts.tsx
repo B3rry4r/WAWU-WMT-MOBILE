@@ -206,7 +206,8 @@ export function OfferBar({
   testID,
 }: {
   offer: Offer;
-  priceKobo: number;
+  /** What the buyer pays, in kobo; null draws no price (in the app the price is the store's, and it is not known yet: never the list price, R-101). */
+  priceKobo: number | null;
   compact?: boolean;
   /** Opens the unlock sheet (H14). Left out, the bar only shows the offer (its press is not drawn until the flow is wired, R-47). */
   onPress?: () => void;
@@ -244,9 +245,11 @@ export function OfferBar({
         </Text>
         <Text style={[words.offerSub, { color: media.ink }]}>{offer.subtitle}</Text>
       </View>
-      <View style={[styles.price, compact && { paddingHorizontal: metrics.pricePadCompact }, { backgroundColor: media.ink }]}>
-        <Money minorUnits={priceKobo} decimals={false} size={compact ? metrics.priceTextCompact : metrics.priceText} weight={700} tone="textOnLight" testID={testID ? `${testID}-price` : undefined} />
-      </View>
+      {priceKobo === null ? null : (
+        <View style={[styles.price, compact && { paddingHorizontal: metrics.pricePadCompact }, { backgroundColor: media.ink }]}>
+          <Money minorUnits={priceKobo} decimals={false} size={compact ? metrics.priceTextCompact : metrics.priceText} weight={700} tone="textOnLight" testID={testID ? `${testID}-price` : undefined} />
+        </View>
+      )}
     </Wrap>
   );
 }

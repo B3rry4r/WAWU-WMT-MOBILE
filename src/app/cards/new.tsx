@@ -1,23 +1,10 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
 
-import { useSession } from '@/api/session';
-import { GetCardScreen } from '@/features/cards/GetCardScreen';
-import { OPEN_WALLET_PIN_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
-
-/** W29 · Get a card (`/cards/new`), from the list's "Get another card". A card made replaces this screen with its own. */
+/**
+ * Get a card (`/cards/new`) is not in the app (R-104, owner, 30 Oct 2026: Nuvion has suspended cards; they stay off until Nuvion says they are back and
+ * they have been tested on dev). Nothing opens the cards screens, and an old link or a stale notification lands on the Wallet. The screens
+ * themselves are still in `src/features/cards/` for the day cards come back; the Hub's card routes are not touched.
+ */
 export default function NewCardRoute() {
-  const router = useRouter();
-  const entry = useOpenWalletEntry();
-  const { status } = useSession();
-  if (status === 'restoring') return null;
-  if (status !== 'signedIn') return <Redirect href="/welcome" />;
-  return (
-    <GetCardScreen
-      onBack={() => (router.canGoBack() ? router.back() : router.replace('/cards'))}
-      onDone={(id) => router.replace({ pathname: '/cards/[id]', params: { id } })}
-      onOpenWallet={entry.open}
-      onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
-      onForgotPin={() => router.push('/reset-pin')}
-    />
-  );
+  return <Redirect href="/wallet" />;
 }

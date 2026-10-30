@@ -5,7 +5,7 @@ import { PointsScreen } from '@/features/points/PointsScreen';
 
 /**
  * PT5 · Your points (`/points`). Signed in only: the route graph does not guard it, so a signed-out visit is sent to the welcome
- * screen here, as the other wallet routes do. The round button on its bar opens PT6 and Buy points opens PT4. The Points card on
+ * screen here, as the other wallet routes do. Buy points opens PT4. There is no way to cash from here (R-103). The Points card on
  * Wallet (W1) opens this screen.
  */
 export default function PointsRoute() {
@@ -17,7 +17,6 @@ export default function PointsRoute() {
   return (
     <PointsScreen
       onBack={() => (router.canGoBack() ? router.back() : router.replace('/wallet'))}
-      onConvert={() => router.push('/points-convert')}
       onBuy={() => router.push('/points-buy')}
     />
   );

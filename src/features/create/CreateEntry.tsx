@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { queryClient } from '@/api/query';
 import { CreateButton } from '@/components/CreateButton';
+import { floatingRoom } from '@/components/floating';
 import { fetchMe, meKey } from '@/features/profile-edit/api';
 
 /**
@@ -33,4 +34,13 @@ export function useCreatorGate(enabled = true): CreatorGate {
  */
 export function CreateEntry({ onPress }: { onPress: () => void }) {
   return useIsCreator() ? <CreateButton onPress={onPress} /> : null;
+}
+
+/**
+ * Room under a tab screen's last block for the floating buttons (R-110 point 3): Create's height and the clear air above it for a creator
+ * account, the theme button's for anyone else. `music` is false on a tab that does not draw the theme button (the Inbox), which then needs room
+ * for a creator's Create button only.
+ */
+export function useFloatingRoom(music = true): number {
+  return floatingRoom({ create: useIsCreator(), music });
 }

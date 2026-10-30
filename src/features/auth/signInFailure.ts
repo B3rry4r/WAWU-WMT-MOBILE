@@ -1,4 +1,4 @@
-import { isApiError } from '@/api/errors';
+import { CLIENT_HELP, CLIENT_TITLE, isApiError } from '@/api/errors';
 
 /** What a refused sign-in or reset request says, and in which tone. Every sentence is for the user: no codes, no status numbers. */
 export type Failure = {
@@ -47,6 +47,14 @@ const busy: Failure = {
   credentials: false,
 };
 
+/** The phone itself threw before a request left, or could not read the answer (WALK-FIX H4): not the network, and not our side. */
+const phoneSide: Failure = {
+  tone: 'danger',
+  title: CLIENT_TITLE,
+  body: CLIENT_HELP,
+  credentials: false,
+};
+
 const broken: Failure = {
   tone: 'danger',
   title: 'Something went wrong on our side',
@@ -74,6 +82,8 @@ export function signInFailure(error: unknown): Failure {
       return mismatch;
     case 'network':
       return offline;
+    case 'client':
+      return phoneSide;
     case 'rate_limited':
       return busy;
     default:
@@ -87,6 +97,8 @@ export function resetFailure(error: unknown): Failure {
   switch (error.kind) {
     case 'network':
       return offline;
+    case 'client':
+      return phoneSide;
     case 'rate_limited':
       return busy;
     default:

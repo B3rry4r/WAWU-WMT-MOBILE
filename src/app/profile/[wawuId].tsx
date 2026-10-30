@@ -29,6 +29,7 @@ export default function ProfileRoute() {
       onOpenAllWorks={(who) => router.push({ pathname: '/works/[wawuId]', params: { wawuId: who } })}
       onOpenWork={(who, workId) => router.push({ pathname: '/works/[wawuId]/[workId]', params: { wawuId: who, workId } })}
       onOpenListing={(listingId) => router.push({ pathname: '/professionals/[id]', params: { id: listingId } })}
+      onOpenContent={(contentId) => router.push({ pathname: '/content/[id]', params: { id: contentId } })}
       onBlocked={() => (router.canGoBack() ? router.back() : router.replace('/'))}
       pay={{
         onOpenWallet: entry.open,

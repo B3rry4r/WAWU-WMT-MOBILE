@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
@@ -146,6 +146,26 @@ export function CodeScreen({
     setSentNote(false);
     if (!extra && next.length === CODE_LENGTH) void submit(next, '');
   };
+  // WALK-FIX M4: a code pasted, or offered by the phone from a text or an email ("123456", "123 456"), fills all the boxes. The sixth
+  // digit sends it, as a keypad's sixth digit does. A single character is a key like the keypad's own.
+  const onPhoneText = (text: string) => {
+    if (keysOff) return;
+    const incoming = text.replace(/\D/g, '');
+    if (incoming.length === 0) return;
+    if (incoming.length === 1) {
+      onDigit(incoming);
+      return;
+    }
+    // A message with a number before the code ("2 min, code 123456") holds the code as a run of exactly six digits: take that run.
+    // With no such run ("123 456", a code written in groups) the first six digits are the code.
+    const standalone = /(?:^|\D)(\d{6})(?!\d)/.exec(text);
+    const next = standalone ? standalone[1] : incoming.slice(0, CODE_LENGTH);
+    setDigits(next);
+    setNotice(null);
+    setPhase({ kind: 'entering' });
+    setSentNote(false);
+    if (!extra && next.length === CODE_LENGTH) void submit(next, '');
+  };
   const onDelete = () => {
     if (busy || locked || phase.kind === 'dead') return;
     setDigits(digits.slice(0, -1));
@@ -250,6 +270,7 @@ export function CodeScreen({
           />
         ) : null}
         <View style={styles.middle}>
+          <View style={styles.boxesWrap}>
           <View
             testID={`${testID}-boxes`}
             accessible
@@ -282,6 +303,28 @@ export function CodeScreen({
                 </Text>
               </View>
             ))}
+          </View>
+          {/* Over the boxes and see-through: it never holds the code (value stays empty), so what arrives in it is only what was just
+              typed, pasted or offered. The phone offers the code from a text or an email to this field (iOS oneTimeCode, Android sms-otp). */}
+          <TextInput
+            testID={`${testID}-input`}
+            value=""
+            onChangeText={onPhoneText}
+            onKeyPress={(event) => {
+              if (event.nativeEvent.key === 'Backspace') onDelete();
+            }}
+            editable={!keysOff}
+            keyboardType="number-pad"
+            textContentType="oneTimeCode"
+            autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
+            importantForAutofill="yes"
+            autoCorrect={false}
+            caretHidden
+            // Our own keypad is the keyboard; this field is for paste and the phone's code offer.
+            showSoftInputOnFocus={false}
+            accessibilityLabel="Paste your code"
+            style={styles.hiddenInput}
+          />
           </View>
           {problem ? (
             <View style={styles.line} accessibilityRole="alert" accessibilityLiveRegion="polite" testID={`${testID}-error`}>
@@ -337,6 +380,8 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   head: { gap: HEAD.apart, paddingTop: HEAD.top },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: HEAD.middleGap },
+  boxesWrap: { alignSelf: 'stretch' },
+  hiddenInput: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 0.02, color: 'transparent', zIndex: 1 },
   boxes: { flexDirection: 'row', justifyContent: 'center', gap: BOX.apart, alignSelf: 'stretch' },
   box: { width: BOX.width, flexShrink: 1, minWidth: 0, height: BOX.height, borderRadius: radius.input, alignItems: 'center', justifyContent: 'center' },
   line: { flexDirection: 'row', alignItems: 'center', gap: LINE.apart },

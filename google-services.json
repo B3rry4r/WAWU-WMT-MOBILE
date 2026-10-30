@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "509087910217",
+    "project_id": "who-made-this-1be5a",
+    "storage_bucket": "who-made-this-1be5a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:509087910217:android:ae7ae850e28ce6fb09f298",
+        "android_client_info": {
+          "package_name": "africa.wawu.wmt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAObYGWKS7K3gv2B5I28e1-I2anrWAUEU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

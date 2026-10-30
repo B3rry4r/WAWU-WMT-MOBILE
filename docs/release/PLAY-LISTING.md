@@ -130,7 +130,7 @@ question for the owner.
 | Field | Value |
 |---|---|
 | App name (30 max) | `Who Made This` (13) |
-| Short description (80 max) | `Get paid for what you know. Sell your work and answer paid questions.` (69) |
+| Short description (80 max) | `The creators and professionals ecosystem. Create. Sell. Get paid. Grow.` (71) |
 | Category | **Business** is the closest fit (Default (agent), owner may override) (a marketplace where people sell their work and expertise). Alternatives: Social, Shopping. **Not Finance**: the app is not mainly a banking app, but the Financial features declaration (section 6) still applies. Category is not a product fact. |
 | Tags | Pick from Play's list: creator, marketplace, wallet or payments if offered. |
 | App icon (512 x 512, 32-bit PNG) | `docs/release/assets/play-icon-512.png`: the app's own `assets/images/icon.png` (1,024 x 1,024, the purple tile with the Who Made This mark, R-37) scaled down with Lanczos, no padding, no redesign. Opaque 512 x 512 RGBA PNG (alpha is 255 everywhere), 47 KB, well under Play's 1,024 KB limit. The source was larger than 512, so nothing was upscaled. Play rounds the corners itself, so the file has square corners on purpose. |

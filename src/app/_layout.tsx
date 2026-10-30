@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
+import { ErrorScreen } from '@/components/ErrorScreen';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useAcceptanceRetry } from '@/features/about/acceptance';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
@@ -20,6 +21,12 @@ import { useBonusStep } from '@/features/verify/bonusStep';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Expo Router wraps the root layout in this: a screen that throws while it draws shows "Something went wrong" with Try again and Go to Home, and
+ * never a blank screen (WALLET-BLANK, SHARED-CHANGES WALLET-BLANK #1). Inside the tabs the tabs' own boundary catches first and keeps the tab bar.
+ */
+export const ErrorBoundary = ErrorScreen;
 
 /** The longest the saved Theme is waited for before the first screen is drawn (SHARED-05 L1). */
 export const THEME_READ_LIMIT_MS = 3000;
@@ -87,9 +94,9 @@ function useStoredTheme(): boolean {
  * goes back to the checklist, since the tabs are not open yet.
  * "Your bonus is waiting" (VF1, `/verify-bonus`) comes once after the access-code step, the same way (VERIFY-01 #1); the shop
  * (`/shop`) and its draft form (`/shop-product`) sit with the tabs (VERIFY-01 #2).
- * "Choose your tier" (TIER-OFFER, R-94, `/tier-offer`) comes once, first, as soon as the sign-up's email, name and access-code steps are done: before
+ * "Choose your tier" (TIER-OFFER, R-94, `/tier-offer`) comes first, as soon as the sign-up's email, name and access-code steps are done: before
  * "Set up your account" (A11) and the other setup steps, "Your bonus" and Home (FIX-P5, lead ruling 27 Oct 2026). The Hub says whether it is
- * this person's to see (a creator account not yet shown it, with no running tier), every setup step and the tabs wait while it is on screen, and its
+ * this person's to see, on every app start, for any account type with no running tier (R-105, `tier_offer.every_start_on`), every setup step and the tabs wait while it is on screen, and its
  * X or Not now (by the admin setting) or a Subscribe ends it; Subscribe's checkout is opened by `TierOfferBridge` once the offer is gone, over the
  * screen that took its place.
  * The push bridge (INBOX-21, SHARED-CHANGES INBOX-21 #1) has no screen: once the tabs are reachable it asks for
@@ -107,8 +114,8 @@ export default function RootLayout() {
   // PAY-FX (R-91): where a wallet payment starts from (naira, or the main currency of a person with no naira wallet).
   useDefaultPaySource(signedIn);
   const bonus = useBonusStep(signedIn, gate.progress?.accountType);
-  // TIER-OFFER (R-94): the Hub is asked once the sign-up gate is open; the splash waits for the answer (bounded), so Home is never drawn first.
-  const tierOffer = useTierOfferStep(signedIn && gate.phase === 'ready', gate.progress?.accountType);
+  // TIER-OFFER (R-94, R-105): the Hub is asked once the sign-up gate is open, for every account type; the splash waits for the answer (bounded), so Home is never drawn first.
+  const tierOffer = useTierOfferStep(signedIn && gate.phase === 'ready');
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || (gate.phase === 'ready' && !tierOffer.holding));
   const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && !bonus.visible;

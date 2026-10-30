@@ -50,6 +50,8 @@ export type ListRowProps = {
   trailing?: ReactNode;
   /** With no `trailing`, a row that can be opened shows a chevron. */
   onPress?: () => void;
+  /** Off: a row that can be opened draws no chevron (a promo row that carries a close button at its end instead, R-110). Default on. */
+  chevron?: boolean;
   /** What a screen reader says when it is not just the title and subtitle. */
   accessibilityLabel?: string;
   /** Room above and below the words, for a row that sits alone in a card taller than the kit's (default: the kit's 12; SHARED-CHANGES SWEEP-VOICE #1). */
@@ -69,13 +71,14 @@ export function ListRow({
   subtitleTestID,
   trailing,
   onPress,
+  chevron = true,
   accessibilityLabel,
   padV,
   testID,
 }: ListRowProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const end = trailing ?? (onPress ? <Icon name="ChevronRight" size={rowMetrics.chevron} color={colors.textMuted} /> : null);
+  const end = trailing ?? (onPress && chevron ? <Icon name="ChevronRight" size={rowMetrics.chevron} color={colors.textMuted} /> : null);
   const body = (
     <>
       {lead}

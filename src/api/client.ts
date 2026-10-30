@@ -1,7 +1,7 @@
 import createClient, { type Middleware } from 'openapi-fetch';
 
 import { apiBaseUrl } from './env';
-import { ApiError, networkError, NO_ANSWER_CODE, noAnswerError, toApiError } from './errors';
+import { ApiError, failureOf, networkError, NO_ANSWER_CODE, noAnswerError, toApiError } from './errors';
 import { carriesPaySource, paySourceCode } from './paySource';
 import { getAccessToken, isCurrentSessionToken, refreshAccessToken } from './session';
 import type { paths } from './schema.generated';
@@ -91,7 +91,35 @@ function withTimeouts(send: typeof fetch, resends: boolean): typeof fetch {
  */
 export const resendsUnderKey: typeof fetch = withTimeouts((input, init) => globalThis.fetch(input, init), true);
 
-export const api = createClient<paths>({ baseUrl: apiBaseUrl, fetch: withTimeouts(globalThis.fetch, false) });
+const client = createClient<paths>({ baseUrl: apiBaseUrl, fetch: withTimeouts(globalThis.fetch, false) });
+
+/**
+ * WALK-FIX H4 (walk L11): openapi-fetch builds the body, the URL and the request before it calls `fetch`, and reads the answer after, and
+ * a throw in any of those never reaches the middleware's `onError`; it came out of `api.POST(...)` as a raw TypeError. Every call ends
+ * as an ApiError: a real network failure as "No connection", anything else as the phone's own error (`failureOf`).
+ */
+function guarded<F extends (...args: never[]) => Promise<unknown>>(call: F): F {
+  return (async (...args: Parameters<F>) => {
+    try {
+      return await call(...args);
+    } catch (error) {
+      throw failureOf(error);
+    }
+  }) as F;
+}
+
+export const api: typeof client = {
+  ...client,
+  request: guarded(client.request),
+  GET: guarded(client.GET),
+  PUT: guarded(client.PUT),
+  POST: guarded(client.POST),
+  DELETE: guarded(client.DELETE),
+  OPTIONS: guarded(client.OPTIONS),
+  HEAD: guarded(client.HEAD),
+  PATCH: guarded(client.PATCH),
+  TRACE: guarded(client.TRACE),
+};
 
 const sentWith = new Map<string, { token: string; copy: Request; resends: boolean }>();
 
@@ -116,8 +144,9 @@ const auth: Middleware = {
   },
   onError({ id, error }) {
     sentWith.delete(id);
-    // Our own end of a write's wait keeps its sentence; any other failure to get an answer is "No connection".
-    return error instanceof ApiError && error.code === NO_ANSWER_CODE ? error : networkError();
+    // Our own end of a write's wait keeps its sentence; a failure to get an answer is "No connection"; any other throw (WALK-FIX H4)
+    // is the phone's own and says so.
+    return error instanceof ApiError && error.code === NO_ANSWER_CODE ? error : failureOf(error);
   },
 };
 

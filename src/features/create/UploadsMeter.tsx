@@ -82,11 +82,11 @@ export function AllowanceMeter() {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0 });
-  // A person who holds a tier is shown the tier's own count and name ("3 of 3 products", "Verify · ends 26 Nov"), as Create and Me show it, and
+  // A person who holds a tier is shown the tier's own count and name ("3 of 3 products", the tier chip and "Until 26 Nov", R-110), as Create and Me show it, and
   // never the free level's "Get verified" line (RELEASE-02 second pass, L-p2-12). The Hub's tier read is the one that decides.
   const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
   const products = productsMeterOf(tier.data);
-  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} caption={products.caption} testID="meter-products" />;
+  if (products) return <ProductsMeter used={products.used} allowed={products.allowed} tier={products.tier} testID="meter-products" />;
   if (tier.isPending) return <Skeleton testID="meter-loading" height={96} radius={radius.card} />;
   if (allowance.data) return <UploadsMeter allowance={allowance.data} />;
   if (allowance.isError) {

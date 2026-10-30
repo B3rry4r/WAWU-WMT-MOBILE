@@ -13,6 +13,7 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(async (key: string, value: string) => void mockVault.set(key, value)),
   deleteItemAsync: jest.fn(async (key: string) => void mockVault.delete(key)),
 }));
+jest.mock('expo-iap', () => require('@/features/store/testing/fakeIap').moduleMock);
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: mockPush, dismissTo: jest.fn() }) }));
 
@@ -55,6 +56,7 @@ const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { RoomScreen } = require('@/features/communities/RoomScreen') as typeof import('@/features/communities/RoomScreen');
 const { CommunitiesView } = require('@/features/communities/CommunitiesView') as typeof import('@/features/communities/CommunitiesView');
 const { forgetAttempts } = require('@/features/money-attempt/attempts') as typeof import('@/features/money-attempt/attempts');
+const { fakeStore } = require('@/features/store/testing/fakeIap') as typeof import('@/features/store/testing/fakeIap');
 
 const b64 = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
 const token = `${b64({ alg: 'none' })}.${b64({ sub: 'me', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
@@ -78,35 +80,17 @@ const room = (over: object = {}) => ({
   ...over,
 });
 const credits = (creditBalance: number) => ok({ userWawuId: ME, creditBalance, trialEndsAt: null });
-const PACKS = ok({
-  packs: [
-    { pack: 'starter', credits: 50, priceKobo: 50_000, badge: null },
-    { pack: 'popular', credits: 120, priceKobo: 100_000, badge: 'popular' },
-    { pack: 'pro', credits: 300, priceKobo: 200_000, badge: 'best_value' },
-  ],
+/** The packs of I28 are the store's now (IAP-02, R-86): the Hub's products, priced by the store. */
+const creditProduct = (n: number, credits: number) => ({
+  id: `credits-${n}`,
+  platform: 'ios',
+  storeProductId: `africa.wawu.credits.${credits}`,
+  kind: 'credits',
+  title: `${credits} credits`,
+  subscription: false,
+  grants: { points: null, credits, tierId: null, days: null },
 });
-const QUOTE = ok({
-  pack: 'popular',
-  credits: 120,
-  priceKobo: 100_000,
-  badge: 'popular',
-  payment: {
-    kind: 'credit_pack',
-    targetId: 'popular',
-    title: '120 credits',
-    payee: null,
-    priceKobo: 100_000,
-    fee: { providerFeeKobo: 2325, wawuFeeKobo: 0, totalFeeKobo: 2325 },
-    totalKobo: 102_325,
-    balanceKobo: 48_525_075,
-    shortfallKobo: null,
-    willBeHeld: false,
-    withinDailyLimit: true,
-    remainingTodayKobo: null,
-    quoteToken: 'tok',
-    expiresAt: '2099-01-01T00:00:00.000Z',
-  },
-});
+const STORE_PRODUCTS = ok({ platform: 'ios', available: true, reason: null, accountToken: '7d9f0c1e-2b3a-4c5d-8e6f-a1b2c3d4e5f6', products: [creditProduct(1, 50), creditProduct(2, 120), creditProduct(3, 300)] });
 
 function serve(over: Record<string, Answer[]> = {}) {
   answers = {
@@ -119,8 +103,7 @@ function serve(over: Record<string, Answer[]> = {}) {
     [`POST /communities/${ROOM}/read`]: [ok({ communityId: ROOM, lastReadAt: new Date().toISOString() })],
     'GET /inbox/unread': [ok({ total: 0, chats: 0, paidDms: 0, communities: 0 })],
     'GET /live/catch-up': [ok({ events: [], cursor: 'c0', hasMore: false })],
-    'GET /credits/packs': [PACKS],
-    'GET /credits/purchase/wallet/quote?pack=popular': [QUOTE],
+    'GET /store/products?platform=ios': [STORE_PRODUCTS],
     'GET /money/wallet/balance': [ok({ availableKobo: 48_525_075, asOf: '2026-10-17T09:00:00.000Z' })],
     ...over,
   };
@@ -145,6 +128,9 @@ beforeEach(() => {
   resetSessionForTests();
   mockVault.clear();
   forgetAttempts();
+  fakeStore.reset();
+  fakeStore.products = [50, 120, 300].map((c, i) => ({ id: `africa.wawu.credits.${c}`, displayPrice: ['$0.99', '$1.99', '$3.99'][i], type: 'in-app' as const }));
+  (require('@/features/store/iap') as typeof import('@/features/store/iap')).resetIapForTests();
   serve();
 });
 
@@ -166,7 +152,8 @@ describe('I27: out of credits in a room', () => {
     expect(rtl.screen.getByText('0 credits')).toBeTruthy();
     await rtl.fireEvent.press(rtl.screen.getByTestId('out-of-credits-buy'));
     expect(await rtl.screen.findByTestId('credits-sheet')).toBeTruthy();
-    expect(await rtl.screen.findByTestId('credits-total')).toBeTruthy();
+    expect(await rtl.screen.findByTestId('credits-packs')).toBeTruthy();
+    expect(rtl.screen.getByTestId('credits-price-credits-2').props.children).toBe('$1.99');
   });
 
   it('a member with credits sees no panel', async () => {

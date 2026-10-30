@@ -19,7 +19,7 @@ export type PointsFrameProps = {
   /** The line under the title on the bar (PT2's "Points: 1,250"), 12.5 in the muted tone, 2 below it. */
   subtitle?: string;
   onBack?: () => void;
-  /** The round button on the bar's right (PT5's "Convert to cash"). */
+  /** A round button on the bar's right (none is drawn today: PT5's "Convert to cash" is gone, R-103). */
   action?: PointsFrameAction;
   /** The gap between the screen's parts (PT5 and PT6 draw 14). */
   gap: number;

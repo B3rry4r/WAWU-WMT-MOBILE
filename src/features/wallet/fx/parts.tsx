@@ -257,6 +257,14 @@ function ScrollTabs({ tabs, value, onChange, onAdd }: WalletTabsProps) {
   const hiddenRight = view.content - view.width - view.x > END_SLACK;
   const hiddenLeft = view.x > END_SLACK;
 
+  // The figures are read from the event here, in the handler, and only the numbers go into the state update. React Native gives a handler a
+  // pooled event and nulls its `nativeEvent` as soon as the handler returns; a state update that is not run on the spot (another one for the
+  // same component is already waiting, as when the strip's size, its content's size and its offset arrive together) is run when React next
+  // renders, and an update that read `e.nativeEvent` then threw "Cannot read property 'layout' of null" in the render, which takes the whole
+  // screen down (WALLET-BLANK).
+  const onStripWidth = (width: number) => setView((v) => (v.width === width ? v : { ...v, width }));
+  const onStripOffset = (x: number) => setView((v) => (v.x === x ? v : { ...v, x }));
+
   // What the layout callbacks need to know, read when they fire (a tab's own layout can arrive after the render that chose it).
   const latest = useRef({ value, view });
   useLayoutEffect(() => {
@@ -290,9 +298,9 @@ function ScrollTabs({ tabs, value, onChange, onAdd }: WalletTabsProps) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.trackRow}
         scrollEventThrottle={16}
-        onLayout={(e) => setView((v) => ({ ...v, width: e.nativeEvent.layout.width }))}
-        onContentSizeChange={(width) => setView((v) => ({ ...v, content: width }))}
-        onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => setView((v) => ({ ...v, x: e.nativeEvent.contentOffset.x }))}
+        onLayout={(e) => onStripWidth(e.nativeEvent.layout.width)}
+        onContentSizeChange={(width) => setView((v) => (v.content === width ? v : { ...v, content: width }))}
+        onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => onStripOffset(e.nativeEvent.contentOffset.x)}
       >
         {tabs.map((tab) => (
           <ScrollTab key={tab.key} tab={tab} selected={tab.key === value} onPress={() => onChange(tab.key)} onLayout={note(tab.key)} />

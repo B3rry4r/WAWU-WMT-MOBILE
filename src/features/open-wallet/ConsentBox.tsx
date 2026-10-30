@@ -60,11 +60,8 @@ export function ConsentBox({ agreed, busy, problem, onToggle, onOpenTerms, onOpe
           {agreed ? <Icon name="Check" size={CONSENT.tick} color={colors.textOnAccent} strokeWidth={CONSENT.tickStroke} /> : null}
         </View>
         {onOpenAll ? (
-          <Text variant="secondary" style={styles.text}>
-            {`${SIGNUP_CONSENT_LINE} `}
-            <Text variant="secondary" tone="accentFg" style={font(700)} accessibilityRole="link" onPress={onOpenAll} testID={`${testID}-read`}>
-              Read them
-            </Text>
+          <Text variant="secondary" style={styles.text} testID={`${testID}-line`}>
+            {SIGNUP_CONSENT_LINE}
           </Text>
         ) : (
           <Text variant="secondary" style={styles.text}>
@@ -79,6 +76,13 @@ export function ConsentBox({ agreed, busy, problem, onToggle, onOpenTerms, onOpe
           </Text>
         )}
       </Pressable>
+      {onOpenAll ? (
+        // WALK-FIX M5: the link is its own line, not the tail of the sentence. Inline at the end of the sentence it shared the sentence's
+        // text view, and a tap on the sentence (or beside its last word) could land on the link and open the Legal list instead of ticking.
+        <Text variant="secondary" tone="accentFg" style={[font(700), styles.read]} accessibilityRole="link" onPress={onOpenAll} testID={`${testID}-read`}>
+          Read them
+        </Text>
+      ) : null}
       {problem ? (
         <Text variant="caption" tone="danger" accessibilityRole="alert" testID={`${testID}-error`}>
           {problem}
@@ -92,5 +96,6 @@ const styles = StyleSheet.create({
   block: { gap: space.sm },
   consent: { flexDirection: 'row', alignItems: 'center', gap: CONSENT.between, alignSelf: 'flex-start' },
   box: { width: CONSENT.box, height: CONSENT.box, borderRadius: CONSENT.corner, alignItems: 'center', justifyContent: 'center' },
+  read: { alignSelf: 'flex-start', marginLeft: CONSENT.box + CONSENT.between, paddingVertical: space.xs },
   text: { flexShrink: 1, fontSize: CONSENT.size, lineHeight: canvasNormalLineHeight(CONSENT.size) },
 });

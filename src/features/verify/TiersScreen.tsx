@@ -1,27 +1,32 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
-import { Money, type Currency } from '@/components/Money';
+import { Icon } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
-import { EmptyState, ErrorState } from '@/components/StateViews';
+import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { StoreUnready } from '@/features/store/StoreParts';
+import type { StoreItem } from '@/features/store/model';
+import { useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space, useWawu } from '@/theme';
 
-import { fetchQuote, plansQuery, type PlanTier } from './purchaseApi';
-import { dayOf, higherTiers, priceIn, startingTier, tierFacts, TIER_WORDS } from './purchaseModel';
+import { plansQuery, type PlanTier } from './purchaseApi';
+import { dayOf, periodOf, tierItems, TIER_WORDS } from './purchaseModel';
 import { Radio } from './planParts';
 
 const HEAD = { title: 22, tracking: -0.03 } as const;
-const CARD = { padV: 14, padH: 16, between: 8 } as const;
+const CARD = { padV: 16, padH: 16, between: 14, itemGap: 10, check: 18 } as const;
+/** The share of the screen's height the tier list may take before it scrolls above the button. */
+const LIST_SHARE = 0.6;
 
 export type TiersScreenProps = {
   /** False closes the sheet (its Modal) while this screen stays mounted, so the choice made on it is still there when it opens again. */
@@ -29,65 +34,44 @@ export type TiersScreenProps = {
   onClose: () => void;
   /** The button: `tier` for a person with none (or an ended one), `upgrade` for a person whose tier is running. */
   onContinue: (kind: 'tier' | 'upgrade', tierId: string) => void;
-  /** A person billed in dollars: the Hub takes no tier payment from a dollar account yet, so Continue says so and this opens the wallet to add one, with the Hub's currency (R-87). */
-  onAddAccount?: (currency: Currency) => void;
 };
 
-/** A person's tier is running (the Hub's `active` or `ending`): the choice is then the step up, paid as the difference. */
+/** A person's tier is running (the Hub's `active` or `ending`): the choice is then the step up. */
 const running = (tier: MyTier | undefined): tier is MyTier & { tier: NonNullable<MyTier['tier']> } => Boolean(tier && (tier.state === 'active' || tier.state === 'ending') && tier.tier);
 
+/** A tier the store sells, joined to what the plan says it gives. */
+type Offer = { tier: PlanTier; item: StoreItem };
+
 /**
- * VF5 · Make it official, and VF5b · Upgrade, one sheet. The tiers, their prices, lengths, products, points and passes are the Hub's
- * (`GET /plans`); the tier the sheet starts on is the one the Hub marks `preselected`. A person whose tier is running sees their own
- * tier marked and the others at "pay only" the difference, which is the Hub's own upgrade quote for each (`GET /plans/purchases/quote`
- * `kind=upgrade`), never a subtraction made here. A person the Hub bills in dollars (VF5a) sees the Hub's dollar figures with the dollar
- * sign (D-1), never a naira sign. The Hub takes a tier payment only from a naira wallet (BACKEND_GAPS G-R2-AUTHME-1), so for them Continue
- * says plainly that paying in dollars is not open yet and leads to adding a dollar account; no cedi or naira wallet is opened to pay it.
- * The board's first line,
- * "Your intro is ready", is true only once a Voice Intro exists (VERIFY-03), so the title is the board's name for the sheet.
+ * VF5 · Make it official, and VF5b · Upgrade, one sheet. A tier is a subscription bought in the store sheet (R-86): the tiers on sale are the
+ * ones the Hub sells in this phone's store (`GET /store/products`) joined to what each gives (`GET /plans`: its length, products, points and
+ * pass), and the price is the store's own, in the person's own currency. A person whose tier is running sees their own tier marked and the
+ * tiers above it; the store works out what moving up costs, so no difference is shown here. The tier the sheet starts on is the one the Hub
+ * marks `preselected`. The dollar tiers (VF5a) are not built at launch (R-16, R-65).
  */
-export function TiersScreen({ open = true, onClose, onContinue, onAddAccount }: TiersScreenProps) {
+export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenProps) {
   const owner = useSessionAccount(undefined);
-  const plans = useQuery(plansQuery(owner), queryClient);
+  const plans = useQuery({ ...plansQuery(owner), retry: false }, queryClient);
   const mine = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
+  const store = useStoreCatalog(['tier']);
   const [chosen, setChosen] = useState<string | null>(null);
-  const [explaining, setExplaining] = useState(false);
+  const { height } = useWindowDimensions();
 
   const held = running(mine.data) ? mine.data : null;
   const all = plans.data?.tiers ?? [];
-  const currency: Currency = plans.data?.currency ?? 'NGN';
-  const dollars = currency !== 'NGN';
-  const above = held ? higherTiers(all, held.tier.id) : [];
-  // The Hub quotes an upgrade only in naira, so a dollar account is shown the tier prices as they are and no difference is asked for.
-  const quoted = dollars ? [] : above;
-  const diffs = useQueries(
-    {
-      queries: quoted.map((tier) => ({
-        queryKey: ['plans', 'upgrade-diff', owner ?? '', tier.id] as const,
-        queryFn: () => fetchQuote({ kind: 'upgrade', tierId: tier.id, bump: false }),
-        enabled: Boolean(owner),
-        staleTime: 0,
-        retry: false,
-      })),
-    },
-    queryClient,
-  );
-  const diffOf = (id: string): number | null => {
-    const at = quoted.findIndex((t) => t.id === id);
-    return at >= 0 ? (diffs[at]?.data?.planKobo ?? null) : null;
-  };
+  const offers: Offer[] = store.state.kind === 'ready' ? store.state.items.flatMap((item) => { const tier = all.find((t) => t.id === item.product.grants.tierId); return tier ? [{ tier, item }] : []; }) : [];
+  const heldPrice = held ? all.find((t) => t.id === held.tier.id)?.priceMinor : undefined;
+  const above = held && heldPrice !== undefined ? offers.filter((o) => o.tier.priceMinor > heldPrice) : offers;
+  const choices = held ? above : offers;
+  const start = choices.find((o) => o.tier.preselected) ?? choices[0] ?? null;
+  const selected = choices.find((o) => o.tier.id === chosen) ?? start;
 
-  const failed = (plans.isError && !plans.data) || (mine.isError && !mine.data) || diffs.some((d) => d.isError);
-  const waiting = !plans.data || !mine.data || diffs.some((d) => d.isPending);
-  const choices = held ? above : all;
-  const start = held ? (above.find((t) => t.preselected) ?? above[0] ?? null) : startingTier(all);
-  const selected = choices.find((t) => t.id === chosen) ?? start;
-  const stepUp = held !== null && !dollars;
-  const price = selected ? (stepUp ? diffOf(selected.id) : selected.priceMinor) : null;
+  const failed = (plans.isError && !plans.data) || (mine.isError && !mine.data);
+  const waiting = !plans.data || !mine.data || store.state.kind === 'loading';
 
   let body;
   if (failed) {
-    const error = plans.error ?? mine.error ?? diffs.find((d) => d.isError)?.error;
+    const error = plans.error ?? mine.error;
     body = (
       <ErrorState
         testID="tiers-error"
@@ -97,7 +81,7 @@ export function TiersScreen({ open = true, onClose, onContinue, onAddAccount }: 
         onRetry={() => {
           void plans.refetch();
           void mine.refetch();
-          for (const d of diffs) if (d.isError) void d.refetch();
+          store.refetch();
         }}
       />
     );
@@ -106,56 +90,43 @@ export function TiersScreen({ open = true, onClose, onContinue, onAddAccount }: 
       <View testID="tiers-loading" style={styles.list}>
         <Skeleton height={34} width="70%" radius={radius.tile} />
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} height={92} radius={radius.card} />
+          <Skeleton key={i} height={200} radius={radius.card} />
         ))}
       </View>
     );
-  } else if (explaining) {
-    body = (
-      <EmptyState
-        testID="tiers-dollars"
-        icon="Wallet"
-        title={TIER_WORDS.dollarsTitle}
-        message={TIER_WORDS.dollarsBody}
-        action={onAddAccount ? { label: TIER_WORDS.dollarsAdd, onPress: () => onAddAccount(currency) } : undefined}
-        actionVariant="primary"
-      />
-    );
-  } else if (all.length === 0 || (held && above.length === 0)) {
-    // A person on the highest tier has nothing to move up to, and a Hub that sells no tier has nothing to sell: nothing is offered.
-    body = (
-      <ErrorState
-        testID="tiers-none"
-        icon="TriangleAlert"
-        title={held ? 'You are on the highest tier' : 'No tiers on sale'}
-        message={held ? 'There is no tier above yours to move up to.' : 'There are no tiers on sale right now. Try again later.'}
-        onRetry={() => void plans.refetch()}
-      />
+  } else if (store.state.kind !== 'ready') {
+    body = <StoreUnready state={store.state} onRetry={store.refetch} testID="tiers" />;
+  } else if (choices.length === 0) {
+    // A person on the highest tier has nothing to move up to; a store with no tier on sale has nothing to sell: nothing is offered.
+    body = held ? (
+      <ErrorState testID="tiers-none" icon="TriangleAlert" title="You are on the highest tier" message="There is no tier above yours to move up to." />
+    ) : (
+      <StoreUnready state={{ kind: 'not_open', why: 'not_configured' }} onRetry={store.refetch} testID="tiers-none" />
     );
   } else {
     const heldName = held?.tier.name ?? 'your tier';
     const until = held ? dayOf(held.activeUntil) : null;
     body = (
-      <>
+      <ScrollView testID="tiers-scroll" style={[styles.scroll, { maxHeight: Math.round(height * LIST_SHARE) }]} contentContainerStyle={styles.scrolled} showsVerticalScrollIndicator={false}>
         <View>
           <Text variant="display" accessibilityRole="header" testID="tiers-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
             {held ? TIER_WORDS.upgradeTitle : TIER_WORDS.title}
           </Text>
           <Text variant="body" tone="textSecondary" testID="tiers-blurb" style={styles.blurb}>
-            {held ? `You're on ${heldName}${until ? ` until ${until}` : ''}. Pay only the difference.` : TIER_WORDS.blurb}
+            {held ? `You're on ${heldName}${until ? ` until ${until}` : ''}. The store works out what moving up costs.` : TIER_WORDS.blurb}
           </Text>
         </View>
         <View accessibilityRole="radiogroup" testID="tiers-list" style={styles.list}>
-          {held ? <TierCard tier={all.find((t) => t.id === held.tier.id) ?? null} fallbackName={held.tier.name ?? 'Your tier'} mark="mine" currency={currency} /> : null}
-          {choices.map((tier) => (
-            <TierCard key={tier.id} tier={tier} currency={currency} on={selected?.id === tier.id} mark={tier.preselected ? 'best' : undefined} only={stepUp ? diffOf(tier.id) : null} onPress={() => setChosen(tier.id)} />
+          {held ? <TierCard tier={all.find((t) => t.id === held.tier.id) ?? null} fallbackName={held.tier.name ?? 'Your tier'} mark="mine" price={null} /> : null}
+          {choices.map((o) => (
+            <TierCard key={o.tier.id} tier={o.tier} price={o.item.price} on={selected?.tier.id === o.tier.id} mark={o.tier.preselected ? 'best' : undefined} onPress={() => setChosen(o.tier.id)} />
           ))}
         </View>
-      </>
+      </ScrollView>
     );
   }
 
-  const ready = !failed && !waiting && !explaining && selected !== null && price !== null;
+  const ready = !failed && !waiting && store.state.kind === 'ready' && selected !== null;
   return (
     <View testID="tiers-screen" style={styles.page}>
       <BottomSheet visible={open} onClose={onClose} label="Choose a tier">
@@ -163,9 +134,9 @@ export function TiersScreen({ open = true, onClose, onContinue, onAddAccount }: 
         {ready && selected ? (
           <Button
             testID="tiers-continue"
-            label={stepUp ? `Upgrade · pay ${priceIn(price as number, currency)}` : `Continue with ${selected.name}`}
+            label={held ? `Upgrade to ${selected.tier.name} · ${selected.item.price}` : `Continue with ${selected.tier.name}`}
             full
-            onPress={() => (dollars ? setExplaining(true) : onContinue(held ? 'upgrade' : 'tier', selected.id))}
+            onPress={() => onContinue(held ? 'upgrade' : 'tier', selected.tier.id)}
           />
         ) : null}
       </BottomSheet>
@@ -175,32 +146,50 @@ export function TiersScreen({ open = true, onClose, onContinue, onAddAccount }: 
 
 type Mark = 'best' | 'mine';
 
-/** One tier: its name and mark, its price (or the difference), what it gives, and the choice mark. The tier a person holds has no choice mark. */
-export function TierCard({ tier, fallbackName, mark, on, only, onPress, currency }: { tier: PlanTier | null; fallbackName?: string; mark?: Mark; on?: boolean; only?: number | null; onPress?: () => void; currency: Currency }) {
+/** A button drawn inside a card, at its foot: the tier offer's "Subscribe to X" (R-108). */
+export type TierCardAction = { label: string; testID: string; onPress: () => void };
+
+/**
+ * One tier, drawn as a subscription card (R-108). Top row: its name and mark, and the STORE's price for it (R-86; null draws none, as on the
+ * tier a person holds) with the period in small text under it. Below, one line for each thing the tier gives (`tierItems`), each with a check.
+ * `on` is the choice made on the tiers sheet (the accent edge and tint, with a radio when `onPress` makes the card a choice); `featured` is the
+ * accent edge alone, for the tier the Hub marks `preselected` on the offer; `action` is the button at the foot of the card, filled when the card is
+ * featured and outlined on the others. One component for the tiers sheet and the tier offer (R-94).
+ */
+export function TierCard({
+  tier,
+  fallbackName,
+  mark,
+  on,
+  featured,
+  price,
+  onPress,
+  action,
+}: {
+  tier: PlanTier | null;
+  fallbackName?: string;
+  mark?: Mark;
+  on?: boolean;
+  featured?: boolean;
+  price: string | null;
+  onPress?: () => void;
+  action?: TierCardAction;
+}) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const name = tier?.name ?? fallbackName ?? '';
-  const facts = tier ? tierFacts(tier) : null;
+  const id = tier?.id ?? 'mine';
+  const items = tier ? tierItems(tier) : [];
+  const period = tier && price !== null ? periodOf(tier) : null;
   const chooses = onPress !== undefined;
-  const priceKobo = only ?? tier?.priceMinor ?? null;
-  return (
-    <Pressable
-      testID={`tier-${tier?.id ?? 'mine'}`}
-      accessibilityRole={chooses ? 'radio' : 'text'}
-      accessibilityState={chooses ? { checked: Boolean(on) } : undefined}
-      accessibilityLabel={[name, mark === 'mine' ? 'your tier' : null, mark === 'best' ? TIER_WORDS.best : null, priceKobo !== null ? `${only != null ? 'pay only ' : ''}${priceIn(priceKobo, currency)}` : null, facts?.gives, facts?.extras].filter(Boolean).join(', ')}
-      disabled={!chooses}
-      onPress={onPress}
-      {...ring.handlers}
-      style={[
-        styles.card,
-        {
-          backgroundColor: on ? colors.accentTint : colors.surfaceCard,
-          boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: on ? 2 : 1, color: on ? colors.accent : colors.borderHairline, inset: true }],
-        },
-        ring.style,
-      ]}
-    >
+  const lit = Boolean(on);
+  const edged = lit || Boolean(featured);
+  const look = {
+    backgroundColor: lit ? colors.accentTint : colors.surfaceCard,
+    boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: edged ? 2 : 1, color: edged ? colors.accent : colors.borderHairline, inset: true }],
+  };
+  const inside = (
+    <>
       <View style={styles.cardHead}>
         <View style={styles.nameRow}>
           <Text variant="body" style={[font(700), styles.name]}>
@@ -210,28 +199,65 @@ export function TierCard({ tier, fallbackName, mark, on, only, onPress, currency
           {mark === 'mine' ? <StatusPill label="Your tier" tone="positive" /> : null}
         </View>
         <View style={styles.priceRow}>
-          {only != null ? (
-            <Text variant="meta" tone="textMuted">
-              {TIER_WORDS.payOnly}
-            </Text>
+          {price !== null ? (
+            <View style={styles.priceCol}>
+              <Text variant="body" testID={`tier-price-${id}`} style={[font(700), styles.price]}>
+                {price}
+              </Text>
+              {period ? (
+                <Text variant="meta" tone="textMuted" testID={`tier-period-${id}`}>
+                  {period}
+                </Text>
+              ) : null}
+            </View>
           ) : null}
-          {priceKobo !== null ? <Money minorUnits={priceKobo} currency={currency} size={16} weight={700} decimals={priceKobo % 100 !== 0} /> : null}
-          {chooses ? <Radio on={Boolean(on)} /> : null}
+          {chooses ? <Radio on={lit} /> : null}
         </View>
       </View>
-      {facts ? (
+      {items.length > 0 ? (
         <>
-          <Text variant="secondary" tone="textSecondary">
-            {facts.gives}
-          </Text>
-          {facts.extras ? (
-            <Text variant="secondary" tone="textSecondary">
-              {facts.extras}
-            </Text>
-          ) : null}
+          <View style={[styles.rule, { backgroundColor: colors.borderHairline }]} />
+          <View testID={`tier-items-${id}`} style={styles.items}>
+            {items.map((item, i) => (
+              <View key={item} style={styles.item}>
+                <Icon name="Check" size={CARD.check} color={colors.accentFg} strokeWidth={3} />
+                <Text variant="body" testID={`tier-item-${id}-${i}`} style={styles.itemText}>
+                  {item}
+                </Text>
+              </View>
+            ))}
+          </View>
         </>
       ) : null}
-    </Pressable>
+      {action ? <Button testID={action.testID} label={action.label} variant={featured ? 'primary' : 'outline'} full onPress={action.onPress} /> : null}
+    </>
+  );
+  if (chooses) {
+    return (
+      <Pressable
+        testID={`tier-${id}`}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: lit }}
+        accessibilityLabel={[name, mark === 'best' ? TIER_WORDS.best : null, price, period, ...items].filter(Boolean).join(', ')}
+        onPress={onPress}
+        {...ring.handlers}
+        style={[styles.card, look, ring.style]}
+      >
+        {inside}
+      </Pressable>
+    );
+  }
+  // With a button inside, the card is not one grouped element: the lines and the button are each found on their own by a screen reader.
+  return (
+    <View
+      testID={`tier-${id}`}
+      accessible={!action}
+      accessibilityRole={action ? undefined : 'text'}
+      accessibilityLabel={action ? undefined : [name, mark === 'mine' ? 'your tier' : null, mark === 'best' ? TIER_WORDS.best : null, price, period, ...items].filter(Boolean).join(', ')}
+      style={[styles.card, look]}
+    >
+      {inside}
+    </View>
   );
 }
 
@@ -239,9 +265,17 @@ const styles = StyleSheet.create({
   page: { flex: 1 },
   blurb: { marginTop: space.xs },
   list: { gap: space.md },
+  scroll: { flexGrow: 0 },
+  scrolled: { gap: space.md },
   card: { gap: CARD.between, paddingVertical: CARD.padV, paddingHorizontal: CARD.padH, borderRadius: radius.card },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1, flexWrap: 'wrap' },
   name: { fontSize: 17 },
+  price: { fontSize: 17 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  priceCol: { alignItems: 'flex-end' },
+  rule: { height: StyleSheet.hairlineWidth },
+  items: { gap: CARD.itemGap },
+  item: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  itemText: { flex: 1 },
 });

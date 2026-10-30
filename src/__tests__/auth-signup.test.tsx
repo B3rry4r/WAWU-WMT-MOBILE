@@ -676,7 +676,7 @@ describe('resume after quitting', () => {
     answers['POST /auth/signup/resume'] = ok({ step: 'details' });
     await renderRouter(routes);
     await waitFor(() => expect(mockVault.has(SIGNUP_ATTEMPT_KEY)).toBe(false));
-    expect(screen.getByText('Get paid for what you know')).toBeTruthy();
+    expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy();
     expect(screen.queryByText(/Sent by SMS/)).toBeNull();
   });
 
@@ -684,7 +684,7 @@ describe('resume after quitting', () => {
     hold();
     await renderRouter(routes);
     await waitFor(() => expect(callsTo('/auth/signup/resume').length).toBe(1));
-    expect(screen.getByText('Get paid for what you know')).toBeTruthy();
+    expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy();
     expect(mockVault.get(SIGNUP_ATTEMPT_KEY)).toBe('secret-attempt-1');
   });
 
@@ -791,7 +791,7 @@ describe('the email step', () => {
 
   it('a signed-out visitor to /email-code lands on the welcome screen', async () => {
     await renderRouter(routes, { initialUrl: '/email-code' });
-    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
   });
 });
 

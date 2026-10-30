@@ -6,7 +6,8 @@ import { phone, vault } from '@/features/device-approval/testing/secureStore';
  * Every payment the app makes with a PIN can be approved by the phone instead (FIX-112; FIX-108 did the sends): the request of each
  * sheet is signed over its exact method, path and body bytes, the Hub (a stand-in that checks the signature with Node's `crypto`, as
  * the Hub does) accepts it, the same Idempotency-Key travels, a refused approval is followed by the PIN under the SAME key, and a
- * prompt the person closes sends nothing. One row per payment route the app calls; the real API function of each sheet.
+ * prompt the person closes sends nothing. One row per payment route the app calls; the real API function of each sheet. Credits, community passes, points packs and the missing
+ * points are bought in the store sheet now (R-86, IAP-02): they have no wallet route here any more.
  */
 jest.mock('expo-secure-store', () => require('@/features/device-approval/testing/secureStore').secureStoreMock);
 jest.mock('expo-crypto', () => require('@/features/device-approval/testing/expoCrypto'));
@@ -64,31 +65,21 @@ beforeAll(() => {
   const tips = require('@/features/tips/api') as typeof import('@/features/tips/api');
   const unlock = require('@/features/unlock/api') as typeof import('@/features/unlock/api');
   const ask = require('@/features/paid-ask/api') as typeof import('@/features/paid-ask/api');
-  const credits = require('@/features/credits/api') as typeof import('@/features/credits/api');
-  const pass = require('@/features/community-pass/api') as typeof import('@/features/community-pass/api');
   const request = require('@/features/chat/requestApi') as typeof import('@/features/chat/requestApi');
   const events = require('@/features/events/buyApi') as typeof import('@/features/events/buyApi');
   const legal = require('@/features/legal/pay/api') as typeof import('@/features/legal/pay/api');
   const schools = require('@/features/schools/enrolApi') as typeof import('@/features/schools/enrolApi');
   const convert = require('@/features/points/api') as typeof import('@/features/points/api');
-  const studio = require('@/features/points/studioApi') as typeof import('@/features/points/studioApi');
-  const pointsBuy = require('@/features/points/buyApi') as typeof import('@/features/points/buyApi');
-  const plans = require('@/features/verify/purchaseApi') as typeof import('@/features/verify/purchaseApi');
   rows = [
     ['a tip', '/api/hub/tips/wallet', (c, key) => tips.sendTip({ creatorWawuId: 'creator-1', amountKobo: 100_000, note: ' thanks ', ...quoteFields, key, ...c } as never)],
     // An id with a space: the path is signed as it is sent, encoded.
     ['an unlock', '/api/hub/content/a%20b/unlock/wallet', (c, key) => unlock.sendUnlock({ contentId: 'a b', ...quoteFields, key, ...c } as never)],
     ['a paid ask', '/api/hub/dm/send/wallet/pay', (c, key) => ask.payQuestion({ questionId: 'q-1', ...quoteFields, key, ...c } as never)],
-    ['credits', '/api/hub/credits/purchase/wallet', (c, key) => credits.buyPack({ pack: 'standard', quote: payQuote, key, ...c } as never)],
-    ['a community pass', '/api/hub/communities/room-1/pass', (c, key) => pass.buyPass({ id: 'room-1', quote: payQuote, key, ...c } as never)],
     ['a request pay', '/api/hub/chats/chat-1/money-requests/req-1/pay', (c, key) => request.payMoneyRequest({ chatId: 'chat-1', requestId: 'req-1', quote: payQuote, key, ...c } as never)],
     ['a ticket', '/api/hub/events/orders/wallet/pay', (c, key) => events.payOrder({ orderId: 'order-1', ...quoteFields, key, ...c } as never)],
     ['a legal fee', '/api/hub/legal/requests/lr-1/pay/wallet', (c, key) => legal.payFee({ requestId: 'lr-1', ...quoteFields, key, ...c } as never)],
     ['school fees', '/api/hub/money/payments', (c, key) => schools.payFee({ enrolmentId: 'en-1', ...quoteFields, key, ...c } as never)],
     ['a points conversion', '/api/hub/points/convert', (c, key) => convert.convertPoints({ points: 500, quoteToken: 'tok-1', key, ...c } as never)],
-    ['a points shortfall', '/api/hub/points/shortfall', (c, key) => studio.buyShortfall({ action: 'voiceover', units: 2, ...quoteFields, key, ...c } as never)],
-    ['a points pack', '/api/hub/plans/purchases', (c, key) => pointsBuy.buyPack({ packId: 'pack-1', method: 'wallet', ...quoteFields, key, ...c } as never)],
-    ['a plan', '/api/hub/plans/purchases', (c, key) => plans.buy({ target: { kind: 'extra_products' }, method: 'wallet', ...quoteFields, key, ...c } as never)],
   ];
 });
 
@@ -111,11 +102,11 @@ const approve = (): Cred => ({ approve: (signed) => approveRequest(signed, 'Appr
 const NAMES = (): [string, string][] => rows.map(([name, path]) => [name, path]);
 
 describe('every payment route takes the phone’s approval in place of the PIN', () => {
-  it('has a row for each of the 13 payment calls the sheets make', () => {
-    expect(rows).toHaveLength(13);
+  it('has a row for each of the 8 payment calls the sheets make', () => {
+    expect(rows).toHaveLength(8);
   });
 
-  it.each(Array.from({ length: 13 }, (_, i) => i))('row %i · the Hub accepts the signed request, with the same Idempotency-Key and no PIN', async (i) => {
+  it.each(Array.from({ length: 8 }, (_, i) => i))('row %i · the Hub accepts the signed request, with the same Idempotency-Key and no PIN', async (i) => {
     const [, path, call] = rows[i];
     const outcome = await call(approve(), KEY);
     expect(seen).toHaveLength(1);
@@ -127,7 +118,7 @@ describe('every payment route takes the phone’s approval in place of the PIN',
     expect(seen[0].text).not.toMatch(/pin|approve/i);
   });
 
-  it.each(Array.from({ length: 13 }, (_, i) => i))('row %i · a refused approval is followed by the PIN under the SAME key and body', async (i) => {
+  it.each(Array.from({ length: 8 }, (_, i) => i))('row %i · a refused approval is followed by the PIN under the SAME key and body', async (i) => {
     const [, , call] = rows[i];
     if (device.device) device.device.publicKey = makeKeyPair().publicKey;
     const first = await call(approve(), KEY);
@@ -140,7 +131,7 @@ describe('every payment route takes the phone’s approval in place of the PIN',
     expect(seen[1].text).toBe(seen[0].text);
   });
 
-  it.each(Array.from({ length: 13 }, (_, i) => i))('row %i · a prompt the person closes sends nothing, and the PIN then goes under the same key', async (i) => {
+  it.each(Array.from({ length: 8 }, (_, i) => i))('row %i · a prompt the person closes sends nothing, and the PIN then goes under the same key', async (i) => {
     const [, , call] = rows[i];
     phone.prompt = 'cancel';
     expect(await call(approve(), KEY)).toEqual({ kind: 'approval_cancelled' });
@@ -151,9 +142,9 @@ describe('every payment route takes the phone’s approval in place of the PIN',
     expect(seen[0]).toMatchObject({ pin: '1234', approval: null, key: KEY });
   });
 
-  it('names the 13 routes once each', () => {
+  it('names the 8 routes once each', () => {
     expect(NAMES().map(([name]) => name)).toEqual([
-      'a tip', 'an unlock', 'a paid ask', 'credits', 'a community pass', 'a request pay', 'a ticket', 'a legal fee', 'school fees', 'a points conversion', 'a points shortfall', 'a points pack', 'a plan',
+      'a tip', 'an unlock', 'a paid ask', 'a request pay', 'a ticket', 'a legal fee', 'school fees', 'a points conversion',
     ]);
   });
 });

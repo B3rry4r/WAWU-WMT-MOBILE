@@ -9,7 +9,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import { Banner } from '@/components/Banner';
 import { ProductsMeter } from '@/components/ProductsMeter';
-import { CreateEntry } from '@/features/create/CreateEntry';
+import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
 import { EntryRow } from '@/features/verify/voiceParts';
@@ -65,7 +65,7 @@ import { ServicesTab } from './ServicesTab';
 
 /** How near the end of the page (in points) the next page of pieces is asked for. */
 const MORE_WITHIN = 600;
-/** Room under the last block, so it clears the bottom bar's shadow line. */
+/** Room under the last block, so it clears the bottom bar's shadow line (and, with the floating buttons, `useFloatingRoom`: R-110 point 3). */
 const BOTTOM_ROOM = space.s3xl;
 /** design/_gen/me.js line 18, `profBody`: the blocks stack 16 apart. */
 const BODY_GAP = space.lg;
@@ -100,6 +100,8 @@ export type MeScreenProps = {
   onOpenTier?: () => void;
   /** A draft tile in the Content grid (M1) opens Your shop (VF2, VERIFY-01). A draft is not pressed without it. */
   onOpenShop?: () => void;
+  /** A published tile in the Content grid (M1) opens that piece's page (WALK-FIX H1). Not pressed without it. */
+  onOpenPiece?: (id: string) => void;
   /** The Create button, for creator accounts only (M1): opens M19 (ME-04). */
   onCreate?: () => void;
   /** Creator dashboard (M18, ME-07): the menu's first row for a creator account, drawn only when given. */
@@ -136,9 +138,10 @@ export type MeScreenProps = {
  * bio instead (M1, "Bio" with the "AI voice" tag, R-66, FIX-103), playing `audioUrl` from the same read. A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onOpenPiece, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const room = useFloatingRoom();
   const cache = useCache();
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe }, cache);
   const fields = useQuery({ queryKey: fieldsKey, queryFn: fetchFields }, cache);
@@ -202,7 +205,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
 
   return (
     <View testID="me-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
-      <ScrollView testID="me-scroll" onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView testID="me-scroll" onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(BOTTOM_ROOM, room) }]}>
         <ProfileTop
           coverUrl={me.data?.coverUrl ?? null}
           top={insets.top}
@@ -250,7 +253,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
               <Counts counts={countsOf(ready.counts)} />
               <TierMeter tier={tier} />
               <ProfileTabs value={tab} onChange={setTab} />
-              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} /> : null}
+              {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} onOpenPiece={onOpenPiece} /> : null}
               {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} /> : null}
               {tab === 'about' ? (
                 <AboutBody
@@ -359,10 +362,10 @@ function TierMeter({ tier }: { tier: TierQuery }) {
   if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" retryLabel="Try loading your tier again" onRetry={() => void tier.refetch()} />;
   if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
   const meter = productsMeterOf(tier.data);
-  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} caption={meter.caption} testID="me-products" /> : null;
+  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} tier={meter.tier} testID="me-products" /> : null;
 }
 
-function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void }) {
+function ContentBody({ query, drafts, creator, onOpenShop, onOpenPiece }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void; onOpenPiece?: (id: string) => void }) {
   if (query.isError && !query.data) {
     return <ErrorState testID="me-grid-error" title="Your content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
@@ -390,7 +393,7 @@ function ContentBody({ query, drafts, creator, onOpenShop }: { query: GridQuery;
   return (
     <View style={styles.gridWrap}>
       {note ? <View style={styles.note}>{note}</View> : null}
-      <ContentGrid tiles={tiles} onOpenDraft={onOpenShop} />
+      <ContentGrid tiles={tiles} onOpenDraft={onOpenShop} onOpenPiece={onOpenPiece} />
       {query.isFetchingNextPage ? <GridSkeleton /> : null}
       {query.isFetchNextPageError ? (
         <ErrorState testID="me-grid-more-error" title="More content did not load" message={readFailure(query.error)} onRetry={() => void query.fetchNextPage()} />

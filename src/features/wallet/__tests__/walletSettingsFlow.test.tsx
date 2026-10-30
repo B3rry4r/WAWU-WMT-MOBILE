@@ -313,7 +313,7 @@ describe('Forgot PIN? on A10, the end that says the account already has a PIN (B
 describe('Settings (Z2) draws Wallet and PIN only where it can open it', () => {
   const renderSettings = async (extra: Record<string, unknown>) => {
     const { SettingsScreen } = require('@/features/settings/SettingsScreen') as typeof import('@/features/settings/SettingsScreen');
-    const handlers = { onBack: jest.fn(), onOpenProfile: jest.fn(), onOpenNotifications: jest.fn(), onOpenPrivacy: jest.fn(), onOpenPassword: jest.fn(), onOpenAbout: jest.fn(), onOpenTerms: jest.fn(), onOpenPolicy: jest.fn(), onSignedOut: jest.fn() };
+    const handlers = { onBack: jest.fn(), onOpenProfile: jest.fn(), onOpenNotifications: jest.fn(), onOpenPrivacy: jest.fn(), onOpenPassword: jest.fn(), onOpenAbout: jest.fn(), onOpenLegal: jest.fn(), onSignedOut: jest.fn() };
     await rtl.render(
       <QueryClientProvider client={app.queryClient}>
         <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>

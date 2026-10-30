@@ -5,6 +5,7 @@ import { walletBalanceQuery } from '@/api/money';
 import type { AvatarHue } from '@/components/Avatar';
 import { feeLines } from '@/features/events/buyModel';
 import { usePaymentFlow, type Engine, type FlowHandlers, type ViewStatus } from '@/features/feedpay/usePaymentFlow';
+import { useLadder } from '@/features/store/ladder/useLadder';
 import { newRequestKey } from '@/features/wallet/api/settings';
 
 import { askQuestion, fetchQuestion, payQuestion, questionKey, requoteQuestion, type AskQuote, type QuestionView } from './api';
@@ -65,7 +66,10 @@ export function toResult(q: QuestionView): AskResult {
  * is on top, true on return) and when the wallet's balance is read again and has changed. The words typed stay, and the draft is the
  * same draft (a fresh quote of it, not a new question).
  */
-export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, question: QuestionView) => void, focused = true) {
+export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, question: QuestionView | null) => void, focused = true) {
+  // R-101: in the Android and iOS apps a paid question is a store purchase on the price ladder (`ladder.native`; false on the web, which keeps the wallet).
+  const ladder = useLadder();
+  const clearBought = ladder.buyer.clear;
   const [target, setTarget] = useState<AskTarget | null>(null);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -108,7 +112,7 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
   const { ask } = flow;
 
   // The breakdown follows the words: asked once they have rested.
-  const settled = open && flow.stage === null;
+  const settled = open && flow.stage === null && !ladder.native;
   useEffect(() => {
     if (!settled || !trimmed) return undefined;
     const timer = setTimeout(() => void ask(), TYPING_REST_MS);
@@ -125,7 +129,7 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
 
   // Back from Add money (or anywhere): one fresh quote, so a funded wallet shows Send and not the old "You have ₦900.00". Only a sheet
   // that is reviewing is asked again; a payment in flight, a PIN or a failure is left exactly as it is.
-  const reviewing = open && flow.stage === null && !flow.pinOpen && flow.status.kind === 'review' && trimmed.length > 0;
+  const reviewing = open && !ladder.native && flow.stage === null && !flow.pinOpen && flow.status.kind === 'review' && trimmed.length > 0;
   const wasFocused = useRef(focused);
   useEffect(() => {
     const returned = focused && !wasFocused.current;
@@ -148,12 +152,14 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
     setTarget(who);
     setText(who.text ?? '');
     draft.current = null;
+    if (ladder.native) clearBought();
     setOpen(true);
-  }, []);
+  }, [ladder.native, clearBought]);
 
   const close = () => {
     flow.finish();
     setOpen(false);
+    if (ladder.native) ladder.buyer.clear();
   };
 
   // A paid question: the sheet is done, the screen opens the thread.
@@ -170,8 +176,21 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
     onAsked(who, paid.question);
   }, [paid, target, finish, onAsked]);
 
+  // A question bought in the store is sent by the Hub the moment it checks the sale: the sheet is done and the screen opens the thread.
+  const bought = ladder.native ? ladder.buyer.granted : null;
+  useEffect(() => {
+    if (!bought || !target || asked.current === bought.id) return;
+    asked.current = bought.id;
+    clearBought();
+    setOpen(false);
+    draft.current = null;
+    onAsked(target.wawuId, null);
+  }, [bought, target, clearBought, onAsked]);
+
   return {
     target,
+    /** The store's side (R-101): set on a phone with a store, null on the web. */
+    store: ladder.native ? { ladder } : null,
     /** I3 and everything over it is up. */
     open,
     begin,

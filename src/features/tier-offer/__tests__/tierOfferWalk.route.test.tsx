@@ -14,13 +14,12 @@ jest.setTimeout(60_000);
 const mockVault = new Map<string, string>();
 let mockTokens = { accessToken: '', refreshToken: 'new-refresh' };
 let mockDone = 0;
-const mockProgress = () => ({
-  step: ['creator_setup'][mockDone] ?? 'done',
-  inSequence: true,
-  accountType: 'creator',
-  steps: ['creator_setup'],
-  emailProven: false,
-});
+/** WAWU ID's progress: a creator works the checklist; a buyer (account type "user") has no setup step before Home (TIER-OFFER-ALL). */
+let mockAccountType: 'user' | 'creator' = 'creator';
+const mockProgress = () => {
+  const steps = mockAccountType === 'creator' ? ['creator_setup'] : [];
+  return { step: steps[mockDone] ?? 'done', inSequence: true, accountType: mockAccountType, steps, emailProven: false };
+};
 
 jest.mock('expo-splash-screen', () => ({ preventAutoHideAsync: jest.fn(), hideAsync: jest.fn() }));
 jest.mock('expo-secure-store', () => ({
@@ -74,15 +73,16 @@ const plans = {
 };
 
 /** The Hub's profile, as it is while the account-type write has not landed (a fan) and after it has (a creator). */
-let hubType: 'user' | 'creator' = 'user';
+let hubType: 'user' | 'creator' | null = 'user';
 const calls: Record<string, number> = {};
+const creatorOffer = (): unknown => ok({ show: hubType === 'creator' && calls['GET /api/hub/me/tier-offer'] >= 2, closeButton: true });
 const hub: Record<string, unknown> = {
   'GET /api/hub/users/me': () => ok({ wawuUserId: ADA, accountType: hubType, firstName: 'Ada', lastName: 'Obi', handle: 'ada' }),
   'PUT /api/hub/users/me/account-type': () => {
-    hubType = 'creator';
-    return ok({ accountType: 'creator' });
+    hubType = mockAccountType;
+    return ok({ accountType: mockAccountType });
   },
-  'GET /api/hub/me/tier-offer': () => ok({ show: hubType === 'creator' && calls['GET /api/hub/me/tier-offer'] >= 2, closeButton: true }),
+  'GET /api/hub/me/tier-offer': creatorOffer,
   'POST /api/hub/me/tier-offer/seen': ok({ seenAt: '2026-10-26T10:00:00.000Z' }),
   'GET /api/hub/plans': ok(plans),
   'GET /api/hub/product-drafts': ok([]),
@@ -145,7 +145,9 @@ beforeAll(async () => {
 
 beforeEach(() => {
   mockDone = 0;
+  mockAccountType = 'creator';
   hubType = 'user';
+  hub['GET /api/hub/me/tier-offer'] = creatorOffer;
   for (const key of Object.keys(calls)) delete calls[key];
   setBonusGateDelaysForTests([40, 40, 40, 40]);
   queryClient.clear();
@@ -199,5 +201,87 @@ describe('a new creator is offered the tiers although the Hub first answered no 
     await waitFor(() => expect(screen.getByTestId('creator-setup')).toBeTruthy());
     expect(calls['GET /api/hub/me/tier-offer']).toBe(2);
     expect(calls['POST /api/hub/me/tier-offer/seen']).toBe(1);
+  });
+});
+
+// R-105 (owner, 30 Oct 2026): the Hub decides who is offered the tiers and how often. The app asks for every account type and shows the offer
+// exactly when the Hub says so. Before TIER-OFFER-ALL a buyer ("user") was never asked.
+describe('a buyer is asked like anyone else, and the Hub alone decides (TIER-OFFER-ALL, R-105)', () => {
+  const home = () => screen.getByRole('header', { name: 'Home' });
+
+  it('a new buyer signs up, the type is written, the Hub is asked again after the write, and the offer comes before Home; Close goes on to Home', async () => {
+    mockAccountType = 'user';
+    // The Hub holds no account type for a new person until the write lands: first answer no, second yes (the same shape as a new creator's).
+    hubType = null;
+    hub['GET /api/hub/me/tier-offer'] = () => ok({ show: calls['GET /api/hub/me/tier-offer'] >= 2, closeButton: true });
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByTestId('welcome-sign-in')).toBeTruthy());
+    setStarted({ channel: 'sms', maskedEmail: null, phoneNotSaved: false, emailCodeRequired: false, resendIn: 0, expiresIn: 600 });
+    await act(async () => {
+      await confirmSignupCode('123456', '');
+    });
+    await waitFor(() => expect(screen.getByTestId('claim-offer')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('claim-offer-skip'));
+
+    await waitFor(() => expect(screen.getByTestId('tier-offer-screen')).toBeTruthy());
+    expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
+    expect(calls['PUT /api/hub/users/me/account-type']).toBe(1);
+    expect(calls['GET /api/hub/me/tier-offer']).toBe(2);
+    await waitFor(() => expect(calls['POST /api/hub/me/tier-offer/seen']).toBe(1));
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(home()).toBeTruthy());
+    expect(screen.queryByTestId('tier-offer-screen')).toBeNull();
+    expect(screen.queryByTestId('creator-setup')).toBeNull();
+    expect(calls['POST /api/hub/me/tier-offer/seen']).toBe(1);
+  });
+
+  it('a buyer who opens the app signed in, with no running tier, is asked and sees the offer on this start; Close goes on to Home', async () => {
+    mockAccountType = 'user';
+    hubType = 'user';
+    hub['GET /api/hub/me/tier-offer'] = () => ok({ show: true, closeButton: true });
+    mockVault.set(ACCESS_KEY, tokenFor(ADA));
+    mockVault.set(REFRESH_KEY, 'stored-refresh');
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByTestId('tier-offer-screen')).toBeTruthy());
+    expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
+    expect(calls['GET /api/hub/me/tier-offer']).toBe(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(home()).toBeTruthy());
+    expect(screen.queryByTestId('tier-offer-screen')).toBeNull();
+  });
+
+  it('a buyer started again after closing it is shown it again when the Hub still says show (nothing in the app remembers "once")', async () => {
+    mockAccountType = 'user';
+    hubType = 'user';
+    hub['GET /api/hub/me/tier-offer'] = () => ok({ show: true, closeButton: true });
+    mockVault.set(ACCESS_KEY, tokenFor(ADA));
+    mockVault.set(REFRESH_KEY, 'stored-refresh');
+    const first = await renderRouter(routes);
+    await waitFor(() => expect(screen.getByTestId('tier-offer-screen')).toBeTruthy());
+    await fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(home()).toBeTruthy());
+    await first.unmount();
+
+    // The app is closed and opened again: the module state is gone, the stored tokens stay.
+    resetTierOffer();
+    resetSignupGate();
+    resetSessionForTests();
+    await renderRouter(routes);
+    await waitFor(() => expect(screen.getByTestId('tier-offer-screen')).toBeTruthy());
+    expect(calls['GET /api/hub/me/tier-offer']).toBe(2);
+  });
+
+  it('the Hub that has not been updated answers no for a buyer: nothing is drawn, nothing is marked, Home opens', async () => {
+    mockAccountType = 'user';
+    hubType = 'user';
+    hub['GET /api/hub/me/tier-offer'] = () => ok({ show: false, closeButton: true });
+    mockVault.set(ACCESS_KEY, tokenFor(ADA));
+    mockVault.set(REFRESH_KEY, 'stored-refresh');
+    await renderRouter(routes);
+    await waitFor(() => expect(home()).toBeTruthy());
+    expect(screen.queryByTestId('tier-offer-screen')).toBeNull();
+    expect(calls['GET /api/hub/me/tier-offer']).toBe(1);
+    expect(calls['POST /api/hub/me/tier-offer/seen']).toBeUndefined();
   });
 });

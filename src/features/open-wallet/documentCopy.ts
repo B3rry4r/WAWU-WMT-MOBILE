@@ -2,6 +2,7 @@ import { isApiError } from '@/api/errors';
 
 import { documentProblem, type DocumentsView } from './api/documents';
 import { UnreadableFile } from './documents/types';
+import type { GoneSide } from './submit';
 
 /** What a screen says when it could not take, read or send a file: a title and the sentence under it. Never a code. */
 export type Failure = { title: string; body: string };
@@ -39,4 +40,30 @@ export function sendFailure(error: unknown, fallbackTitle: string): Failure {
   if (problem === 'invalid') return { title: "We can't use that file", body: message };
   if (problem === 'rate_limited') return { title: 'Too many tries', body: message };
   return { title: fallbackTitle, body: message };
+}
+
+/** The fallback title `sendFailure` gets for the documents step, so a plain failure there can be told from the server's own sentence. */
+export const DOCUMENTS_FALLBACK_TITLE = "We couldn't send your documents";
+
+/**
+ * What the screen says when the details are saved (the opening exists) and only the photos or files failed to go up
+ * (OPEN-UPLOAD): that the details are safe, that the photos did not upload, and Try again. Null when the server sent
+ * its own sentence about the file (one it refused, too many tries): that sentence is kept as it is, and the screen
+ * says the details are saved beside it.
+ */
+export function photosNotSent(error: unknown): Failure | null {
+  if (isApiError(error) && error.kind === 'network') {
+    return { title: 'Your details are saved', body: "Your photos didn't upload. Check your internet and tap Try again." };
+  }
+  const base = sendFailure(error, DOCUMENTS_FALLBACK_TITLE);
+  if (base.title !== DOCUMENTS_FALLBACK_TITLE) return null;
+  return { title: 'Your details are saved', body: `Your photos didn't upload. ${base.body}` };
+}
+
+/** What the screen says when a photo or file it held is no longer on the phone: which one to take or choose again. */
+export function filesGone(sides: GoneSide[]): Failure {
+  if (sides.some((side) => side === 'front' || side === 'back')) {
+    return { title: 'Take the photo of your ID again', body: 'The photo is no longer on this phone. Go back and take it again.' };
+  }
+  return { title: 'Choose your bill or statement again', body: 'The file is no longer on this phone. Choose it again.' };
 }

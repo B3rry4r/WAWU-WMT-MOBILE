@@ -28,7 +28,6 @@ import { ThemeSheet } from './ThemeSheet';
 import { useSwitches } from './useSwitches';
 import { setThemeMusic, useThemeMusic } from '@/features/music/themeMusic';
 import { ThemeNotice } from '@/features/music/ThemeNotice';
-import { fetchPointsSettings, pointsSettingsKey, putPointsSettings, type PointsSettings } from '@/features/points/walletUseApi';
 
 /** design/_gen/settings.js line 11 (Z2): the parts 12 apart. */
 const BODY_GAP = 12;
@@ -46,13 +45,6 @@ const footMetrics = { padV: 4, signOut: 15, between: 14, deleteAccount: 13.5 } a
  */
 export const TGIF_TITLE = 'TGIF each morning';
 export const TGIF_SUBTITLE = 'Daily verse and prayer, as a notification';
-
-/**
- * G-POINTS-07-1: where "Use wallet" is switched (`GET` and `PUT /me/points/settings`). No board draws the row, so it is the TGIF switch's own
- * look, in the same group; the line says what the switch does, and nothing is taken from the wallet by switching it.
- */
-export const USE_WALLET_TITLE = 'Use wallet for AI tools';
-export const USE_WALLET_SUBTITLE = 'Pay for missing points from your wallet';
 
 /**
  * R-99: the old "Sound / Taps and alerts" row promised tap sounds the app never makes. It is what it does: the sound a push makes when
@@ -86,10 +78,8 @@ export type SettingsScreenProps = {
   /** Delete account (Z6, SETTINGS-05): the muted line under Sign out. Drawn only when the route gives a place to go. */
   onOpenDeleteAccount?: () => void;
   onOpenAbout: () => void;
-  onOpenTerms: () => void;
-  onOpenPolicy: () => void;
-  /** The Legal list (LEGAL-DOCS): the owner's nine documents. The row is drawn only where this is given. */
-  onOpenLegal?: () => void;
+  /** The Legal list (LEGAL-DOCS): the owner's nine documents, the Terms and the Privacy policy among them. Always drawn, once (R-107, WALK-FIX S1). */
+  onOpenLegal: () => void;
   /** After the phone has signed out: leaves Settings, which the route graph does not guard (SHARED-CHANGES SETTINGS-01 #3). */
   onSignedOut: () => void;
 };
@@ -108,12 +98,6 @@ export function SettingsScreen(props: SettingsScreenProps) {
     read: fetchTgif,
     write: (patch) => patchTgif(patch.show === true),
     valueOf: (settings) => settings.show,
-  });
-  const useWallet = useSwitches<'useWallet', PointsSettings>({
-    queryKey: pointsSettingsKey,
-    read: fetchPointsSettings,
-    write: (patch) => putPointsSettings(patch.useWallet === true),
-    valueOf: (settings) => settings.useWallet,
   });
   const { prefs, setSound, setTheme, ensurePrefs } = useDevicePrefs();
   const music = useThemeMusic();
@@ -190,25 +174,8 @@ export function SettingsScreen(props: SettingsScreenProps) {
           )}
           <SwitchRow testID="settings-sound" title={ALERT_SOUND_TITLE} subtitle={ALERT_SOUND_SUBTITLE} on={prefs.sound} onChange={(next) => void setSound(next)} />
           <SwitchRow testID="settings-music" title={MUSIC_TITLE} subtitle={MUSIC_SUBTITLE} on={music.on} busy={music.busy} onChange={(next) => void setThemeMusic(next)} />
-          {useWallet.query.data ? (
-            <SwitchRow
-              testID="settings-use-wallet"
-              title={USE_WALLET_TITLE}
-              subtitle={USE_WALLET_SUBTITLE}
-              on={useWallet.isOn('useWallet')}
-              busy={useWallet.busy.includes('useWallet')}
-              onChange={(next) => void useWallet.set('useWallet', next)}
-            />
-          ) : (
-            <PendingRow testID="settings-use-wallet-pending" title={USE_WALLET_TITLE} subtitle={USE_WALLET_SUBTITLE} failed={useWallet.query.isError} onRetry={() => void useWallet.query.refetch()} />
-          )}
           <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
         </GroupedList>
-        {useWallet.failure ? (
-          <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-use-wallet">
-            {useWallet.failure}
-          </Text>
-        ) : null}
         {tgif.failure ? (
           <Text variant="errorLine" accessibilityRole="alert" accessibilityLiveRegion="polite" testID="settings-problem-tgif">
             {tgif.failure}
@@ -216,9 +183,7 @@ export function SettingsScreen(props: SettingsScreenProps) {
         ) : null}
         <GroupedList testID="settings-about">
           <ListRow testID="settings-about-app" lead={<IconTile icon="Info" size={ROW_TILE} />} title="About Who Made This?" onPress={props.onOpenAbout} />
-          <ListRow testID="settings-terms" lead={<IconTile icon="FileText" size={ROW_TILE} />} title="Terms" onPress={props.onOpenTerms} />
-          <ListRow testID="settings-policy" lead={<IconTile icon="Shield" size={ROW_TILE} />} title="Privacy policy" onPress={props.onOpenPolicy} />
-          {props.onOpenLegal ? <ListRow testID="settings-legal" lead={<IconTile icon="Scale" size={ROW_TILE} />} title="Legal" onPress={props.onOpenLegal} /> : null}
+          <ListRow testID="settings-legal" lead={<IconTile icon="Scale" size={ROW_TILE} />} title="Legal" onPress={props.onOpenLegal} />
         </GroupedList>
         <View style={styles.foot}>
           <Pressable

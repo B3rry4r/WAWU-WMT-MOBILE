@@ -15,8 +15,10 @@ import type { PickedImage } from './pickImage';
  * - **A photo never carries where it was taken** (lead ruling, 8 Oct 2026). Every
  *   photo is written again with `expo-image-manipulator` before it goes up: the
  *   encoder writes the pixels and no metadata, so no Exif block, GPS, time or phone
- *   details. It keeps the size it was picked at; only the Hub's own upload limit
- *   applies. A video goes as it was chosen.
+ *   details. It keeps the size it was picked at unless the caller asks for a cap
+ *   (`ReadOptions`, OPEN-UPLOAD: A26 and A27 bring a photo down to a size a phone can
+ *   send over 4G); otherwise only the Hub's own upload limit applies. A video goes
+ *   as it was chosen.
  * - **Transparency is kept** (lead ruling after the verifier, D2): a PNG stays a PNG
  *   and a WebP a WebP; a GIF becomes a PNG of its first frame; a JPEG, a HEIC, a HEIF
  *   or anything else becomes a JPEG at 0.9.
@@ -63,13 +65,39 @@ const extensionOf = (type: string): string => {
   return subtype === 'jpeg' ? 'jpg' : subtype;
 };
 
-/** The photo written again in `how.format`, at the size it was picked: where the new file is. Throws when it cannot be read. */
-async function rewrite(uri: string, how: Rewrite): Promise<string> {
+/**
+ * What the caller may ask of a photo beyond the default (the size it was picked at, written again in its own kind).
+ * `maxSide` brings the long side down to that many pixels (never up); `jpeg` writes it as a JPEG whatever it was,
+ * at `quality` when given. Left out, a photo is written exactly as before.
+ */
+export type ReadOptions = { maxSide?: number; jpeg?: boolean; quality?: number };
+
+/** The size to bring a `width` by `height` photo to so its long side is `longest`: null when it already fits. */
+export function fitTo(width: number, height: number, longest: number): { width: number } | { height: number } | null {
+  if (!(longest > 0) || Math.max(width, height) <= longest) return null;
+  return width >= height ? { width: longest } : { height: longest };
+}
+
+/** The photo written again in `how.format`, at the size it was picked (or within `maxSide`): where the new file is. Throws when it cannot be read. */
+async function rewrite(uri: string, how: Rewrite, maxSide?: number): Promise<string> {
   const context = ImageManipulator.manipulate(uri);
   try {
     const image = await context.renderAsync();
     try {
-      return (await image.saveAsync({ format: how.format, compress: how.compress })).uri;
+      const size = maxSide ? fitTo(image.width, image.height, maxSide) : null;
+      if (!size) return (await image.saveAsync({ format: how.format, compress: how.compress })).uri;
+      // The size is known only once the photo is read (the phone's own turning of it is applied then), so the resize is a second pass over that image.
+      const smaller = ImageManipulator.manipulate(image);
+      try {
+        const resized = await smaller.resize(size).renderAsync();
+        try {
+          return (await resized.saveAsync({ format: how.format, compress: how.compress })).uri;
+        } finally {
+          resized.release();
+        }
+      } finally {
+        smaller.release();
+      }
     } finally {
       image.release();
     }
@@ -104,16 +132,18 @@ export const isVideoAsset = (asset: ImagePickerAsset) => asset.type === 'video' 
  * screen can show it, and `discard` for after its upload. Throws `PickFailed` when the
  * file cannot be read.
  */
-export async function readPicked(asset: ImagePickerAsset): Promise<PickedImage> {
+export async function readPicked(asset: ImagePickerAsset, options: ReadOptions = {}): Promise<PickedImage> {
   if (isVideoAsset(asset)) {
     const blob = await bytesAt(asset.uri);
     const contentType = asset.mimeType ?? 'video/mp4';
     return { blob, contentType, extension: extensionOf(contentType), previewUri: asset.uri, discard: () => forgetLibraryCopy(asset.uri) };
   }
-  const how = rewriteFor(asset.mimeType);
+  const how: Rewrite = options.jpeg
+    ? { format: SaveFormat.JPEG, compress: options.quality ?? PHOTO_QUALITY, contentType: 'image/jpeg' }
+    : rewriteFor(asset.mimeType);
   let copy: string;
   try {
-    copy = await rewrite(asset.uri, how);
+    copy = await rewrite(asset.uri, how, options.maxSide);
   } catch {
     throw new PickFailed();
   } finally {

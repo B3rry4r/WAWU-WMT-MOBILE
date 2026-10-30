@@ -21,28 +21,26 @@ const SKELETON = { balance: 92, lots: 156, rows: 3, row: 60 } as const;
 
 export type PointsScreenProps = {
   onBack: () => void;
-  /** The round button on the bar: PT6. */
-  onConvert: () => void;
   /** Buy points: PT4. */
   onBuy: () => void;
 };
 
 /**
  * PT5 · Your points, with PT5a (nothing yet). Read from `GET /me/points`: the balance, a row for each live lot with the day it
- * ends (the soonest in the warning tone), and the last movements in the Hub's own words. Every figure is the Hub's and a count of
+ * ends (the soonest in the warning tone), and the last movements in the Hub's own words. There is no way from here to cash: the stores do not
+ * allow points to be turned into cash, so the app has no Convert to cash (R-103). Every figure is the Hub's and a count of
  * points, never naira. Buy points opens PT4 (POINTS-06): a secondary pill beside the balance, and the accent one when there are
  * none (PT5a); the Points card on Wallet that opens this screen is DV2-02's.
  *
  * A person who has never had points sees the designed empty view; a read that fails is the error view with Try again.
  */
-export function PointsScreen({ onBack, onConvert, onBuy }: PointsScreenProps) {
+export function PointsScreen({ onBack, onBuy }: PointsScreenProps) {
   const owner = useSessionAccount(undefined);
   const points = useQuery(myPointsQuery(owner), queryClient);
-  const action = { icon: 'Banknote', label: 'Convert to cash', onPress: onConvert, testID: 'points-convert' } as const;
 
   if (points.data === undefined && points.isError) {
     return (
-      <PointsFrame title="Your points" onBack={onBack} action={action} gap={BODY_GAP} centered testID="points-screen">
+      <PointsFrame title="Your points" onBack={onBack} gap={BODY_GAP} centered testID="points-screen">
         <ErrorState
           testID="points-error"
           icon={isApiError(points.error) && points.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
@@ -55,23 +53,15 @@ export function PointsScreen({ onBack, onConvert, onBuy }: PointsScreenProps) {
   }
   if (points.data === undefined) {
     return (
-      <PointsFrame title="Your points" onBack={onBack} action={action} gap={BODY_GAP} testID="points-screen">
+      <PointsFrame title="Your points" onBack={onBack} gap={BODY_GAP} testID="points-screen">
         <Loading />
       </PointsFrame>
     );
   }
-  // Nothing in the balance can be turned into cash (everything was bought, or there is nothing): no round Convert button, and a person who
-  // holds bought points is told why (R-101 point 7).
-  const noCash = points.data.cashablePoints === 0;
   const empty = points.data.balance === 0 && points.data.lots.length === 0 && points.data.movements.length === 0;
   return (
-    <PointsFrame title="Your points" onBack={onBack} action={noCash ? undefined : action} gap={BODY_GAP} testID="points-screen">
+    <PointsFrame title="Your points" onBack={onBack} gap={BODY_GAP} testID="points-screen">
       <BalanceCard points={points.data.balance} buy={{ label: 'Buy points', primary: empty, onPress: onBuy }} />
-      {noCash && points.data.balance > 0 ? (
-        <Text variant="muted" testID="points-bought-note">
-          {WORDS.boughtNotCash}
-        </Text>
-      ) : null}
       {empty ? (
         <View style={styles.empty}>
           <EmptyState testID="points-empty" icon="Sparkles" title={WORDS.emptyTitle} message={WORDS.emptyBody} />

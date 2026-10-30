@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { resetApp, signInOnly } from '@/features/store/testing/screen';
 
 /*
  * R2-SOCIAL3 (CHECK-3 social pass 3, defect 2): H10 draws "Message · ₦1,500" beside Profile, and it opens the same paid-ask sheet (I3) the
@@ -14,6 +15,7 @@ jest.mock('expo-router', () => ({ useIsFocused: () => true }));
 type Answer = { status: number; body: unknown } | 'offline' | 'hold';
 let answers: Record<string, Answer[]> = {};
 
+afterEach(() => resetApp());
 const ok = (data: unknown, pagination?: unknown): Answer => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...(pagination ? { pagination } : {}) } });
 const page = (entries: unknown[]) => ok(entries, { currentPage: 1, nextPage: null, perPage: 10, total: entries.length });
 
@@ -132,9 +134,15 @@ const wired = (extra: Record<string, unknown> = {}) => ({ pay: PAY, onOpenPaidTh
 describe('H10 · Message with its price opens the paid-ask sheet (I3)', () => {
   it('a user sees "Message · ₦2,500" with the price from the Hub, and tapping it opens the ask sheet for that professional', async () => {
     answers[FOR_YOU] = [page([professionalCard()])];
+    // R-101 point 10: on a phone with a store the button says the store's price (₦2,500 sells at ₦3,000), never the list price.
+    await signInOnly();
+    answers['GET /prices'] = [ok({ prices: [{ priceNaira: 2500, priceKobo: 250000, storePriceNaira: 3000 }], tips: [] })];
     const screen = await boot(wired());
     const message = await screen.findByTestId('card-message');
-    expect(message.props.accessibilityLabel).toBe('Message · ₦2,500');
+    await rtl.waitFor(() => expect(message.props.accessibilityLabel).toBe('Message · ₦3,000'));
+    // A missed reply on a phone with a store is a question credit, never money back, and the line names no price.
+    expect(screen.getByText('No reply in 24 hours and you get a question credit.')).toBeTruthy();
+    expect(screen.queryByText(/2,500/)).toBeNull();
     expect(screen.getByTestId('card-profile')).toBeTruthy();
     expect(screen.queryByTestId('ask-sheet')).toBeNull();
     await rtl.act(async () => {
@@ -146,10 +154,23 @@ describe('H10 · Message with its price opens the paid-ask sheet (I3)', () => {
 
   it('draws the price the card carries, not the board figure', async () => {
     answers[FOR_YOU] = [page([professionalCard({ dmPrice: 4000 })])];
+    await signInOnly();
+    answers['GET /prices'] = [ok({ prices: [{ priceNaira: 4000, priceKobo: 400000, storePriceNaira: 4800 }], tips: [] })];
     const screen = await boot(wired());
     const message = await screen.findByTestId('card-message');
-    expect(message.props.accessibilityLabel).toBe('Message · ₦4,000');
+    await rtl.waitFor(() => expect(message.props.accessibilityLabel).toBe('Message · ₦4,800'));
     expect(screen.queryByText(/1,500/)).toBeNull();
+  });
+
+  it('draws no price on Message where the store sells none for the professional\u2019s price', async () => {
+    answers[FOR_YOU] = [page([professionalCard({ dmPrice: 4000 })])];
+    await signInOnly();
+    answers['GET /prices'] = [ok({ prices: [{ priceNaira: 4000, priceKobo: 400000, storePriceNaira: null }], tips: [] })];
+    const screen = await boot(wired());
+    const message = await screen.findByTestId('card-message');
+    await rtl.act(async () => new Promise((r) => setTimeout(r, 100)));
+    expect(message.props.accessibilityLabel).toBe('Message');
+    expect(screen.queryByText(/4,000/)).toBeNull();
   });
 
   it('has no Message when the professional has paid messages switched off, and no refund promise either', async () => {

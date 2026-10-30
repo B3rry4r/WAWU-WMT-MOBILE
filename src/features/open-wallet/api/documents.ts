@@ -1,7 +1,5 @@
-import { Platform } from 'react-native';
-
 import { api } from '@/api/client';
-import { ApiError, isApiError, networkError, toApiError } from '@/api/errors';
+import { ApiError, failureOf, isApiError, toApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 
 import { OPEN_WALLET_KEY } from './account';
@@ -75,7 +73,7 @@ async function send(request: Promise<Answer>): Promise<unknown> {
   try {
     answer = await request;
   } catch (error) {
-    throw isApiError(error) ? error : networkError();
+    throw failureOf(error);
   }
   if (!answer.response.ok) throw toApiError(answer.response.status, answer.error);
   return (answer.data as Envelope<unknown> | undefined)?.data;
@@ -120,12 +118,15 @@ export function documentProblem(error: unknown): DocumentProblem {
 }
 
 /**
- * One file in the multipart form. The browser takes the bytes with a name; on the phone React Native's `FormData`
- * takes only `{ uri, name, type }`, so a file goes by where the app's own copy of it is.
+ * One file in the multipart form, as its bytes with the name and the type the app checked. The phone's `fetch` is Expo's,
+ * which builds the body in JavaScript and cannot read React Native's `{ uri, name, type }` part: it throws before anything
+ * is sent, and the client made that "No connection" (OPEN-UPLOAD, the owner's Android build, 29 Oct 2026). So the phone
+ * sends the bytes it already holds, as the browser does. The file read on the phone names the bytes from the file's name
+ * (or not at all), so the part is given the picker's own type.
  */
 function appendFile(form: FormData, field: string, file: PickedFile) {
-  if (Platform.OS === 'web' || !file.uri) form.append(field, file.blob, file.name);
-  else form.append(field, { uri: file.uri, name: file.name, type: file.contentType } as unknown as Blob);
+  const part = file.blob.type === file.contentType ? file.blob : new Blob([file.blob], { type: file.contentType });
+  form.append(field, part, file.name);
 }
 
 /** The ID's two sides, or a proof of address: one request. Resolves with the documents as they now stand. */

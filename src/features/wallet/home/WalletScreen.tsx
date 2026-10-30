@@ -8,6 +8,7 @@ import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { onSessionEnd } from '@/api/session';
 import { Card } from '@/components/Card';
+import { floatingRoom } from '@/components/floating';
 import { PoweredByNuvion } from '@/components/PoweredByNuvion';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -18,7 +19,6 @@ import { layout, radius, useWawu } from '@/theme';
 
 import { availabilityQuery } from '@/features/capital/api';
 import { CapitalWalletRow } from '@/features/capital/WalletRow';
-import { CardRow } from '@/features/cards/CardRow';
 import { myPointsQuery, type MyPoints } from '@/features/points/api';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
@@ -32,7 +32,6 @@ import { useFxHome } from '../fx/useFx';
 import { PassesTile } from '../pass/PassesTile';
 import { BalanceCard, ACCT } from './BalanceCard';
 import { PointsTile } from './PointsTile';
-import { BillTiles } from './BillTiles';
 import { WalletActions, type WalletAction } from './WalletActions';
 import { homeView, stateWords, type HomeView } from './model';
 import { RecentTransactions } from './RecentTransactions';
@@ -45,7 +44,7 @@ import { BODY_GAP, WalletSkeleton } from './WalletSkeleton';
  * kit.js line 35 (`body`) leaves 120 under it over a tab bar that overlays it; here the bar is its own box.
  * W6's card (line 67) is padded 10 by 16 with a 28 corner.
  */
-const HOME = { bodyTop: 4, bodyBottom: 120 - layout.tabbarH, statePadV: 10, statePadH: 16, infoGap: 10 } as const;
+const HOME = { bodyTop: 4, bodyBottom: Math.max(120 - layout.tabbarH, floatingRoom({ create: false, music: true })), statePadV: 10, statePadH: 16, infoGap: 10 } as const;
 /** The Points card's stand-in while its read is out: as high as the card (12 + the head, the count and the line + 12). */
 const INFO_SKELETON = 86;
 
@@ -53,14 +52,13 @@ const INFO_SKELETON = 86;
  * The Wallet tab (WALLET-01, reworked by DV2-02 to the 16 Oct board): W1, and its states W4 (loading), W5 (a new account) and W6 (the
  * bank did not answer), against `GET /money/wallet`, `GET /money/wallet/balance`, `GET /money/transactions`, `GET /me/points` and `GET /me/tier`.
  *
- * Cash is the card (the Hub's balance), Points and Passes sit under it as information, then the actions, the bill tiles (Airtime, Data, Power,
- * TV and More, which open that bill or S2: bills are back, R-102, BILLS-08), then Transactions. The bill tiles need no wallet, so they are drawn
- * in every state of the tab.
+ * Cash is the card (the Hub's balance), Points and Passes sit under it as information, then the actions (the fifth, Bills, opens S2: bills are
+ * back, R-102, and the Wallet draws no row of bill tiles, R-103), then Transactions.
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where it leads, as
- * drawn: the scan icon (WALLET-20). The WAWU card row is built (WALLET-22, R-84): drawn while the Hub says cards are on. The tabs under the title (WALLET-21, R-83, R-84) are one for each
- * currency account the Hub says exists or can be opened, and Crypto; Naira is the tab below, as it was, and a person whose wallet is
- * not open yet sees none of them (the Open your wallet path above). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and To cash (POINTS-05) are built. The Passes card (WALLET-38)
+ * drawn: the scan icon (WALLET-20). The WAWU card row is not drawn: cards are off until Nuvion says they are back (R-104). The tabs under the title (WALLET-21, R-83, R-84, R-106) are Naira, one for each
+ * currency account the person has added (or is opening), and Crypto when they hold a coin, then "+ Add", which opens the add-a-currency choice; a
+ * currency they have not added is never a tab, and a person whose wallet is not open yet sees none of them (the Open your wallet path above). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and Bills (BILLS-08, R-103) are built. The Passes card (WALLET-38)
  * is always drawn beside the Points card (wallet.js line 47, 10 apart): the Hub's event pass from `GET /me/tier` when there is one, else its
  * empty card, which opens the tiers (owner, 26 Oct 2026, R-97). The Capital row is drawn only for a person who holds something (R-97). The settings icon is built
  * (WALLET-06, W35), and See all and a row open the history and a receipt (WALLET-04, W26 and W27). Nothing here reads, charges or moves
@@ -157,7 +155,7 @@ export function WalletScreen({ add }: { add?: string } = {}) {
           <WalletSkeleton tiles={actions.length} />
         ) : (
           <>
-            {tabbed && fx.tabs.length > 1 ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} onAdd={adder.available ? adder.show : undefined} /> : null}
+            {tabbed && (fx.tabs.length > 1 || adder.available) ? <WalletTabs tabs={fx.tabs} value={activeTab} onChange={setTab} onAdd={adder.available ? adder.show : undefined} /> : null}
             {tabbed ? adder.notice : null}
             {view.kind === 'ready' ? <CurrencyNote owner={owner} adder={adder} /> : null}
             {tabbed && activeTab !== NAIRA_TAB ? (
@@ -328,8 +326,6 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
           </View>
           {capital ? <CapitalWalletRow onPress={onOpenCapital} /> : null}
           <WalletActions actions={actions} />
-          <BillTiles />
-          <CardRow />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );
@@ -339,16 +335,14 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
 /** W6 (wallet.js line 67): a card padded 10 by 16 with a 28 corner holding the kit's `empty` block. */
 function StateCard({ children }: { children: ReactNode }) {
   return (
-    <>
-      <Card style={styles.state}>{children}</Card>
-      <BillTiles />
-    </>
+    <Card style={styles.state}>{children}</Card>
   );
 }
 
 /**
- * The actions that are built, in the board's order (Add money, Send, Withdraw, Buy points, To cash): Add money opens W15, Send opens W7,
- * Withdraw opens W17, Buy points opens PT4 and To cash opens PT6 (WALLET-05 added Add money and Withdraw with their screens, R-47).
+ * The actions that are built, in the board's order (Add money, Send, Withdraw, Buy points, Bills): Add money opens W15, Send opens W7,
+ * Withdraw opens W17, Buy points opens PT4 and Bills opens S2, Pay a bill, as Home's Bills does (R-103: the app has no points-to-cash, the stores
+ * do not allow it; WALLET-05 added Add money and Withdraw with their screens, R-47).
  */
 function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
   return [
@@ -356,7 +350,7 @@ function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
     { key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') },
     { key: 'withdraw', icon: 'Landmark', label: 'Withdraw', onPress: () => router.push('/withdraw') },
     { key: 'buy-points', icon: 'Sparkles', label: 'Buy points', onPress: () => router.push('/points-buy') },
-    { key: 'to-cash', icon: 'Banknote', label: 'To cash', onPress: () => router.push('/points-convert') },
+    { key: 'bills', icon: 'Receipt', label: 'Bills', onPress: () => router.push('/bills') },
   ];
 }
 

@@ -33,12 +33,18 @@ export function eventDay(iso: string, now: Date): string {
  * The muted line under a tile's title (M30): a piece the person already bought says "Bought", a free one "Free", a paid one its
  * price (the Hub's, in kobo); an event says its day, or that it was called off; a school course its school and fee; a creator their handle.
  */
-export function metaOf(entry: SavedEntry, now: Date): string {
+export function metaOf(
+  entry: SavedEntry,
+  now: Date,
+  /** On a phone with a store (R-101 point 10) a paid piece shows the store's price, and none where no rung sells it. Left out, the list price. */
+  shown?: { forKobo: (listKobo: number) => number | null },
+): string {
   if (entry.kind === 'content' && entry.content) {
     const piece = entry.content;
     if (piece.bought) return 'Bought';
     if (piece.accessType === 'free' || !piece.priceKobo || piece.priceKobo <= 0) return 'Free';
-    return formatMoney(piece.priceKobo, { decimals: piece.priceKobo % 100 !== 0 });
+    const kobo = shown ? shown.forKobo(piece.priceKobo) : piece.priceKobo;
+    return kobo === null ? '' : formatMoney(kobo, { decimals: kobo % 100 !== 0 });
   }
   if (entry.kind === 'event' && entry.event) return entry.event.status === 'cancelled' ? 'Called off' : eventDay(entry.event.startsAt, now);
   // A school course says which school it is at and what it costs (the Hub's, in kobo).

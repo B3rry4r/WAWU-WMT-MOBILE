@@ -124,12 +124,52 @@ afterAll(() => {
 });
 
 describe('the tab strip reaches every currency (FX-POLISH P1)', () => {
-  it('ends in a plain + Add, which is not a tab, and the tabs before it are the same ones', async () => {
+  it('ends in a plain + Add, which is not a tab, and the tabs before it are the accounts the person has added (R-106)', async () => {
     await boot();
     const add = await rtl.screen.findByTestId('wallet-tab-add');
     expect(add.props.accessibilityRole).toBe('button');
     expect(add.props.accessibilityLabel).toBe('Add a currency');
-    expect(tabNames()).toEqual(['Naira', 'Dollar', 'Euro', 'Pound', 'CAD', 'Dirham', 'Cedi', 'Crypto']);
+    expect(tabNames()).toEqual(['Naira', 'Dollar', 'Crypto']);
+  });
+
+  it('a Naira-only person sees exactly Naira and + Add, and no currency they have not added (R-106)', async () => {
+    hub.accounts = [];
+    await boot();
+    await rtl.screen.findByTestId('wallet-tab-add');
+    expect(tabNames()).toEqual(['Naira']);
+    for (const name of ['Dollar', 'Euro', 'Pound', 'CAD', 'Dirham', 'Cedi', 'Crypto']) expect(rtl.screen.queryByRole('tab', { name })).toBeNull();
+    expect(rtl.screen.getByRole('tab', { name: 'Naira' }).props.accessibilityState.selected).toBe(true);
+  });
+
+  it('a Naira-only person whose Hub offers nothing to add sees no strip at all (nothing that does nothing, R-47)', async () => {
+    hub.accounts = [];
+    hub.currencies = { ...hub.currencies, products: { ...hub.currencies.products, openAccount: false } };
+    await boot();
+    await rtl.screen.findByTestId('wallet-balance-card');
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(rtl.screen.queryByTestId('wallet-tabs')).toBeNull();
+    expect(rtl.screen.queryByTestId('wallet-tab-add')).toBeNull();
+  });
+
+  it('with two accounts, the strip is exactly those two and + Add (R-106)', async () => {
+    hub.accounts = [usdAccount];
+    await boot();
+    await rtl.screen.findByTestId('wallet-tab-add');
+    expect(tabNames()).toEqual(['Naira', 'Dollar']);
+  });
+
+  it('+ Add on a Naira-only strip opens the choice, and the currency picked there gets its pill, opening and then opened (R-106)', async () => {
+    hub.accounts = [];
+    await boot();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('wallet-tab-add'));
+    expect(await rtl.screen.findByTestId('add-currency-EUR')).toBeTruthy();
+    expect(tabNames()).toEqual(['Naira']);
+    await rtl.fireEvent.press(rtl.screen.getByTestId('add-currency-EUR'));
+    await rtl.waitFor(() => expect(hub.opened).toEqual([{ currency: 'EUR' }]));
+    await rtl.waitFor(() => expect(tabNames()).toEqual(['Naira', 'Euro']));
+    await rtl.waitFor(() => expect(rtl.screen.getByRole('tab', { name: 'Euro' }).props.accessibilityState.selected).toBe(true));
   });
 
   it('opens the add-a-currency choice with what the Hub offers and the person does not hold, coins in its words', async () => {
@@ -273,7 +313,7 @@ describe('the one-time note after a wallet opens (D2)', () => {
     hub.accounts = [];
     await boot();
     const line = await rtl.screen.findByTestId('currency-note-line');
-    expect(line.props.children).toBe('You can also hold dollars, euros, pounds, Canadian dollars, dirhams, cedis and crypto.');
+    expect(line.props.children).toBe('Hold dollars, euros, pounds and more.');
     await rtl.fireEvent.press(rtl.screen.getByTestId('currency-note-dismiss'));
     expect(rtl.screen.queryByTestId('currency-note')).toBeNull();
     await rtl.waitFor(() => expect(mockVault.get(noteKey())).toBe('seen'));
@@ -288,7 +328,7 @@ describe('the one-time note after a wallet opens (D2)', () => {
     hub.accounts = [];
     hub.currencies = currenciesBody({ off: ['EUR', 'GBP', 'CAD', 'AED', 'GHS'] });
     await boot();
-    expect((await rtl.screen.findByTestId('currency-note-line')).props.children).toBe('You can also hold dollars and crypto.');
+    expect((await rtl.screen.findByTestId('currency-note-line')).props.children).toBe('Hold dollars and crypto.');
   });
 
   it('its Add a currency opens the choice and puts the note away for good', async () => {

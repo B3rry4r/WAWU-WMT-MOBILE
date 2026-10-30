@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { StyleSheet, View } from 'react-native';
 
-import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
@@ -12,7 +11,7 @@ import { billsKeys, fetchBillers, fetchCategories } from './api';
 import { billDraft } from './draft';
 import { BILLS_TITLE } from './BillsScreen';
 import { categoryCodeOf, categoryOfKind, kindInfo, type BillKind } from './kinds';
-import { billerInitials } from './model';
+import { billerInitials, billsLoadFailure } from './model';
 import { BillerRow, SectionLabel, StepChip, billMetrics } from './parts';
 
 /** design/_gen/services.js `billerPick`: the body stacks the chip and the list 16 apart, the label 6 above the rows. */
@@ -44,14 +43,14 @@ export function BillersScreen({ kind, onBack, onChangeCategory, onPick }: Biller
 
   let list;
   if (failed) {
-    const offline = isApiError(failed.error) && failed.error.kind === 'network';
+    const failure = billsLoadFailure(failed.error);
     list = (
       <ErrorState
         testID="billers-error"
         title="Couldn't load the companies"
-        message={offline ? 'No connection. Check your internet and try again.' : 'We could not reach the bills service. Try again in a moment.'}
-        icon={offline ? 'WifiOff' : 'TriangleAlert'}
-        onRetry={() => void failed.refetch()}
+        message={failure.message}
+        icon={failure.offline ? 'WifiOff' : 'TriangleAlert'}
+        onRetry={failure.canRetry ? () => void failed.refetch() : undefined}
       />
     );
   } else if (categories.isSuccess && !category) {

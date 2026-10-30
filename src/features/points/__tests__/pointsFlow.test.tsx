@@ -177,6 +177,25 @@ const stub = (name: string) => {
   return Stub;
 };
 const page = (module: string): ComponentType => (require(module) as { default: ComponentType }).default;
+/**
+ * PT6 has no route of its own any more (R-103: `src/app/points-convert.tsx` redirects to Your points, nothing opens it). Its screen is
+ * still in the code until the removal task, so these tests mount it on the old address with the callbacks the old route file gave it.
+ */
+function ConvertStandIn() {
+  const { useRouter } = require('expo-router') as typeof import('expo-router');
+  const { ConvertScreen } = require('@/features/points/ConvertScreen') as typeof import('@/features/points/ConvertScreen');
+  const { OPEN_WALLET_PIN_PATH } = require('@/features/open-wallet/entry') as typeof import('@/features/open-wallet/entry');
+  const router = useRouter();
+  return (
+    <ConvertScreen
+      onBack={() => (router.canGoBack() ? router.back() : router.replace('/wallet'))}
+      onDone={() => router.dismissTo('/wallet')}
+      onForgotPin={() => router.push('/reset-pin')}
+      onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
+      onBuy={() => router.push('/points-buy')}
+    />
+  );
+}
 
 let routes: Record<string, ComponentType>;
 
@@ -192,7 +211,7 @@ beforeAll(async () => {
     'open-wallet': stub('Open your wallet'),
     'open-wallet-pin': stub('Create your PIN'),
     points: page('@/app/points'),
-    'points-convert': page('@/app/points-convert'),
+    'points-convert': ConvertStandIn,
   };
   const { unmount } = await renderRouter(routes, { initialUrl: '/wallet' });
   await unmount();
@@ -259,18 +278,19 @@ async function toConvert() {
 }
 
 describe('PT5 · your points', () => {
-  it('a person whose points are all bought has no Convert button and is told why; with cashable points the button is there', async () => {
+  it('a person whose points are all bought sees no Convert button and no note about it: the app has no points-to-cash (R-103)', async () => {
     hub.cashable = 0;
     await renderRouter(routes, { initialUrl: '/points' });
     await screen.findByTestId('points-lots');
     expect(screen.queryByTestId('points-convert')).toBeNull();
-    expect(screen.getByTestId('points-bought-note')).toHaveTextContent("Points you bought can't be turned into cash.");
+    expect(screen.queryByTestId('points-bought-note')).toBeNull();
   });
 
-  it('a person with cashable points sees the Convert button and no note', async () => {
+  it('a person with cashable points sees no Convert button either (R-103)', async () => {
     await renderRouter(routes, { initialUrl: '/points' });
     await screen.findByTestId('points-lots');
-    expect(screen.getByTestId('points-convert')).toBeTruthy();
+    expect(screen.queryByTestId('points-convert')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Convert to cash' })).toBeNull();
     expect(screen.queryByTestId('points-bought-note')).toBeNull();
   });
 
@@ -323,14 +343,12 @@ describe('PT5 · your points', () => {
     await screen.findByTestId('points-lots');
   });
 
-  it('the round button on the bar opens Convert to cash; Back returns', async () => {
-    await renderRouter(routes, { initialUrl: '/points' });
+  it('an old link to /points-convert lands on Your points, not on a missing page (R-103)', async () => {
+    const real = { ...routes, 'points-convert': page('@/app/points-convert') };
+    await renderRouter(real, { initialUrl: '/points-convert' });
     await screen.findByTestId('points-lots');
-    await press('Convert to cash');
-    await screen.findByTestId('convert-screen');
-    expect(pathname()).toBe('/points-convert');
-    await press('Back');
     await waitFor(() => expect(pathname()).toBe('/points'));
+    expect(screen.queryByTestId('convert-screen')).toBeNull();
   });
 });
 

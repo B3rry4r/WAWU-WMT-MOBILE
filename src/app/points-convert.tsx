@@ -1,26 +1,10 @@
-import { Redirect, useRouter } from 'expo-router';
-
-import { useSession } from '@/api/session';
-import { OPEN_WALLET_PIN_PATH } from '@/features/open-wallet/entry';
-import { ConvertScreen } from '@/features/points/ConvertScreen';
+import { Redirect } from 'expo-router';
 
 /**
- * PT6 · Convert to cash (`/points-convert`), with PT6a and PT6b. Wallet's "To cash" button and PT5's round button open it. Signed in
- * only, as the other wallet routes are. Done goes back to the wallet; Forgot PIN? opens W37 and no PIN yet opens A9.
+ * PT6 · Convert to cash (`/points-convert`) is gone from the app (R-103, owner, 30 Oct 2026: the stores do not allow points to be
+ * turned into cash). Nothing opens it any more; this file stays only so a link or a notification from an older build lands on Your
+ * points and not on a missing page. The Hub's convert routes stay until the removal task.
  */
 export default function PointsConvertRoute() {
-  const router = useRouter();
-  const { status } = useSession();
-  if (status === 'restoring') return null;
-  if (status !== 'signedIn') return <Redirect href="/welcome" />;
-
-  return (
-    <ConvertScreen
-      onBack={() => (router.canGoBack() ? router.back() : router.replace('/wallet'))}
-      onDone={() => router.dismissTo('/wallet')}
-      onForgotPin={() => router.push('/reset-pin')}
-      onSetPin={() => router.push(OPEN_WALLET_PIN_PATH)}
-      onBuy={() => router.push('/points-buy')}
-    />
-  );
+  return <Redirect href="/points" />;
 }

@@ -1,5 +1,5 @@
 import { identityBaseUrl } from './env';
-import { ApiError, networkError, toApiError } from './errors';
+import { ApiError, failureOf, toApiError } from './errors';
 import type { components, operations } from './identity.generated';
 
 /**
@@ -38,8 +38,8 @@ async function call<A>(method: 'GET' | 'POST', path: string, body?: unknown, tok
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-  } catch {
-    throw networkError();
+  } catch (error) {
+    throw failureOf(error);
   }
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) throw toApiError(response.status, payload, response.headers);

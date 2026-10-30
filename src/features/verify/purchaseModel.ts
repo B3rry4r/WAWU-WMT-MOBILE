@@ -1,17 +1,10 @@
-import { formatMoney, type Currency } from '@/components/Money';
+import type { MyTier } from '@/features/me/api';
+import { isApiError } from '@/api/errors';
 import { formatPoints } from '@/components/PointsFigure';
-import { CHANGED_LINE, lastsText, naira, NOT_READY_LINE, SHORT_LINE } from '@/features/points/buyModel';
+import { lastsText } from '@/features/points/buyModel';
 import { dateWords } from '@/features/wallet/history/lagosTime';
 
-import type { PlanTier, Purchase, PurchaseGrant, PurchaseQuote, PurchaseTarget } from './purchaseApi';
-
-export { CHANGED_LINE, naira, NOT_READY_LINE, SHORT_LINE };
-
-/**
- * A price in the currency the Hub priced it in (`GET /plans` `currency`), with that currency's own sign: "$3" for a person billed in
- * dollars, "₦1,000" for one billed in naira. A dollar figure is never drawn with the naira sign (RELEASE-02, CHECK-3 D-1).
- */
-export const priceIn = (minor: number, currency: Currency): string => formatMoney(minor, { currency, decimals: minor % 100 !== 0 });
+import type { PlanTier, PurchaseGrant } from './purchaseApi';
 
 /**
  * The words of VF5 to VF7a that are the design's own. No figure is in any of them: every price, length, count and point is the Hub's
@@ -51,13 +44,26 @@ export const tierLine = (tier: Pick<PlanTier, 'days' | 'products'>): string => `
 const firstWord = (name: string): string => name.trim().split(/\s+/)[0] ?? name;
 
 /**
- * VF5's two lines under a tier's name: what it gives (its length, products, points and event pass), then, when it carries them, the
- * numbered badge and the bonus on points packs. A part the Hub does not give is not written.
+ * What a tier gives, one entry per thing, in the order VF5 has always drawn them (R-108): its length, its products, its points, its event
+ * pass (the Hub's own name for it), then, when it carries them, the numbered badge and the bonus on points packs. A part the Hub does not
+ * give is not listed. The card draws one line, with a check, for each.
  */
-export function tierFacts(tier: PlanTier): { gives: string; extras: string | null } {
-  const gives = [lengthOf(tier), productsOf(tier.products), tier.bonusPoints > 0 ? formatPoints(tier.bonusPoints) : null, tier.eventPass?.name ?? null].filter(Boolean).join(' · ');
-  const extras = [tier.badge?.numbered ? `Numbered ${firstWord(tier.name)} badge` : null, tier.packBonusPercent > 0 ? `${tier.packBonusPercent}% bonus on points packs` : null].filter(Boolean).join(', ');
-  return { gives, extras: extras || null };
+export function tierItems(tier: PlanTier): string[] {
+  return [
+    lengthOf(tier),
+    productsOf(tier.products),
+    tier.bonusPoints > 0 ? formatPoints(tier.bonusPoints) : null,
+    tier.eventPass?.name ?? null,
+    tier.badge?.numbered ? `Numbered ${firstWord(tier.name)} badge` : null,
+    tier.packBonusPercent > 0 ? `${tier.packBonusPercent}% bonus on points packs` : null,
+  ].filter((item): item is string => Boolean(item));
+}
+
+/** The small line under a tier's price (R-108): "a year" for a tier of 365 days, "a month" for 30; any other length is said as it is. */
+export function periodOf(tier: Pick<PlanTier, 'days'>): string {
+  if (tier.days >= 360 && tier.days <= 370) return 'a year';
+  if (tier.days >= 28 && tier.days <= 31) return 'a month';
+  return `for ${lengthOf(tier)}`;
 }
 
 /** The tier the sheet starts on: the one the Hub marks `preselected`, else the first. Never a name of the design's. */
@@ -79,38 +85,50 @@ export const nextTiers = (tiers: readonly PlanTier[], heldId: string | null, ext
   return above.filter((t) => t.products + extraProducts > used);
 };
 
-/** "Add 1,000 points for ₦800": the checkout offer, from the Hub's own figures. */
-export const bumpLine = (bump: { points: number; priceMinor: number }): string => `Add ${formatPoints(bump.points)} for ${naira(bump.priceMinor)}`;
+/**
+ * Whether the Hub would sell VF13's "Add 5 more products" to this person now, by the rule it refuses with (`limitOffers`, TIER-02): the pack is
+ * bought on a RUNNING tier (`active` or `ending`, never none, ended, or a verification tick alone, whose cap the pack does not raise) and it
+ * must lift the limit above what is published. The sheet keeps this check BESIDE the Hub's own answer (below, R-100): a store purchase cannot be
+ * refunded by WAWU on Apple, so the store sheet never opens for no tier or an ended one, even when the Hub that answers is an old one.
+ */
+export const packOffered = (mine: Pick<MyTier, 'state' | 'productsAllowed' | 'productsUsed'>, count: number): boolean =>
+  (mine.state === 'active' || mine.state === 'ending') && count > 0 && mine.productsAllowed + count > mine.productsUsed;
 
-/** What the pay button says: the total the payer pays, the Bank charge included (BRIEF rule 5). */
-export const payLabel = (totalKobo: number): string => `Pay ${naira(totalKobo)}`;
+/**
+ * The Hub's refusals of the "Add 5 more products" pack on its quote (`GET /plans/purchases/quote?kind=extra_products`, R-100, PACK-CAP):
+ * `pack_not_allowed` (the person's tier may not buy it, or they hold the most packs a profile can: 20 products) and `tier_required` (no running
+ * tier). The sheet no longer guesses from `GET /me/tier`: it asks the Hub, which answers eligibility first, before any wallet or payment gate.
+ */
+export const PACK_NOT_ALLOWED = 'pack_not_allowed';
+/** Verify and Verify Plus, full: only the tiers are offered. */
+export const PACK_TIERS_LINE = 'Move up a tier to publish another.';
+/** Founding Maker at the cap (R-100's own sentence). */
+export const PACK_CAP_LINE = "That's the most products a profile can hold.";
+/** The store sheet is not opened while the Hub cannot be asked: an Apple purchase cannot be refunded by WAWU. */
+export const PACK_CHECK_FAILED_LINE = 'We could not check this right now. Try again.';
 
-/** VF6a's two lines: what is needed and what the wallet has, both the Hub's. */
-export const shortLine = (quote: Pick<PurchaseQuote, 'totalKobo' | 'balanceKobo'>): string =>
-  quote.balanceKobo === null ? `You need ${naira(quote.totalKobo)}.` : `You need ${naira(quote.totalKobo)}. Your wallet has ${naira(quote.balanceKobo)}.`;
+export type PackVerdict = { kind: 'checking' } | { kind: 'offered' } | { kind: 'refused'; code: 'pack_not_allowed' | 'tier_required'; message: string } | { kind: 'unknown' };
 
-/** The PIN sheet's line after the amount ("Approve ₦5,800 for ..."): the tier, its renewal or upgrade, or the five more products. */
-export function pinPurposeOf(target: PurchaseTarget, tierName: string | null, products: number | null): string {
-  if (target.kind === 'extra_products') return products !== null ? `${products} more products` : 'more products';
-  const name = tierName ?? 'your tier';
-  if (target.kind === 'renew') return `renewing ${name}`;
-  if (target.kind === 'upgrade') return `upgrading to ${name}`;
-  return `the ${name} tier`;
+/**
+ * What the Hub's answer to the pack's quote means. A quote that comes back, or one stopped only by a gate that is asked AFTER eligibility
+ * (`wallet_not_open`: the store path needs no wallet) means the Hub would sell the pack. `fees_not_set` does not: the Hub answers it BEFORE it judges eligibility, so it says nothing about the person and the store stays closed (Apple cannot be refunded). A refusal is `pack_not_allowed` or
+ * `tier_required`. Anything else (no network, the server failing) is `unknown`: the pack is not drawn and the store is not opened.
+ */
+export function packVerdictOf(read: { isPending: boolean; isError: boolean; error: unknown }): PackVerdict {
+  if (read.isPending) return { kind: 'checking' };
+  if (!read.isError) return { kind: 'offered' };
+  const error = read.error;
+  if (isApiError(error)) {
+    if (error.code === 'wallet_not_open') return { kind: 'offered' };
+    if (error.code === PACK_NOT_ALLOWED || error.code === 'tier_required') return { kind: 'refused', code: error.code, message: error.message };
+  }
+  return { kind: 'unknown' };
 }
-
-/** When the figures the person was shown are not the figures the Hub has now. */
-export function quoteMoved(a: PurchaseQuote, b: PurchaseQuote): boolean {
-  return a.totalKobo !== b.totalKobo || a.planKobo !== b.planKobo || a.bumpKobo !== b.bumpKobo || a.bumpPoints !== b.bumpPoints || a.productsAllowedAfter !== b.productsAllowedAfter;
-}
-
-/** The words for a purchase that did not go through: the Hub's own sentence when it sent one. Nothing is promised about the money. */
-export const failedLine = (p: Pick<Purchase, 'statusMessage' | 'status'>): string =>
-  p.statusMessage?.trim() || (p.status === 'expired' ? 'The bank transfer did not arrive in time. Nothing was taken.' : 'Payment did not go through. Nothing was taken.');
 
 /** VF7's three rows, from what the Hub granted: the points (the tier's and the offer's, "600 + 1,000"), the products, the event pass. A row the grant does not carry is not drawn. */
 export type GrantRow = { id: 'points' | 'products' | 'pass'; label: string; value: string };
 
-export function grantRows(grant: PurchaseGrant): GrantRow[] {
+export function grantRows(grant: Pick<PurchaseGrant, 'bonusPoints' | 'bumpPoints' | 'productsAllowed' | 'eventPass'>): GrantRow[] {
   const rows: GrantRow[] = [];
   const plain = (n: number) => new Intl.NumberFormat('en-US').format(n);
   if (grant.bonusPoints > 0 || grant.bumpPoints > 0) {
@@ -131,14 +149,5 @@ export function dayOf(iso: string | null | undefined, now: Date = new Date()): s
   return Number.isNaN(at.getTime()) ? null : dateWords(at, now);
 }
 
-/**
- * The Hub's refusal of the "Add 5 more products" pack (`409 pack_not_allowed`, R-100, PACK-CAP): the person's tier may not buy it, or they
- * hold the most packs a profile can (20 products). The pack is drawn and sold only while the Hub's quote of it is not refused with this code.
- */
-export const PACK_NOT_ALLOWED = 'pack_not_allowed';
-/** Verify and Verify Plus, full: only the tiers are offered. */
-export const PACK_TIERS_LINE = 'Move up a tier to publish another.';
-/** Founding Maker at the cap (R-100's own sentence). */
-export const PACK_CAP_LINE = "That's the most products a profile can hold.";
 /** No running tier (the Hub answers `tier_required`): the pack is not offered; the way on is a tier, or taking something down. */
 export const PACK_TAKE_DOWN_LINE = 'Take something down to make room for a new one.';

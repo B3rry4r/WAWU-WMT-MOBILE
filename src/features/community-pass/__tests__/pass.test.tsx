@@ -1,386 +1,337 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
-import type { ReactElement } from 'react';
-import { View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
+
+import { hub, installHub, type HubProduct } from '@/features/store/testing/fakeHub';
+import { fakeStore } from '@/features/store/testing/fakeIap';
+import { renderSignedIn, resetApp } from '@/features/store/testing/screen';
 
 /*
- * I30 and I31 · A private community's monthly pass (INBOX-14, R-63). The Hub is a stand-in `fetch` installed before the app's modules load.
- * It answers in the Hub's shapes, records every quote and purchase (headers and body) and answers an Idempotency-Key it knows with the
- * first purchase, as the Hub does. This renderer draws a state change on its own clock, not inside `act`, so every check is repeated on a
- * real clock until it holds (`until`).
+ * I30 and I31 · A private community's pass, bought in the store sheet (IAP-02, R-86, IAP-03 round 2; STORE-BUY-APP, R-101). The Hub is a
+ * stand-in `fetch` (the room, the pass and the store routes); `expo-iap` is replaced at its own boundary. A pass is bought ONCE for this room:
+ * the Hub is told what the payment is for (an intent at the room's list price), the person pays the store at the store's price for that rung
+ * of the price ladder (`wawu.buy.2000`), the Hub checks it with the store and lets them in for the days it gives, and nothing renews it.
+ * Renew buys it again. Restore purchases is on the screen. The old `africa.wawu.pass.month` product stays in the catalog here only because a
+ * phone may still hold a payment made for it: Restore and the start-up recovery still hand it over (F-1).
  */
-const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data });
-const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
+const mockVault = new Map<string, string>();
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(async (key: string) => mockVault.get(key) ?? null),
+  setItemAsync: jest.fn(async (key: string, value: string) => void mockVault.set(key, value)),
+  deleteItemAsync: jest.fn(async (key: string) => void mockVault.delete(key)),
+}));
+jest.mock('expo-iap', () => require('@/features/store/testing/fakeIap').moduleMock);
+jest.mock('expo-router', () => ({ useIsFocused: () => true, useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }), usePathname: () => '/' }));
 
 const ID = 'c0000000-0000-4000-8000-000000000001';
-const PRICE = 200_000;
-const BANK_CHARGE = 2325;
-const TOTAL = PRICE + BANK_CHARGE;
-const ENDS = '2026-11-16T12:00:00.000Z';
-const REMOVED = 'The host has removed you from this room. Ask the host to let you back in.';
-
-type Mode = 'paid' | 'pending' | 'lost_after' | 'short_on_pay' | 'changed';
-const hub = {
-  mode: 'paid' as Mode,
-  balanceKobo: 48_525_075,
-  pass: {} as Record<string, unknown>,
-  quote: 'ok' as 'ok' | 'removed' | 'no_wallet',
-  quotes: 0,
-  buys: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
-  paidKeys: new Map<string, string>(),
-  payments: 0,
-  wrongFirst: false,
-  purchaseReads: 0,
+const PASS: HubProduct = {
+  id: 'pass-month',
+  platform: 'android',
+  storeProductId: 'africa.wawu.pass.month',
+  kind: 'pass',
+  title: 'Monthly pass',
+  subscription: false,
+  grants: { points: null, credits: null, tierId: null, days: 30 },
 };
+const BUY: HubProduct = {
+  id: 'buy-android-2000',
+  platform: 'android',
+  storeProductId: 'wawu.buy.2000',
+  kind: 'buy',
+  title: 'Buy 2000',
+  subscription: false,
+  grants: { points: null, credits: null, tierId: null, days: null },
+  listPriceKobo: 200_000,
+  storePriceKobo: 240_000,
+};
+const newMember = { communityId: ID, sellsPass: true, priceKobo: 200_000, periodDays: 30, passUntil: null, active: false, canRenew: false, canBuy: true, isHost: false };
 
-const newMember = () => ({ communityId: ID, sellsPass: true, priceKobo: PRICE, periodDays: 30, passUntil: null, active: false, canRenew: false, canBuy: true, isHost: false });
-
-function quoteView() {
-  return {
-    communityId: ID,
-    title: 'Founders under 30',
-    host: { wawuUserId: 'host1', displayName: 'Adaeze Okonkwo', handle: 'adaeze', avatarUrl: null, tick: null },
-    priceKobo: PRICE,
-    periodDays: 30,
-    passUntil: (hub.pass.passUntil as string | null) ?? null,
-    newPassUntil: ENDS,
-    payment: {
-      kind: 'community_pass',
-      targetId: ID,
-      title: 'Founders under 30',
-      payee: null,
-      priceKobo: PRICE,
-      fee: { providerFeeKobo: BANK_CHARGE, wawuFeeKobo: 0, totalFeeKobo: BANK_CHARGE },
-      totalKobo: TOTAL,
-      balanceKobo: hub.balanceKobo,
-      shortfallKobo: hub.balanceKobo < TOTAL ? TOTAL - hub.balanceKobo : null,
-      willBeHeld: false,
-      withinDailyLimit: true,
-      remainingTodayKobo: null,
-      quoteToken: 'tok-pass',
-      expiresAt: '2099-01-01T00:00:00.000Z',
-    },
-  };
+function serve(pass: Record<string, unknown> = newMember, over: { available?: boolean; reason?: 'store_not_configured' | 'store_disabled' } = {}) {
+  hub.reset();
+  fakeStore.reset();
+  installHub();
+  hub.products = [PASS, BUY];
+  hub.open = over.available ?? true;
+  hub.reason = over.reason ?? null;
+  fakeStore.products = [
+    { id: PASS.storeProductId, displayPrice: '$3.99', type: 'in-app' },
+    { id: BUY.storeProductId, displayPrice: '$3.99', type: 'in-app' },
+  ];
+  hub.routes[`GET /communities/${ID}/room`] = { id: ID, name: 'Founders under 30', kind: 'private', imageUrl: null, description: 'A room', hostWawuId: 'host1', memberCount: 640, messagesToday: 0, slug: 'founders', link: 'wawu/c/founders', role: 'none', messageCostInCredits: 1 };
+  hub.routes['GET /users/host1/public-profile'] = { handle: 'adaeze' };
+  hub.routes[`GET /communities/${ID}/pass`] = pass;
 }
 
-function purchaseView(status: 'paid' | 'pending') {
-  return {
-    id: 'cpp-1',
-    method: 'wallet',
-    communityId: ID,
-    title: 'Founders under 30',
-    status,
-    statusMessage: status === 'pending' ? 'Paid, finishing it.' : null,
-    priceKobo: PRICE,
-    passUntil: status === 'paid' ? ENDS : null,
-    payment: {
-      id: 'pay-1',
-      kind: 'community_pass',
-      targetId: ID,
-      title: 'Founders under 30',
-      status: status === 'paid' ? 'completed' : 'pending',
-      priceKobo: PRICE,
-      fee: { providerFeeKobo: BANK_CHARGE, wawuFeeKobo: 0, totalFeeKobo: BANK_CHARGE },
-      totalKobo: TOTAL,
-      reference: 'WAW-PASS-1',
-      hold: null,
-      failureReason: null,
-      delivered: status === 'paid',
-      statusMessage: null,
-      createdAt: '2026-10-17T10:00:00.000Z',
-      completedAt: status === 'paid' ? '2026-10-17T10:00:03.000Z' : null,
-    },
-    createdAt: '2026-10-17T10:00:00.000Z',
-    paidAt: status === 'paid' ? '2026-10-17T10:00:03.000Z' : null,
-  };
+async function boot(pass?: Record<string, unknown>, over?: Parameters<typeof serve>[1]) {
+  serve(pass, over);
+  const { PassScreen } = require('../PassScreen') as typeof import('../PassScreen');
+  await renderSignedIn(<PassScreen id={ID} onBack={jest.fn()} />);
 }
 
-globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-  const request = input instanceof Request ? input : new Request(String(input), init);
-  const url = new URL(request.url);
-  const path = url.pathname.replace(/^\/api\/hub/, '');
-  const method = request.method;
-  if (path === `/communities/${ID}/room`) {
-    return ok({ id: ID, name: 'Founders under 30', kind: 'private', imageUrl: null, description: 'A room', hostWawuId: 'host1', memberCount: 640, messagesToday: 0, slug: 'founders', link: 'wawu/c/founders', role: 'none', messageCostInCredits: 1 });
-  }
-  if (path === '/users/host1/public-profile') return ok({ handle: 'adaeze' });
-  if (path === `/communities/${ID}/pass` && method === 'GET') return ok(hub.pass);
-  if (path === `/communities/${ID}/pass/quote`) {
-    hub.quotes += 1;
-    if (hub.quote === 'no_wallet') return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
-    if (hub.quote === 'removed') return refuse(409, { code: 'target_not_payable', message: REMOVED });
-    return ok(quoteView());
-  }
-  if (path === `/communities/${ID}/pass` && method === 'POST') {
-    const body = (await request.json()) as Record<string, unknown>;
-    const key = request.headers.get('idempotency-key') ?? '';
-    hub.buys.push({ pin: request.headers.get('x-transaction-pin'), key, body });
-    // The Hub answers a key it knows with the first purchase, before it looks at the PIN or the quote.
-    if (hub.paidKeys.has(key)) return json(201, { statusCode: 201, message: 'Created', data: purchaseView(hub.paidKeys.get(key) as 'paid') });
-    if (hub.wrongFirst && hub.buys.length === 1) return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
-    if (hub.mode === 'short_on_pay') return refuse(402, { code: 'insufficient_funds', message: 'Not enough.', balanceKobo: 50_000, totalKobo: TOTAL, shortfallKobo: TOTAL - 50_000 });
-    if (hub.mode === 'lost_after' && hub.paidKeys.size === 0) {
-      hub.paidKeys.set(key, 'paid');
-      hub.payments += 1;
-      return json(500, { statusCode: 500, message: 'Something went wrong' });
-    }
-    const status = hub.mode === 'pending' ? 'pending' : 'paid';
-    hub.paidKeys.set(key, status);
-    hub.payments += 1;
-    return json(201, { statusCode: 201, message: 'Created', data: purchaseView(status) });
-  }
-  if (path === `/communities/${ID}/pass/cpp-1` && method === 'GET') {
-    hub.purchaseReads += 1;
-    return ok(purchaseView('paid'));
-  }
-  throw new Error(`no answer for ${method} ${path}`);
-}) as typeof fetch;
+/*
+ * L-4 (v-IAP-03c): the first test failed once under load with no `pass-price`. The screen's answer lands only after a chain of hops (room and
+ * pass, the host's handle, the Hub's catalog, the store's prices), and the first test paid for loading the code on the way: about 0.3 s when
+ * the machine is quiet, over the 1 s that `findBy*` waits by default when it is not (a cold transform cache takes it past 9 s). The asserts
+ * are unchanged; this file waits as long as the other store screens' tests do (they wait up to 10 s, and a `findBy*` returns the moment its
+ * element is there), and loads the screen's code before the first test starts instead of inside it.
+ */
+rtl.configure({ asyncUtilTimeout: 10_000 });
 
-jest.mock('expo-router', () => ({
-  ...jest.requireActual('expo-router'),
-  useRouter: () => ({ push: mockPush, replace: mockReplace, back: jest.fn(), canGoBack: () => true }),
-}));
-const mockPush = jest.fn();
-const mockReplace = jest.fn();
-
-const { PassScreen } = require('../PassScreen') as typeof import('../PassScreen');
-const { forgetAttempts } = require('@/features/money-attempt/attempts') as typeof import('@/features/money-attempt/attempts');
-
-rtl.configure({ asyncUtilTimeout: 5000 });
-
-beforeAll(async () => {
-  const warm = await rtl.render(<View />);
-  warm.unmount();
+beforeAll(() => {
+  // The Hub client takes `fetch` when it is first loaded, so the stand-in Hub goes in before the screen's code does (as `boot` does).
+  installHub();
+  require('../PassScreen');
 });
 
 beforeEach(() => {
-  forgetAttempts();
-  mockPush.mockClear();
-  mockReplace.mockClear();
-  Object.assign(hub, {
-    mode: 'paid',
-    balanceKobo: 48_525_075,
-    pass: newMember(),
-    quote: 'ok',
-    quotes: 0,
-    buys: [],
-    paidKeys: new Map<string, string>(),
-    payments: 0,
-    wrongFirst: false,
-    purchaseReads: 0,
-  });
+  jest.replaceProperty(Platform, 'OS', 'android');
+  (require('@/features/store/iap') as typeof import('@/features/store/iap')).resetIapForTests();
+});
+afterEach(async () => {
+  await rtl.act(async () => new Promise((r) => setTimeout(r, 0)));
+  rtl.cleanup();
+  resetApp();
+  jest.restoreAllMocks();
 });
 
-const clients: QueryClient[] = [];
-afterEach(() => {
-  clients.splice(0).forEach((c) => c.clear());
-});
-
-/** A check repeated on a real clock until it holds (or 4 seconds pass). */
-async function until<T>(check: () => T): Promise<T> {
-  const end = Date.now() + 4000;
-  for (;;) {
-    try {
-      return check();
-    } catch (error) {
-      if (Date.now() > end) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 40));
-    }
-  }
-}
-
-async function render(child: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
-  clients.push(client);
-  return rtl.render(
-    <QueryClientProvider client={client}>
-      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>{child}</SafeAreaProvider>
-    </QueryClientProvider>,
-  );
-}
-
-async function boot() {
-  const onBack = jest.fn();
-  await render(<PassScreen id={ID} onBack={onBack} />);
-  await until(() => rtl.screen.getByTestId('pass-body'));
-  return onBack;
-}
-
-const pressTest = (testID: string) => rtl.fireEvent.press(rtl.screen.getByTestId(testID));
-async function enterPin(pin: string) {
-  for (const digit of pin) {
-    const key = await until(() => rtl.screen.getByRole('button', { name: digit }));
-    rtl.fireEvent.press(key);
-    // The next digit waits for this one to be drawn: a press meets the screen as it was drawn last.
-    await new Promise((resolve) => setTimeout(resolve, 150));
-  }
-}
-const payLabel = () => rtl.screen.getByTestId('pass-pay').props.accessibilityLabel as string;
-async function reachPin() {
-  await until(() => expect(payLabel()).toContain('Join · ₦2,023.25'));
-  pressTest('pass-pay');
-  await until(() => rtl.screen.getByText(/ for a 30 day pass$/));
-}
-
-describe('I30: a private room that sells a pass', () => {
-  it('a person with no pass sees the host\'s price, the bank charge and the total, and the button carries the total', async () => {
+describe('I30 · Private, pay to join, in the store sheet', () => {
+  it('a person sees the pass at the store’s own price, with Restore purchases, and no wallet, PIN, bank charge or naira', async () => {
     await boot();
-    await until(() => rtl.screen.getByTestId('pass-total'));
-    expect(rtl.screen.getByTestId('pass-price').props.children).toBeTruthy();
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
-    expect(rtl.screen.getByText('Reading inside is free.', { exact: false })).toBeTruthy();
-    await until(() => expect(payLabel()).toContain('Join · ₦2,023.25'));
-    // No host approval, no request, nothing about a monthly debit by itself.
-    expect(rtl.screen.queryByText(/approve|request sent|renews 16|cancel any time/i)).toBeNull();
+    expect(await rtl.screen.findByTestId('pass-price')).toBeTruthy();
+    expect(rtl.screen.getByText('$3.99 for 30 days')).toBeTruthy();
+    expect(rtl.screen.getByText('Join · $3.99')).toBeTruthy();
+    expect(rtl.screen.getByTestId('pass-restore')).toBeTruthy();
+    for (const gone of ['pass-breakdown', 'pass-total', 'pass-short', 'pass-no-wallet', 'pass-add']) expect(rtl.screen.queryByTestId(gone)).toBeNull();
+    expect(rtl.screen.queryByText(/wallet|PIN|Bank charge|₦/i)).toBeNull();
   });
 
-  it('a user pays with the PIN: one purchase carrying the quote the person saw, then I31 says what was paid and when the pass ends', async () => {
+  it('a person joins: the store sheet opens for the pass with the room, the Hub lets them in, and I31 says when it runs to', async () => {
     await boot();
-    await reachPin();
-    await enterPin('4829');
-    await until(() => rtl.screen.getByTestId('pass-joined-title'));
-    expect(rtl.screen.getByTestId('pass-joined-line').props.children).toBe('Paid ₦2,023.25 from your wallet. Your pass ends on 16 November.');
-    expect(rtl.screen.getByText('Member')).toBeTruthy();
-    expect(hub.buys).toHaveLength(1);
-    expect(hub.buys[0].pin).toBe('4829');
-    expect(hub.buys[0].body).toEqual({ expectedTotalKobo: TOTAL, quoteToken: 'tok-pass' });
-    expect(hub.buys[0].key).toBeTruthy();
-    expect(hub.payments).toBe(1);
+    await rtl.screen.findByTestId('pass-pay');
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByTestId('pass-joined-title')).toBeTruthy();
+    // The Hub is told what the payment is for before the store sheet opens, at the room's list price.
+    expect(hub.intents).toEqual([{ platform: 'android', kind: 'pass', communityId: ID, listPriceNaira: 2000 }]);
+    expect(hub.bodies).toEqual([{ platform: 'android', productId: 'wawu.buy.2000', purchaseToken: 'token-1', intentId: 'intent-1' }]);
+    // A pass is bought once: it is consumed, so the same product can be bought again (for another room, or to renew).
+    expect(fakeStore.finished).toEqual([{ productId: 'wawu.buy.2000', isConsumable: true }]);
+    expect(JSON.stringify(fakeStore.requests[0])).toContain('"in-app"');
+    expect(JSON.stringify(fakeStore.requests[0])).not.toContain('subs');
+    expect((fakeStore.requests[0] as { request: { google: { obfuscatedAccountId?: string } } }).request.google).toMatchObject({ obfuscatedAccountId: hub.accountToken });
+    expect(rtl.screen.getByTestId('pass-joined-line').props.children).toBe('Your pass runs to 1 December.');
+    expect(rtl.screen.queryByText(/renews it|cancel/i)).toBeNull();
   });
 
-  it('a fresh quote is asked for on the tap, before the PIN', async () => {
+  it('the Hub refusing the room (removed, or the host’s own) says why in the Hub’s words before the store sheet opens, so nothing is charged', async () => {
     await boot();
-    await until(() => expect(hub.quotes).toBeGreaterThan(0));
-    const before = hub.quotes;
-    await reachPin();
-    expect(hub.quotes).toBe(before + 1);
+    await rtl.screen.findByTestId('pass-pay');
+    hub.intent = 'store_intent_not_payable';
+    hub.intentMessage = 'You host this room, so you do not need a pass.';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText('You host this room, so you do not need a pass.')).toBeTruthy();
+    expect(fakeStore.requests).toEqual([]);
+    expect(fakeStore.finished).toEqual([]);
   });
 
-  it('a wrong PIN, then the right one: the Hub refused the first before anything moved, so the second is a new attempt, and one pass is given', async () => {
-    hub.wrongFirst = true;
+  it('a payment the Hub refuses after the store took it says so and the store transaction stays open', async () => {
     await boot();
-    await reachPin();
-    await enterPin('1111');
-    await until(() => expect(hub.buys).toHaveLength(1));
-    await until(() => rtl.screen.getByText(/4 tries left|incorrect|wrong/i, { exact: false }));
-    await enterPin('4829');
-    await until(() => rtl.screen.getByTestId('pass-joined-title'));
-    expect(hub.buys).toHaveLength(2);
-    // A refused PIN proves nothing moved, so the next try is its own attempt (a fresh key); only the second was ever paid.
-    expect(hub.buys[1].key).not.toBe(hub.buys[0].key);
-    expect(hub.buys[1].body.expectedTotalKobo).toBe(hub.buys[0].body.expectedTotalKobo);
-    expect(hub.payments).toBe(1);
-    expect(hub.paidKeys.size).toBe(1);
+    await rtl.screen.findByTestId('pass-pay');
+    hub.answer = 'store_purchase_invalid';
+    hub.message = 'The store does not know this payment.';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText('The store does not know this payment.')).toBeTruthy();
+    expect(fakeStore.finished).toEqual([]);
   });
 
-  it('an answer that is lost after the Hub took the payment, then a retry: one debit and one pass', async () => {
-    hub.mode = 'lost_after';
+  it('cancelling or a pending payment in the store sheet is said by its cause and joins nobody', async () => {
     await boot();
-    await reachPin();
-    await enterPin('4829');
-    await until(() => expect(hub.buys).toHaveLength(1));
-    // The answer never came: the PIN sheet is still up and asks again with the same request.
-    // The line says the payment may have gone through and that the retry happens once (SWEEP-APP-3, SWEEP-APP-2 #1).
-    await until(() => rtl.screen.getByText("We didn't get an answer. Try again: it will only happen once."));
-    await enterPin('4829');
-    await until(() => rtl.screen.getByTestId('pass-joined-title'));
-    expect(hub.buys).toHaveLength(2);
-    expect(hub.buys[1].key).toBe(hub.buys[0].key);
-    expect(hub.payments).toBe(1);
+    await rtl.screen.findByTestId('pass-pay');
+    fakeStore.next = { kind: 'error', code: 'user-cancelled' };
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText('Cancelled. You were not charged.')).toBeTruthy();
+    fakeStore.next = { kind: 'pending' };
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText(/waiting for the store to finish/)).toBeTruthy();
+    expect(hub.bodies).toEqual([]);
+    expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
   });
 
-  it('a wallet that is short shows what is missing and "Add ₦X", which opens W15 with the shortfall, and sends nothing (WALLET-05)', async () => {
-    hub.balanceKobo = 50_000;
+  it('a pass the store holds for this account is brought back by Restore purchases, and says how many', async () => {
     await boot();
-    await until(() => rtl.screen.getByTestId('pass-short'));
-    const add = await until(() => rtl.screen.getByTestId('pass-add'));
-    expect(add.props.accessibilityLabel).toContain('Add ₦1,523.25');
-    expect(rtl.screen.getByTestId('pass-pay').props.accessibilityState.disabled).toBe(true);
-    rtl.fireEvent.press(add);
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/add-money', params: { short: String(TOTAL - 50_000) } });
-    expect(hub.buys).toHaveLength(0);
+    await rtl.screen.findByTestId('pass-pay');
+    fakeStore.owned = [{ id: 'run', productId: PASS.storeProductId, purchaseState: 'purchased', purchaseToken: 'running', isAcknowledgedAndroid: true, obfuscatedProfileIdAndroid: ID }];
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-restore')));
+    expect(await rtl.screen.findByText('Restored 1 purchase.')).toBeTruthy();
+    expect(fakeStore.restores).toBe(1);
+    expect(hub.bodies).toEqual([{ platform: 'android', productId: PASS.storeProductId, purchaseToken: 'running', communityId: ID }]);
   });
 
-  it('a person with no wallet is led to Open your wallet, and nothing is sent', async () => {
-    hub.quote = 'no_wallet';
-    await boot();
-    await until(() => rtl.screen.getByTestId('pass-no-wallet'));
-    expect(rtl.screen.getByTestId('pass-pay').props.accessibilityLabel).toContain('Join · ₦2,000 a month');
-    expect(hub.buys).toHaveLength(0);
-  });
-});
-
-describe('I31 and a pass that ended', () => {
-  it('a member with time left sees "You\'re in" with the end day and a Renew that adds 30 days, never an automatic one', async () => {
-    hub.pass = { ...newMember(), passUntil: ENDS, active: true, canRenew: true, canBuy: true };
-    await boot();
-    await until(() => rtl.screen.getByTestId('pass-joined-title'));
-    expect(rtl.screen.getByTestId('pass-joined-line').props.children).toBe('Your pass ends on 16 November. Renew any time to add 30 days.');
-    await until(() => expect(payLabel()).toContain('Renew · ₦2,023.25'));
+  it('a member sees "You’re in" with the end day, that it does not renew by itself, and Renew at the store’s price', async () => {
+    await boot({ ...newMember, active: true, canRenew: true, passUntil: '2026-11-16T12:00:00.000Z' });
+    expect(await rtl.screen.findByTestId('pass-joined-title')).toBeTruthy();
+    expect(rtl.screen.getByTestId('pass-joined-line').props.children).toMatch(/runs to 16 November.*does not renew by itself/);
+    expect(await rtl.screen.findByText('Renew · $3.99')).toBeTruthy();
     expect(rtl.screen.getByTestId('pass-open')).toBeTruthy();
-    expect(hub.buys).toHaveLength(0);
+    expect(rtl.screen.getByTestId('pass-restore')).toBeTruthy();
+    expect(rtl.screen.queryByText(/store renews|cancel (it )?there/i)).toBeNull();
   });
 
-  it('a person whose pass ended is shown the way back in: Renew, with the day it ended', async () => {
-    hub.pass = { ...newMember(), passUntil: '2026-10-01T12:00:00.000Z', active: false, canRenew: true, canBuy: true };
-    await boot();
-    await until(() => rtl.screen.getByTestId('pass-ended-title'));
-    expect(rtl.screen.getByTestId('pass-ended-line').props.children).toBe('Your pass ended on 1 October. Renew to come back in.');
-    await until(() => expect(payLabel()).toContain('Renew · ₦2,023.25'));
+  it('Renew buys the pass again for this room, and the new end day is shown (the days stack behind the days left)', async () => {
+    await boot({ ...newMember, active: true, canRenew: true, passUntil: '2026-11-16T12:00:00.000Z' });
+    await rtl.screen.findByText('Renew · $3.99');
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText('Your pass runs to 1 December.')).toBeTruthy();
+    expect(hub.intents).toEqual([{ platform: 'android', kind: 'pass', communityId: ID, listPriceNaira: 2000 }]);
+    expect(hub.bodies).toEqual([{ platform: 'android', productId: 'wawu.buy.2000', purchaseToken: 'token-1', intentId: 'intent-1' }]);
+    expect(fakeStore.finished).toEqual([{ productId: 'wawu.buy.2000', isConsumable: true }]);
   });
 
-  it('renewing early pays once and I31 shows the new end day', async () => {
-    hub.pass = { ...newMember(), passUntil: '2026-10-25T12:00:00.000Z', active: true, canRenew: true, canBuy: true };
+  it('a payment still held by the store for this price is finished with the intent it was made for, and the person is told to tap again', async () => {
     await boot();
-    await until(() => expect(payLabel()).toContain('Renew · ₦2,023.25'));
-    pressTest('pass-pay');
-    await until(() => rtl.screen.getByText(/ for a 30 day pass$/));
-    await enterPin('4829');
-    await until(() => expect(rtl.screen.getByTestId('pass-joined-line').props.children).toBe('Paid ₦2,023.25 from your wallet. Your pass ends on 16 November.'));
-    expect(hub.buys).toHaveLength(1);
+    await rtl.screen.findByTestId('pass-pay');
+    // An earlier purchase of the same price that the Hub was never told about: the store refuses a second one until it is finished.
+    await (require('@/features/store/ladder/memory') as typeof import('@/features/store/ladder/memory')).bindIntent(hub.accountToken, 'held-token', 'intent-old');
+    hub.made.set('intent-old', { platform: 'android', kind: 'pass', communityId: ID, listPriceNaira: 2000 });
+    fakeStore.next = { kind: 'error', code: 'already-owned' };
+    fakeStore.owned = [{ id: 'held', productId: BUY.storeProductId, purchaseState: 'purchased', purchaseToken: 'held-token', isAcknowledgedAndroid: false }];
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText(/payment you made earlier was still waiting/)).toBeTruthy();
+    expect(hub.bodies).toEqual([{ platform: 'android', productId: 'wawu.buy.2000', purchaseToken: 'held-token', intentId: 'intent-old' }]);
+    expect(fakeStore.finished).toEqual([{ productId: 'wawu.buy.2000', isConsumable: true }]);
+    expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
+  });
+
+  it('a held payment with no intent kept is posted as it is: the Hub makes a store credit for it and the screen says so, never "cash"', async () => {
+    await boot();
+    await rtl.screen.findByTestId('pass-pay');
+    fakeStore.next = { kind: 'error', code: 'already-owned' };
+    fakeStore.owned = [{ id: 'held', productId: BUY.storeProductId, purchaseState: 'purchased', purchaseToken: 'held-token', isAcknowledgedAndroid: false }];
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText(/You have a ₦2,000 credit to use on Who Made This/)).toBeTruthy();
+    expect(hub.bodies[0]).not.toHaveProperty('intentId');
+    expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
+    expect(rtl.screen.queryByText(/cash|withdraw|refund/i)).toBeNull();
+  });
+
+  it('a pass price that moved since the screen was read says so before the store sheet opens, and nothing is charged', async () => {
+    await boot();
+    await rtl.screen.findByTestId('pass-pay');
+    hub.intent = 'store_intent_price_changed';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-pay')));
+    expect(await rtl.screen.findByText('The price changed. Check the new price, then try again. You were not charged.')).toBeTruthy();
+    expect(fakeStore.requests).toEqual([]);
+  });
+
+  it('a question credit is never offered for a pass', async () => {
+    await boot();
+    hub.credits = [{ id: 'q1', amountKobo: 500_000, scope: 'question', createdAt: '2026-10-27T00:00:00.000Z' }];
+    await rtl.screen.findByTestId('pass-pay');
+    expect(rtl.screen.queryByTestId('pass-use-credit')).toBeNull();
+  });
+
+  it('a person holding a credit that covers the pass is offered "Use your credit" first, and it joins them with no store sheet', async () => {
+    serve();
+    hub.credits = [{ id: 'c1', amountKobo: 200_000, scope: null, createdAt: '2026-10-27T00:00:00.000Z' }];
+    const { PassScreen } = require('../PassScreen') as typeof import('../PassScreen');
+    await renderSignedIn(<PassScreen id={ID} onBack={jest.fn()} />);
+    const use = await rtl.screen.findByTestId('pass-use-credit');
+    await rtl.act(async () => rtl.fireEvent.press(use));
+    expect(await rtl.screen.findByTestId('pass-joined-title')).toBeTruthy();
+    expect(hub.intents).toEqual([{ platform: 'android', kind: 'pass', communityId: ID, listPriceNaira: 2000, payWith: 'credit' }]);
+    expect(fakeStore.requests).toEqual([]);
+    expect(hub.bodies).toEqual([]);
+    expect(rtl.screen.queryByText(/cash/i)).toBeNull();
+  });
+
+  it('a member the host removed sees "Removed by the host" and no way to buy', async () => {
+    await boot({ ...newMember, active: true, canBuy: false, canRenew: false, passUntil: '2026-11-16T12:00:00.000Z' });
+    expect(await rtl.screen.findByTestId('pass-blocked')).toBeTruthy();
+    expect(rtl.screen.getByText('The host has removed you from this room. Ask the host to let you back in.')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
+  });
+
+  it('a removed member is told nothing about cancelling: nothing renews, so there is nothing to cancel', async () => {
+    await boot({ ...newMember, active: true, canBuy: false, canRenew: false, passUntil: '2026-11-16T12:00:00.000Z' });
+    expect(await rtl.screen.findByTestId('pass-blocked')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('pass-cancel-in-store')).toBeNull();
+    expect(rtl.screen.queryByText(/cancel/i)).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
+  });
+
+  it('the Hub not open for Google Play yet says plainly that buying is not open yet', async () => {
+    await boot(undefined, { available: false, reason: 'store_not_configured' });
+    expect(await rtl.screen.findByText('Buying is not open yet')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
   });
 });
 
-describe('a member the host removed (R-63: there is no join request)', () => {
-  it('sees the Hub\'s own sentence and no Pay, and nothing is sent', async () => {
-    hub.pass = { ...newMember(), canBuy: false, canRenew: false };
-    hub.quote = 'removed';
-    await boot();
-    const blocked = await until(() => rtl.screen.getByTestId('pass-blocked'));
-    expect(blocked).toBeTruthy();
-    expect(rtl.screen.getByText('Removed by the host')).toBeTruthy();
-    expect(rtl.screen.getByText(REMOVED)).toBeTruthy();
-    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
-    expect(rtl.screen.queryByText(/Join ·|Renew ·/)).toBeNull();
-    expect(hub.buys).toHaveLength(0);
-  });
-});
+describe('F-1 · App Store · passes the store still lists after they were delivered (IAP-03 round 3)', () => {
+  const held = (id: string) => ({ id: `tx-${id}`, productId: PASS.storeProductId, purchaseState: 'purchased' as const, purchaseToken: 'jws', transactionId: id });
+  const roomIntent = () => require('@/features/store/roomIntent') as typeof import('@/features/store/roomIntent');
 
-describe('a member the host removed while their pass still has days left', () => {
-  it('is not shown "You\'re in": the Hub keeps the pass active but turns buying and renewing off, and the screen says "Removed by the host" with no Pay', async () => {
-    hub.pass = { ...newMember(), passUntil: ENDS, active: true, canRenew: false, canBuy: false };
-    hub.quote = 'removed';
-    await boot();
-    await until(() => rtl.screen.getByTestId('pass-blocked'));
-    expect(rtl.screen.getByText('Removed by the host')).toBeTruthy();
-    expect(rtl.screen.getByText(REMOVED)).toBeTruthy();
-    expect(rtl.screen.queryByText('You’re in')).toBeNull();
-    expect(rtl.screen.queryByTestId('pass-open')).toBeNull();
-    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
-    expect(hub.buys).toHaveLength(0);
-  });
-});
+  async function bootIos(owned: ReturnType<typeof held>[], setUp: () => Promise<void> = async () => {}) {
+    mockVault.clear();
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    (require('@/features/store/iap') as typeof import('@/features/store/iap')).resetIapForTests();
+    serve();
+    hub.products = [{ ...PASS, platform: 'ios' }, { ...BUY, platform: 'ios' }];
+    fakeStore.owned = owned;
+    await setUp();
+    const { PassScreen } = require('../PassScreen') as typeof import('../PassScreen');
+    await renderSignedIn(<PassScreen id={ID} onBack={jest.fn()} />);
+    await rtl.screen.findByTestId('pass-pay');
+    await rtl.act(async () => new Promise((r) => setTimeout(r, 0)));
+  }
 
-describe('the host', () => {
-  it('is inside already: the room opens and nothing is asked for', async () => {
-    hub.pass = { ...newMember(), canBuy: false, isHost: true };
-    await boot();
-    await until(() => rtl.screen.getByTestId('pass-joined-title'));
-    expect(rtl.screen.getByText('You host this room')).toBeTruthy();
-    expect(rtl.screen.queryByTestId('pass-pay')).toBeNull();
-    expect(hub.quotes).toBe(0);
+  it('a pass the app delivered and the store still lists is not sent again when the screen opens, and nothing is said', async () => {
+    await bootIos([held('1001')], async () => {
+      await roomIntent().markDone(hub.accountToken, '1001');
+      // An earlier buy that never completed left an entry for this room: it must not be given to the delivered pass.
+      await roomIntent().rememberBuy(hub.accountToken, PASS.storeProductId, ID);
+    });
+    expect(hub.bodies).toEqual([]);
+    expect(rtl.screen.queryByTestId('pass-said')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-restore-line')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
+  });
+
+  it('a payment the app never saw complete is handed to the Hub with this room, though delivered passes are listed beside it', async () => {
+    await bootIos([held('1001'), held('1002'), held('3001')], async () => {
+      await roomIntent().markDone(hub.accountToken, '1001');
+      await roomIntent().markDone(hub.accountToken, '1002');
+      await roomIntent().rememberBuy(hub.accountToken, PASS.storeProductId, ID);
+    });
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: PASS.storeProductId, transactionId: '3001', communityId: ID }]);
+    expect(fakeStore.finished).toEqual([{ productId: PASS.storeProductId, isConsumable: true }]);
+    expect(rtl.screen.queryByTestId('pass-restore-line')).toBeNull();
+  });
+
+  it('two payments nothing was kept for are not guessed: the screen says so plainly, and Restore purchases gives one to this room', async () => {
+    await bootIos([held('3001'), held('3002')], async () => {
+      await roomIntent().rememberBuy(hub.accountToken, PASS.storeProductId, ID);
+    });
+    expect(hub.bodies).toEqual([]);
+    expect((await rtl.screen.findByTestId('pass-restore-line')).props.children).toBe('2 payments for a pass could not be matched to a room on this phone. If you paid and are not in the room, open that room and tap Restore purchases.');
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-restore')));
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: PASS.storeProductId, transactionId: '3001', communityId: ID }]);
+    expect(await rtl.screen.findByText(/^Restored 1 purchase\. A payment for a pass could not be matched/)).toBeTruthy();
+  });
+
+  it('L-3: Restore purchases in a room, with the Hub refusing the payment as another room’s, tells the person so and does not say there was nothing to restore', async () => {
+    await bootIos([held('3001')]);
+    expect(hub.bodies).toEqual([]);
+    hub.answer = 'store_purchase_other_room';
+    await rtl.act(async () => rtl.fireEvent.press(rtl.screen.getByTestId('pass-restore')));
+    expect((await rtl.screen.findByTestId('pass-restore-line')).props.children).toBe('That payment was already used for a different room. To join this one, buy its pass again.');
+    expect(hub.bodies).toEqual([{ platform: 'ios', productId: PASS.storeProductId, transactionId: '3001', communityId: ID }]);
+    expect(rtl.screen.queryByText('There was nothing to restore.')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-joined-title')).toBeNull();
+  });
+
+  it('a person who owes no pass payment on this phone, with passes listed from another device, is told nothing', async () => {
+    await bootIos([held('4001'), held('4002')]);
+    expect(hub.bodies).toEqual([]);
+    expect(rtl.screen.queryByTestId('pass-restore-line')).toBeNull();
+    expect(rtl.screen.queryByTestId('pass-said')).toBeNull();
   });
 });

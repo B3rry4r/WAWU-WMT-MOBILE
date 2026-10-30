@@ -479,8 +479,7 @@ describe('Z2 · Settings', () => {
     onOpenPrivacy: jest.fn(),
     onOpenPassword: jest.fn(),
     onOpenAbout: jest.fn(),
-    onOpenTerms: jest.fn(),
-    onOpenPolicy: jest.fn(),
+    onOpenLegal: jest.fn(),
     onSignedOut: jest.fn(),
   });
   const boot = async () => {
@@ -510,7 +509,9 @@ describe('Z2 · Settings', () => {
     expect(screen.getByText('About Who Made This?')).toBeTruthy();
   });
 
-  it('a user can open Notifications, Privacy, Password, About, Terms and Privacy policy, and their own details', async () => {
+  // WALK-FIX S1 (R-107, owner 30 Oct 2026): the Terms and the Privacy policy rows are gone from Settings (they live inside the Legal list), so
+  // this test no longer taps them and taps the one Legal row instead.
+  it('a user can open Notifications, Privacy, Password, About, Legal, and their own details', async () => {
     serve();
     const p = await boot();
     await screen.findByText('Lennox Emmanuel');
@@ -518,36 +519,28 @@ describe('Z2 · Settings', () => {
     await tap('settings-privacy');
     await tap('settings-password');
     await tap('settings-about-app');
-    await tap('settings-terms');
-    await tap('settings-policy');
+    await tap('settings-legal');
     await tap('settings-header');
     expect(p.onOpenNotifications).toHaveBeenCalledTimes(1);
     expect(p.onOpenPrivacy).toHaveBeenCalledTimes(1);
     expect(p.onOpenPassword).toHaveBeenCalledTimes(1);
     expect(p.onOpenAbout).toHaveBeenCalledTimes(1);
-    expect(p.onOpenTerms).toHaveBeenCalledTimes(1);
-    expect(p.onOpenPolicy).toHaveBeenCalledTimes(1);
+    expect(p.onOpenLegal).toHaveBeenCalledTimes(1);
     expect(p.onOpenProfile).toHaveBeenCalledTimes(1);
   });
 
-  it('LEGAL-DOCS · a user can open the Legal list from a Legal row, and Privacy policy stays reachable beside it', async () => {
+  // WALK-FIX S1: was "a user can open the Legal list from a Legal row, and Privacy policy stays reachable beside it" (it tapped settings-policy and
+  // expected onOpenPolicy) and "draws no Legal row where the route gives no place to open it (R-47)". Legal is now always drawn, and nothing
+  // sits beside it.
+  it('LEGAL-DOCS · a user can open the Legal list from the one Legal row, and Terms and Privacy policy have no rows beside it (R-107)', async () => {
     serve();
-    const { SettingsScreen } = mod<typeof import('../SettingsScreen')>('../SettingsScreen');
-    const p = { ...props(), onOpenLegal: jest.fn() };
-    await render(frame(<SettingsScreen {...p} />));
+    const p = await boot();
     await screen.findByText('Lennox Emmanuel');
-    expect(screen.getByText('Legal')).toBeTruthy();
+    expect(screen.getAllByText('Legal')).toHaveLength(1);
     await tap('settings-legal');
     expect(p.onOpenLegal).toHaveBeenCalledTimes(1);
-    await tap('settings-policy');
-    expect(p.onOpenPolicy).toHaveBeenCalledTimes(1);
-  });
-
-  it('LEGAL-DOCS · draws no Legal row where the route gives no place to open it (R-47)', async () => {
-    serve();
-    await boot();
-    await screen.findByText('Lennox Emmanuel');
-    expect(screen.queryByTestId('settings-legal')).toBeNull();
+    expect(screen.queryByTestId('settings-terms')).toBeNull();
+    expect(screen.queryByTestId('settings-policy')).toBeNull();
   });
 
   it('DV2-06 · the switch reads "TGIF each morning" with the notification line, names no time, and keeps writing /settings/tgif', async () => {
@@ -991,8 +984,7 @@ describe('no screen shows the server\'s own words', () => {
           onOpenPrivacy={jest.fn()}
           onOpenPassword={jest.fn()}
           onOpenAbout={jest.fn()}
-          onOpenTerms={jest.fn()}
-          onOpenPolicy={jest.fn()}
+          onOpenLegal={jest.fn()}
           onSignedOut={jest.fn()}
         />,
       ),
@@ -1041,11 +1033,9 @@ describe('no screen shows the server\'s own words', () => {
   });
 });
 
-const POINTS_SETTINGS = 'GET /api/hub/me/points/settings';
-const POINTS_SETTINGS_SET = 'PUT /api/hub/me/points/settings';
-
-describe('G-POINTS-07-1 · Use wallet for AI tools', () => {
-  const boot = async () => {
+describe('R-86 · no wallet path for points in Settings', () => {
+  it('a person sees no "Use wallet for AI tools" row: missing points are bought in the store sheet, never from the wallet', async () => {
+    answers = { [ME]: ok(me), [TGIF]: ok({ show: true }) };
     const { SettingsScreen } = mod<typeof import('../SettingsScreen')>('../SettingsScreen');
     await render(
       frame(
@@ -1056,57 +1046,14 @@ describe('G-POINTS-07-1 · Use wallet for AI tools', () => {
           onOpenPrivacy={jest.fn()}
           onOpenPassword={jest.fn()}
           onOpenAbout={jest.fn()}
-          onOpenTerms={jest.fn()}
-          onOpenPolicy={jest.fn()}
+          onOpenLegal={jest.fn()}
           onSignedOut={jest.fn()}
         />,
       ),
     );
-  };
-  const serve = (over: Record<string, Answer | Answer[]> = {}) => {
-    answers = { [ME]: ok(me), [TGIF]: ok({ show: true }), [POINTS_SETTINGS]: ok({ useWallet: false }), ...over };
-  };
-
-  it('a person sees the row off, as the Hub holds it, in the same group as the other switches', async () => {
-    serve();
-    await boot();
-    await screen.findByTestId('settings-use-wallet');
-    expect(screen.getByText('Use wallet for AI tools')).toBeTruthy();
-    expect(screen.getByText('Pay for missing points from your wallet')).toBeTruthy();
-    expect(checked('settings-use-wallet')).toBe(false);
-    expect(JSON.stringify(screen.toJSON())).not.toMatch(/Fintava|—/);
-  });
-
-  it('a person can switch it on and off: one request carrying the value, and the switch shows the Hub’s answer', async () => {
-    serve({ [POINTS_SETTINGS_SET]: [ok({ useWallet: true }), ok({ useWallet: false })] });
-    await boot();
-    await screen.findByTestId('settings-use-wallet');
-    await tap('settings-use-wallet');
-    await waitFor(() => expect(checked('settings-use-wallet')).toBe(true));
-    await idle('settings-use-wallet');
-    await tap('settings-use-wallet');
-    await waitFor(() => expect(checked('settings-use-wallet')).toBe(false));
-    await idle('settings-use-wallet');
-    expect(bodiesOf('PUT', '/api/hub/me/points/settings')).toEqual([{ useWallet: true }, { useWallet: false }]);
-  });
-
-  it('puts the switch back and says why when the Hub refuses', async () => {
-    serve({ [POINTS_SETTINGS_SET]: refusal(500, 'The server is having trouble.') });
-    await boot();
-    await screen.findByTestId('settings-use-wallet');
-    await tap('settings-use-wallet');
-    expect(await screen.findByTestId('settings-problem-use-wallet')).toBeTruthy();
-    expect(checked('settings-use-wallet')).toBe(false);
-  });
-
-  it('never guesses the switch: it is a retry while the Hub has not answered, and the row appears when it does', async () => {
-    serve({ [POINTS_SETTINGS]: [refusal(500, 'The server is having trouble.'), ok({ useWallet: true })] });
-    await boot();
-    await screen.findByTestId('settings-use-wallet-pending');
-    await waitFor(() => expect(screen.getByLabelText('Use wallet for AI tools did not load. Try again')).toBeTruthy());
+    await screen.findByTestId('settings-tgif');
     expect(screen.queryByTestId('settings-use-wallet')).toBeNull();
-    await act(async () => fireEvent.press(screen.getByLabelText('Use wallet for AI tools did not load. Try again')));
-    await screen.findByTestId('settings-use-wallet');
-    expect(checked('settings-use-wallet')).toBe(true);
+    expect(screen.queryByTestId('settings-use-wallet-pending')).toBeNull();
+    expect(screen.queryByText('Use wallet for AI tools')).toBeNull();
   });
 });

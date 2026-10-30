@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { fireEvent } from '@testing-library/react-native';
-import { renderRouter, screen, waitFor as waitForRaw } from 'expo-router/testing-library';
-import { Text, View } from 'react-native';
+import { renderRouter, screen, waitFor as waitForRaw, within } from 'expo-router/testing-library';
+import { Platform, Text, View } from 'react-native';
+
+import { fakeStore } from '@/features/store/testing/fakeIap';
 
 /** The machine that runs these is often loaded: wait up to 15 s for a screen, never less than the default. */
 const waitFor = (check: () => void) => waitForRaw(check, { timeout: 15_000 });
@@ -14,6 +16,8 @@ jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(),
   hideAsync: jest.fn(),
 }));
+// IAP-02 lineage (R-86): every tier on the offer is the store's, so the store is the fake `expo-iap` at its own boundary and the Hub answers its catalog.
+jest.mock('expo-iap', () => require('@/features/store/testing/fakeIap').moduleMock);
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async (key: string) => mockVault.get(key) ?? null),
   setItemAsync: jest.fn(async (key: string, value: string) => {
@@ -53,6 +57,23 @@ const plans = (currency = 'NGN') => ({
   },
   tiers: [tier('verify', 'Verify', 299900, 3), tier('plus', 'Verify Plus', 599900, 6, true), tier('founding', 'Founding Maker', 999900, 10)],
 });
+const STORE_PRICES: Record<string, string> = { verify: '$2.99', plus: '$5.99', founding: '$9.99' };
+const storeCatalog = () =>
+  ok({
+    platform: 'android',
+    available: true,
+    reason: null,
+    accountToken: '7d9f0c1e-2b3a-4c5d-8e6f-a1b2c3d4e5f6',
+    products: ['verify', 'plus', 'founding'].map((id) => ({
+      id: `store-${id}`,
+      platform: 'android',
+      storeProductId: `africa.wawu.tier.${id}`,
+      kind: 'tier',
+      title: id,
+      subscription: true,
+      grants: { points: null, credits: null, tierId: id, days: 365 },
+    })),
+  });
 const ADA = 'account-ada';
 let seenCalls = 0;
 const hub: Record<string, unknown> = {};
@@ -83,6 +104,7 @@ const { ACCESS_KEY, REFRESH_KEY } = require('@/api/tokenStore') as typeof import
 const { resetSignupGate } = require('@/features/auth/signupGate') as typeof import('@/features/auth/signupGate');
 const { queryClient } = require('@/api/query') as typeof import('@/api/query');
 const { resetTierOffer } = require('../offerStep') as typeof import('../offerStep');
+const { resetIapForTests } = require('@/features/store/iap') as typeof import('@/features/store/iap');
 
 const stub = (name: string) =>
   function Stub() {
@@ -120,6 +142,10 @@ beforeAll(async () => {
 }, 60_000);
 
 beforeEach(() => {
+  jest.replaceProperty(Platform, 'OS', 'android');
+  resetIapForTests();
+  fakeStore.reset();
+  fakeStore.products = ['verify', 'plus', 'founding'].map((id) => ({ id: `africa.wawu.tier.${id}`, displayPrice: STORE_PRICES[id], type: 'subs' as const, offerToken: `offer-${id}` }));
   seenCalls = 0;
   for (const key of Object.keys(hub)) delete hub[key];
   hub['GET /api/hub/users/me'] = ok({
@@ -130,6 +156,7 @@ beforeEach(() => {
     handle: 'ada',
   });
   hub['GET /api/hub/plans'] = ok(plans());
+  hub['GET /api/hub/store/products'] = storeCatalog();
   hub['GET /api/hub/me/tier-offer'] = ok({ show: true, closeButton: true });
   hub['POST /api/hub/me/tier-offer/seen'] = ok({
     seenAt: '2026-10-26T10:00:00.000Z',
@@ -142,6 +169,10 @@ beforeEach(() => {
   signedIn();
 });
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe('a person the Hub offers the tiers to sees them before Home (TIER-OFFER, R-94)', () => {
   it('a person can see the three tiers with a Subscribe each, close with the X and land on Home', async () => {
     await renderRouter(routes);
@@ -149,10 +180,24 @@ describe('a person the Hub offers the tiers to sees them before Home (TIER-OFFER
     expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
     await waitFor(() => expect(screen.getByTestId('tier-offer-list')).toBeTruthy());
     for (const id of ['verify', 'plus', 'founding']) expect(screen.getByTestId(`tier-offer-subscribe-${id}`)).toBeTruthy();
-    // The prices are the Hub's, as the tiers sheet draws them.
-    expect(screen.getByLabelText(/Verify, .*2,999/)).toBeTruthy();
-    expect(screen.getByLabelText(/Verify Plus, .*5,999/)).toBeTruthy();
-    expect(screen.getByLabelText(/Founding Maker, .*9,999/)).toBeTruthy();
+    // R-108 (TIER-CARDS updated these three assertions: they read the card's one grouped label "Verify, $2.99, 12 months · ..." from the old dot-line card).
+    // Each tier is a card: its name, the STORE's price with "a year" under it (R-86; the Hub's naira figures are not drawn), one line for each thing
+    // it gives, and its own Subscribe inside the card.
+    const cards: [string, string, string, string[]][] = [
+      ['verify', 'Verify', '$2.99', ['12 months', '3 products', 'Maker Pass']],
+      ['plus', 'Verify Plus', '$5.99', ['12 months', '6 products', 'Maker Pass']],
+      ['founding', 'Founding Maker', '$9.99', ['12 months', '10 products', 'Maker Pass']],
+    ];
+    for (const [id, name, price, items] of cards) {
+      const card = screen.getByTestId(`tier-${id}`);
+      expect(within(card).getByText(name)).toBeTruthy();
+      expect(within(card).getByTestId(`tier-price-${id}`)).toHaveTextContent(price);
+      expect(within(card).getByTestId(`tier-period-${id}`)).toHaveTextContent('a year');
+      items.forEach((item, i) => expect(within(card).getByTestId(`tier-item-${id}-${i}`)).toHaveTextContent(item));
+      expect(within(card).queryByText(/·/)).toBeNull();
+      expect(within(card).getByTestId(`tier-offer-subscribe-${id}`)).toHaveTextContent(`Subscribe to ${name}`);
+    }
+    expect(screen.queryByText(/2,999|5,999|9,999/)).toBeNull();
 
     // The way out is plain: a button named Close, and no "Not now" while the X is on.
     const close = screen.getByRole('button', { name: 'Close' });
@@ -193,18 +238,19 @@ describe('a person the Hub offers the tiers to sees them before Home (TIER-OFFER
     expect(seenCalls).toBe(1);
   });
 
-  it('a person billed in dollars who taps Subscribe is led to the tiers sheet, which says what is open', async () => {
+  it('a person billed in dollars who taps Subscribe lands in the same store checkout, not the tiers sheet (R-86: the store charges in its own currency)', async () => {
     hub['GET /api/hub/plans'] = ok(plans('USD'));
     await renderRouter(routes);
     await waitFor(() => expect(screen.getByTestId('tier-offer-subscribe-founding')).toBeTruthy());
     await fireEvent.press(screen.getByTestId('tier-offer-subscribe-founding'));
-    await waitFor(() => expect(screen.getByRole('header', { name: 'route tiers' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('header', { name: 'route checkout' })).toBeTruthy());
+    expect(screen.queryByRole('header', { name: 'route tiers' })).toBeNull();
   });
 });
 
 describe('a person the Hub does not offer the tiers to goes straight to Home', () => {
   it.each([
-    ['a fan, or a person already shown it, or one who holds a tier', ok({ show: false, closeButton: true })],
+    ['a person the Hub does not offer it to (one who holds a running tier, or has been shown it with the every-start setting off, or a Hub that has not been updated)', ok({ show: false, closeButton: true })],
     ['the Hub cannot be reached', 'offline'],
   ])('%s', async (_name, answer) => {
     hub['GET /api/hub/me/tier-offer'] = answer;

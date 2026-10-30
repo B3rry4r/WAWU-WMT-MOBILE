@@ -90,8 +90,9 @@ describe('M28 · My content', () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(3, 3));
     hub.answers[`GET ${TIER}`] = ok(runningTier(3, 3));
     await open();
-    expect(await screen.findByText('3 of 3 products')).toBeTruthy();
-    expect(screen.getByText(/^Verify \u00b7 ends /)).toBeTruthy();
+    expect(await screen.findByText('3 of 3')).toBeTruthy();
+    expect(screen.getByText('Verify')).toBeTruthy();
+    expect(screen.getByText(/^(Until|Ends) /)).toBeTruthy();
     expect(screen.queryByText(/Get verified/)).toBeNull();
     expect(screen.queryByText(/more reach/)).toBeNull();
   });

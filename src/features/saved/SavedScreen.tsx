@@ -17,6 +17,7 @@ import { CreateFrame } from '@/features/create/CreateFrame';
 import { countsKey } from '@/features/me/counts';
 import { kindIcon } from '@/features/me/model';
 import { font, space, useWawu } from '@/theme';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 
 import { fetchSavedPage, removeSaved, savedKey, savedRoot, type SavedEntry, type SavedPage, type SavedTab } from './api';
 import { EMPTY, TABS, metaOf, titleOf } from './model';
@@ -50,6 +51,8 @@ function without(data: InfiniteData<SavedPage, string | null> | undefined, id: s
 export function SavedScreen({ onBack, onOpenEvent, onOpenContent, onOpenCourse }: SavedScreenProps) {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  // R-101 point 10: on a phone with a store a paid piece shows the store's price, never the list price.
+  const shown = useShownPrice();
   const [tab, setTab] = useState<SavedTab>('all');
   const [notice, setNotice] = useState<string | null>(null);
   const list = useInfiniteQuery({
@@ -133,7 +136,7 @@ export function SavedScreen({ onBack, onOpenEvent, onOpenContent, onOpenCourse }
                   <Tile
                     key={entry.id}
                     entry={entry}
-                    meta={metaOf(entry, now)}
+                    meta={metaOf(entry, now, shown)}
                     onOpen={openerOf(entry, onOpenEvent, onOpenContent, onOpenCourse)}
                     onRemove={() => remove.mutate(entry)}
                   />

@@ -119,7 +119,8 @@ describe('fetch', () => {
     try {
       // Built now, after the env above: the client keeps the fetch and the address it finds when it is created.
       const { api } = jest.requireActual<typeof import('@/api/client')>('@/api/client');
-      await expect(api.GET('/api/hub/users/me' as never)).rejects.toMatchObject({ kind: 'network' });
+      // WALK-FIX H4, lead ruling (30 Oct 2026): the guard throws a plain Error, which is not a network failure, so the client now says 'client'.
+      await expect(api.GET('/api/hub/users/me' as never)).rejects.toMatchObject({ kind: 'client' });
       const violations = takeViolations(globalThis);
       expect(violations).toHaveLength(1);
       expect(violations[0]).toMatchObject({ via: 'fetch', host: 'api.wawuafrica.com' });

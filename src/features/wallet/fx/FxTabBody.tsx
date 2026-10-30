@@ -11,6 +11,7 @@ import { Card } from '@/components/Card';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { PoweredByNuvion } from '@/components/PoweredByNuvion';
+import { PromoRow } from '@/components/PromoRow';
 import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -147,7 +148,7 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
         </View>
       ) : null}
       {account.details?.status === 'active' && number ? (
-        <PaidFromAbroad code={code} name={name} onPress={() => setSheet(true)} />
+        <PaidFromAbroad code={code} onPress={() => setSheet(true)} />
       ) : null}
       <Transactions owner={props.owner} accounts={[account]} currencies={props.currencies} allAccounts={props.accounts} noun={WORD[code]} />
       <FxDetailsSheet visible={sheet} onClose={() => setSheet(false)} account={account} name={name} />
@@ -198,23 +199,22 @@ function OpenCard({ code, owner, allowed }: { code: FxCode; owner: string | null
   );
 }
 
-/** W2's "Get paid from abroad": the card that opens the details payers need. The words say what is there, never what it will earn. */
-export function PaidFromAbroad({ code, name, onPress }: { code: FxCode; name: string; onPress: () => void }) {
-  const ring = useFocusRing();
-  const { colors } = useWawu();
+/**
+ * W2's "Get paid from abroad": the row that opens the details payers need. The words say what is there, never what it will earn. It is the
+ * shared promo row (R-110 point 1): a 40 rounded accent tile with an arrow-down-to-tray glyph, the title, one muted line and a chevron, in a
+ * card with the Wallet's corner; it had a 52 round currency coin (a saturated blue) and two lines.
+ */
+export function PaidFromAbroad({ code, onPress }: { code: FxCode; onPress: () => void }) {
   return (
-    <Pressable testID="fx-abroad" accessibilityRole="button" accessibilityLabel={`Get paid in ${WORDS[code]}. Share your ${code} account details.`} onPress={onPress} {...ring.handlers} style={ring.style}>
-      <Card style={styles.abroad}>
-        <FxFlag currency={code} size={52} />
-        <View style={styles.words}>
-          <Text variant="cardTitle">Get paid from abroad</Text>
-          <Text variant="secondary" tone="textSecondary" style={styles.abroadLine}>
-            Share your {code} account details with a client or a platform.
-          </Text>
-        </View>
-        <Icon name="ChevronRight" size={20} color={colors.textMuted} />
-      </Card>
-    </Pressable>
+    <PromoRow
+      testID="fx-abroad"
+      icon="ArrowDownToLine"
+      title="Get paid from abroad"
+      subtitle={`Share your ${code} account details`}
+      accessibilityLabel={`Get paid in ${WORDS[code]}. Share your ${code} account details.`}
+      onPress={onPress}
+      radius={ACCT.radius}
+    />
   );
 }
 
@@ -416,7 +416,6 @@ const styles = StyleSheet.create({
   pill: { flex: 1, height: ACTION.height, borderRadius: radius.chip, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, paddingHorizontal: space.md },
   pillLabel: { fontSize: ACTION.label },
   round: { width: ACTION.height, height: ACTION.height, borderRadius: radius.chip, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
-  abroad: { flexDirection: 'row', alignItems: 'center', gap: space.lg, padding: space.lg },
   abroadLine: { marginTop: LINE_GAP },
   words: { flex: 1, minWidth: 0 },
   holdings: { padding: 0 },

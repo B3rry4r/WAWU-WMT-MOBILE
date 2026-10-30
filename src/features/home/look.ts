@@ -1,6 +1,5 @@
 import { StyleSheet, type TextStyle } from 'react-native';
 
-import { createButtonMetrics } from '@/components/CreateButton';
 import { canvasNormalLineHeight, font, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
@@ -23,11 +22,7 @@ const metricsBase = {
   bodyTop: 8,
   between: 20,
   bodyBottom: 32,
-  /**
-   * A creator's body ends higher: the Create button sits `createButtonMetrics.bottom` above the screen's foot and is 58 across, so the last
-   * row ends that far, and 16 more, above it, which keeps a card's Follow clear of the button at the end of the scroll (HOME-18).
-   */
-  bodyBottomCreator: createButtonMetrics.bottom + createButtonMetrics.size + space.lg,
+  // The body's end clears the floating buttons by `floatingRoom` (R-110 point 3), which keeps a card's Follow clear of them at the end of the scroll (HOME-18).
   /** `balanceCard`: `padding:18px 18px 16px`, the figure 14 under the chip row (the shared fitted figure keeps 10 of it itself). */
   moneyPadTop: 18,
   moneyPadX: 18,

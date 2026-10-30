@@ -13,10 +13,11 @@ jest.mock('expo-secure-store', () => ({
 jest.mock('@/api/session', () => ({
   ...jest.requireActual('@/api/session'),
   useSession: () => ({ status: 'signedIn' }),
-  getAccessToken: async () => 'access-1',
+  getAccessToken: async () => mockToken,
   refreshAccessToken: async () => null,
   isCurrentSessionToken: () => true,
 }));
+let mockToken = 'access-1';
 const mockRouter = { canGoBack: jest.fn(() => true), back: jest.fn(), replace: jest.fn(), push: jest.fn(), setParams: jest.fn() };
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
@@ -163,14 +164,21 @@ describe('the professionals routes', () => {
   // FIX-100 #1 (H2): P2 had no "Ask a question" button, so nobody could pay a professional from their profile.
   it('P2: a user can tap Ask a question with the price the Hub gave and the paid question (I3) opens', async () => {
     mockParams = { id: 'p1' };
+    // R-101 point 10: on a phone with a store the button says the store's price (₦5,000 sells at ₦6,000), never the list price.
+    mockToken = require('@/features/store/testing/screen').TOKEN as string;
+    answers['GET /api/hub/prices'] = ok({ prices: [{ priceNaira: 5000, priceKobo: 500000, storePriceNaira: 6000 }], tips: [] });
     await rtl.render(wrap(<ProfileRoute />));
     const button = await rtl.screen.findByTestId('pro-ask');
-    expect(rtl.within(button).getByText('Ask a question · ₦5,000')).toBeTruthy();
-    expect(rtl.screen.getByText("Funmi replies within 24 hours, or you're refunded automatically.")).toBeTruthy();
+    await rtl.waitFor(() => expect(rtl.within(button).getByText('Ask a question · ₦6,000')).toBeTruthy());
+    expect(rtl.screen.queryByText(/5,000/)).toBeNull();
+    mockToken = 'access-1';
+    // R-101 point 6: on a phone with a store a missed reply is a question credit, in the creator's own window.
+    expect(rtl.screen.getByText('Funmi replies within 24 hours, or you get a question credit.')).toBeTruthy();
     expect(rtl.screen.queryByTestId('pro-closed')).toBeNull();
     await rtl.act(async () => rtl.fireEvent.press(button));
     expect(await rtl.screen.findByTestId('ask-sheet')).toBeTruthy();
-    expect(rtl.screen.getByTestId('ask-title')).toHaveTextContent('Ask Funmi');
+    // R-101: on a phone the ask sheet is the store's (its head is the pay sheet's, not the wallet sheet's `ask-title`); it is still the sheet for Funmi.
+    expect(rtl.screen.getByText('Ask Funmi')).toBeTruthy();
   });
 
   // FIX-101 (FIX-100 L-3): a listing whose category is outside the taxonomy comes with no field, and the page crashed reading its label.

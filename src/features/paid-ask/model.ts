@@ -81,6 +81,8 @@ export const refundLine = (totalKobo: number | null, from?: PaidFrom | null): st
 
 /** Where a refund lands: the buyer's own account when another currency paid, else the wallet. */
 const backTo = (from?: PaidFrom | null): string => (from ? `your ${accountNameOf(from.currency)}` : 'your wallet');
+/** I3 on a phone with a store (R-101 point 6): an unanswered question is not refunded to a wallet, it gives a question credit. Never cash. */
+export const creditLine = 'No reply in time? You get a question credit, to ask anyone at this price or less.';
 export const heldLine = (name: string | null | undefined): string => `Held by ${APP_NAME_COPY} until ${whoOf(name)} answers`;
 
 /** What the pay sheet says when the wallet is short (I6). */
@@ -109,7 +111,7 @@ export function askTerms(
 }
 
 /** The message button's words: "Message · ₦1,500" (I2), "Ask a question · ₦1,500" on a professional's page (P2). */
-export const askButtonLabel = (priceKobo: number, verb = 'Message'): string => `${verb} · ${formatNaira(priceKobo)}`;
+export const askButtonLabel = (priceKobo: number | null, verb = 'Message'): string => (priceKobo === null ? verb : `${verb} · ${formatNaira(priceKobo)}`);
 
 /** I8: the note under a creator who is not taking paid messages (R-2, R-9: no shop, so their work). */
 export const offTitle = (name: string | null | undefined): string => `${whoOf(name)} isn't taking paid messages right now`;
@@ -166,9 +168,11 @@ export const SOURCE_PENDING = 'pending' as const;
 export type PaidFromState = PaidFrom | null | typeof SOURCE_PENDING;
 
 /** The small line under a question bubble: "09:51 · ₦1,500 paid", and the weekday on another day ("Mon 14:10 · ₦200 paid"). Held to the time alone while the account is not known. */
-export function paidStamp(iso: string, amountKobo: number, now: number, from?: PaidFromState): string {
+export function paidStamp(iso: string, amountKobo: number, now: number, from?: PaidFromState, store = false): string {
   const d = new Date(iso);
   const when = sameDay(d, new Date(now)) ? clock(d) : `${WEEKDAYS[d.getDay()].slice(0, 3)} ${clock(d)}`;
+  // R-101: a question bought in a store was paid at the store's price, which the thread does not carry, so the stamp says only "Paid".
+  if (store) return `${when} · Paid`;
   if (from === SOURCE_PENDING) return when;
   return `${when} · ${from ? paidFromText(from) : formatNaira(amountKobo)} paid`;
 }
@@ -193,8 +197,14 @@ export type StatusCard = { tone: CardTone; title: string; body: string | null };
  * The lines say "your money" and no figure: the thread carries the question's price, and what the person paid (and gets back, every
  * naira) is the price and the bank's charge, which the thread does not carry (I3 and I7 say the Hub's own total).
  */
-export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number, from?: PaidFromState): StatusCard {
+export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string | null | undefined, now: number, from?: PaidFromState, store = false): StatusCard {
   const left = Date.parse(q.deadlineAt) - now;
+  // R-101 point 6: a question bought in a store that is not answered in time gives a question credit (never money back to a wallet).
+  if (store) {
+    return left <= 0
+      ? { tone: 'late', title: 'No reply in time', body: 'You get a question credit.' }
+      : { tone: 'waiting', title: `${whoOf(name)} has ${leftLong(left)} left to reply`, body: `If ${whoOf(name)} does not reply in time, you get a question credit.` };
+  }
   // Where the money is held, and where it goes back to, depend on the account that paid: the words wait for it (a loading line, never a guess).
   if (left <= 0) {
     return { tone: 'late', title: 'No reply in time', body: from === SOURCE_PENDING ? null : `Your money is on its way back to ${backTo(from)}.` };
@@ -207,7 +217,7 @@ export function waitingCard(q: Pick<ThreadQuestion, 'deadlineAt'>, name: string 
 }
 
 /** The next question's terms: its price and window, said only when the Hub says paid messages are on. */
-export type FollowUp = { priceKobo: number; windowHours: number | null };
+export type FollowUp = { priceKobo: number | null; windowHours: number | null };
 
 /**
  * What the newest answered question's card may say about asking again. The terms come from the creator's profile and then the Hub's pause,
@@ -232,7 +242,7 @@ export function answeredCard(name: string | null | undefined, followUp: FollowUp
   if (followUp === 'failed') return { tone: 'answered', title: lead, body: TERMS_FAILED_LINE };
   if (!followUp) return { tone: 'answered', title: lead, body: 'This question is closed.' };
   const window = followUp.windowHours === null ? '' : ` Each paid message gets its own ${windowAdjective(followUp.windowHours)} window.`;
-  return { tone: 'answered', title: lead, body: `Ask a follow-up for ${formatNaira(followUp.priceKobo)}.${window}` };
+  return { tone: 'answered', title: lead, body: `Ask a follow-up${followUp.priceKobo === null ? '' : ` for ${formatNaira(followUp.priceKobo)}`}.${window}` };
 }
 
 /**
@@ -277,7 +287,7 @@ export type ThreadEntry =
   | { kind: 'card'; key: string; questionId: string; status: ThreadQuestion['status']; question: ThreadQuestion; last: boolean };
 
 /** The thread as the Hub sends it (newest first) turned around: a day label, the question, its replies, its card. */
-export function threadEntries(questions: readonly ThreadQuestion[], now: number, fromOf?: (questionId: string) => PaidFromState): ThreadEntry[] {
+export function threadEntries(questions: readonly ThreadQuestion[], now: number, fromOf?: (questionId: string) => PaidFromState, store = false): ThreadEntry[] {
   const ordered = [...questions].filter((q) => q.mine).sort((a, b) => Date.parse(a.sentAt) - Date.parse(b.sentAt));
   const out: ThreadEntry[] = [];
   let lastDay = '';
@@ -288,7 +298,7 @@ export function threadEntries(questions: readonly ThreadQuestion[], now: number,
       out.push({ kind: 'day', key: `day-${q.id}`, label });
       lastDay = dayKey;
     }
-    out.push({ kind: 'question', key: `q-${q.id}`, text: q.text, stamp: paidStamp(q.sentAt, q.amountKobo, now, fromOf?.(q.id)) });
+    out.push({ kind: 'question', key: `q-${q.id}`, text: q.text, stamp: paidStamp(q.sentAt, q.amountKobo, now, fromOf?.(q.id), store) });
     for (const reply of q.replies) out.push({ kind: 'reply', key: `r-${reply.id}`, text: reply.text, stamp: replyStamp(reply.createdAt) });
     out.push({ kind: 'card', key: `c-${q.id}`, questionId: q.id, status: q.status, question: q, last: i === ordered.length - 1 });
   });
@@ -322,7 +332,7 @@ export function isWaiting(questions: readonly ThreadQuestion[], now: number): bo
  * "Ask a question · ₦1,500" in a thread with no question yet (the board draws no empty thread; this is the lead default, as the sheet
  * and the profile button say "question").
  */
-export function composerLabel(latest: ThreadQuestion | null, priceKobo: number): string {
+export function composerLabel(latest: ThreadQuestion | null, priceKobo: number | null): string {
   const verb = latest === null ? 'Ask a question' : latest.status === 'refunded' ? 'Try again' : 'Ask a follow-up';
-  return `${verb} · ${formatNaira(priceKobo)}`;
+  return priceKobo === null ? verb : `${verb} · ${formatNaira(priceKobo)}`;
 }

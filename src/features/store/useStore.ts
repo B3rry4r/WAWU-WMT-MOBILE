@@ -1,0 +1,284 @@
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
+
+import { isApiError } from '@/api/errors';
+import { queryClient } from '@/api/query';
+import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+
+import { fetchCatalog, type StoreCatalog, type StoreKind, type StorePurchaseView } from './api';
+import { purchase, purchaseLadder, recover, type BuyOptions, type PurchaseResult, type Recovery } from './buy';
+import * as iap from './iap';
+import type { LadderSpec, PayWith } from './ladder/api';
+import { restoredLine, waitingLine, type StoreItem, type StoreState } from './model';
+import { said, type Said } from './words';
+
+/**
+ * The store's side of a buy screen (IAP-02, R-86). `useStoreCatalog` asks the Hub what is on sale in this phone's store and the store for
+ * its own price of each, so a product is drawn only when both have it; `useStoreBuyer` carries one purchase at a time and finishes any the
+ * store still holds. Both are for the phone: on the web they report that buying happens in the app.
+ */
+type Loaded = { catalog: StoreCatalog; items: StoreItem[]; storeFailed: boolean };
+
+async function load(os: 'android' | 'ios'): Promise<Loaded> {
+  const catalog = await fetchCatalog(os);
+  if (!catalog.available || catalog.products.length === 0) return { catalog, items: [], storeFailed: false };
+  try {
+    const prices = await iap.fetchPrices({
+      packs: catalog.products.filter((p) => !p.subscription && p.kind !== 'pass').map((p) => p.storeProductId),
+      subscriptions: catalog.products.filter((p) => p.subscription).map((p) => p.storeProductId),
+      passes: catalog.products.filter((p) => p.kind === 'pass').map((p) => p.storeProductId),
+    });
+    const items = catalog.products.flatMap((product) => {
+      const price = prices.get(product.storeProductId);
+      return price ? [{ product, price: price.price, offerToken: price.offerToken }] : [];
+    });
+    return { catalog, items, storeFailed: false };
+  } catch {
+    return { catalog, items: [], storeFailed: true };
+  }
+}
+
+export type StoreCatalogResult = {
+  state: StoreState;
+  /** The Hub's whole catalog for this store (for Restore purchases and recovery), whatever the store priced. */
+  catalog: StoreCatalog | null;
+  refetch: () => void;
+  os: 'android' | 'ios' | null;
+};
+
+/** The items of the given kinds the Hub sells and the store prices, in the Hub's order. */
+export function useStoreCatalog(kinds: readonly StoreKind[]): StoreCatalogResult {
+  const owner = useSessionAccount(undefined);
+  const os = iap.storeOs();
+  const query = useQuery(
+    {
+      queryKey: ['store', 'catalog', os ?? 'none', owner ?? ''],
+      queryFn: () => load(os as 'android' | 'ios'),
+      enabled: os !== null && Boolean(owner),
+      staleTime: 0,
+      retry: false,
+    },
+    queryClient,
+  );
+  const refetch = useCallback(() => void query.refetch(), [query]);
+  if (os === null) return { state: { kind: 'store_unavailable', web: true }, catalog: null, refetch, os };
+  if (query.isError && !query.data) {
+    return { state: { kind: 'error', message: isApiError(query.error) && query.error.message ? query.error.message : 'Check your connection and try again.' }, catalog: null, refetch, os };
+  }
+  const data = query.data;
+  if (!data) return { state: { kind: 'loading' }, catalog: null, refetch, os };
+  if (!data.catalog.available) return { state: { kind: 'not_open', why: data.catalog.reason === 'store_disabled' ? 'disabled' : 'not_configured' }, catalog: data.catalog, refetch, os };
+  if (data.storeFailed) return { state: { kind: 'store_unavailable', web: false }, catalog: data.catalog, refetch, os };
+  return { state: { kind: 'ready', items: data.items.filter((i) => kinds.includes(i.product.kind)) }, catalog: data.catalog, refetch, os };
+}
+
+/** Everything a grant can change on screen reads the Hub again (the points, the credits, the tier, the rooms). The catalog itself is left alone. */
+function refreshAfterGrant(): void {
+  // The store credits (R-101) are read again too: a grant may have spent one, a late sale makes one.
+  void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'store' || q.queryKey[1] === 'credits' });
+}
+
+/** A price the Hub refused as moved or off its list: the list and the catalog are read again so the screen shows what is true now. */
+function refreshPrices(result: PurchaseResult): void {
+  if (result.kind !== 'intent_refused') return;
+  // A credit the Hub would not take (spent elsewhere, or too small): the person's credits are read again, so "Use your credit" is not offered a second time (F4).
+  if (result.code.startsWith('store_credit_')) void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === 'store' && q.queryKey[1] === 'credits' });
+  if (result.code !== 'price_not_on_list' && result.code !== 'store_intent_price_changed') return;
+  void queryClient.invalidateQueries({ queryKey: ['prices'] });
+  void queryClient.invalidateQueries({ queryKey: ['store', 'catalog'] });
+}
+
+export type StoreBuyer = {
+  /** A purchase is on its way: the store sheet is open, or the Hub is being asked. */
+  busy: boolean;
+  /** How the last buy came to a stop that was not a grant, in words. */
+  said: Said | null;
+  /** The last grant. */
+  granted: StorePurchaseView | null;
+  /** Earlier purchases the store held and the Hub has now granted (finished when the screen opened). */
+  recovered: StorePurchaseView[];
+  restoring: boolean;
+  restoreLine: string | null;
+  buy: (item: StoreItem, options?: Pick<BuyOptions, 'communityId' | 'replace'>) => Promise<PurchaseResult | null>;
+  /**
+   * R-101: a piece, a tip, a community pass or a paid question on the price ladder. The intent is made first; the store sheet opens (or, with
+   * `credit`, a credit is spent and there is no store sheet); only a 201 finishes the store transaction.
+   */
+  buyLadder: (spec: LadderSpec, payWith?: PayWith) => Promise<PurchaseResult | null>;
+  /** With `communityId` (a room's pass screen), a pass payment this phone could not place is given to that room, one per tap. */
+  restore: (options?: { communityId?: string | null }) => Promise<void>;
+  clear: () => void;
+};
+
+/**
+ * The app coming back to the front (R-101): what the store still holds that the Hub was not given is handed over again, as it is when a
+ * screen opens. One listener serves every screen, and the screens that ask at the same moment share one answer, so a payment is posted once.
+ */
+let resumes = 0;
+const resumeListeners = new Set<(count: number) => void>();
+let resumeWatch: { remove: () => void } | null = null;
+function onResume(listener: (count: number) => void): () => void {
+  resumeListeners.add(listener);
+  if (!resumeWatch) {
+    let last = AppState.currentState;
+    resumeWatch = AppState.addEventListener('change', (next) => {
+      const back = next === 'active' && last !== 'active';
+      last = next;
+      if (!back) return;
+      resumes += 1;
+      for (const l of [...resumeListeners]) l(resumes);
+    });
+  }
+  return () => {
+    resumeListeners.delete(listener);
+    if (resumeListeners.size === 0) {
+      resumeWatch?.remove();
+      resumeWatch = null;
+    }
+  };
+}
+
+let sharedRecovery: { key: string; promise: Promise<Recovery> } | null = null;
+function recoverShared(key: string, run: () => Promise<Recovery>): Promise<Recovery> {
+  if (sharedRecovery?.key === key) return sharedRecovery.promise;
+  const promise = run().finally(() => {
+    if (sharedRecovery?.promise === promise) sharedRecovery = null;
+  });
+  sharedRecovery = { key, promise };
+  return promise;
+}
+
+/**
+ * One purchase at a time. On opening, whatever the store still holds that the Hub was not given (a payment taken before the app was closed,
+ * a slow payment that has since cleared) is handed over and finished, so nothing paid for is lost.
+ */
+export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
+  const owner = useSessionAccount(undefined);
+  const os = iap.storeOs();
+  const [busy, setBusy] = useState(false);
+  const [line, setLine] = useState<Said | null>(null);
+  const [granted, setGranted] = useState<StorePurchaseView | null>(null);
+  const [recovered, setRecovered] = useState<StorePurchaseView[]>([]);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreLine, setRestoreLine] = useState<string | null>(null);
+  const running = useRef(false);
+  const recovering = useRef<string | null>(null);
+  const alive = useRef(true);
+  const [resumed, setResumed] = useState(resumes);
+  useEffect(() => onResume(setResumed), []);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  const products = catalog?.available ? catalog.products : null;
+  // The person's account token from the Hub: the stores bind every purchase to it (never the user id).
+  const token = catalog?.accountToken ? catalog.accountToken : null;
+  useEffect(() => {
+    if (!products || !os || !owner || products.length === 0) return;
+    const once = `${owner}:${resumed}:${products.map((p) => p.storeProductId).join(',')}`;
+    if (recovering.current === once) return;
+    recovering.current = once;
+    void recoverShared(once, () => recover(products, { platform: os, all: false, accountToken: token })).then((found) => {
+      if (!alive.current) return;
+      // Said only when this phone knows it owes a pass payment it could not place; a finished pass the store still lists is never counted.
+      if (found.unplaced > 0) setRestoreLine(waitingLine(found.unplaced));
+      if (found.granted.length === 0) return;
+      setRecovered(found.granted);
+      refreshAfterGrant();
+    });
+  }, [products, os, owner, token, resumed]);
+
+  const buy = useCallback<StoreBuyer['buy']>(
+    async (item, options) => {
+      if (running.current || !os) return null;
+      running.current = true;
+      setBusy(true);
+      setLine(null);
+      setGranted(null);
+      try {
+        const result = await purchase(item, { platform: os, accountToken: token, communityId: options?.communityId ?? null, replace: options?.replace ?? null });
+        if (!alive.current) return result;
+        if (result.kind === 'granted') {
+          setGranted(result.purchase);
+          refreshAfterGrant();
+        } else {
+          setLine(said(result, os, item.product.subscription));
+          // A held payment for another room was granted there, so the rooms read the Hub again.
+          if (result.kind === 'unreachable' || result.kind === 'grant_failed' || result.kind === 'earlier_room') refreshAfterGrant();
+        }
+        return result;
+      } finally {
+        running.current = false;
+        if (alive.current) setBusy(false);
+      }
+    },
+    [os, token],
+  );
+
+  const buyLadder = useCallback<StoreBuyer['buyLadder']>(
+    async (spec, payWith = 'store') => {
+      if (running.current || !os) return null;
+      running.current = true;
+      setBusy(true);
+      setLine(null);
+      setGranted(null);
+      try {
+        const result = await purchaseLadder(spec, { platform: os, accountToken: token, payWith });
+        if (!alive.current) return result;
+        if (result.kind === 'granted') {
+          setGranted(result.purchase);
+          refreshAfterGrant();
+        } else {
+          setLine(said(result, os, false));
+          if (result.kind === 'credited' || result.kind === 'earlier_purchase' || result.kind === 'unreachable' || result.kind === 'grant_failed') refreshAfterGrant();
+          refreshPrices(result);
+        }
+        return result;
+      } finally {
+        running.current = false;
+        if (alive.current) setBusy(false);
+      }
+    },
+    [os, token],
+  );
+
+  const restore = useCallback<StoreBuyer['restore']>(async (options) => {
+    if (running.current || !os || !products) return;
+    running.current = true;
+    setRestoring(true);
+    setRestoreLine(null);
+    setLine(null);
+    try {
+      const transactions = await iap.restore();
+      const found = await recover(products, { platform: os, all: true, transactions, accountToken: token, restoreRoom: options?.communityId ?? null });
+      if (!alive.current) return;
+      if (found.notOpen) setLine(said({ kind: 'not_open', why: 'not_configured' }, os, true));
+      else if (found.left > 0) setRestoreLine(said({ kind: 'unreachable' }, os, true)?.line ?? null);
+      else if (found.unplaced > 0) setRestoreLine(found.granted.length + found.already > 0 ? `${restoredLine(found.granted.length, found.already)} ${waitingLine(found.unplaced)}` : waitingLine(found.unplaced));
+      // Every payment the Hub refused as another room's (L-3): said in a room, where "this one" is the room in view, never as "nothing to restore".
+      else if (options?.communityId && found.granted.length + found.already === 0 && (found.elsewhere ?? 0) > 0) setRestoreLine(said({ kind: 'room_mismatch' }, os, false)?.line ?? null);
+      else setRestoreLine(restoredLine(found.granted.length, found.already));
+      if (found.granted.length > 0) {
+        setRecovered(found.granted);
+        refreshAfterGrant();
+      }
+    } catch {
+      if (alive.current) setLine(said({ kind: 'store_unavailable' }, os, true));
+    } finally {
+      running.current = false;
+      if (alive.current) setRestoring(false);
+    }
+  }, [os, products, token]);
+
+  const clear = useCallback(() => {
+    setLine(null);
+    setGranted(null);
+    setRestoreLine(null);
+  }, []);
+
+  return { busy, said: line, granted, recovered, restoring, restoreLine, buy, buyLadder, restore, clear };
+}

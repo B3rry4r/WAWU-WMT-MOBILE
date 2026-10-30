@@ -56,7 +56,7 @@ const clear = (color: string): string => (/^#[0-9a-f]{6}$/i.test(color) ? `${col
 const offsetOf = (event: NativeSyntheticEvent<NativeScrollEvent>): number => event.nativeEvent.contentOffset.x;
 
 export type PricePickerProps = {
-  /** The price now, in whole naira. Null when none is chosen yet: the strip is centred on the design's stop with nothing selected and no price claimed. */
+  /** The price now, in whole naira. Null when none is chosen yet: the strip waits at its start with nothing selected and no price claimed (WALK-FIX M8). */
   value: number | null;
   /** The chosen list price, in whole naira. Called only for a person's own tap, scroll or shortcut (or a screen reader's adjust), never by the picker itself. */
   onChange: (naira: number) => void;
@@ -165,10 +165,21 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
   );
   const at = selected === null ? -1 : list.indexOf(selected);
   useEffect(() => {
-    if (at < 0 || width === 0 || placed.current === at) return;
+    // WALK-FIX M8: with no price chosen the strip stays at its start (the first price) and does not scroll itself to the design's stop,
+    // which left the first chips (₦100 to ₦1,500) off the left edge on opening.
+    if (value === null || at < 0 || width === 0 || placed.current === at) return;
     glideTo(at * stepWidth, placed.current !== null);
     placed.current = at;
-  }, [at, width, glideTo]);
+  }, [value, at, width, glideTo]);
+  // WALK-FIX M8: the first placement above runs before the strip has the padding that centres its first stop, and a phone clamps a scroll
+  // to the content it has laid out, so a chosen price far along the strip opened at the start. Once the content is laid out at the measured
+  // width, the chosen price is placed again, at once.
+  const laidOut = useRef(false);
+  const onContentSizeChange = () => {
+    if (laidOut.current || width === 0) return;
+    laidOut.current = true;
+    if (value !== null && at >= 0) glideTo(at * stepWidth, false);
+  };
   useEffect(
     () => () => {
       if (settle.current) clearTimeout(settle.current);
@@ -238,7 +249,8 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
   const into = colors[fadeInto];
   const edge = clear(into);
   const spoken = shown === null ? 'No price chosen' : `₦${shown.toLocaleString('en-NG')}`;
-  // Adjusting with no price chosen yet chooses the stop the strip is centred on; otherwise one list step.
+  // Adjusting with no price chosen yet chooses the design's stop (`selected`), and the strip then moves to it; until a price is chosen the strip
+  // waits at its start (WALK-FIX M8). Otherwise one list step.
   const bump = (direction: 1 | -1) => choose(shown === null ? selected : stepOf(list, shown, direction));
 
   return (
@@ -302,6 +314,7 @@ export function PricePicker({ value, onChange, label, earnSuffix, storeNote = tr
           decelerationRate="fast"
           scrollEventThrottle={16}
           onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
           onScrollBeginDrag={lift}
           onTouchStart={lift}
           onMomentumScrollEnd={onEnd}

@@ -99,7 +99,7 @@ beforeEach(() => {
 describe('signed out, cold start', () => {
   it('a user who is not signed in lands on the welcome screen, never on Home or sign in', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
     expect(screen.queryByText('Welcome back')).toBeNull();
     expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull();
@@ -121,7 +121,7 @@ describe('signed out, cold start', () => {
     await act(async () => {
       await signOut();
     });
-    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
     expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull();
   });
 
@@ -129,7 +129,7 @@ describe('signed out, cold start', () => {
     await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
-    await waitFor(() => expect(screen.getByText('Get paid for what you know')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
     expect(screen.queryByText('Welcome back')).toBeNull();
   });
 });

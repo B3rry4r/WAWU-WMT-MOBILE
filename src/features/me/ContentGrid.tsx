@@ -33,7 +33,7 @@ export const gridMetrics = {
 } as const;
 
 /** The grid, as rows of three: a flex row keeps every tile the same width at any screen width. */
-export function ContentGrid({ tiles, onOpenDraft }: { tiles: readonly GridTile[]; onOpenDraft?: () => void }) {
+export function ContentGrid({ tiles, onOpenDraft, onOpenPiece }: { tiles: readonly GridTile[]; onOpenDraft?: () => void; onOpenPiece?: (id: string) => void }) {
   const rows: GridTile[][] = [];
   for (let i = 0; i < tiles.length; i += gridMetrics.columns) rows.push(tiles.slice(i, i + gridMetrics.columns));
   return (
@@ -41,7 +41,7 @@ export function ContentGrid({ tiles, onOpenDraft }: { tiles: readonly GridTile[]
       {rows.map((row) => (
         <View key={row[0].id} style={styles.row}>
           {row.map((tile) => (
-            <Tile key={tile.id} tile={tile} onOpenDraft={onOpenDraft} />
+            <Tile key={tile.id} tile={tile} onOpenDraft={onOpenDraft} onOpenPiece={onOpenPiece} />
           ))}
           {Array.from({ length: gridMetrics.columns - row.length }, (_, i) => (
             <View key={`gap-${i}`} style={styles.cell} />
@@ -52,13 +52,14 @@ export function ContentGrid({ tiles, onOpenDraft }: { tiles: readonly GridTile[]
   );
 }
 
-function Tile({ tile, onOpenDraft }: { tile: GridTile; onOpenDraft?: () => void }) {
+function Tile({ tile, onOpenDraft, onOpenPiece }: { tile: GridTile; onOpenDraft?: () => void; onOpenPiece?: (id: string) => void }) {
   const { colors } = useWawu();
   // A still that will not load (a link that has expired) shows the kind of file instead, never an empty box.
   const [broken, setBroken] = useState(false);
   const still = tile.still && !broken ? tile.still : null;
-  // A draft opens the shop that finishes it (VF2, VERIFY-01); a published piece is not pressed here.
-  const opens = tile.draft && onOpenDraft ? onOpenDraft : null;
+  // A draft opens the shop that finishes it (VF2, VERIFY-01); a published piece opens its own page (WALK-FIX H1, design M5: the grid is the
+  // way in). A screen that gives no opener leaves its tiles as plain pictures.
+  const opens = tile.draft ? onOpenDraft ?? null : onOpenPiece ? () => onOpenPiece(tile.id) : null;
   const Frame = opens ? Pressable : View;
   return (
     <Frame

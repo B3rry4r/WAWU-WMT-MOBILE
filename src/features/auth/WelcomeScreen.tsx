@@ -12,8 +12,8 @@ import { Text } from '@/components/Text';
 import { font, layout, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
-/** design/_gen/auth.js line 8: the words sit 24 in from the sides, 14 apart; the title is 34 px bold, tracking -0.04em, line 1.05; the line under it 15 px at 80%, line 1.45; */
-const WORDS = { side: 24, between: 14, title: 34, tracking: -0.04, leading: 1.05, line: 15, lineLeading: 1.45, lineOpacity: 0.8 } as const;
+/** design/_gen/auth.js line 8: the words sit 24 in from the sides, 14 apart; the title is bold, tracking -0.04em, line 1.05, 34 px in the design and 24 px since WELCOME-TEXT (the longer words must sit on two lines on a 360 and a 390 wide phone so the video's orbit stays clear, R-98); the line under it 15 px at 80%, line 1.45; */
+const WORDS = { side: 24, between: 14, title: 24, tracking: -0.04, leading: 1.05, line: 15, lineLeading: 1.45, lineOpacity: 0.8 } as const;
 /**
  * design/_gen/auth.js line 8: the buttons are 10 apart, and the words end 180 above the bottom edge.
  * The buttons are 2 x 54 high (kit.js line 15, `Btn` large) with 10 between and 34 of home bar below (kit.js line 38), so the words
@@ -21,8 +21,8 @@ const WORDS = { side: 24, between: 14, title: 34, tracking: -0.04, leading: 1.05
  */
 const BUTTONS = { between: 10, wordsAbove: 28 } as const;
 /**
- * The approved loop (R-98, owner, 27 Oct 2026): `assets/video/welcome-loop.mp4`, 1080 x 1920, 8 s, no sound, played as it
- * came (never re-encoded or trimmed). It carries the mark, so the screen draws no logo of its own.
+ * The approved loop (R-98, owner, 27 Oct 2026): `assets/video/welcome-loop.mp4`, 1080 x 1920, 15 s, no sound (the owner's file of 29 Oct 2026,
+ * replacing the 8 s one), played as it came (never re-encoded or trimmed). It carries the mark, so the screen draws no logo of its own.
  */
 export const WELCOME_VIDEO = require('../../../assets/video/welcome-loop.mp4') as number;
 /**
@@ -113,14 +113,14 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
               tone="textOnAccent"
               style={[font(700), { fontSize: WORDS.title, lineHeight: WORDS.title * WORDS.leading, letterSpacing: WORDS.tracking * WORDS.title }]}
             >
-              Get paid for what you know
+              The creators and professionals ecosystem.
             </Text>
             <Text
               variant="body"
               tone="textOnAccent"
               style={{ opacity: WORDS.lineOpacity, lineHeight: WORDS.line * WORDS.lineLeading }}
             >
-              Sell your work and answer paid questions.
+              Create. Sell. Get paid. Grow.
             </Text>
           </View>
         </View>

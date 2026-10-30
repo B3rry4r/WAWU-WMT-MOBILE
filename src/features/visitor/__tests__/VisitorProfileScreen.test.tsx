@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { resetApp, signInOnly } from '@/features/store/testing/screen';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
@@ -27,6 +28,9 @@ function installFetch() {
   }) as typeof fetch;
 }
 
+// R-101 point 10: on a phone with a store a visitor reads the STORE's price (₦300 sells at ₦360), never the list price.
+afterEach(() => resetApp());
+const PRICES = { prices: [{ priceNaira: 300, priceKobo: 30000, storePriceNaira: 360 }], tips: [] };
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ status: 200, body: { statusCode: 200, message: 'OK', data, ...extra } });
 const refusal = (statusCode: number, message: string) => ({ status: statusCode, body: { statusCode, message, data: null } });
 
@@ -213,10 +217,12 @@ describe('M5 and M6 · someone else\'s profile', () => {
   });
 
   it('a user can open the person\'s listing from Services, and sees the paid messages line', async () => {
-    answers = page();
+    answers = page({ 'GET /api/hub/prices': ok(PRICES) });
+    await signInOnly();
     const h = await boot();
     await fireEvent.press(await screen.findByTestId('me-tab-services'));
-    expect(await screen.findByTestId('me-service-paid-sub')).toHaveTextContent('₦300 a message · replies within 24 hours');
+    // The store's price (R-101 point 10); the list price is the website's and is not drawn.
+    expect(await screen.findByTestId('me-service-paid-sub')).toHaveTextContent('₦360 a message · replies within 24 hours');
     await fireEvent.press(screen.getByTestId('me-service-listing-l1-open'));
     expect(h.onOpenListing).toHaveBeenCalledWith('l1');
   });
@@ -359,10 +365,13 @@ describe('I2 and I8 · Message with its price, and Messages off (INBOX-10)', () 
   }
 
   it('a user sees "Message · ₦300" beside Follow when the creator takes paid messages, and a tap opens the ask sheet', async () => {
-    answers = page({ [`GET ${AVAILABLE}`]: ok(open) });
+    answers = page({ [`GET ${AVAILABLE}`]: ok(open), 'GET /api/hub/prices': ok(PRICES) });
+    await signInOnly();
     await bootAsk();
     const button = await screen.findByTestId('visitor-message');
-    expect(screen.getByRole('button', { name: 'Message · ₦300' })).toBeTruthy();
+    // R-101 point 10: the store's price on a phone with a store (₦300 lists at ₦360), never the list price.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Message · ₦360' })).toBeTruthy());
+    expect(screen.queryByText(/₦300/)).toBeNull();
     expect(screen.queryByTestId('visitor-message-off')).toBeNull();
     expect(screen.queryByTestId('visitor-messages-off')).toBeNull();
     await fireEvent.press(button);
@@ -479,14 +488,27 @@ describe('SWEEP-FLOWS L1 · a piece the viewer bought is not drawn as locked on 
   }
 
   it('a paid piece the Hub says is open for this viewer has no frost, veil or lock; one still locked keeps them', async () => {
-    answers = page(grid({ ...piece('bought', 'paid', 8000, 3), fullAssetLocked: false }, { ...piece('closed', 'paid', 8000, 3), fullAssetLocked: true }, piece('silent', 'paid', 8000, 3)));
+    answers = page({ ...grid({ ...piece('bought', 'paid', 8000, 3), fullAssetLocked: false }, { ...piece('closed', 'paid', 8000, 3), fullAssetLocked: true }, piece('silent', 'paid', 8000, 3)), 'GET /api/hub/prices': ok({ prices: [{ priceNaira: 8000, priceKobo: 800000, storePriceNaira: 9600 }], tips: [] }) });
+    await signInOnly();
     await boot();
     await screen.findByTestId('me-tile-bought');
     expect(screen.queryByTestId('me-tile-bought-veil')).toBeNull();
-    expect(screen.getByLabelText('Piece bought, yours, ₦8,000')).toBeTruthy();
+    // R-101 point 10: the caption is the store's price on a phone with a store (₦8,000 sells at ₦9,600), never the list price.
+    await waitFor(() => expect(screen.getByLabelText('Piece bought, yours, ₦9,600')).toBeTruthy());
     expect(screen.getByTestId('me-tile-closed-veil')).toBeTruthy();
-    expect(screen.getByLabelText('Piece closed, paid, ₦8,000')).toBeTruthy();
+    expect(screen.getByLabelText('Piece closed, paid, ₦9,600')).toBeTruthy();
     // An answer that does not say is read as locked.
     expect(screen.getByTestId('me-tile-silent-veil')).toBeTruthy();
+  });
+});
+
+describe('WALK-FIX H1 · a visitor opens a creator\'s piece from the profile grid', () => {
+  it('pressing a published tile hands the piece id to onOpenContent', async () => {
+    answers = page();
+    const onOpenContent = jest.fn();
+    const h = { onBack: jest.fn(), onOwn: jest.fn(), onOpenAllWorks: jest.fn(), onOpenWork: jest.fn(), onOpenListing: jest.fn(), onBlocked: jest.fn() };
+    await render(frame(<VisitorProfileScreen wawuId="u2" {...h} onOpenContent={onOpenContent} />));
+    await fireEvent.press(await screen.findByTestId('me-tile-p2'));
+    expect(onOpenContent).toHaveBeenCalledWith('p2');
   });
 });

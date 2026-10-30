@@ -63,11 +63,16 @@ export function educationLine(row: Pick<Education, 'field' | 'startYear' | 'endY
 }
 
 /** The paid messages line on Services: "₦300 a message · replies within 24 hours" is M2's; a visitor reads the same facts. */
-export function paidLine(profile: Pick<VisitorProfile['profile'], 'dmEnabled' | 'dmPrice' | 'dmResponseHours'>): { priceLine: string; replyLine: string | null } | null {
+export function paidLine(
+  profile: Pick<VisitorProfile['profile'], 'dmEnabled' | 'dmPrice' | 'dmResponseHours'>,
+  /** On a phone with a store (R-101 point 10) the price a visitor reads is the store's, and none where no rung sells it. Left out, the list price. */
+  shown?: { forKobo: (listKobo: number) => number | null },
+): { priceLine: string | null; replyLine: string | null } | null {
   if (!profile.dmEnabled || typeof profile.dmPrice !== 'number' || profile.dmPrice <= 0) return null;
   const hours = profile.dmResponseHours;
   const reply = typeof hours === 'number' && hours > 0 ? `replies within ${hours % 24 === 0 && hours > 24 ? `${hours / 24} days` : `${hours} ${hours === 1 ? 'hour' : 'hours'}`}` : null;
-  return { priceLine: `${formatMoney(nairaToKobo(profile.dmPrice), { decimals: false })} a message`, replyLine: reply };
+  const kobo = shown ? shown.forKobo(nairaToKobo(profile.dmPrice)) : nairaToKobo(profile.dmPrice);
+  return { priceLine: kobo === null ? null : `${formatMoney(kobo, { decimals: false })} a message`, replyLine: reply };
 }
 
 /** What the share sheet carries: who this is and their profile link (the same text Share on Me sends, LINKS-01). */

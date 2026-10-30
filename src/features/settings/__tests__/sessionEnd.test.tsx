@@ -173,8 +173,7 @@ const settingsScreen = (over: Partial<Record<string, jest.Mock>> = {}) => {
     onOpenPrivacy: jest.fn(),
     onOpenPassword: jest.fn(),
     onOpenAbout: jest.fn(),
-    onOpenTerms: jest.fn(),
-    onOpenPolicy: jest.fn(),
+    onOpenLegal: jest.fn(),
     onSignedOut: jest.fn(),
     ...over,
   };

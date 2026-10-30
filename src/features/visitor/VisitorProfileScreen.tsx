@@ -29,6 +29,7 @@ import { AskSheets } from '@/features/paid-ask/AskSheets';
 import { askButtonLabel, offBody, offTitle } from '@/features/paid-ask/model';
 import { useAsk } from '@/features/paid-ask/useAsk';
 import { useAskTerms } from '@/features/paid-ask/useAskTerms';
+import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { openFreeChat } from '@/features/paid-answers/api';
 import { tickOf } from '@/features/chat/api';
 import { ServicesTab } from '@/features/me/ServicesTab';
@@ -86,6 +87,8 @@ export type VisitorProfileScreenProps = {
   onOpenWork: (wawuId: string, workId: string) => void;
   /** A professional listing on Services opens that professional's page. */
   onOpenListing: (listingId: string) => void;
+  /** A published tile in the Content grid (M5) opens that piece's page (WALK-FIX H1). Not pressed without it. */
+  onOpenContent?: (id: string) => void;
   /** After Block: the profile is gone for both people, so the route leaves it. */
   onBlocked: () => void;
   /** Where the tip's and the question's wallet steps lead (Open your wallet, a PIN to set, Forgot PIN, add money). The ₦ button is drawn only when given (R-47). */
@@ -117,7 +120,7 @@ const NOT_WIRED: FlowHandlers = { onOpenWallet: () => undefined, onSetPin: () =>
  * screen adds it, R-47): nothing. A person with a Voice Intro has the Bio player under the bio (M5, R-66, FIX-103), read from
  * `GET /users/{wawuId}/voice-intro` after the profile loads; a person with none, or a read that fails or is still on its way, draws no player.
  */
-export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onBlocked, pay, onOpenPaidThread, onOpenChat, focused = true }: VisitorProfileScreenProps) {
+export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, onOpenWork, onOpenListing, onOpenContent, onBlocked, pay, onOpenPaidThread, onOpenChat, focused = true }: VisitorProfileScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const cache = useCache();
@@ -129,6 +132,8 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
   const tip = useTip(pay ?? NOT_WIRED);
   const asking = Boolean(pay && onOpenPaidThread);
   const ask = useAsk(pay ?? NOT_WIRED, (who) => onOpenPaidThread?.(who), focused);
+  // R-101 point 10: on a phone with a store the button says the store's price, never the list price.
+  const shown = useShownPrice();
 
   const view = profile.data ?? null;
   const person = view?.profile.wawuUserId ?? null;
@@ -252,7 +257,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
         ? { kind: 'off' }
         : {
             kind: 'on',
-            label: askButtonLabel(terms.priceKobo),
+            label: askButtonLabel(shown.forKobo(terms.priceKobo)),
             onPress: () =>
               ask.begin({
                 wawuId: view.profile.wawuUserId,
@@ -389,7 +394,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
               <Actions following={view.following} busy={follow.isPending} onToggleFollow={toggleFollow} onTip={tipHandler} ask={askAction} />
               {terms?.kind === 'off' ? <Banner tone="info" icon="Info" title={offTitle(name)} body={offBody(name)} testID="visitor-messages-off" /> : null}
               <ProfileTabs value={tab} onChange={setTab} />
-              {tab === 'content' ? <ContentBody query={grid} /> : null}
+              {tab === 'content' ? <ContentBody query={grid} onOpenContent={onOpenContent} /> : null}
               {tab === 'services' ? <ServicesBody view={view} onOpenListing={onOpenListing} /> : null}
             </>
           )}
@@ -403,7 +408,9 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
 
 type GridQuery = ReturnType<typeof useInfiniteQuery<Awaited<ReturnType<typeof fetchGridPage>>>>;
 
-function ContentBody({ query }: { query: GridQuery }) {
+function ContentBody({ query, onOpenContent }: { query: GridQuery; onOpenContent?: (id: string) => void }) {
+  // R-101 point 10: on a phone with a store a locked tile's caption is the store's price, never the list price.
+  const shown = useShownPrice();
   if (query.isError && !query.data) {
     return <ErrorState testID="visitor-grid-error" title="Their content did not load" message={readFailure(query.error)} onRetry={() => void query.refetch()} />;
   }
@@ -414,13 +421,13 @@ function ContentBody({ query }: { query: GridQuery }) {
       </LoadingView>
     );
   }
-  const tiles = query.data.pages.flatMap((page) => page.pieces).map(visitorTileOf);
+  const tiles = query.data.pages.flatMap((page) => page.pieces).map((piece) => visitorTileOf(piece, shown));
   if (tiles.length === 0) {
     return <EmptyState testID="visitor-grid-empty" icon="LayoutGrid" title="Nothing published yet" message="What they publish shows here." />;
   }
   return (
     <View style={styles.gridWrap}>
-      <ContentGrid tiles={tiles} />
+      <ContentGrid tiles={tiles} onOpenPiece={onOpenContent} />
       {query.isFetchingNextPage ? <GridSkeleton /> : null}
       {query.isFetchNextPageError ? (
         <ErrorState testID="visitor-grid-more-error" title="More content did not load" message={readFailure(query.error)} onRetry={() => void query.fetchNextPage()} />
@@ -429,8 +436,9 @@ function ContentBody({ query }: { query: GridQuery }) {
   );
 }
 
-function ServicesBody({ view, onOpenListing }: { view: VisitorProfile; onOpenListing: (listingId: string) => void }) {
-  const paid = paidLine(view.profile);
+export function ServicesBody({ view, onOpenListing }: { view: VisitorProfile; onOpenListing: (listingId: string) => void }) {
+  const shown = useShownPrice();
+  const paid = paidLine(view.profile, shown);
   if (!paid && view.listings.length === 0) {
     return <EmptyState testID="visitor-services-empty" icon="BriefcaseBusiness" title="No services yet" message="Paid messages and professional listings show here once they are on." />;
   }

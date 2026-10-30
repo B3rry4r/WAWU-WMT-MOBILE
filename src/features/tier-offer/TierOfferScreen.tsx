@@ -5,13 +5,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
-import { Button, IconButton } from '@/components/Button';
+import { IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
-import type { Currency } from '@/components/Money';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { tierItemOf } from '@/features/store/model';
+import { StoreUnready } from '@/features/store/StoreParts';
+import { useStoreCatalog } from '@/features/store/useStore';
 import { TierCard } from '@/features/verify/TiersScreen';
 import { plansQuery } from '@/features/verify/purchaseApi';
 import { TIER_WORDS } from '@/features/verify/purchaseModel';
@@ -28,29 +30,36 @@ export type TierOfferScreenProps = {
   closeButton: boolean;
   /** The X, or Not now: on to Home. */
   onClose: () => void;
-  /** A tier's Subscribe: the checkout (VF6) with that tier. A person billed in dollars is led to the tiers sheet, which says plainly what is open. */
-  onSubscribe: (tierId: string, currency: Currency) => void;
+  /** A tier's Subscribe: the store checkout (VF6) with that tier, where Buy opens the store sheet (R-86). The same for everyone, whatever currency they are billed in. */
+  onSubscribe: (tierId: string) => void;
 };
 
 /**
- * The tier offer (TIER-OFFER, R-94): right after sign-up, before Home, the three tiers as VF5 draws them (the same card), each with what it gives
- * and its own Subscribe. The tiers, prices and lengths are the Hub's (`GET /plans`); on a build with a store the price is the store's (R-86), and
- * none is written here. It always has a way out and it is never hidden or faint: the close X at the top right (a 44 round button, the full-contrast
- * icon, "Close" to a screen reader), or, when an admin switched the X off, a "Not now" button at the foot. The way out stays through loading and
- * an error, so no state of this screen is a dead end.
+ * The tier offer (TIER-OFFER, R-94): right after sign-up, before Home, the three tiers as VF5 draws them (the same card, R-108: the name and the store's price with its period, one line with a check for each thing
+ * it gives, and its own Subscribe at the foot of the card). In this build every tier is bought in the store sheet (R-86): the tiers on offer are the ones the Hub sells in this phone's
+ * store (`GET /store/products`) joined to what each gives (`GET /plans`: its length, products and points), and the price on each is the store's own,
+ * in the person's own currency; none is written here, and the Hub's naira figure is never drawn. Subscribe opens the store checkout (VF6) with that
+ * tier, the one the tiers sheet opens, where Buy opens the store sheet. There is no wallet, PIN or bank charge on the way. It always has a way out and
+ * it is never hidden or faint: the close X at the top right (a 44 round button, the full-contrast icon, "Close" to a screen reader), or, when an admin
+ * switched the X off, a "Not now" button at the foot. The way out stays through loading, an error and a store that is not open, so no state of this
+ * screen is a dead end.
  */
 export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOfferScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const owner = useSessionAccount(undefined);
   const plans = useQuery(plansQuery(owner), queryClient);
-  // Drawn once is enough: the Hub is told as it appears, so closing the app on this screen never brings it back.
+  const store = useStoreCatalog(['tier']);
+  // The Hub is told as it appears (once per start); whether it comes again is the Hub's setting (R-105).
   useEffect(() => {
     settleTierOffer();
   }, []);
 
-  const tiers = plans.data?.tiers ?? [];
-  const currency: Currency = plans.data?.currency ?? 'NGN';
+  // A tier is on offer only when the store sells it; its price is the store's.
+  const offers = (plans.data?.tiers ?? []).flatMap((tier) => {
+    const item = tierItemOf(store.state, tier.id);
+    return item ? [{ tier, item }] : [];
+  });
   const side = {
     paddingLeft: layout.gutter + insets.left,
     paddingRight: layout.gutter + insets.right,
@@ -67,38 +76,41 @@ export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOffer
         onRetry={() => void plans.refetch()}
       />
     );
-  } else if (!plans.data) {
+  } else if (!plans.data || store.state.kind === 'loading') {
     body = (
       <View testID="tier-offer-loading" style={styles.list}>
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} height={150} radius={radius.card} />
+          <Skeleton key={i} height={280} radius={radius.card} />
         ))}
       </View>
     );
-  } else if (tiers.length === 0) {
+  } else if (store.state.kind !== 'ready') {
+    body = <StoreUnready state={store.state} onRetry={store.refetch} testID="tier-offer" />;
+  } else if (offers.length === 0) {
     body = (
       <ErrorState
         testID="tier-offer-none"
         icon="TriangleAlert"
         title="No tiers on sale"
         message="There are no tiers on sale right now. Try again later."
-        onRetry={() => void plans.refetch()}
+        onRetry={() => {
+          void plans.refetch();
+          store.refetch();
+        }}
       />
     );
   } else {
     body = (
       <View testID="tier-offer-list" style={styles.list}>
-        {tiers.map((tier) => (
-          <View key={tier.id} style={styles.offer}>
-            <TierCard tier={tier} currency={currency} mark={tier.preselected ? 'best' : undefined} />
-            <Button
-              testID={`tier-offer-subscribe-${tier.id}`}
-              label={`Subscribe to ${tier.name}`}
-              variant={tier.preselected ? 'primary' : 'secondary'}
-              full
-              onPress={() => onSubscribe(tier.id, currency)}
-            />
-          </View>
+        {offers.map(({ tier, item }) => (
+          <TierCard
+            key={tier.id}
+            tier={tier}
+            price={item.price}
+            mark={tier.preselected ? 'best' : undefined}
+            featured={tier.preselected}
+            action={{ testID: `tier-offer-subscribe-${tier.id}`, label: `Subscribe to ${tier.name}`, onPress: () => onSubscribe(tier.id) }}
+          />
         ))}
       </View>
     );
@@ -173,8 +185,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingBottom: space.xl, gap: space.xl },
   head: { gap: space.sm },
-  list: { gap: space.xl },
-  offer: { gap: space.md },
+  list: { gap: space.lg },
   foot: { paddingTop: space.sm, alignItems: 'center' },
   notNow: {
     minHeight: layout.tapMin,

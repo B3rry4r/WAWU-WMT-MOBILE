@@ -114,10 +114,12 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
     } else onBack();
   };
 
-  // The phone's own Back does what the on-screen one does: a step back with the text kept, then out.
+  // The phone's own Back does what the on-screen one does: a step back with the text kept, then out. On the Sent screen it does what
+  // Done does (WALK-FIX M3): the form's step behind it is no longer on screen, so a step back there did nothing and Back was swallowed.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (!sending) back();
+      if (sent) onDone();
+      else if (!sending) back();
       return true;
     });
     return () => sub.remove();

@@ -45,6 +45,9 @@ const AS_SENT: Record<HubNotificationKind, Sample> = {
   money_in: { target: { kind: 'transaction', id: 't1' } },
   money_in_reversed: { target: { kind: 'transaction', id: 't1' } },
   wallet_ready: { target: null },
+  pass_sold: { target: null },
+  question_answered: { target: null },
+  question_credit: { target: null },
 };
 
 const feedItem = (kind: string, sample: Sample) => ({

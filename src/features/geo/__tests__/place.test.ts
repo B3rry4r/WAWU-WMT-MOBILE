@@ -71,4 +71,34 @@ describe('the phone field starts on the phone\'s own country', () => {
     jest.restoreAllMocks();
     expect(Intl.DateTimeFormat).toBe(real);
   });
+
+  // WALK-FIX H3 (29 Oct walk): an Android phone set to "English (United States)" in Nigeria started sign-up on +1 / United States, because
+  // the region was read from the LANGUAGE locale. The phone's zone names where it is.
+  describe('WALK-FIX H3 · the phone\'s region, not its language', () => {
+    const phone = (locale: string | null, timeZone: string | null) => () => ({ locale, timeZone });
+    it('an English (United States) phone in Nigeria starts on Nigeria', () => {
+      expect(deviceRegion(phone('en-US', 'Africa/Lagos'))).toBe('NG');
+      expect(startingCountry([{ code: 'US', dialCode: '+1' }, { code: 'NG', dialCode: '+234' }], deviceRegion(phone('en-US', 'Africa/Lagos')))).toBe('NG');
+    });
+    it('an English (United States) phone in Ghana starts on Ghana', () => {
+      expect(deviceRegion(phone('en-US', 'Africa/Accra'))).toBe('GH');
+    });
+    it('a phone with no region at all gives none, so the field starts on Nigeria', () => {
+      expect(deviceRegion(phone('en', null))).toBeNull();
+      expect(deviceRegion(phone(null, null))).toBeNull();
+      expect(startingCountry([{ code: 'US', dialCode: '+1' }, { code: 'NG', dialCode: '+234' }], deviceRegion(phone('en', null)))).toBe('NG');
+    });
+    it('a phone whose region is the United Kingdom starts on the United Kingdom', () => {
+      expect(deviceRegion(phone('en-GB', 'Europe/London'))).toBe('GB');
+    });
+    it('a phone whose region is the United States still starts on the United States', () => {
+      expect(deviceRegion(phone('en-US', 'America/New_York'))).toBe('US');
+      expect(startingCountry([{ code: 'US', dialCode: '+1' }, { code: 'NG', dialCode: '+234' }], deviceRegion(phone('en-US', 'America/Chicago')))).toBe('US');
+    });
+    it('a runtime that throws asking gives none', () => {
+      expect(deviceRegion(() => {
+        throw new Error('no Intl');
+      })).toBeNull();
+    });
+  });
 });

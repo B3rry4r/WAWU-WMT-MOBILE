@@ -168,28 +168,19 @@ const idsInOrder = (app: Awaited<ReturnType<typeof boot>>) => {
 };
 const inOrder = (ids: string[], expected: string[]) => ids.filter((id) => expected.includes(id));
 /** What the canvas draws for screens that are not built (R-47): none of it is drawn, whatever state the tab is in. The settings icon is built since WALLET-06 (W35) and is drawn in every state. */
-const NOT_BUILT_BUTTONS = ['Scan to pay', 'Swap', 'WAWU card', 'Bills'];
+const NOT_BUILT_BUTTONS = ['Scan to pay', 'Swap', 'WAWU card'];
 /**
  * The actions that are built (DV2-02, the 16 Oct board): Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and
- * To cash (POINTS-05), drawn when the wallet is open, in the board's order: all five columns.
- * The bill tiles under them (Airtime, Data, Power, TV and More) are built since BILLS-08 (R-102).
+ * Bills (BILLS-08, R-102; in the place of To cash since R-103), drawn when the wallet is open, in the board's order: all five columns.
+ * There is no row of bill tiles under them (R-103).
  */
-const ACTION_TILES = ['Add money', 'Send', 'Withdraw', 'Buy points', 'To cash'];
-const ACTION_KEYS = ['add-money', 'send', 'withdraw', 'buy-points', 'to-cash'];
+const ACTION_TILES = ['Add money', 'Send', 'Withdraw', 'Buy points', 'Bills'];
+const ACTION_KEYS = ['add-money', 'send', 'withdraw', 'buy-points', 'bills'];
 /** The Points card, as a button: the Hub's own balance and the day the soonest points end (`POINTS` below). */
 const POINTS_BUTTON = 'Points, 1,240 points, 400 end 12 Jan';
 /** The Passes card is always drawn beside Points (owner, 26 Oct 2026, R-97); this suite gives it no pass, so it is the empty card. */
 const PASSES_BUTTON = 'Passes, No pass yet, With Founding Maker';
 const NOT_BUILT_IDS = ['wallet-scan', 'wallet-tabs', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row'];
-/** The bill tiles (BILLS-08), in the canvas's order, with the address each opens. */
-const BILL_TILES = [
-  { key: 'airtime', name: 'Airtime', path: '/bills/airtime' },
-  { key: 'data', name: 'Data', path: '/bills/data' },
-  { key: 'power', name: 'Power', path: '/bills/electricity' },
-  { key: 'tv', name: 'TV', path: '/bills/cable' },
-  { key: 'more', name: 'More', path: '/bills' },
-];
-const BILL_NAMES = BILL_TILES.map((t) => t.name);
 /**
  * Fails when anything the Wallet tab has no screen for is drawn: a button, a tab, a tile or a row of them. See all and a row's
  * detail are built since WALLET-04 (W26 and W27), so they are drawn with the heading, which stands only when there are rows
@@ -287,11 +278,11 @@ describe('W1 · Wallet · Naira', () => {
     expect(app.screen.queryByText(/4821|Physical|Active|Verve|LENNOX/)).toBeNull();
   });
 
-  it('every button on W1 does something: the settings icon, the eye, Copy, the Points card, Add money, Send, Withdraw, Buy points, To cash, See all and the two rows, and each one works', async () => {
+  it('every button on W1 does something: the settings icon, the eye, Copy, the Points card, Add money, Send, Withdraw, Buy points, Bills, See all and the two rows, and each one works', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     expect(await app.screen.findByText('Amaka Nwosu')).toBeTruthy();
-    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, ...BILL_NAMES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
     expect(rowButtons(buttonNames(app))).toHaveLength(2);
     const asks = sent.length;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Hide balance' }));
@@ -310,29 +301,25 @@ describe('W1 · Wallet · Naira', () => {
     mockPushed.length = 0;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Withdraw' }));
     expect(mockPushed).toEqual(['/withdraw']);
-    // Buy points (POINTS-06) opens PT4, To cash (POINTS-05) opens PT6, and the Points card opens Your points (PT5).
+    // Buy points (POINTS-06) opens PT4, Bills (BILLS-08) opens S2 as Home's Bills does (R-103), and the Points card opens Your points (PT5).
     mockPushed.length = 0;
     await app.fireEvent.press(app.screen.getByRole('button', { name: 'Buy points' }));
     expect(mockPushed).toEqual(['/points-buy']);
     mockPushed.length = 0;
-    await app.fireEvent.press(app.screen.getByRole('button', { name: 'To cash' }));
-    expect(mockPushed).toEqual(['/points-convert']);
+    await app.fireEvent.press(app.screen.getByRole('button', { name: 'Bills' }));
+    expect(mockPushed).toEqual(['/bills']);
     mockPushed.length = 0;
     await app.fireEvent.press(app.screen.getByRole('button', { name: POINTS_BUTTON }));
     expect(mockPushed).toEqual(['/points']);
     expect(allText(app)).not.toMatch(/soon|not available|not built/i);
   });
 
-  it('a user sees the five bill tiles in the canvas’s order, and each opens its own bill (BILLS-08, R-102)', async () => {
+  it('the wallet draws no row of bill tiles, and no To cash: Bills is the one bills entry, the fifth action (R-103)', async () => {
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
-    expect(app.screen.getByTestId('wallet-bills')).toBeTruthy();
-    for (const tile of BILL_TILES) {
-      mockPushed.length = 0;
-      await app.fireEvent.press(app.screen.getByRole('button', { name: tile.name }));
-      expect(mockPushed).toEqual([tile.path]);
-    }
-    expect(app.screen.queryByRole('button', { name: 'Bills' })).toBeNull();
+    expect(app.screen.queryByTestId('wallet-bills')).toBeNull();
+    for (const name of ['Airtime', 'Data', 'Power', 'TV', 'More', 'To cash']) expect(app.screen.queryByRole('button', { name })).toBeNull();
+    expect(app.screen.getAllByRole('button', { name: 'Bills' })).toHaveLength(1);
   });
 
   it('the actions sit in the board’s columns: packed from the left in its order, each column 16 wider than its square', async () => {
@@ -497,7 +484,7 @@ describe('W4 · Wallet · loading', () => {
     }
     expect(app.screen.getByTestId('wallet-loading-rows').children).toHaveLength(3);
     expect(app.screen.getByTestId('wallet-loading-actions').children).toHaveLength(5);
-    expect(app.screen.getByTestId('wallet-loading-bills').children).toHaveLength(5);
+    expect(app.screen.queryByTestId('wallet-loading-bills')).toBeNull();
     const stands = ['wallet-bar', 'wallet-loading-tabs', 'wallet-loading-card', 'wallet-loading-points', 'wallet-loading-actions', 'wallet-loading-rows'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
@@ -529,7 +516,7 @@ describe('W5 · Wallet · new account', () => {
     const stands = ['wallet-bar', 'wallet-balance-card', 'wallet-points', 'wallet-actions', 'wallet-no-transactions'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app);
-    expect(buttonNames(app).sort()).toEqual([...ACTION_TILES, ...BILL_NAMES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'Wallet settings'].sort());
+    expect(buttonNames(app).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'Wallet settings'].sort());
   });
 });
 
@@ -551,13 +538,13 @@ describe('W6 · Wallet · can’t reach account', () => {
     expect(asked('/money/wallet/balance')).toBe(2);
   });
 
-  it('draws what is built on W6: the bar, then the card with its words and Try again, and no balance or tab (R-47); the bill tiles stand, since they need no wallet (R-102)', async () => {
+  it('draws what is built on W6: the bar, then the card with its words and Try again, and no balance or tab (R-47), and no bill tiles (R-103)', async () => {
     routes['GET /money/wallet/balance'] = [refusal(503, 'provider_unreachable', UNREACHABLE)];
     const app = await boot();
     expect(await app.screen.findByTestId('wallet-unreachable')).toBeTruthy();
     const stands = ['wallet-bar', 'wallet-unreachable'];
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
-    expect(buttonNames(app)).toEqual(['Wallet settings', 'Try again', ...BILL_NAMES]);
+    expect(buttonNames(app)).toEqual(['Wallet settings', 'Try again']);
     expect(app.screen.queryByTestId('wallet-balance-card')).toBeNull();
     expectNothingUnbuilt(app);
   });
@@ -583,7 +570,7 @@ describe('every state without a balance draws the bar and its card, and nothing 
     expect(app.screen.getByTestId('wallet-bar')).toBeTruthy();
     expectNothingUnbuilt(app);
     // Every button is the bar's settings icon or the state's own (it asks again or opens Open your wallet).
-    expect(buttonNames(app)).toEqual(['Wallet settings', ...only, ...BILL_NAMES]);
+    expect(buttonNames(app)).toEqual(['Wallet settings', ...only]);
   };
 
   it('no wallet', async () => {
@@ -806,7 +793,7 @@ describe('a narrow phone: nothing on the tab runs past the screen between 320 an
     expect(inOrder(idsInOrder(app), stands)).toEqual(stands);
     expectNothingUnbuilt(app, { rows: true });
     // The settings icon, the card's own two buttons, the Points card, the two actions, See all and the two rows are the only ones pressable.
-    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, ...BILL_NAMES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
+    expect(apartFromRows(buttonNames(app)).sort()).toEqual([...ACTION_TILES, POINTS_BUTTON, PASSES_BUTTON, 'Copy account number', 'Hide balance', 'See all transactions', 'Wallet settings'].sort());
     expect(rowButtons(buttonNames(app))).toHaveLength(2);
   });
 

@@ -20,17 +20,17 @@ import { DOCUMENTS_KEY, documentProblem, fetchDocuments, fileProblem, rowOf, sel
 import { openingProgressQuery, type OpeningProgress } from './api/review';
 import { ChoiceField, ChoiceSheet } from './ChoiceField';
 import { DetailsNeeded } from './DetailsNeeded';
-import { fileLine, pickFailure, sendFailure, type Failure } from './documentCopy';
+import { DOCUMENTS_FALLBACK_TITLE, fileLine, filesGone, photosNotSent, pickFailure, sendFailure, type Failure } from './documentCopy';
 import { markFields, type MarkedFields } from './hubFields';
 import { labelOf, POSTAL_NEEDS, PROOF_TYPE_NEEDS, PROOF_TYPES, postalProblem } from './documentFields';
 import { FileRow, UploadTile } from './DocumentParts';
 import { pickProofFile } from './documents/pick';
-import { clearFiles, setAddress, setPostalCode, setProof, setProofType, useDraft, useDraftLifetime } from './draft';
+import { clearFiles, setAddress, setIdSide, setPostalCode, setProof, setProofType, useDraft, useDraftLifetime } from './draft';
 import { readAddress } from './keptCheck';
 import { forgetSelfieDrop } from './selfieDrop';
 import { beginOpeningSend } from './sending';
 import { useSessionAccount } from './sessionAccount';
-import { detailsFromKept, NeedsDetails, needsOpening, sendOpening, useKeptDetailsHeld } from './submit';
+import { detailsFromKept, FilesGone, NeedsDetails, needsOpening, sendOpening, useKeptDetailsHeld } from './submit';
 
 const NAV_TITLE = 'Proof of address';
 /** design/_gen/auth.js line 66 (A27): the body's parts 14 apart. */
@@ -44,6 +44,7 @@ const NEEDS_DETAILS: Failure = {
   body: 'The details you gave are no longer held on this phone. Add them again to go on.',
 };
 const NEEDS_BILL: Failure = { title: 'Add your bill or statement', body: 'Choose a utility bill or bank statement from the last 3 months.' };
+const SAVED_NOTE = 'Your details are saved.';
 const NEEDS_ID: Failure = { title: 'Add your ID first', body: 'Go back and take the photos of your ID.' };
 
 const tidy = (value: string) => value.replace(/\s+/g, ' ').trim();
@@ -112,6 +113,11 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
   const [touched, setTouched] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [busy, setBusy] = useState(false);
+  // OPEN-UPLOAD: the opening was sent from this screen (the Hub holds the details now) and the photos did not go up yet.
+  const [savedHere, setSavedHere] = useState(false);
+  // The last send failed on the photos with the details saved: the button reads Try again, and a note says the details are safe.
+  const [retry, setRetry] = useState(false);
+  const [savedNote, setSavedNote] = useState(false);
   const inFlight = useRef(false);
   const live = useRef(true);
   useEffect(() => {
@@ -169,9 +175,12 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
   const postalIssue = sendsDetails ? postalProblem(draft.postalCode) : null;
   const typeIssue = sendsDetails && draft.proofType === null ? PROOF_TYPE_NEEDS : null;
   const shows = attempted;
+  // The details went up from this screen: what was typed stays on view, read only, since the Hub holds it (nothing disappears after a failed upload).
+  const showsDetails = sendsDetails || savedHere;
+  const locked = savedHere && !sendsDetails;
 
   const edit = (value: string) => {
-    if (!owner || busy) return;
+    if (!owner || busy || locked) return;
     setAddress(owner, value);
     setFailure(null);
     setNeedsDetails(false);
@@ -209,6 +218,8 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
+    setRetry(false);
+    setSavedNote(false);
     setHubMarks(null);
     setNeedsDetails(false);
     // Until the send is over and this screen has routed by the Hub's last answer, no screen under it reads the
@@ -224,6 +235,7 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
         details: detailsFromKept(owner, { address, postalCode: draft.postalCode, idType: draft.idType, idNumber: draft.idNumber, proofType: draft.proofType, passportCountry: draft.passportCountry }),
         onOpened: (answer) => {
           step = 'documents';
+          if (live.current) setSavedHere(true);
           queryClient.setQueryData(progressQuery.queryKey, answer);
         },
       });
@@ -240,6 +252,13 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
       if (error instanceof NeedsDetails) {
         setNeedsDetails(true);
         setFailure(NEEDS_DETAILS);
+      } else if (error instanceof FilesGone) {
+        // A photo or file the phone no longer holds: it is taken out, and that one is asked for again. Nothing was sent.
+        for (const side of error.sides) {
+          if (side === 'proof') setProof(owner, null);
+          else setIdSide(owner, side, null);
+        }
+        setFailure(filesGone(error.sides));
       } else if (documentProblem(error) === 'closed') {
         // The opening was already sent for review: this step has nothing more to take.
         void queryClient.invalidateQueries({ queryKey: [OPEN_WALLET_KEY] });
@@ -254,8 +273,14 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
             title: "We couldn't send your details",
             body: marks.elsewhere.length > 0 ? `${error.message} Also: ${marks.elsewhere.join(', ')}.` : error.message,
           });
+        } else if (step === 'documents') {
+          // The Hub holds the details; only the photos failed. Say so, and offer Try again.
+          const plain = photosNotSent(error);
+          setFailure(plain ?? sendFailure(error, DOCUMENTS_FALLBACK_TITLE));
+          setSavedNote(plain === null);
+          setRetry(true);
         } else {
-          setFailure(sendFailure(error, step === 'details' ? "We couldn't send your details" : "We couldn't send your documents"));
+          setFailure(sendFailure(error, "We couldn't send your details"));
         }
       }
     } finally {
@@ -274,13 +299,14 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
       onBack={onBack}
       footer={
         <>
-          <Button label="Submit" full loading={busy} onPress={() => void submit()} testID="open-wallet-address-submit" />
+          <Button label={retry ? 'Try again' : 'Submit'} full loading={busy} onPress={() => void submit()} testID="open-wallet-address-submit" />
           {needsDetails ? <Button label="Add your details" variant="secondary" full onPress={onDetails} testID="open-wallet-address-details" /> : null}
         </>
       }
     >
       <View style={styles.body}>
         {failure ? <Banner tone="danger" title={failure.title} body={failure.body} testID="open-wallet-address-banner" /> : null}
+        {savedNote ? <Text variant="muted" testID="open-wallet-address-saved">{SAVED_NOTE}</Text> : null}
         <Text variant="muted">A utility bill or bank statement from the last 3 months, with your name and address.</Text>
         <AuthField
           scrollRef={scrollRef}
@@ -295,31 +321,31 @@ export function ProofOfAddressScreen({ onBack, onSubmitted, onChecking, onOpened
           textContentType="fullStreetAddress"
           autoCapitalize="words"
           returnKeyType="done"
-          disabled={busy}
+          disabled={busy || locked}
         />
-        {sendsDetails ? (
+        {showsDetails ? (
           <AuthField
             scrollRef={scrollRef}
             label="Postal code"
             testID="open-wallet-postal"
             value={draft.postalCode}
-            onChangeText={(value) => owner && !busy && setPostalCode(owner, value)}
+            onChangeText={(value) => owner && !busy && !locked && setPostalCode(owner, value)}
             error={hubMarks?.keys.includes('postalCode') ? hubMarks.words : shows && postalIssue ? POSTAL_NEEDS : undefined}
             maxLength={20}
             autoComplete="postal-code"
             textContentType="postalCode"
             autoCapitalize="characters"
             returnKeyType="done"
-            disabled={busy}
+            disabled={busy || locked}
           />
         ) : null}
-        {sendsDetails ? (
+        {showsDetails ? (
           <ChoiceField
             label="Document type"
             value={labelOf(PROOF_TYPES, draft.proofType)}
             onPress={() => setChoosing(true)}
             error={hubMarks?.keys.includes('proofType') ? hubMarks.words : shows && typeIssue ? typeIssue : undefined}
-            disabled={busy}
+            disabled={busy || locked}
             testID="open-wallet-proof-type"
           />
         ) : null}

@@ -147,7 +147,9 @@ describe('M19 to E21 · hosting needs a tier', () => {
     await fireEvent.press(await screen.findByTestId('create-tile-event'));
     expect(await screen.findByText('Hosting needs a tier')).toBeTruthy();
     expect(await screen.findByText('Verify, Verify Plus or Founding Maker.')).toBeTruthy();
-    expect(await screen.findByText('From ₦1,000.')).toBeTruthy();
+    expect((await screen.findAllByText(/needs a tier/i)).length).toBeGreaterThan(0);
+    // G-IAP-02-5: the Hub's plan price is never drawn; the store's own is (storePrices test), and none while the store has not answered.
+    expect(screen.queryByText(/From/)).toBeNull();
     expect(screen.queryByTestId('host-name')).toBeNull();
     expect(hub.posts).toBe(0);
     await fireEvent.press(screen.getByTestId('host-see-tiers'));
@@ -166,7 +168,8 @@ describe('M19 to E21 · hosting needs a tier', () => {
   it('a person with a tier sees the products meter on Create, and Event opens the form', async () => {
     hub.tier = 'active';
     await renderRouter(routes, { initialUrl: '/create' });
-    expect(await screen.findByTestId('create-products')).toHaveAccessibleName('2 of 3 products. Verify · ends 26 Nov');
+    // Lead ruling (BATCH-1030, R-110 item 2, owner 30 Oct 2026): the meter says "Until" while a tier is active, so the name is "Verify. Until 26 Nov".
+    expect(await screen.findByTestId('create-products')).toHaveAccessibleName('2 of 3 products. Verify. Until 26 Nov');
     await fireEvent.press(screen.getByTestId('create-tile-event'));
     expect(await screen.findByTestId('host-name')).toBeTruthy();
     expect(screen.queryByTestId('host-gate')).toBeNull();

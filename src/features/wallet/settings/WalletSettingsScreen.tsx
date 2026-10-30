@@ -46,8 +46,6 @@ export type WalletSettingsScreenProps = {
   onOpenWallet: () => void;
   /** Statements: W38. Without it the row is not drawn. */
   onOpenStatements?: () => void;
-  /** Cards (WALLET-22, R-84): the row's second line and where it leads. Without it the row is not drawn (cards are off at the Hub). */
-  cards?: { subtitle: string; onOpen: () => void };
   /** Beneficiaries (WALLET-14, W35): where the saved accounts are, the Saved list on W8. Without it the row is not drawn. */
   onOpenBeneficiaries?: () => void;
   /** Accounts and currencies (D3): the accounts held, and Add a currency. Without it the row is not drawn. */
@@ -61,8 +59,8 @@ export type WalletSettingsScreenProps = {
  * otherwise.
  *
  * Drawn: what has a screen behind it or says something true by itself (R-47). Statements (WALLET-35) leads to W38 and
- * is drawn when the route gives it somewhere to go; W38's "Toast on W35" shows over this page. Cards (WALLET-22, R-84) is drawn
- * while the Hub says cards are on. Fingerprint or face for payments is drawn when this phone can keep a
+ * is drawn when the route gives it somewhere to go; W38's "Toast on W35" shows over this page. There is no Cards row: cards are off until Nuvion says they are back (R-104).
+ * Fingerprint or face for payments is drawn when this phone can keep a
  * key behind a biometric (FIX-108; SHARED-CHANGES WALLET-06 #1): the switch makes the key, asks the PIN on a sheet with no amount, and
  * registers it (`PUT /money/device`); off turns it off at the Hub and drops the key. Help with a payment, the
  * last row, opens the support chat (I12) with nothing attached, since no one payment is being asked about (SUPPORT-01, R-30; the
@@ -72,7 +70,7 @@ export type WalletSettingsScreenProps = {
  * The Tier row stays out: no tier is served (WALLET-19). The fingerprint or face switch is drawn wherever the phone can keep that key; the
  * CHECK-3 audit ran on a web export, which cannot, so it did not show there.
  */
-export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements, cards, onOpenBeneficiaries, onOpenAccounts }: WalletSettingsScreenProps) {
+export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWallet, onOpenStatements, onOpenBeneficiaries, onOpenAccounts }: WalletSettingsScreenProps) {
   const owner = useSessionAccount(undefined);
   const wallet = useQuery(walletSettingsQuery(owner), queryClient);
   const [showAccount, setShowAccount] = useState(false);
@@ -170,7 +168,6 @@ export function WalletSettingsScreen({ onBack, onOpenPin, onCreatePin, onOpenWal
         onCreatePin={onCreatePin}
         onOpenAccount={() => setShowAccount(true)}
         onOpenStatements={onOpenStatements}
-        cards={cards}
         onOpenBeneficiaries={onOpenBeneficiaries}
         onOpenAccounts={onOpenAccounts}
         savedCount={savedCount}
@@ -213,7 +210,6 @@ type SettingsProps = {
   onCreatePin: () => void;
   onOpenAccount: () => void;
   onOpenStatements?: () => void;
-  cards?: { subtitle: string; onOpen: () => void };
   onOpenBeneficiaries?: () => void;
   onOpenAccounts?: () => void;
   /** The saved bank accounts W8 will show; null until the list is read (or when it cannot be), when the row has no second line. */
@@ -221,7 +217,7 @@ type SettingsProps = {
   onOpenHelp: () => void;
 };
 
-function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, cards, onOpenBeneficiaries, onOpenAccounts, savedCount, onOpenHelp }: SettingsProps) {
+function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOpenStatements, onOpenBeneficiaries, onOpenAccounts, savedCount, onOpenHelp }: SettingsProps) {
   const limits = data.limits ? limitsLine(data.limits) : null;
   return (
     <>
@@ -247,9 +243,6 @@ function Settings({ data, biometric, onOpenPin, onCreatePin, onOpenAccount, onOp
           onPress={data.pin.isSet ? onOpenPin : onCreatePin}
         />
         {biometric ? <BiometricRow {...biometric} /> : null}
-        {cards ? (
-          <ListRow testID="wallet-settings-cards" lead={<IconTile icon="CreditCard" size={ROW_TILE} />} title="Cards" subtitle={cards.subtitle} onPress={cards.onOpen} />
-        ) : null}
         {onOpenBeneficiaries ? (
           <ListRow
             testID="wallet-settings-beneficiaries"
