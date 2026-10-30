@@ -4,9 +4,10 @@ import type { components } from '@/api/schema.generated';
 
 /**
  * The tier offer's two calls (TIER-OFFER, R-94), as the Hub's contract types them:
- * - `GET /me/tier-offer`: whether the full-screen offer is to be drawn for this person now (a creator account not yet shown it and
- *   holding no running tier), and whether it has the close X (`closeButton`) or a "Not now" button, which is an admin setting;
- * - `POST /me/tier-offer/seen`: the offer was drawn, so the Hub never offers it again, on any phone.
+ * - `GET /me/tier-offer`: whether the full-screen offer is to be drawn for this person now (any account type holding no running tier;
+ *   every start while the admin setting `tier_offer.every_start_on` is on, once per person when off, R-105), and whether it has the close X
+ *   (`closeButton`) or a "Not now" button, which is an admin setting;
+ * - `POST /me/tier-offer/seen`: the offer was drawn; with the every-start setting off the Hub does not offer it again, on any phone.
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data` (SHARED-CHANGES.md row 11).
  */
 export type TierOffer = components['schemas']['TierOfferView'];

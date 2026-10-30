@@ -14,8 +14,11 @@ import { StoreFailure } from './failure';
  */
 export type Os = 'android' | 'ios';
 
-/** Why a store step did not finish, by its real cause. `already_owned` means the store still holds an earlier purchase of the same item. */
-export type StoreCause = 'cancelled' | 'pending' | 'already_owned' | 'network' | 'store_unavailable' | 'item_unavailable' | 'failed';
+/**
+ * Why a store step did not finish, by its real cause. `already_owned` means the store still holds an earlier purchase of the same item.
+ * `declined` is a payment the store refused (Google Play said no, for funds or another reason); the store is there, nothing was charged.
+ */
+export type StoreCause = 'cancelled' | 'pending' | 'already_owned' | 'network' | 'store_unavailable' | 'item_unavailable' | 'declined' | 'failed';
 
 /** The store's own price for one product: the store formats it, in the person's own currency (R-86). */
 export type StorePrice = {
@@ -99,7 +102,6 @@ const UNAVAILABLE: string[] = [
   'billing-unavailable',
   'iap-not-available',
   'service-disconnected',
-  'service-error',
   'feature-not-supported',
   'init-connection',
   'connection-closed',
@@ -108,19 +110,34 @@ const UNAVAILABLE: string[] = [
 ];
 const ITEM: string[] = ['item-unavailable', 'sku-not-found', 'sku-offer-mismatch', 'empty-sku-list', 'query-product'];
 
-/** The cause a store error code names. A code the module adds later is a plain failure. */
-export function causeOf(code: unknown): StoreCause {
+/**
+ * Google Play's sub-response code for a payment it declined for want of funds. It rides on the purchase error as `subResponseCodeAndroid`
+ * (openiap-google 4.0.3 `toOpenIapSubResponseCode`, read by expo-iap `nativeError.ts`).
+ */
+const INSUFFICIENT_FUNDS = 'payment-declined-due-to-insufficient-funds';
+
+/**
+ * The cause a store error code names. `step` says where the error came from. While BUYING (`'buy'`) the store is plainly there (the connection
+ * opened and the sheet was asked for), so `service-error` is the store refusing the payment: Google Play's ERROR (response code 6) and
+ * SERVICE_UNAVAILABLE (2) both arrive as that one code (openiap-google 4.0.3 `OpenIapError.fromBillingResponseCode`, expo-iap errorMapping.ts
+ * lines 63 and 67), and a payment declined for insufficient funds carries the sub-response code above. Asking the store for prices or a
+ * restore (`'ask'`, the default) keeps `service-error` as "the store could not be reached". A code the module adds later is a plain failure.
+ */
+export function causeOf(code: unknown, sub?: unknown, step: 'ask' | 'buy' = 'ask'): StoreCause {
   const c = typeof code === 'string' ? code : '';
+  if (step === 'buy' && sub === INSUFFICIENT_FUNDS) return 'declined';
   if (CANCELLED.includes(c)) return 'cancelled';
   if (PENDING.includes(c)) return 'pending';
   if (OWNED.includes(c)) return 'already_owned';
   if (NETWORK.includes(c)) return 'network';
+  if (c === 'service-error') return step === 'buy' ? 'declined' : 'store_unavailable';
   if (UNAVAILABLE.includes(c)) return 'store_unavailable';
   if (ITEM.includes(c)) return 'item_unavailable';
   return 'failed';
 }
 
 const codeOf = (error: unknown): unknown => (typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined);
+const subOf = (error: unknown): unknown => (typeof error === 'object' && error !== null ? (error as { subResponseCodeAndroid?: unknown }).subResponseCodeAndroid : undefined);
 
 let connecting: Promise<boolean> | null = null;
 
@@ -228,7 +245,7 @@ export async function buy(request: BuyRequest): Promise<BuyResult> {
     subs.push(
       m.purchaseErrorListener((e) => {
         if (e.productId && e.productId !== request.storeProductId) return;
-        settle({ ok: false, cause: causeOf(e.code) });
+        settle({ ok: false, cause: causeOf(e.code, (e as { subResponseCodeAndroid?: unknown }).subResponseCodeAndroid, 'buy') });
       }),
     );
     // The person's account token goes to BOTH stores on every purchase; the room of a pass rides in Google's profile id only.
@@ -256,7 +273,7 @@ export async function buy(request: BuyRequest): Promise<BuyResult> {
       : { type: 'in-app' as const, request: { apple, google } };
     Promise.resolve()
       .then(() => m.requestPurchase(args as Parameters<Module['requestPurchase']>[0]))
-      .catch((error: unknown) => settle({ ok: false, cause: causeOf(codeOf(error)) }));
+      .catch((error: unknown) => settle({ ok: false, cause: causeOf(codeOf(error), subOf(error), 'buy') }));
   });
 }
 

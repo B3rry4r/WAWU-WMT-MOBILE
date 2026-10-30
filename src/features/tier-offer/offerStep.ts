@@ -7,20 +7,23 @@ import { readClaims } from '@/features/claim/tokenClaims';
 import { fetchTierOffer, markTierOfferSeen } from './api';
 
 /**
- * The tier offer (TIER-OFFER, R-94): a full screen that offers the three tiers once, first thing once the sign-up's email, name and access-code
- * steps are done, before "Set up your account" and the other setup steps and before Home (FIX-P5, lead ruling 27 Oct 2026). It shows
- * and asks; it never decides who is offered it (the Hub does, `GET /me/tier-offer`: a creator account not yet shown it and holding no
- * running tier) and it never blocks the app.
+ * The tier offer (TIER-OFFER, R-94; who sees it and how often is the Hub's, R-105): a full screen that offers the three tiers, first thing once
+ * the sign-up's email, name and access-code steps are done, before "Set up your account" and the other setup steps and before Home (FIX-P5,
+ * lead ruling 27 Oct 2026). It shows and asks; it never decides who is offered it and it never blocks the app. The Hub decides
+ * (`GET /me/tier-offer`): for any signed-in person, whatever their account type, who holds no running tier, on every app start while the admin
+ * setting `tier_offer.every_start_on` is on (the default), and once per person when it is off. Nothing here keeps "once" or "creators only".
  *
- *   - Once the sign-up gate is open (`asked`), the Hub is asked once per signed-in session. A new account has had its type copied to the
- *     Hub by then. The email, name and access-code steps come first; the setup steps (A11 to A13) wait behind the offer.
+ *   - Once the sign-up gate is open (`asked`), the Hub is asked once per signed-in session, for every account type. A new account has had its
+ *     type copied to the Hub by then. The email, name and access-code steps come first; the setup steps (A11 to A13) wait behind the offer.
  *   - The answer is waited for a short, bounded time (`TIER_OFFER_WAIT_MS`). An answer that fails or comes late means no offer this
- *     session; the next start asks again, because nothing was marked.
- *   - When the Hub does not say show while the sign-up has just written a creator account type to it (the write is what makes a new person
- *     one the Hub offers the tiers to), the Hub is asked once more, within one more bounded wait that also covers the write still being
- *     on its way. An answer that already says show is never asked twice, and a start that wrote nothing asks once (F1, round 2).
- *   - "Shown once" lives on the Hub, so it holds across phones: the screen tells the Hub the moment it is drawn (`settleTierOffer`),
- *     so closing the app on it never brings it back.
+ *     session; the next start asks again, because nothing was marked. A Hub that has not been updated yet answers no for a buyer: nothing is
+ *     drawn, nothing breaks, and the app goes on to Home.
+ *   - When the Hub does not say show while the sign-up has just written an account type to it (the write is what gives a new person the profile
+ *     the Hub reads the type from), the Hub is asked once more, within one more bounded wait that also covers the write still being on its way.
+ *     An answer that already says show is never asked twice, and a start that wrote nothing asks once (F1, round 2; any type, R-105).
+ *   - The screen tells the Hub the moment it is drawn (`settleTierOffer`), once per start. The Hub keeps that mark: with the setting off it is
+ *     what stops the offer on any phone; with it on (the default) the offer still comes on the next start. Closing the app on the offer never
+ *     decides anything here.
  *   - Subscribe ends the step and hands the tier to the layout's bridge, which opens the checkout (VF6) once the offer is gone.
  *   - It never holds a session change. A session that ends while the app is up and the gate stays open (a sign-in over another account,
  *     a refresh that brings one) resets the step: the app is not held for it, nothing is asked for the new account and no offer is
@@ -75,7 +78,7 @@ async function within<T>(work: Promise<T>, ms: number): Promise<T | null> {
   }
 }
 
-/** Asks the Hub once for this session (twice, when a creator type was just written and the first answer was not "show"). Never throws; a failure or a late answer is "no offer". */
+/** Asks the Hub once for this session (twice, when an account type was just written and the first answer was not "show"). Never throws; a failure or a late answer is "no offer". */
 async function ask(): Promise<void> {
   if (started) return;
   started = true;
@@ -87,9 +90,9 @@ async function ask(): Promise<void> {
   publish({ ...state, sub, phase: 'asking' });
   let answer = await within(fetchTierOffer().catch(() => null), TIER_OFFER_WAIT_MS);
   if (!answer?.show && state.sub === sub && state.phase === 'asking') {
-    // The write of a creator account type may have landed after the Hub answered: one more look, never more.
+    // The write of the account type (whichever it is) may have landed after the Hub answered: one more look, never more.
     const again = await within(
-      accountTypeWriteResult().then((held) => (held === 'creator' ? fetchTierOffer().catch(() => null) : null)),
+      accountTypeWriteResult().then((held) => (held ? fetchTierOffer().catch(() => null) : null)),
       TIER_OFFER_WAIT_MS,
     );
     answer = again ?? answer;
@@ -99,12 +102,12 @@ async function ask(): Promise<void> {
   publish(answer?.show ? { ...state, phase: 'visible', closeButton: answer.closeButton } : { ...state, phase: 'done' });
 }
 
-/** The offer has been drawn: the Hub is told, so it will not come again, even if the app is closed on it. Never throws. */
+/** The offer has been drawn: the Hub is told (once per start). Whether it comes again is the Hub's setting. Never throws. */
 export function settleTierOffer(): void {
   if (settled) return;
   settled = true;
   void markTierOfferSeen().catch(() => {
-    // The Hub could not be told: the offer may be drawn once more on the next start, never twice in this one.
+    // The Hub could not be told: nothing changes here; the next start asks the Hub again.
   });
 }
 
@@ -144,15 +147,11 @@ function endTierOfferSession(): void {
 onSessionEnd(endTierOfferSession);
 
 /**
- * For the root layout. `asked` is true once the sign-up gate is open for a signed-in person. `accountType` is what WAWU ID's sign-up
- * progress says: a discoverer ("user") has no shop for a tier to unlock, so the Hub is not even asked. `holding` is true from the
- * moment the gate opens until the Hub has answered (at most `TIER_OFFER_WAIT_MS`), so the splash waits and Home is never drawn first
- * for a person who is to be offered the tiers.
+ * For the root layout. `asked` is true once the sign-up gate is open for a signed-in person. The account type is not passed: the app does not
+ * decide who is offered the tiers, the Hub does (R-105). `holding` is true from the moment the gate opens until the Hub has answered (at most
+ * `TIER_OFFER_WAIT_MS`), so the splash waits and Home is never drawn first for a person who is to be offered the tiers.
  */
-export function useTierOfferStep(
-  asked: boolean,
-  accountType?: string | null,
-): {
+export function useTierOfferStep(asked: boolean): {
   visible: boolean;
   holding: boolean;
   closeButton: boolean;
@@ -163,19 +162,17 @@ export function useTierOfferStep(
     () => state,
     () => state,
   );
-  const discoverer = accountType === 'user';
   const idle = current.phase === 'idle';
   useEffect(() => {
     // Signed out (or the gate is not open yet): whatever was held is dropped, so the next sign-in holds and asks afresh.
     if (!asked) resetTierOffer();
-    else if (discoverer) publish({ ...state, phase: 'done' });
     // The session changed under a live app (the step was reset with the gate still open): no hold, no ask, no offer for it.
     else if (state.live) {
       if (state.phase === 'idle') publish({ ...state, phase: 'done' });
     } else void ask();
     // `idle` is here so a reset under an open gate is seen: it lands on 'idle' while `asked` has not changed.
-  }, [asked, discoverer, idle]);
-  const open = asked && !discoverer && !(current.live && idle) && current.phase !== 'visible' && current.phase !== 'done';
+  }, [asked, idle]);
+  const open = asked && !(current.live && idle) && current.phase !== 'visible' && current.phase !== 'done';
   return {
     visible: asked && current.phase === 'visible',
     holding: open,

@@ -104,6 +104,7 @@ const PUBLIC: Record<string, string> = {
   'preview/products-meter': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/studio-job': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/tier-badge': 'development only, a release build leaves (LeaveDevRoute)',
+  'preview/tier-cards': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/voice-player': 'development only, a release build leaves (LeaveDevRoute)',
 };
 

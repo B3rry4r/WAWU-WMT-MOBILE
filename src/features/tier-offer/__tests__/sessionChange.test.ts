@@ -43,7 +43,7 @@ beforeEach(() => {
 describe('a session that changes under an open app never holds it', () => {
   it('a sign-in over another account, or a refresh that brings one, leaves the app up: nothing held, nothing asked, no offer', async () => {
     mockFetchOffer.mockResolvedValue(no);
-    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    const { result } = await renderHook(() => step.useTierOfferStep(true));
     await waitFor(() => expect(result.current.holding).toBe(false));
     expect(mockFetchOffer).toHaveBeenCalledTimes(1);
 
@@ -56,7 +56,7 @@ describe('a session that changes under an open app never holds it', () => {
 
   it('an offer on screen when the account changes is dropped with the session, never shown to the next account', async () => {
     mockFetchOffer.mockResolvedValue(yes);
-    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    const { result } = await renderHook(() => step.useTierOfferStep(true));
     await waitFor(() => expect(result.current.visible).toBe(true));
 
     await endSession();
@@ -67,7 +67,7 @@ describe('a session that changes under an open app never holds it', () => {
   it("an ask still on its way when the account changes is asked again for the new account, and the first account's late answer is never shown", async () => {
     let first: (value: unknown) => void = () => undefined;
     mockFetchOffer.mockReturnValueOnce(new Promise((resolve) => (first = resolve))).mockResolvedValueOnce(no);
-    const { result } = await renderHook(() => step.useTierOfferStep(true, 'creator'));
+    const { result } = await renderHook(() => step.useTierOfferStep(true));
     await waitFor(() => expect(mockFetchOffer).toHaveBeenCalledTimes(1));
     expect(result.current.holding).toBe(true);
 
@@ -81,7 +81,7 @@ describe('a session that changes under an open app never holds it', () => {
 
   it('a sign-out and a sign-in still hold until the Hub answers for the new account, and show its offer', async () => {
     mockFetchOffer.mockResolvedValueOnce(no);
-    const { result, rerender } = await renderHook(({ asked }: { asked: boolean }) => step.useTierOfferStep(asked, 'creator'), {
+    const { result, rerender } = await renderHook(({ asked }: { asked: boolean }) => step.useTierOfferStep(asked), {
       initialProps: { asked: true },
     });
     await waitFor(() => expect(result.current.holding).toBe(false));

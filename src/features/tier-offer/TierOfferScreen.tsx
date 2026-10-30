@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
-import { Button, IconButton } from '@/components/Button';
+import { IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
@@ -35,8 +35,8 @@ export type TierOfferScreenProps = {
 };
 
 /**
- * The tier offer (TIER-OFFER, R-94): right after sign-up, before Home, the three tiers as VF5 draws them (the same card), each with what it gives
- * and its own Subscribe. In this build every tier is bought in the store sheet (R-86): the tiers on offer are the ones the Hub sells in this phone's
+ * The tier offer (TIER-OFFER, R-94): right after sign-up, before Home, the three tiers as VF5 draws them (the same card, R-108: the name and the store's price with its period, one line with a check for each thing
+ * it gives, and its own Subscribe at the foot of the card). In this build every tier is bought in the store sheet (R-86): the tiers on offer are the ones the Hub sells in this phone's
  * store (`GET /store/products`) joined to what each gives (`GET /plans`: its length, products and points), and the price on each is the store's own,
  * in the person's own currency; none is written here, and the Hub's naira figure is never drawn. Subscribe opens the store checkout (VF6) with that
  * tier, the one the tiers sheet opens, where Buy opens the store sheet. There is no wallet, PIN or bank charge on the way. It always has a way out and
@@ -50,7 +50,7 @@ export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOffer
   const owner = useSessionAccount(undefined);
   const plans = useQuery(plansQuery(owner), queryClient);
   const store = useStoreCatalog(['tier']);
-  // Drawn once is enough: the Hub is told as it appears, so closing the app on this screen never brings it back.
+  // The Hub is told as it appears (once per start); whether it comes again is the Hub's setting (R-105).
   useEffect(() => {
     settleTierOffer();
   }, []);
@@ -80,7 +80,7 @@ export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOffer
     body = (
       <View testID="tier-offer-loading" style={styles.list}>
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} height={150} radius={radius.card} />
+          <Skeleton key={i} height={280} radius={radius.card} />
         ))}
       </View>
     );
@@ -103,16 +103,14 @@ export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOffer
     body = (
       <View testID="tier-offer-list" style={styles.list}>
         {offers.map(({ tier, item }) => (
-          <View key={tier.id} style={styles.offer}>
-            <TierCard tier={tier} price={item.price} mark={tier.preselected ? 'best' : undefined} />
-            <Button
-              testID={`tier-offer-subscribe-${tier.id}`}
-              label={`Subscribe to ${tier.name}`}
-              variant={tier.preselected ? 'primary' : 'secondary'}
-              full
-              onPress={() => onSubscribe(tier.id)}
-            />
-          </View>
+          <TierCard
+            key={tier.id}
+            tier={tier}
+            price={item.price}
+            mark={tier.preselected ? 'best' : undefined}
+            featured={tier.preselected}
+            action={{ testID: `tier-offer-subscribe-${tier.id}`, label: `Subscribe to ${tier.name}`, onPress: () => onSubscribe(tier.id) }}
+          />
         ))}
       </View>
     );
@@ -187,8 +185,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingBottom: space.xl, gap: space.xl },
   head: { gap: space.sm },
-  list: { gap: space.xl },
-  offer: { gap: space.md },
+  list: { gap: space.lg },
   foot: { paddingTop: space.sm, alignItems: 'center' },
   notNow: {
     minHeight: layout.tapMin,
