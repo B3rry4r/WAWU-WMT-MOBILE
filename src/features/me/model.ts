@@ -2,7 +2,7 @@ import { formatMoney } from '@/components/Money';
 import type { MeterTier } from '@/components/ProductsMeter';
 import { APP_NAME_COPY } from '@/lib/appName';
 import { nairaToKobo } from '@/api/kobo';
-import { compactCount } from '@/features/feed/model';
+import { compactCount, rowPicture } from '@/features/feed/model';
 import { profileLink } from '@/lib/appLinks';
 import { PLATFORMS, SOCIAL, bareHandle, handleOf, orderOf, type SocialHandles, type SocialPlatform } from '@/features/profile-edit/social';
 
@@ -131,7 +131,7 @@ export function profileShareText(name: string, handle: string | null | undefined
 export type GridTile = {
   id: string;
   title: string;
-  /** A picture to fill the tile, when the piece's preview is one. Other files have no still (BACKEND_GAPS G-290). */
+  /** A picture to fill the tile, when the piece's preview is one (a photo, or a template with a picture cover). Other files have no still (BACKEND_GAPS G-290). */
   still: string | null;
   kind: ContentPiece['contentType'];
   locked: boolean;
@@ -150,7 +150,7 @@ export function tileOf(piece: ContentPiece): GridTile {
   return {
     id: piece.id,
     title: piece.title,
-    still: piece.contentType === 'image' && piece.previewAssetUrl ? piece.previewAssetUrl : null,
+    still: rowPicture(piece.contentType, piece.previewAssetUrl),
     kind: piece.contentType,
     locked: paid,
     caption,

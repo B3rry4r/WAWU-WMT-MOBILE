@@ -51,7 +51,7 @@ export function ResultPlayer({ uri, name, testID }: ResultPlayerProps) {
       testID={testID}
       style={[styles.pill, { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }] }]}
     >
-      <AudioSource uri={uri} playing={playing} seek={seek} onTime={onTime} onEnded={onEnded} />
+      <AudioSource uri={uri} playing={playing} seek={seek} title={name} onTime={onTime} onEnded={onEnded} />
       <Pressable
         testID={testID ? `${testID}-button` : undefined}
         accessibilityRole="button"

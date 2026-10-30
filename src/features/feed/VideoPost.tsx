@@ -25,6 +25,9 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
   // A course's full file is the whole course (a video, a PDF or an archive): the feed only ever plays its free lesson.
   const uri = course ? item.previewAssetUrl : playableUrl(item);
   const still = course && isPicture(uri);
+  // The address whose first frame is on screen. Until it is, the backdrop draws the kind's mark, never plain black (a player is
+  // transparent until its first frame); an unlocked post plays a new file, whose frame is awaited the same way.
+  const [framed, setFramed] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
   const [time, setTime] = useState({ position: 0, length: 0 });
   const [ended, setEnded] = useState(false);
@@ -93,15 +96,23 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
           {still ? (
             <Image testID={`still-${item.id}`} source={{ uri }} contentFit="cover" accessibilityLabel={item.title} style={StyleSheet.absoluteFill} />
           ) : (
-            <VideoSurface
-              uri={uri}
-              playing={playing}
-              seek={seek}
-              frosted={previewEnded}
-              onTime={(position, length) => setTime({ position, length })}
-              onEnded={() => setEnded(true)}
-              testID={`video-${item.id}`}
-            />
+            <>
+              {framed === uri ? null : (
+                <View testID={`video-mark-${item.id}`} style={[StyleSheet.absoluteFill, styles.mark]}>
+                  <Icon name={course ? 'GraduationCap' : 'Video'} size={metrics.loadingMark} color={media.dot} />
+                </View>
+              )}
+              <VideoSurface
+                uri={uri}
+                playing={playing}
+                seek={seek}
+                frosted={previewEnded}
+                onTime={(position, length) => setTime({ position, length })}
+                onEnded={() => setEnded(true)}
+                onFirstFrame={() => setFramed(uri)}
+                testID={`video-${item.id}`}
+              />
+            </>
           )}
           {previewEnded ? <View style={[StyleSheet.absoluteFill, { backgroundColor: media.veil }]} /> : null}
         </View>
@@ -159,6 +170,7 @@ const styles = StyleSheet.create({
   scrub: { marginRight: metrics.barRight },
   tapLayer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   paused: { opacity: 0.85 },
+  mark: { alignItems: 'center', justifyContent: 'center' },
   ended: {
     position: 'absolute',
     left: metrics.endedSide,

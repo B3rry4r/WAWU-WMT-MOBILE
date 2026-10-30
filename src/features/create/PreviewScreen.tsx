@@ -19,9 +19,11 @@ import { refusalFor, type ChosenFile } from './chosen';
 import { CreateFrame } from './CreateFrame';
 import { setPreview, useDraft, type UploadedFile } from './draft';
 import { formatBytes, iconOf, labelOf, previewHint, type FormatId, type PreviewRule } from './model';
+import { frameFor } from './frames';
 import { FileRow, Stepper, useFirstTap } from './parts';
 import { pagesOf } from './pdfPages';
 import { canPickFile, pickFile } from './pickFile';
+import { stillOf } from './still';
 import { UPLOAD_CANCELLED, uploadFile } from './upload';
 
 /** me.js `previewStep`: the title at 20, 6 above its line; three 3:4 tiles 8 apart with 10 corners; the third frosted (8 blur, black at 0.3) with an 18 lock. */
@@ -63,6 +65,8 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
     if (!rule) return;
     const refusal = refusalFor(file, rule);
     if (refusal) {
+      // A file that is refused is never uploaded, so nothing else lets go of the phone's copy of it.
+      file.discard?.();
       setPreview(null);
       setStage({ state: 'failed', file, share: 0, message: refusal, retry: false });
       return;
@@ -74,9 +78,17 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
     setStage({ state: 'uploading', file, share: 0 });
     try {
       const pages = file.contentType === 'application/pdf' ? await pagesOf(file.blob) : null;
+      // A video is drawn as a frame of itself. It is read before the upload, because the phone's own copy of the file goes once the
+      // upload has settled; a file with no readable frame gives null (never an error, never a long wait) and keeps the icon.
+      const frame = await frameFor(file);
+      if (controller.signal.aborted) {
+        // The person left (Back, or another pick) before the upload began, so `uploadFile` will never settle for this file: its copy on the phone goes now.
+        file.discard?.();
+        return;
+      }
       const uploaded = await uploadFile(file, { folder: 'content/preview', format }, (share) => setStage((s) => (s.state === 'uploading' ? { ...s, share } : s)), controller.signal);
       if (controller.signal.aborted) return;
-      setPreview(pages ? { ...uploaded, pages } : uploaded);
+      setPreview({ ...uploaded, ...(pages ? { pages } : {}), ...(frame ? { frame } : {}) });
       setStage({ state: 'idle' });
     } catch (error) {
       if (error instanceof ApiError && error.code === UPLOAD_CANCELLED) return;
@@ -199,11 +211,12 @@ function HowItLooks({ format, file }: { format: FormatId; file: UploadedFile }) 
 function LookTile({ format, file, locked }: { format: FormatId; file: UploadedFile; locked?: boolean }) {
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);
-  const still = file.previewUri && file.contentType.startsWith('image/') && !broken ? file.previewUri : null;
+  const picture = stillOf(file);
+  const still = picture && !broken ? picture : null;
   return (
     <View testID={locked ? 'preview-tile-locked' : 'preview-tile'} style={[styles.tile, { backgroundColor: colors.surfaceSunken }]}>
       {still ? (
-        <Image source={{ uri: still }} contentFit="cover" blurRadius={locked ? lookMetrics.frost : 0} style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+        <Image testID="preview-tile-image" source={still} contentFit="cover" blurRadius={locked ? lookMetrics.frost : 0} style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
       ) : locked ? null : (
         <View style={[StyleSheet.absoluteFill, styles.centre]}>
           <Icon name={iconOf(format)} size={lookMetrics.kindIcon} color={colors.textMuted} />

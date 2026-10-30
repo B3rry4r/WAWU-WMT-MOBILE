@@ -121,7 +121,10 @@ describe('M24 · Price and M37 · Free piece', () => {
     hub.answers[`POST ${CREATE}`] = created();
     const calls = await open();
     expect(screen.getByText('Step 5 of 5')).toBeTruthy();
-    expect(send().props.accessibilityState.disabled).toBe(true);
+    // Lead ruling (PREVIEWS-APP round 1, named test fix): this line asserted `disabled` straight after render and raced the answer of
+    // GET /prices, which seeds the list's start price (PriceScreen) and so enables Send. It now waits for the list first.
+    expect((await screen.findByTestId('price-stop-2500')).props.accessibilityState.selected).toBe(true);
+    await waitFor(() => expect(send().props.accessibilityState.disabled).toBe(false));
 
     await pick(3000);
     expect(screen.queryByTestId('price-input')).toBeNull();
@@ -183,7 +186,8 @@ describe('M24 · Price and M37 · Free piece', () => {
     expect(screen.getByText('Anyone can open it. Fans can still tip.')).toBeTruthy();
     expect(screen.getByText('Free pieces count toward your uploads.')).toBeTruthy();
     expect(screen.queryByTestId('price-input')).toBeNull();
-    expect(screen.queryByTestId('price-piece')).toBeNull();
+    // PREVIEWS-APP (lead brief, rank 5): the piece card is the piece, not the price, so a free piece shows it too (this line asserted it away).
+    expect(screen.getByTestId('price-piece')).toBeTruthy();
     expect(screen.queryByTestId('price-note')).toBeNull();
     expect(send().props.accessibilityState.disabled).toBe(false);
 

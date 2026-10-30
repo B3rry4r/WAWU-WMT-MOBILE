@@ -4,6 +4,7 @@ import { ApiError } from '@/api/errors';
 import { onSessionEnd } from '@/api/session';
 
 import { releaseUpload } from './api';
+import type { Frame } from './chosen';
 import { resetDetails, setSent } from './details';
 import type { FormatId } from './model';
 
@@ -20,6 +21,8 @@ export type UploadedFile = {
   previewUri?: string;
   /** Pages in a PDF, when the file says so. */
   pages?: number;
+  /** A frame read out of a video, when the file is one and a frame could be read (`frames.ts`). Held in memory only: it is never sent anywhere. */
+  frame?: Frame;
 };
 
 /**

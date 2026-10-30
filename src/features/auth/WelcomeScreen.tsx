@@ -1,14 +1,14 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { type LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_NAME } from '@/components/BrandMark';
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
+import { bufferFor, PLAY_BUFFER, readAhead } from '@/features/feed/player/buffer';
 import { font, layout, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
@@ -26,25 +26,31 @@ const BUTTONS = { between: 10, wordsAbove: 28 } as const;
  */
 export const WELCOME_VIDEO = require('../../../assets/video/welcome-loop.mp4') as number;
 /**
- * The panel under the video (R-98, round 2): the words and the buttons sit in a solid panel in the video's own base purple
- * (`surfaceWelcomeVideoBase`), so the loop's mark and its orbit are never under the words and the screen still reads as one
- * full-screen video. The video's box is the room above the panel from the top of the screen, and `overlap` more behind the panel's
- * top edge (the panel's negative top margin), so no sliver of the page shows between them. `top` is the room above the headline
- * inside the panel. A short fade of `fade` from clear to the panel's colour lies on the video's last rows, ending at the panel's
- * top edge; the loop's own edge is already that purple, so the seam does not show.
+ * Where the loop's mark and its orbit sit, as a share of the video's own height, measured on `assets/video/welcome-loop.mp4`
+ * (R-111; 90 frames, 6 a second, every pixel more than 220 away from the base purple in the sum of its three channels: the logo, the
+ * stickers on its orbit and the bright rings): from 0.260 (top of the highest sticker) to 0.729 (foot of the lowest). `foot` is the
+ * lowest with a little over for a sticker's soft edge. The faint outer glow reaches further down and is not counted.
  */
-const PANEL = { top: 20, overlap: 8, fade: 16 } as const;
-/** The fade's stops: [place from its top (0 to 1), strength of the panel's colour]. */
-const FADE_STOPS = [
-  [0, 0],
-  [0.4, 0.35],
-  [0.75, 0.8],
-  [1, 1],
-] as const;
-/** The panel's colour at a strength from 0 to 1, built from the token (the word "transparent" blends through black on iOS). */
-const baseAt = (strength: number) => `${darkColors.surfaceWelcomeVideoBase}${Math.round(strength * 255).toString(16).padStart(2, '0').toUpperCase()}`;
-const FADE_COLORS = FADE_STOPS.map(([, strength]) => baseAt(strength)) as unknown as readonly [string, string, ...string[]];
-const FADE_LOCATIONS = FADE_STOPS.map(([place]) => place) as unknown as readonly [number, number, ...number[]];
+const ORBIT = { foot: 0.74 } as const;
+/** Room kept between the foot of the orbit and the top of the title, when the video has to be lifted. */
+const LIFT_GAP = 12;
+/** The loop's own size (1080 x 1920): `cover` scales it to the screen by whichever side leaves no gap. */
+const LOOP = { width: 1080, height: 1920 } as const;
+
+/**
+ * R-111 (owner, 30 Oct 2026): the video is the whole screen, and the words and buttons sit over its lower part with no panel, no
+ * shade and no gradient. A phone that is tall and narrow shows the loop at the screen's height, so the foot of the orbit (0.74 of it)
+ * can land on the title. When it would, the video's layer is lifted by exactly the room that is missing (never lowered), so the mark
+ * and its orbit end `LIFT_GAP` above the title. The lift is a translation, never a crop or a scale: the loop keeps its size, the
+ * lifted layer gives up its foot, and the screen behind it is the base purple the loop's own bottom rows already are (at most 4
+ * levels apart in each channel on every frame, measured). `contentPosition` would also move it but is iOS only.
+ * `wordsTop` is the title's top edge from the top of the screen.
+ */
+export function welcomeLift({ width, height, wordsTop }: { width: number; height: number; wordsTop: number }): number {
+  const shown = Math.max(height, (width * LOOP.height) / LOOP.width);
+  const foot = (height - shown) / 2 + ORBIT.foot * shown;
+  return Math.max(0, Math.ceil(foot - (wordsTop - LIFT_GAP)));
+}
 
 export type WelcomeScreenProps = {
   /** Create an account: opens A2. */
@@ -54,12 +60,12 @@ export type WelcomeScreenProps = {
 };
 
 /**
- * A1: the screen a signed-out user first sees (R-98, owner, 27 Oct 2026): the approved loop plays above a solid panel in its own
- * base purple that holds the words and the buttons. The video fills the room from the top of the screen (under the status bar) to
- * the panel, cropped to fill and never stretched, silent, looping, and only while A1 is the screen in front, so the mark and its
- * orbit are fully in view above the headline on every phone and the screen reads as one full-screen video. The app draws no logo:
- * the video carries the mark. The screen is that purple behind everything, so nothing flashes before the first frame, and the words
- * and the status bar are always light, whatever the phone's theme.
+ * A1: the screen a signed-out user first sees (R-111, owner, 30 Oct 2026, replacing R-98's panel): the approved loop plays over the
+ * whole screen, edge to edge and under the status bar, cropped to fill and never stretched, silent, looping, and only while A1 is the
+ * screen in front. The headline, the line under it and both buttons sit over its lower part, white, with no panel, no shade and no
+ * gradient behind them. The loop's mark and its orbit stay above the headline on every phone (`welcomeLift`). The app draws no logo:
+ * the video carries the mark. The screen is the loop's base purple behind everything, so nothing flashes before the first frame, and
+ * the words and the status bar are always light, whatever the phone's theme.
  * "and bank it all in one app" is left out of the line under the title: it
  * implies a bank account for everyone, which nothing backs (G-34).
  */
@@ -68,45 +74,51 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
   /** The welcome screen stays mounted under the screens pushed on it; its light bar and its video must not outlive its turn on screen. */
   const focused = useIsFocused();
   const player = useVideoPlayer(WELCOME_VIDEO, (p) => {
+    // The same read-ahead rule as the feed's players (`buffer.ts`): two seconds while it is not playing, the documented 20 once it plays.
+    p.bufferOptions = bufferFor(focused);
     p.loop = true;
     p.muted = true;
     p.staysActiveInBackground = false;
     p.showNowPlayingNotification = false;
   });
   useEffect(() => {
-    if (focused) player.play();
-    else player.pause();
+    if (focused) {
+      readAhead(player, PLAY_BUFFER);
+      player.play();
+    } else player.pause();
   }, [player, focused]);
+  /** The screen's size and the title's top edge, from layout; until both are known the video sits at the top, unlifted. */
+  const [screen, setScreen] = useState<{ width: number; height: number } | null>(null);
+  const [wordsTop, setWordsTop] = useState<number | null>(null);
+  const onRootLayout = (e: LayoutChangeEvent) => setScreen({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height });
+  const onWordsLayout = (e: LayoutChangeEvent) => setWordsTop(e.nativeEvent.layout.y);
+  const lift = screen && wordsTop !== null ? welcomeLift({ ...screen, wordsTop }) : 0;
   return (
-    <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.surfaceWelcomeVideoBase }]}>
+    <View testID="welcome" onLayout={onRootLayout} style={[styles.root, { backgroundColor: darkColors.surfaceWelcomeVideoBase }]}>
       {focused ? <StatusBar style="light" /> : null}
-      <View testID="welcome-stage" style={styles.stage}>
-        <View testID="welcome-video" pointerEvents="none" accessible accessibilityRole="image" accessibilityLabel={APP_NAME} style={StyleSheet.absoluteFill}>
-          <VideoView
-            testID="welcome-video-view"
-            player={player}
-            contentFit="cover"
-            nativeControls={false}
-            allowsPictureInPicture={false}
-            playsInline
-            // A texture view, as the feed's: it moves with the screen when another is pushed on this one.
-            surfaceType="textureView"
-            pointerEvents="none"
-            style={styles.video}
-          />
-        </View>
-      </View>
-      <View testID="welcome-panel" style={[styles.panel, { backgroundColor: darkColors.surfaceWelcomeVideoBase }]}>
-        <LinearGradient
-          testID="welcome-fade"
+      <View
+        testID="welcome-video"
+        pointerEvents="none"
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={APP_NAME}
+        style={[StyleSheet.absoluteFill, lift > 0 ? { transform: [{ translateY: -lift }] } : null]}
+      >
+        <VideoView
+          testID="welcome-video-view"
+          player={player}
+          contentFit="cover"
+          nativeControls={false}
+          allowsPictureInPicture={false}
+          playsInline
+          // A texture view, as the feed's: it moves with the screen when another is pushed on this one.
+          surfaceType="textureView"
           pointerEvents="none"
-          colors={FADE_COLORS}
-          locations={FADE_LOCATIONS}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={styles.fade}
+          style={styles.video}
         />
-        <View testID="welcome-words" style={styles.words}>
+      </View>
+      <View testID="welcome-content" style={styles.content}>
+        <View testID="welcome-words" onLayout={onWordsLayout} style={styles.words}>
           <View style={styles.wordsText}>
             <Text
               variant="display"
@@ -135,14 +147,10 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  /** The video's box: all the room above the panel, from the top of the screen, and the panel's overlap under its top edge. */
-  stage: { flex: 1 },
-  /** Fills the box. The 100% is for the web build: its `<video>` is a replaced element, which keeps its own size unless it is given one. */
+  /** Fills the video's layer. The 100% is for the web build: its `<video>` is a replaced element, which keeps its own size unless it is given one. */
   video: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%' },
-  /** Solid, over the video; the negative top margin gives the video's box `overlap` more under its top edge. */
-  panel: { marginTop: -PANEL.overlap, paddingTop: PANEL.top, zIndex: 1 },
-  /** Lies on the video's last rows, ending at the panel's top edge. */
-  fade: { position: 'absolute', top: -PANEL.fade, left: 0, right: 0, height: PANEL.fade },
+  /** The words and the buttons, over the lower part of the video: the whole screen's height, the words pushed to its foot. */
+  content: { flex: 1, justifyContent: 'flex-end' },
   words: { paddingHorizontal: WORDS.side, paddingBottom: BUTTONS.wordsAbove },
   wordsText: { gap: WORDS.between },
   buttons: { paddingHorizontal: layout.gutter, gap: BUTTONS.between },
