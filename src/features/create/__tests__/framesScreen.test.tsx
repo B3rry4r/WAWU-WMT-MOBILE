@@ -195,6 +195,23 @@ describe('M22 · Preview, a video (Android, from the gallery)', () => {
     expect(ScriptedXhr.last).toBeNull();
     expect(draft.getDraft().preview).toBeNull();
   });
+
+  it('a person who leaves during the frame read leaves no copy behind: the phone\'s copy of the video is discarded once', async () => {
+    let finish: (value: unknown[]) => void = () => undefined;
+    mockReader.thumbnails = () => new Promise<unknown[]>((resolve) => (finish = resolve));
+    const discard = jest.fn();
+    const pickFileModule = require('../pickFile') as typeof import('../pickFile');
+    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue({ ...chosen('launch-day.mp4', 'video/mp4', 4, { previewUri: GALLERY }), discard });
+    const onBack = jest.fn();
+    await open('video', onBack);
+    await fireEvent.press(await screen.findByTestId('preview-drop'));
+    await waitFor(() => expect(mockReader.events).toContain('frame'));
+    expect(discard).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('Back'));
+    await act(async () => finish([mockThumbnail]));
+    expect(ScriptedXhr.last).toBeNull();
+    expect(discard).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('M22 · Preview, an image or an audio clip looks exactly as before', () => {
@@ -223,5 +240,52 @@ describe('M22 · Preview, an image or an audio clip looks exactly as before', ()
     expect(screen.queryByTestId('preview-tile-image')).toBeNull();
     expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
     expect(mockReader.calls).toEqual([]);
+  });
+});
+
+/*
+ * PREVIEWS-APP (rank 5): a course's preview is an mp4 lesson, so it is drawn as a frame of itself like a video's, and the step-5 card is
+ * the piece, not the price: a Free piece shows it too.
+ */
+describe('M22 and M24 · a course, and a Free piece (Android)', () => {
+  it('a user adding a course preview from the gallery sees its frame in How it will look, and on the price step\'s card', async () => {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'lesson.mp4');
+    draft.setFormat('course');
+    // A course's full file is its first lesson's: the price step reads it from there.
+    draft.addLesson();
+    draft.setLessonFile(draft.getLessons()[0].key, { name: 'lesson-1.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/l1.mp4', fileUrl: 'https://storage.test/content/full/u1/l1.mp4?read=1' });
+    const first = await open('course' as never);
+    await fireEvent.press(await screen.findByTestId('preview-drop'));
+    await land();
+    await screen.findByTestId('preview-look');
+    expect(mockReader.calls).toEqual([GALLERY]);
+    expect(imageSource()).toEqual([[mockThumbnail], [mockThumbnail], [mockThumbnail]]);
+    expect(draft.getDraft().preview?.frame).toBe(mockThumbnail);
+    await first.unmount();
+
+    details.setDetails({ title: 'VFX for Beginners', description: 'Twelve lessons.', category: 'entertainment_creative' });
+    servePrices();
+    await renderFrame(<PriceScreen format="course" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await screen.findByTestId('price-piece')).toBeTruthy();
+    expect(screen.getByTestId('price-piece-image').props.source).toEqual([mockThumbnail]);
+  });
+
+  it('a user who picks Free on the price step still sees the piece card, with the frame of their video as its cover, above the Free card', async () => {
+    draft.setFormat('video');
+    draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+    const first = await open();
+    await fireEvent.press(await screen.findByTestId('preview-drop'));
+    await land();
+    await screen.findByTestId('preview-look');
+    await first.unmount();
+
+    details.setDetails({ title: 'Launch day', description: 'The whole day.', category: 'entertainment_creative', accessType: 'free' });
+    servePrices();
+    await renderFrame(<PriceScreen format="video" onBack={jest.fn()} onSent={jest.fn()} />);
+    expect(await screen.findByTestId('price-free')).toBeTruthy();
+    expect(screen.getByText('Free for everyone')).toBeTruthy();
+    expect(screen.getByTestId('price-piece')).toBeTruthy();
+    expect(screen.getByText('Launch day')).toBeTruthy();
+    expect(screen.getByTestId('price-piece-image').props.source).toEqual([mockThumbnail]);
   });
 });

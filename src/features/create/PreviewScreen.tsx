@@ -79,7 +79,11 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
       // A video is drawn as a frame of itself. It is read before the upload, because the phone's own copy of the file goes once the
       // upload has settled; a file with no readable frame gives null (never an error, never a long wait) and keeps the icon.
       const frame = await frameFor(file);
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        // The person left (Back, or another pick) before the upload began, so `uploadFile` will never settle for this file: its copy on the phone goes now.
+        file.discard?.();
+        return;
+      }
       const uploaded = await uploadFile(file, { folder: 'content/preview', format }, (share) => setStage((s) => (s.state === 'uploading' ? { ...s, share } : s)), controller.signal);
       if (controller.signal.aborted) return;
       setPreview({ ...uploaded, ...(pages ? { pages } : {}), ...(frame ? { frame } : {}) });

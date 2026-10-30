@@ -10,6 +10,7 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { CreateFrame } from '@/features/create/CreateFrame';
+import { rowPicture } from '@/features/feed/model';
 import { kindIcon } from '@/features/me/model';
 import { font, space, useWawu } from '@/theme';
 
@@ -98,7 +99,8 @@ function PurchaseRow({ entry, line, onOpen }: { entry: PurchaseEntry; line: stri
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);
   const piece = entry.kind === 'content_unlock' ? entry.content : null;
-  const picture = piece?.thumbnailUrl && !broken ? piece.thumbnailUrl : null;
+  // The Hub's thumbnail is the piece's public file: a clip or a PDF for most kinds, which is never handed to Image (it would be fetched to fail).
+  const picture = broken || !piece ? null : rowPicture(piece.contentType, piece.thumbnailUrl);
   const glyph = entry.kind === 'content_unlock' ? kindIcon(piece?.contentType ?? 'video') : KIND_ICONS[entry.kind];
   const target = onOpen ? targetOf(entry) : null;
   const action = target ? actionOf(entry) : null;
@@ -107,9 +109,11 @@ function PurchaseRow({ entry, line, onOpen }: { entry: PurchaseEntry; line: stri
     <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
         {picture ? (
-          <Image source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+          <Image testID="purchase-thumb-image" source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
         ) : (
-          <Icon name={glyph} size={rowMetrics.mark} color={colors.textMuted} />
+          <View testID="purchase-thumb-mark">
+            <Icon name={glyph} size={rowMetrics.mark} color={colors.textMuted} />
+          </View>
         )}
       </View>
       <View style={styles.words}>

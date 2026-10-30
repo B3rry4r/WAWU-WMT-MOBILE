@@ -155,7 +155,7 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   return (
     <CreateFrame testID="price-screen" title={`New ${labelOf(format)}`} subtitle="Step 5 of 5" onLeave={onBack} foot={foot}>
       <Stepper active={3} />
-      {!free && full && preview ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview} /> : null}
+      {full && preview ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview} /> : null}
       <SegmentedTabs
         testID="price-mode"
         label="Paid or free"
@@ -209,7 +209,7 @@ function NoteLine() {
   );
 }
 
-/** The piece as a buyer will meet it: its cover (the preview, when that is a picture, or a frame of it when it is a video), its title, and what was uploaded. */
+/** The piece as a buyer will meet it: its cover (the preview, when that is a picture, or a frame of it when it is a video), its title, and what was uploaded. Paid or free: the card is the piece, not the price. */
 function PieceCard({ format, title, meta, cover }: { format: FormatId; title: string; meta: string; cover: UploadedFile }) {
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);

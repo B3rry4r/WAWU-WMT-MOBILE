@@ -183,7 +183,8 @@ describe('M24 · Price and M37 · Free piece', () => {
     expect(screen.getByText('Anyone can open it. Fans can still tip.')).toBeTruthy();
     expect(screen.getByText('Free pieces count toward your uploads.')).toBeTruthy();
     expect(screen.queryByTestId('price-input')).toBeNull();
-    expect(screen.queryByTestId('price-piece')).toBeNull();
+    // PREVIEWS-APP (lead brief, rank 5): the piece card is the piece, not the price, so a free piece shows it too (this line asserted it away).
+    expect(screen.getByTestId('price-piece')).toBeTruthy();
     expect(screen.queryByTestId('price-note')).toBeNull();
     expect(send().props.accessibilityState.disabled).toBe(false);
 

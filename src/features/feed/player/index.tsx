@@ -50,7 +50,7 @@ function moveTo(player: VideoPlayer, to: number) {
 }
 
 /** H2 and H5: a video that fills the frame. */
-export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, testID }: VideoSurfaceProps) {
+export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, onFirstFrame, testID }: VideoSurfaceProps) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = false;
     p.timeUpdateEventInterval = TICK_SECONDS;
@@ -89,6 +89,7 @@ export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, tes
       contentFit="cover"
       allowsPictureInPicture={false}
       playsInline
+      onFirstFrameRender={onFirstFrame}
       // A texture view, not the default surface: it can be blurred and scaled, and it sits in a paged list.
       surfaceType="textureView"
       style={frosted ? [styles.fill, styles.frost] : styles.fill}

@@ -18,6 +18,8 @@ export type VideoSurfaceProps = PlayerEvents & {
   seek: SeekRequest;
   /** Blur the frame (the preview ended, H5). */
   frosted: boolean;
+  /** The first picture of the file is on screen (a post draws the kind's mark until then, never an empty box). */
+  onFirstFrame?: () => void;
   testID?: string;
 };
 

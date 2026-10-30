@@ -24,6 +24,8 @@ export type ContentRowModel = {
   /** "Kemi Okafor · PDF", or just "PDF" when the Hub did not name the creator. */
   byline: string;
   thumb: string | null;
+  /** The kind of piece (`contentRows` always sets it): a row draws `thumb` only when its file is a picture, and the kind's mark otherwise. */
+  kind?: SearchContent['contentType'];
   /** Paid and not bought: the picture is blurred and carries a lock. */
   locked: boolean;
   /** The price in kobo for a paid piece; null for a free one (the row says Free). */
@@ -39,6 +41,7 @@ export function contentRows(items: readonly SearchContent[], people: ReadonlyMap
       title: piece.title,
       byline: who ? `${who} · ${kind}` : kind,
       thumb: piece.previewAssetUrl ? piece.previewAssetUrl : null,
+      kind: piece.contentType,
       locked: piece.fullAssetLocked,
       priceKobo: piece.accessType === 'paid' ? nairaToKobo(piece.price) : null,
     };
