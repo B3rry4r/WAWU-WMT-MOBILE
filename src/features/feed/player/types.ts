@@ -25,5 +25,7 @@ export type AudioSourceProps = PlayerEvents & {
   uri: string;
   playing: boolean;
   seek: SeekRequest;
+  /** The piece's name, shown on the phone's lock screen and notification while it plays (the web build ignores it). */
+  title?: string;
   testID?: string;
 };

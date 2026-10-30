@@ -110,6 +110,7 @@ export function AudioPost(props: PostProps) {
             uri={uri}
             playing={playing}
             seek={seek}
+            title={item.title}
             onTime={(position, length) => setTime({ position, length })}
             onEnded={() => setPaused(true)}
             testID={`audio-${item.id}`}

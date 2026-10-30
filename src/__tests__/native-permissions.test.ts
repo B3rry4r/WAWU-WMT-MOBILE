@@ -11,6 +11,13 @@
  * are not a library's default sentence (ours won); and no permission the code under `src/` needs is blocked. A new Expo module
  * that asks for a permission this file does not know fails until it is added to `NEEDS`.
  *
+ * NATIVE-FIX (30 Oct 2026) adds the rest of what the one store build must carry, so none of it can be dropped by a later `app.json`
+ * edit: the iPhone `audio` background mode (UIBackgroundModes) and the Android media-playback foreground service permissions, so what a
+ * person listens to keeps playing when the screen locks (R-115); `ITSAppUsesNonExemptEncryption` false, so TestFlight does not stop
+ * on the export question; and the app-level privacy manifest with the four required-reason categories Apple asks for. The manifest is
+ * written by a build step the introspect does not run, so it is read from `ios.privacyManifests` and checked through Expo's own
+ * `mergePrivacyInfo`, the function that writes `PrivacyInfo.xcprivacy`.
+ *
  * To run the same check on another project folder (for example an old `app.json` in a copy of this project): set
  * NATIVE_PERMS_ROOT to that folder.
  */
@@ -23,6 +30,17 @@ const projectRoot = process.env.NATIVE_PERMS_ROOT ? path.resolve(process.env.NAT
 
 const RECORD_AUDIO = 'android.permission.RECORD_AUDIO';
 const CAMERA = 'android.permission.CAMERA';
+const FOREGROUND_SERVICE = 'android.permission.FOREGROUND_SERVICE';
+const FOREGROUND_SERVICE_MEDIA_PLAYBACK = 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK';
+/** The permissions background listening needs on Android (R-115): the media-playback foreground service and its type. */
+const BACKGROUND_AUDIO_ANDROID = [FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK] as const;
+/** The required-reason API categories the app's privacy manifest declares, and the reason code for each (Apple's list). */
+export const PRIVACY_CATEGORIES: Record<string, string> = {
+  NSPrivacyAccessedAPICategoryUserDefaults: 'CA92.1',
+  NSPrivacyAccessedAPICategoryFileTimestamp: 'C617.1',
+  NSPrivacyAccessedAPICategoryDiskSpace: 'E174.1',
+  NSPrivacyAccessedAPICategorySystemBootTime: '35F9.1',
+};
 const REQUIRED_IOS = ['NSMicrophoneUsageDescription', 'NSCameraUsageDescription', 'NSPhotoLibraryUsageDescription'] as const;
 
 /** The sentences the Expo plugins write when `app.json` gives them no text. Seeing one means our own text lost. */
@@ -33,8 +51,10 @@ const LIBRARY_DEFAULTS = [
 ];
 
 type UsesPermission = { $?: Record<string, string> };
+type PrivacyManifests = { NSPrivacyAccessedAPITypes?: { NSPrivacyAccessedAPIType?: unknown; NSPrivacyAccessedAPITypeReasons?: unknown }[] };
 export type Introspected = {
   android?: { blockedPermissions?: string[] };
+  ios?: { privacyManifests?: PrivacyManifests };
   _internal?: {
     modResults?: {
       android?: { manifest?: { manifest?: Record<string, UsesPermission[] | undefined> } };
@@ -105,6 +125,35 @@ export function manifestPermissions(config: Introspected): { present: Set<string
   return { present, removed };
 }
 
+/**
+ * Expo's own merge writes `PrivacyInfo.xcprivacy` from `ios.privacyManifests`. Run on the config, it is the file's contents: every
+ * category in `PRIVACY_CATEGORIES` must be in it with its reason, and every entry must be the shape Expo's schema gives (a string
+ * category and a list of string reasons, nothing else).
+ */
+export function privacyManifestProblems(manifests: PrivacyManifests | undefined): string[] {
+  if (!manifests || !Array.isArray(manifests.NSPrivacyAccessedAPITypes) || manifests.NSPrivacyAccessedAPITypes.length === 0) {
+    return ['iOS: ios.privacyManifests is missing, so the build has no app-level privacy manifest (PrivacyInfo.xcprivacy)'];
+  }
+  const problems: string[] = [];
+  for (const entry of manifests.NSPrivacyAccessedAPITypes) {
+    const reasons = entry.NSPrivacyAccessedAPITypeReasons;
+    const keys = Object.keys(entry).sort().join(',');
+    if (typeof entry.NSPrivacyAccessedAPIType !== 'string' || !Array.isArray(reasons) || reasons.some((r) => typeof r !== 'string') || keys !== 'NSPrivacyAccessedAPIType,NSPrivacyAccessedAPITypeReasons') {
+      problems.push(`iOS: a privacy manifest entry is not {NSPrivacyAccessedAPIType: string, NSPrivacyAccessedAPITypeReasons: string[]}: ${JSON.stringify(entry)}`);
+    }
+  }
+  if (problems.length > 0) return problems;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { mergePrivacyInfo } = require('@expo/config-plugins/build/ios/PrivacyInfo') as { mergePrivacyInfo: (existing: object, manifests: PrivacyManifests) => { NSPrivacyAccessedAPITypes: { NSPrivacyAccessedAPIType: string; NSPrivacyAccessedAPITypeReasons: string[] }[] } };
+  const written = mergePrivacyInfo({}, manifests).NSPrivacyAccessedAPITypes;
+  for (const [category, reason] of Object.entries(PRIVACY_CATEGORIES)) {
+    const found = written.find((entry) => entry.NSPrivacyAccessedAPIType === category);
+    if (!found) problems.push(`iOS: the privacy manifest does not declare ${category}`);
+    else if (!found.NSPrivacyAccessedAPITypeReasons.includes(reason)) problems.push(`iOS: the privacy manifest declares ${category} without the reason ${reason}`);
+  }
+  return problems;
+}
+
 /** Every reason this build cannot ask for what the app's code needs. An empty list is a pass. */
 export function permissionProblems(config: Introspected, needs: ReturnType<typeof codeNeeds>): string[] {
   const problems: string[] = [];
@@ -115,6 +164,14 @@ export function permissionProblems(config: Introspected, needs: ReturnType<typeo
     if (removed.has(permission)) problems.push(`Android: ${permission} is blocked (tools:node="remove"); a plugin option such as microphonePermission: false or cameraPermission: false does this`);
     else if (!present.has(permission)) problems.push(`Android: ${permission} is not in the manifest`);
   }
+  for (const permission of BACKGROUND_AUDIO_ANDROID) {
+    if (removed.has(permission)) problems.push(`Android: ${permission} is blocked (tools:node="remove"); a piece the person listens to would stop when the screen locks`);
+    else if (!present.has(permission)) problems.push(`Android: ${permission} is not in the manifest; enableBackgroundPlayback on expo-audio is off, so a piece stops when the screen locks`);
+  }
+  const backgroundModes = plist.UIBackgroundModes;
+  if (!Array.isArray(backgroundModes) || !backgroundModes.includes('audio')) problems.push('iOS: UIBackgroundModes does not contain audio; enableBackgroundPlayback on expo-audio is off, so a piece stops when the screen locks');
+  if (plist.ITSAppUsesNonExemptEncryption !== false) problems.push('iOS: ITSAppUsesNonExemptEncryption is not false (ios.config.usesNonExemptEncryption), so every iPhone build waits on the export question');
+  problems.push(...privacyManifestProblems(config.ios?.privacyManifests));
   for (const key of REQUIRED_IOS) {
     const value = plist[key];
     if (typeof value !== 'string' || value.trim() === '') problems.push(`iOS: ${key} is missing or empty in Info.plist`);
@@ -160,11 +217,16 @@ describe('native permissions (the build that expo prebuild would make)', () => {
   });
 
   describe('the check itself, on the shapes a build can have', () => {
-    const config = (over: { permissions?: UsesPermission[]; plist?: Record<string, unknown>; blocked?: string[] } = {}): Introspected => ({
+    const goodPermissions = (): UsesPermission[] => [RECORD_AUDIO, CAMERA, 'android.permission.USE_BIOMETRIC', ...BACKGROUND_AUDIO_ANDROID].map((name) => ({ $: { 'android:name': name } }));
+    const goodManifests = (): PrivacyManifests => ({
+      NSPrivacyAccessedAPITypes: Object.entries(PRIVACY_CATEGORIES).map(([NSPrivacyAccessedAPIType, reason]) => ({ NSPrivacyAccessedAPIType, NSPrivacyAccessedAPITypeReasons: [reason] })),
+    });
+    const config = (over: { permissions?: UsesPermission[]; plist?: Record<string, unknown>; blocked?: string[]; manifests?: PrivacyManifests | null } = {}): Introspected => ({
       android: { blockedPermissions: over.blocked ?? [] },
+      ios: over.manifests === null ? {} : { privacyManifests: over.manifests ?? goodManifests() },
       _internal: {
         modResults: {
-          android: { manifest: { manifest: { 'uses-permission': over.permissions ?? [{ $: { 'android:name': RECORD_AUDIO } }, { $: { 'android:name': CAMERA } }, { $: { 'android:name': 'android.permission.USE_BIOMETRIC' } }] } } },
+          android: { manifest: { manifest: { 'uses-permission': over.permissions ?? goodPermissions() } } },
           ios: {
             infoPlist: over.plist ?? {
               NSMicrophoneUsageDescription: 'Allow $(PRODUCT_NAME) to use your microphone to record your voice.',
@@ -173,6 +235,8 @@ describe('native permissions (the build that expo prebuild would make)', () => {
               NSPhotoLibraryAddUsageDescription: 'Allow $(PRODUCT_NAME) to save a picture to your photos.',
               NSFaceIDUsageDescription: 'Allow $(PRODUCT_NAME) to use Face ID.',
               NSCalendarsWriteOnlyAccessUsageDescription: 'Allow $(PRODUCT_NAME) to add an event.',
+              UIBackgroundModes: ['audio'],
+              ITSAppUsesNonExemptEncryption: false,
             },
           },
         },
@@ -200,6 +264,45 @@ describe('native permissions (the build that expo prebuild would make)', () => {
       expect(permissionProblems(config({ plist: emptyText }), needs).join('\n')).toContain('NSMicrophoneUsageDescription is missing or empty');
       const defaulted = { ...emptyText, NSMicrophoneUsageDescription: 'Allow $(PRODUCT_NAME) to access your microphone' };
       expect(permissionProblems(config({ plist: defaulted }), needs).join('\n')).toContain("is a plugin's default sentence");
+    });
+
+    it('NATIVE-FIX: a build without background listening fails, on the iPhone mode and on each Android permission', () => {
+      const plist = (config().ios && config()._internal?.modResults?.ios?.infoPlist) as Record<string, unknown>;
+      expect(permissionProblems(config({ plist: { ...plist, UIBackgroundModes: [] } }), needs).join('\n')).toContain('UIBackgroundModes does not contain audio');
+      const { UIBackgroundModes: _gone, ...noModes } = plist;
+      expect(permissionProblems(config({ plist: noModes }), needs).join('\n')).toContain('UIBackgroundModes does not contain audio');
+      for (const permission of BACKGROUND_AUDIO_ANDROID) {
+        const without = goodPermissions().filter((entry) => entry.$?.['android:name'] !== permission);
+        expect(permissionProblems(config({ permissions: without }), needs).join('\n')).toContain(`${permission} is not in the manifest`);
+        expect(permissionProblems(config({ blocked: [permission] }), needs).join('\n')).toContain(`${permission} is blocked`);
+      }
+    });
+
+    it('NATIVE-FIX: a build without the encryption answer, or with the wrong one, fails', () => {
+      const plist = config()._internal?.modResults?.ios?.infoPlist as Record<string, unknown>;
+      const { ITSAppUsesNonExemptEncryption: _gone, ...without } = plist;
+      expect(permissionProblems(config({ plist: without }), needs).join('\n')).toContain('ITSAppUsesNonExemptEncryption is not false');
+      expect(permissionProblems(config({ plist: { ...plist, ITSAppUsesNonExemptEncryption: true } }), needs).join('\n')).toContain('ITSAppUsesNonExemptEncryption is not false');
+    });
+
+    it('NATIVE-FIX: a build without the privacy manifest, a category, a reason, or a well-formed entry fails; the four categories carry Apple\'s reasons', () => {
+      expect(PRIVACY_CATEGORIES).toEqual({
+        NSPrivacyAccessedAPICategoryUserDefaults: 'CA92.1',
+        NSPrivacyAccessedAPICategoryFileTimestamp: 'C617.1',
+        NSPrivacyAccessedAPICategoryDiskSpace: 'E174.1',
+        NSPrivacyAccessedAPICategorySystemBootTime: '35F9.1',
+      });
+      expect(privacyManifestProblems(goodManifests())).toEqual([]);
+      expect(permissionProblems(config({ manifests: null }), needs).join('\n')).toContain('ios.privacyManifests is missing');
+      expect(privacyManifestProblems({ NSPrivacyAccessedAPITypes: [] }).join('\n')).toContain('ios.privacyManifests is missing');
+      for (const category of Object.keys(PRIVACY_CATEGORIES)) {
+        const without = { NSPrivacyAccessedAPITypes: goodManifests().NSPrivacyAccessedAPITypes!.filter((entry) => entry.NSPrivacyAccessedAPIType !== category) };
+        expect(privacyManifestProblems(without).join('\n')).toContain(`does not declare ${category}`);
+        const wrong = { NSPrivacyAccessedAPITypes: goodManifests().NSPrivacyAccessedAPITypes!.map((entry) => (entry.NSPrivacyAccessedAPIType === category ? { ...entry, NSPrivacyAccessedAPITypeReasons: ['0000.0'] } : entry)) };
+        expect(privacyManifestProblems(wrong).join('\n')).toContain(`${category} without the reason ${PRIVACY_CATEGORIES[category]}`);
+      }
+      expect(privacyManifestProblems({ NSPrivacyAccessedAPITypes: [{ NSPrivacyAccessedAPIType: 'x', NSPrivacyAccessedAPITypeReasons: 'CA92.1' }] }).join('\n')).toContain('is not {NSPrivacyAccessedAPIType: string');
+      expect(privacyManifestProblems({ NSPrivacyAccessedAPITypes: [{ NSPrivacyAccessedAPIType: 'x', NSPrivacyAccessedAPITypeReasons: ['CA92.1'], extra: 1 } as never] }).join('\n')).toContain('is not {NSPrivacyAccessedAPIType: string');
     });
 
     it('fails a module that asks for a permission nobody mapped', () => {
