@@ -168,7 +168,8 @@ describe('M19 to E21 · hosting needs a tier', () => {
   it('a person with a tier sees the products meter on Create, and Event opens the form', async () => {
     hub.tier = 'active';
     await renderRouter(routes, { initialUrl: '/create' });
-    expect(await screen.findByTestId('create-products')).toHaveAccessibleName('2 of 3 products. Verify · ends 26 Nov');
+    // Lead ruling (BATCH-1030, R-110 item 2, owner 30 Oct 2026): the meter says "Until" while a tier is active, so the name is "Verify. Until 26 Nov".
+    expect(await screen.findByTestId('create-products')).toHaveAccessibleName('2 of 3 products. Verify. Until 26 Nov');
     await fireEvent.press(screen.getByTestId('create-tile-event'));
     expect(await screen.findByTestId('host-name')).toBeTruthy();
     expect(screen.queryByTestId('host-gate')).toBeNull();

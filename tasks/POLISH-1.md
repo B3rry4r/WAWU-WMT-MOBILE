@@ -40,6 +40,10 @@ As of 30 Oct 2026, built by a Sonnet builder (T1), mobile `wmt/POLISH-1` on `ori
 - `library/__tests__/library.test.tsx`: the line matches /^(Until|Ends) /.
 - Code: `productsMeterRenewal` (`ProductsMeter.tsx`) returns "Until" for `active`; names and test ids are unchanged.
 
+### Patch r2 (lead, in the batch)
+- Lead ruling of 30 Oct 2026 (R-110 item 2, owner): `events/host/__tests__/hostTier.route.test.tsx`, "a person with a tier sees the products meter on Create, and Event opens the form": the expected accessible name reads "2 of 3 products. Verify. Until 26 Nov" (it read "2 of 3 products. Verify · ends 26 Nov"). Patch r1 changed the meter's words and missed this one assertion. Nothing else in that file changed.
+- Comment only: `create/UploadsMeter.tsx` no longer quotes the old "Verify · ends 26 Nov" line.
+
 ### Where the floating buttons stand
 The theme button (R-99) moved from above Create to Create's left on the same line (right edge at Create's left edge less 12; centres on one line); with no Create (Wallet, a non-creator) it takes Create's place. The zone is one row high, so the room under every tab's last block is Create's top plus 16 clear: 90 above the bar for a creator, 83 for anyone else (`src/components/floating.ts`, `useFloatingRoom`). Today, Explore, Inbox (Create only), Me and Wallet use it. Home's Following and For you feed is a full-bleed pager with no scroll content to pad, and is unchanged.
 
