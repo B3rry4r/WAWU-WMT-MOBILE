@@ -29,7 +29,7 @@ import { fetchFileQuote, uploadRecording, type FileQuote } from './fileToolApi';
 import { DUB_WORDS, dubLanguages, FILE_WORDS, folderFor, isDubbing, limitsLine, readCues, refusalFor, subtitleFileName, typeOfRecording, acceptedTypes } from './fileToolModel';
 import { RecordingBox, SubtitlesCard, TranscriptCard, type Recording } from './FileParts';
 import { LengthRow, PhotoRow, ShapeRow, VoiceRow as SpeechRow } from './MediaInputs';
-import { defaultShape, isTalking, lengthsOf, MEDIA_WORDS, shapesOf } from './mediaToolModel';
+import { defaultShape, isTalking, lengthsOf, MEDIA_WORDS, shapesOf, thingOf, workingTitleFor } from './mediaToolModel';
 import type { AiPiece } from './mediaToolApi';
 import { putPieceInDraft } from './pieceFlow';
 import { DoneCard, ResultMedia } from './ResultView';
@@ -663,11 +663,11 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
           rowPrefix="tool-language"
         />
       ) : null}
-      {view === 'working' ? <Working name={tool.name} body={dubbing ? DUB_WORDS.workingBody : kind === 'video' ? MEDIA_WORDS.workingLong : TOOL_WORDS.workingBody} /> : null}
+      {view === 'working' ? <Working title={workingTitleFor(tool)} body={dubbing ? DUB_WORDS.workingBody : kind === 'video' ? MEDIA_WORDS.workingLong : TOOL_WORDS.workingBody} /> : null}
       {view === 'done' && job.data && hasResult(job.data) ? (
         <View style={styles.done}>
           {doneMedia ? (
-            <ResultMedia file={doneMedia} name={tool.name} />
+            <ResultMedia file={doneMedia} name={thingOf(tool)} />
           ) : job.data.audioUrl ? (
             <ResultPlayer testID="tool-player" uri={job.data.audioUrl} name={tool.name} />
           ) : (
@@ -696,7 +696,7 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
             <DoneCard
               owner={owner}
               job={job.data}
-              toolName={tool.name}
+              toolName={thingOf(tool)}
               creator={creator}
               onUse={job.data.audioUrl ? () => setPicking(true) : undefined}
               onPiece={openPiece}
@@ -828,12 +828,12 @@ function VoiceRow({ voice, on, onPress, testID }: { voice: AiTool['voices'][numb
   );
 }
 
-function Working({ name, body }: { name: string; body: string }) {
+function Working({ title, body }: { title: string; body: string }) {
   return (
     <View testID="tool-working" accessibilityLiveRegion="polite" style={styles.working}>
       <IconTile icon="Loader" tone="accent" size={WORKING.mark} />
       <Text variant="body" accessibilityRole="header" style={[font(700), styles.workingTitle, { fontSize: WORKING.title, lineHeight: WORKING.title * WORKING.titleLeading, letterSpacing: WORKING.titleTracking * WORKING.title }]}>
-        {TOOL_WORDS.workingTitle(name)}
+        {title}
       </Text>
       <Text variant="body" tone="textSecondary" style={[styles.workingBody, { fontSize: WORKING.body, lineHeight: WORKING.body * WORKING.bodyLeading }]}>
         {body}

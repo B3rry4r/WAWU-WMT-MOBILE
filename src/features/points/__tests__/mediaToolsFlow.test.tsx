@@ -415,9 +415,10 @@ async function toTool(id: string, url = `/studio-tool?tool=${id}`) {
 const describe_ = async (words: string) => {
   await fireEvent.changeText(await screen.findByTestId('tool-text'), words);
 };
-async function runAndFinish() {
+async function runAndFinish(title?: string) {
   await fireEvent.press(screen.getByTestId('tool-run'));
   await screen.findByTestId('tool-working');
+  if (title) expect(screen.getByText(title)).toBeTruthy();
   await sleep(2100);
 }
 /** The phone's picker hands back a photo and the app uploads it; resolves when the photo row says it is ready. */
@@ -464,6 +465,9 @@ describe('PT2 · Make an image', () => {
     await fireEvent.press(screen.getByTestId('tool-shape-9:16'));
     await fireEvent.press(screen.getByTestId('tool-run'));
     await screen.findByTestId('tool-working');
+    // The working title names the thing made, not the tool's verb phrase.
+    expect(screen.getByText('Making your image')).toBeTruthy();
+    expect(screen.queryByText(/Making your Make/)).toBeNull();
     expect(hub.posts).toHaveLength(1);
     expect(hub.posts[0].body).toEqual({ prompt: 'A red door in a blue wall', shape: '9:16', quoteToken: 'job-image_per_use-100' });
     expect(hub.posts[0].key).toMatch(/^[A-Za-z0-9_-]{8,128}$/);
@@ -539,7 +543,7 @@ describe('POINTS-13 · the done view of a picture', () => {
     const piece = await screen.findByTestId('result-piece');
     const save = screen.getByTestId('result-save');
     const download = screen.getByTestId('result-download');
-    expect(piece).toHaveAccessibleName('Make it a piece. Into Create, as an image');
+    expect(piece).toHaveAccessibleName('Make it a piece. Into Create, as an image piece');
     const all = screen.getAllByTestId(/^(result-piece|result-save|result-download|tool-used)$/);
     expect(all.map((x) => x.props.testID)).toEqual(['result-piece', 'result-save', 'result-download', 'tool-used']);
     // The piece row is the tallest part and Download the smallest: their styles say so.
@@ -547,6 +551,8 @@ describe('POINTS-13 · the done view of a picture', () => {
     const flat = (node: { props: { style?: unknown } }) => Object.assign({}, ...[styleOf(node)].flat(4).filter(Boolean)) as { minHeight?: number; fontSize?: number };
     expect(flat(piece).minHeight).toBeGreaterThan(64);
     expect(screen.getByTestId('result-download')).toHaveTextContent('Download');
+    expect(screen.getByTestId('result-download')).toHaveAccessibleName('Download your image');
+    expect(screen.getByTestId('result-picture')).toHaveAccessibleName('Your image. View larger');
     expect(save).toBeTruthy();
     expect(download).toBeTruthy();
     expect(screen.queryByTestId('result-use')).toBeNull();
@@ -652,7 +658,7 @@ describe('PT2 · Edit a photo', () => {
     expect(hub.presigns).toEqual([{ folder: 'ai/input-image', contentType: 'image/jpeg', extension: 'jpg', contentLength: 3000 }]);
     expect(hub.puts).toEqual([{ url: 'https://upload.test/1', type: 'image/jpeg', size: 3000 }]);
     await screen.findByTestId('tool-cost');
-    await runAndFinish();
+    await runAndFinish('Editing your photo');
     expect(hub.posts[0].body).toEqual({ prompt: 'Make the sky orange', shape: '1:1', photoKey: 'ai/input-image/k1', quoteToken: 'job-photo_edit_per_use-100' });
     await screen.findByTestId('result-picture');
     expect(screen.getByTestId('tool-original')).toBeTruthy();
@@ -713,6 +719,7 @@ describe('PT2 · Make a video', () => {
     await waitFor(() => expect(screen.getByTestId('tool-cost')).toHaveTextContent('This uses 1,000 points'));
     await fireEvent.press(screen.getByTestId('tool-run'));
     await screen.findByTestId('tool-working');
+    expect(screen.getByText('Making your video')).toBeTruthy();
     expect(screen.getByText(/You can leave this screen. We will tell you when it is ready./)).toBeTruthy();
     expect(hub.posts[0].body).toEqual({ prompt: 'A red ball rolls across a table', shape: '9:16', seconds: 4, quoteToken: 'job-video_per_sec-1000' });
     // The person leaves; the tool opened again finds the running job and sends no second request.
@@ -788,7 +795,7 @@ describe('PT2 · Talking photo', () => {
     await waitFor(() => expect(screen.getByTestId('tool-voice-state')).toHaveTextContent('Your voice runs 12 seconds'));
     expect(hub.presigns[1]).toMatchObject({ folder: 'ai/input-audio', contentType: 'audio/mpeg' });
     await waitFor(() => expect(screen.getByTestId('tool-cost')).toHaveTextContent('This uses 2,400 points'));
-    await runAndFinish();
+    await runAndFinish('Making your talking photo');
     expect(hub.posts[0].body).toEqual({ photoKey: 'ai/input-image/k1', audioKey: 'ai/input-audio/k2', quoteToken: 'job-talking_photo_per_sec-2400' });
     await screen.findByTestId('result-video');
   });

@@ -45,7 +45,7 @@ export const MEDIA_WORDS = {
   closeLarger: 'Close',
   workingLong: 'This takes a few minutes. You can leave this screen. We will tell you when it is ready.',
   videoUnavailable: "This video can't play here.",
-  playVideo: (name: string) => `Play ${name}`,
+  playVideo: (thing: string) => `Play your ${thing}`,
   seconds: (n: number) => `${n} second${n === 1 ? '' : 's'}`,
   speechLine: (seconds: number) => `Your voice runs ${seconds} second${seconds === 1 ? '' : 's'}`,
   photoNote: (name: string, bytes: number) => `${name}, ${formatBytes(bytes)}`,
@@ -54,13 +54,15 @@ export const MEDIA_WORDS = {
 /** The done view of every tool: "Make it a piece" first and big, Save, "Use in a product", and a quiet Download (POINTS-13, R-109). */
 export const RESULT_WORDS = {
   pieceTitle: 'Make it a piece',
-  pieceLine: (format: string) => `Into Create, as ${/^[aeiou]/i.test(format) ? 'an' : 'a'} ${format}`,
+  /** "Into Create, as a video piece", "as an audio piece", "as an image piece". */
+  pieceLine: (format: string) => `Into Create, as ${/^[aeiou]/i.test(format) ? 'an' : 'a'} ${format} piece`,
   pieceWorking: 'Getting it ready',
   piecePickTitle: 'Which one?',
   pieceFailedTitle: "We couldn't open it in Create",
   pieceFailed: 'Try again in a moment.',
   pieceCancel: 'Cancel',
   download: 'Download',
+  downloadLabel: (thing: string) => `Download your ${thing}`,
   downloadPick: 'Download which one?',
   downloading: (share: number | null) => (share === null ? 'Downloading' : `Downloading ${Math.round(share * 100)}%`),
   cancel: 'Cancel',
@@ -71,6 +73,22 @@ export const RESULT_WORDS = {
   savedToPhotos: 'Saved to your photos.',
   started: 'Your download has started.',
 } as const;
+
+/**
+ * What each picture and video tool is called inside a sentence. The Hub names the tool by what a person does ("Make an image", "Edit a photo"),
+ * which reads wrong after "Making your" or "Download", so a sentence uses the thing it makes. A tool not listed here is a noun already
+ * (VoiceOver, Quick voice, Dubbing) and keeps its name in the board's words.
+ */
+const TOOL_THINGS: Record<string, { making: string; noun: string }> = {
+  image: { making: 'Making your image', noun: 'image' },
+  'photo-edit': { making: 'Editing your photo', noun: 'photo' },
+  video: { making: 'Making your video', noun: 'video' },
+  'talking-photo': { making: 'Making your talking photo', noun: 'talking photo' },
+};
+/** The working view's title (PT2a): "Making your image", "Editing your photo"; the older tools keep "Making your {name}". */
+export const workingTitleFor = (tool: { id: string; name: string }): string => TOOL_THINGS[tool.id]?.making ?? `Making your ${tool.name}`;
+/** What a screen reader and a link call the result: "image", "talking photo"; the older tools keep their name. */
+export const thingOf = (tool: { id: string; name: string }): string => TOOL_THINGS[tool.id]?.noun ?? tool.name;
 
 /** What a shape reads as. The Hub lists ratios ("1:1"); a person reads Square, Portrait, Tall, Wide. A ratio this map does not know is shown as the ratio. */
 const SHAPE_NAMES: Record<string, string> = { '1:1': 'Square', '4:5': 'Portrait', '9:16': 'Tall', '16:9': 'Wide' };

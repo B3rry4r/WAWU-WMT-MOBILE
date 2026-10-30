@@ -37,7 +37,7 @@ function ResultPicture({ uri, name }: { uri: string; name: string }) {
       <Pressable
         testID="result-picture"
         accessibilityRole="imagebutton"
-        accessibilityLabel={`${name}. ${MEDIA_WORDS.viewLarger}`}
+        accessibilityLabel={`Your ${name}. ${MEDIA_WORDS.viewLarger}`}
         onPress={() => setOpen(true)}
         {...ring.handlers}
         style={[styles.frame, { backgroundColor: colors.surfaceSunken }, ring.style]}
@@ -300,7 +300,7 @@ function DownloadLink({
         <Pressable
           testID="result-download"
           accessibilityRole="button"
-          accessibilityLabel={`${RESULT_WORDS.download} ${toolName}`}
+          accessibilityLabel={RESULT_WORDS.downloadLabel(toolName)}
           onPress={press}
           hitSlop={{ top: space.md, bottom: space.md, left: space.lg, right: space.lg }}
           {...ring.handlers}
