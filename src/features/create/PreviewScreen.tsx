@@ -65,6 +65,8 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
     if (!rule) return;
     const refusal = refusalFor(file, rule);
     if (refusal) {
+      // A file that is refused is never uploaded, so nothing else lets go of the phone's copy of it.
+      file.discard?.();
       setPreview(null);
       setStage({ state: 'failed', file, share: 0, message: refusal, retry: false });
       return;

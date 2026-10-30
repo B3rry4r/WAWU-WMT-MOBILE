@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_NAME } from '@/components/BrandMark';
 import { Button } from '@/components/Button';
 import { Text } from '@/components/Text';
+import { bufferFor, PLAY_BUFFER, readAhead } from '@/features/feed/player/buffer';
 import { font, layout, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
@@ -68,14 +69,18 @@ export function WelcomeScreen({ onCreateAccount, onSignIn }: WelcomeScreenProps)
   /** The welcome screen stays mounted under the screens pushed on it; its light bar and its video must not outlive its turn on screen. */
   const focused = useIsFocused();
   const player = useVideoPlayer(WELCOME_VIDEO, (p) => {
+    // The same read-ahead rule as the feed's players (`buffer.ts`): two seconds while it is not playing, the documented 20 once it plays.
+    p.bufferOptions = bufferFor(focused);
     p.loop = true;
     p.muted = true;
     p.staysActiveInBackground = false;
     p.showNowPlayingNotification = false;
   });
   useEffect(() => {
-    if (focused) player.play();
-    else player.pause();
+    if (focused) {
+      readAhead(player, PLAY_BUFFER);
+      player.play();
+    } else player.pause();
   }, [player, focused]);
   return (
     <View testID="welcome" style={[styles.root, { backgroundColor: darkColors.surfaceWelcomeVideoBase }]}>

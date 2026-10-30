@@ -1,5 +1,7 @@
 import { createVideoPlayer, type VideoPlayer } from 'expo-video';
 
+import { FRAME_BUFFER, readAhead } from '@/features/feed/player/buffer';
+
 import type { ChosenFile, Frame } from './chosen';
 
 /** How far into the video the frame is read (the first half second skips a fade in), and the longest side of the picture. */
@@ -36,6 +38,8 @@ export async function frameFor(file: Pick<ChosenFile, 'contentType' | 'previewUr
   try {
     const made = createVideoPlayer(uri);
     player = made;
+    // The reader only needs to open the file: it never plays, so it reads two seconds ahead, not the player's stock 50 (`buffer.ts`).
+    readAhead(made, FRAME_BUFFER);
     const read = (async () => {
       await opened(made);
       const at = made.duration > 0 ? Math.min(FRAME_AT_SECONDS, made.duration / 2) : FRAME_AT_SECONDS;

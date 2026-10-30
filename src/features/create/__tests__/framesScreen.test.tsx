@@ -212,6 +212,18 @@ describe('M22 · Preview, a video (Android, from the gallery)', () => {
     expect(ScriptedXhr.last).toBeNull();
     expect(discard).toHaveBeenCalledTimes(1);
   });
+
+  it('a file the step refuses (a type the Hub does not take) leaves no copy behind either: the phone\'s copy is discarded once and nothing uploads', async () => {
+    const discard = jest.fn();
+    const pickFileModule = require('../pickFile') as typeof import('../pickFile');
+    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue({ ...chosen('launch-day.avi', 'video/x-msvideo', 4, { previewUri: GALLERY }), discard });
+    await open();
+    await fireEvent.press(await screen.findByTestId('preview-drop'));
+    expect(await screen.findByTestId('preview-failure')).toBeTruthy();
+    expect(discard).toHaveBeenCalledTimes(1);
+    expect(ScriptedXhr.last).toBeNull();
+    expect(mockReader.calls).toEqual([]);
+  });
 });
 
 describe('M22 · Preview, an image or an audio clip looks exactly as before', () => {

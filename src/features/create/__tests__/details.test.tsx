@@ -121,7 +121,10 @@ describe('M24 · Price and M37 · Free piece', () => {
     hub.answers[`POST ${CREATE}`] = created();
     const calls = await open();
     expect(screen.getByText('Step 5 of 5')).toBeTruthy();
-    expect(send().props.accessibilityState.disabled).toBe(true);
+    // Lead ruling (PREVIEWS-APP round 1, named test fix): this line asserted `disabled` straight after render and raced the answer of
+    // GET /prices, which seeds the list's start price (PriceScreen) and so enables Send. It now waits for the list first.
+    expect((await screen.findByTestId('price-stop-2500')).props.accessibilityState.selected).toBe(true);
+    await waitFor(() => expect(send().props.accessibilityState.disabled).toBe(false));
 
     await pick(3000);
     expect(screen.queryByTestId('price-input')).toBeNull();

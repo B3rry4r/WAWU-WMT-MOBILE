@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 jest.mock('expo-router', () => ({ useIsFocused: () => true }));
@@ -120,9 +120,19 @@ describe('X7 · the Content tab', () => {
     expect(row('photo').getByTestId('search-thumb-mark')).toBeTruthy();
   });
 
-  it('a paid row keeps its lock over the mark, and the row still says what it is and what it costs', async () => {
+  it('a paid row keeps its lock, apart from the kind mark and not over it, and still says what it is and what it costs', async () => {
     await searchContent();
     expect(row('video').getByText('Kemi Okafor · Video')).toBeTruthy();
     expect(row('video').getByTestId('search-thumb-lock')).toBeTruthy();
+    // The lock is not inside the mark's box and does not cover the thumb: it is a small glyph in the corner.
+    expect(rtl.within(row('video').getByTestId('search-thumb-mark')).queryByTestId('search-thumb-lock')).toBeNull();
+    const lock = StyleSheet.flatten(row('video').getByTestId('search-thumb-lock').props.style) as { position?: string; left?: number; bottom?: number };
+    expect(lock.position).toBe('absolute');
+    expect(lock.left).toBeUndefined();
+    expect(lock.bottom).toBeUndefined();
+    // A locked picture keeps the board's centred lock over the blur.
+    const locked = StyleSheet.flatten(row('tplpic').getByTestId('search-thumb-lock').props.style) as { left?: number; right?: number };
+    expect(locked.left).toBe(0);
+    expect(locked.right).toBe(0);
   });
 });

@@ -8,6 +8,7 @@ import { peaksFrom } from '../model';
 import type { AudioSourceProps, PlayerEvents, VideoSurfaceProps } from './types';
 
 export type { AudioSourceProps, SeekRequest, VideoSurfaceProps } from './types';
+export { FRAME_BUFFER, PLAY_BUFFER } from './buffer';
 
 /** The web build plays through the browser's own `<video>` and `<audio>`. */
 export const canPlay = true;

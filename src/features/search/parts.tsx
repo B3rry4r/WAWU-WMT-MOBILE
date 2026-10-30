@@ -47,6 +47,9 @@ export const rowMetrics = {
   /** The kind's mark on a row whose file is not a picture (the other lists draw theirs at 24 to 28). */
   mark: 26,
   lock: 16,
+  /** The lock on a row with no picture: small, in the corner, apart from the kind's mark. */
+  lockCorner: 13,
+  lockInset: 6,
   /** The black over a locked picture, as `cRes` draws it: 25%. */
   price: 14.5,
   room: 52,
@@ -270,9 +273,16 @@ export function ContentRow({ row, testID, onPress }: { row: ContentRowModel; tes
             <Icon name={kindIcon(row.kind ?? 'image')} size={rowMetrics.mark} color={colors.textMuted} />
           </View>
         )}
-        {row.locked ? (
+        {row.locked && picture ? (
+          // The board's lock: centred over the blurred picture.
           <View testID="search-thumb-lock" pointerEvents="none" style={[StyleSheet.absoluteFill, styles.veil, { backgroundColor: colors.mediaBlack25 }]}>
             <Icon name="Lock" size={rowMetrics.lock} color={colors.textOnAccent} />
+          </View>
+        ) : null}
+        {row.locked && !picture ? (
+          // Over a kind mark the lock would read as one muddled glyph: it sits in the corner, as the grid's tiles carry theirs.
+          <View testID="search-thumb-lock" pointerEvents="none" style={styles.lockCorner}>
+            <Icon name="Lock" size={rowMetrics.lockCorner} color={colors.textMuted} />
           </View>
         ) : null}
       </View>
@@ -357,4 +367,5 @@ const styles = StyleSheet.create({
   thumb: { width: rowMetrics.thumb, height: rowMetrics.thumb, borderRadius: rowMetrics.thumbCorner, overflow: 'hidden' },
   veil: { alignItems: 'center', justifyContent: 'center' },
   mark: { alignItems: 'center', justifyContent: 'center' },
+  lockCorner: { position: 'absolute', top: rowMetrics.lockInset, right: rowMetrics.lockInset },
 });
