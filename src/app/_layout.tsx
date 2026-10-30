@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
+import { ErrorScreen } from '@/components/ErrorScreen';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useAcceptanceRetry } from '@/features/about/acceptance';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
@@ -20,6 +21,12 @@ import { useBonusStep } from '@/features/verify/bonusStep';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Expo Router wraps the root layout in this: a screen that throws while it draws shows "Something went wrong" with Try again and Go to Home, and
+ * never a blank screen (WALLET-BLANK, SHARED-CHANGES WALLET-BLANK #1). Inside the tabs the tabs' own boundary catches first and keeps the tab bar.
+ */
+export const ErrorBoundary = ErrorScreen;
 
 /** The longest the saved Theme is waited for before the first screen is drawn (SHARED-05 L1). */
 export const THEME_READ_LIMIT_MS = 3000;
