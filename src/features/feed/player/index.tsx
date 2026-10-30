@@ -1,4 +1,4 @@
-import { useAudioPlayer } from 'expo-audio';
+import { useAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { useVideoPlayer, VideoView, type VideoPlayer } from 'expo-video';
 import { useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
@@ -6,6 +6,8 @@ import { StyleSheet } from 'react-native';
 import { pieceStartedSound } from '@/features/music/pieceSound';
 
 import { metrics } from '../look';
+
+import { holdContentAudio } from './audioMode';
 
 import type { AudioSourceProps, PlayerEvents, SeekRequest, VideoSurfaceProps } from './types';
 
@@ -96,10 +98,34 @@ export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, tes
   );
 }
 
-/** H6: the sound of an audio post. It draws nothing; the post draws the waveform and the buttons. */
-export function AudioSource({ uri, playing, seek, onTime, onEnded }: AudioSourceProps) {
+/** Puts this player on the lock screen (and, on Android, behind the media-playback service that keeps it going past about 3 minutes in the background). */
+function showOnLockScreen(player: AudioPlayer, title: string | undefined) {
+  try {
+    player.setActiveForLockScreen(true, title ? { title } : undefined);
+  } catch {
+    // A phone that will not show the controls still plays the piece.
+  }
+}
+
+function hideFromLockScreen(player: AudioPlayer) {
+  try {
+    player.setActiveForLockScreen(false);
+  } catch {
+    // A player the phone has already let go of has nothing to hide.
+  }
+}
+
+/**
+ * H6: the sound of an audio post. It draws nothing; the post draws the waveform and the buttons.
+ *
+ * R-115: this is every content player's sound (audio pieces, audiobooks, podcasts, Studio results, previews), so it plays in the
+ * content audio mode (`audioMode.ts`): heard with the iPhone's silent switch on and kept going when the screen locks. The mode is
+ * on the phone before `play()`, and let go of when the piece pauses, ends or goes away.
+ */
+export function AudioSource({ uri, playing, seek, onTime, onEnded, title }: AudioSourceProps) {
   const player = useAudioPlayer(uri, { updateInterval: TICK_SECONDS * 1000 });
   const events = useLatest<PlayerEvents>({ onTime, onEnded });
+  const lockScreenTitle = useLatest(title);
   const finished = useRef(false);
 
   useEffect(() => {
@@ -126,17 +152,31 @@ export function AudioSource({ uri, playing, seek, onTime, onEnded }: AudioSource
     }
     // R-99: a piece with sound takes the floor from the WAWU theme.
     pieceStartedSound();
-    // A file that played to its end starts again from the top, whatever the phone's player does at the end.
-    if (finished.current) {
-      finished.current = false;
-      player
-        .seekTo(0)
-        .catch(() => undefined)
-        .finally(() => player.play());
-      return;
-    }
-    player.play();
-  }, [player, playing]);
+    // R-115: the content mode goes on the phone first; a piece that was stopped meanwhile never starts.
+    // Only a piece with a title stays on in the background and shows on the lock screen; a short voice clip stops on background.
+    const named = Boolean(lockScreenTitle.current);
+    const content = holdContentAudio(named);
+    let live = true;
+    void content.ready.then(() => {
+      if (!live) return;
+      if (named) showOnLockScreen(player, lockScreenTitle.current);
+      // A file that played to its end starts again from the top, whatever the phone's player does at the end.
+      if (finished.current) {
+        finished.current = false;
+        player
+          .seekTo(0)
+          .catch(() => undefined)
+          .finally(() => player.play());
+        return;
+      }
+      player.play();
+    });
+    return () => {
+      live = false;
+      if (named) hideFromLockScreen(player);
+      content.release();
+    };
+  }, [player, playing, lockScreenTitle]);
 
   return null;
 }

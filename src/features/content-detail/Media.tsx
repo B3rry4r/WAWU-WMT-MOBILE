@@ -123,7 +123,7 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         ) : null}
         {kind === 'audio' ? (
           <>
-            <AudioSource uri={uri} playing={playing} seek={null} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} testID={`${testID}-audio`} />
+            <AudioSource uri={uri} playing={playing} seek={null} title={piece.title} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} testID={`${testID}-audio`} />
             <Icon name="AudioLines" size={metrics.playDisc} color={colors.textMuted} strokeWidth={ICON_STROKE.fab} />
           </>
         ) : null}
