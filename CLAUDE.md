@@ -70,6 +70,9 @@ any "do it fast".
 9. **The tiered workflow in full** (`docs/WORKFLOW.md`: tiers, bundles, verifier passes
    per tier, at most two rounds, batches, the full check per batch). When a rule and
    speed conflict, the rule wins and the owner is told the time it costs.
+10. **The owner's status page is always current.** After every change that matters to
+    the owner (built, checked, merged, shipped, deployed, a ruling, a blocker, an owner
+    item), the lead republishes the App Status page in the same turn, before telling him.
 
 ## Code
 
