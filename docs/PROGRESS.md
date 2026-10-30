@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 44 | 0 | 0 | 0 |
+| todo | 42 | 0 | 0 | 0 |
 | building | 1 | 0 | 0 | 0 |
-| verifying | 21 | 0 | 0 | 0 |
+| verifying | 23 | 0 | 0 | 0 |
 | review | 239 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -270,6 +270,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AITOOLS-08](../tasks/AITOOLS-08.md) Studio media pipeline, the result into Create, and the listing gate (backend) (You)
 - [AITOOLS-09](../tasks/AITOOLS-09.md) Make an image and Edit a photo (backend) (You)
 - [AITOOLS-10](../tasks/AITOOLS-10.md) Make a video and Talking photo (backend) (You)
+- [AITOOLS-11](../tasks/AITOOLS-11.md) Voice changer, Dialogue and a saved clone of your own voice (backend) (You)
+- [AITOOLS-12](../tasks/AITOOLS-12.md) Music for a video and Split a song (backend) (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
