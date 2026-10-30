@@ -107,16 +107,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to use your camera to take the selfie that opens your wallet.",
-          "microphonePermission": false,
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use your camera for your wallet selfie and to take photos for your work.",
           "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to open your photos so you can choose a profile picture or add photos and videos to your works.",
-          "microphonePermission": false
+          "photosPermission": "Allow $(PRODUCT_NAME) to open your photos so you can choose a profile picture or add photos and videos to your works."
         }
       ],
       [
@@ -147,7 +145,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record your voice for your Voice Intro.",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone to record your voice.",
           "recordAudioAndroid": true,
           "enableBackgroundPlayback": false
         }
