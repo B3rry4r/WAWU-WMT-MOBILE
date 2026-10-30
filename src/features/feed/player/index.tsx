@@ -153,11 +153,13 @@ export function AudioSource({ uri, playing, seek, onTime, onEnded, title }: Audi
     // R-99: a piece with sound takes the floor from the WAWU theme.
     pieceStartedSound();
     // R-115: the content mode goes on the phone first; a piece that was stopped meanwhile never starts.
-    const content = holdContentAudio();
+    // Only a piece with a title stays on in the background and shows on the lock screen; a short voice clip stops on background.
+    const named = Boolean(lockScreenTitle.current);
+    const content = holdContentAudio(named);
     let live = true;
     void content.ready.then(() => {
       if (!live) return;
-      showOnLockScreen(player, lockScreenTitle.current);
+      if (named) showOnLockScreen(player, lockScreenTitle.current);
       // A file that played to its end starts again from the top, whatever the phone's player does at the end.
       if (finished.current) {
         finished.current = false;
@@ -171,7 +173,7 @@ export function AudioSource({ uri, playing, seek, onTime, onEnded, title }: Audi
     });
     return () => {
       live = false;
-      hideFromLockScreen(player);
+      if (named) hideFromLockScreen(player);
       content.release();
     };
   }, [player, playing, lockScreenTitle]);

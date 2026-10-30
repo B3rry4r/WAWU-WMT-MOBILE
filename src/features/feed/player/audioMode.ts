@@ -8,9 +8,10 @@ import { Platform } from 'react-native';
  * - `playsInSilentMode`: a piece the person pressed play on is heard with the iPhone's silent switch on (the phone's default
  *   session obeys the switch and plays nothing). The call is made BEFORE `play()`, and `holdContentAudio().ready` is what the player
  *   waits for.
- * - `shouldPlayInBackground`: the piece keeps playing when the screen locks or the app is left. The binary allows it (`app.json`:
- *   `expo-audio` `enableBackgroundPlayback`, which adds the iPhone `audio` background mode and the Android media-playback foreground
- *   service); this is the setting that tells `expo-audio` not to pause its players on the way out.
+ * - `shouldPlayInBackground`: a piece WITH A TITLE keeps playing when the screen locks or the app is left (a short clip without one
+ *   does not, see `CLIP_MODE`). The binary allows it (`app.json`: `expo-audio` `enableBackgroundPlayback`, which adds the iPhone
+ *   `audio` background mode and the Android media-playback foreground service); this is the setting that tells `expo-audio` not to
+ *   pause its players on the way out.
  * - `doNotMix`: exclusive audio focus, which the lock screen controls need (`expo-audio`'s own rule).
  *
  * The WAWU theme (R-99) never takes this mode: when the last content player lets go, the session goes back to what the phone has
@@ -30,21 +31,31 @@ export const CONTENT_MODE: Partial<AudioMode> = {
 };
 
 /**
- * What `expo-audio` has before anything sets a mode, which is where the theme plays: the iPhone obeys the silent switch, Android
- * does not; nothing mixes in or stays on in the background.
+ * A short voice clip (Hear name, Voice Intro playback, a voice sample) has no title: it is heard with the silent switch on, but it
+ * stops when the app leaves the screen, as before, and takes no lock screen.
+ */
+export const CLIP_MODE: Partial<AudioMode> = { ...CONTENT_MODE, shouldPlayInBackground: false };
+
+/**
+ * What the phone has before anything sets a mode, which is where the theme plays, and what the app used before R-115 (it set none
+ * for listening): the iPhone obeys the silent switch (category `.soloAmbient`: `playsInSilentMode` false with `doNotMix`), Android
+ * does not (its native default asks transient focus, which `doNotMix` also asks); nothing stays on in the background.
  */
 export function restingMode(): Partial<AudioMode> {
   return {
     playsInSilentMode: Platform.OS !== 'ios',
     shouldPlayInBackground: false,
-    interruptionMode: 'mixWithOthers',
+    interruptionMode: 'doNotMix',
     allowsRecording: false,
     shouldRouteThroughEarpiece: false,
   };
 }
 
-/** How many content players are playing right now. */
-let holders = 0;
+/** How many content players are playing right now: those with a title (they keep on in the background) and the short clips. */
+let titled = 0;
+let clips = 0;
+/** Which mode the phone was last given: the content mode, the clip mode, or the resting one. */
+let inForce: 'content' | 'clip' | 'rest' = 'rest';
 /** The last mode call, so the next one is made after it and the order the phone sees is the order made. */
 let applied: Promise<void> = Promise.resolve();
 
@@ -61,24 +72,38 @@ export type ContentHold = {
   release: () => void;
 };
 
-/** A content player is about to play. */
-export function holdContentAudio(): ContentHold {
-  holders += 1;
-  const ready = holders === 1 ? apply(CONTENT_MODE) : applied;
+/** Puts the mode the players now playing need on the phone, if it is not already there. */
+function sync(): Promise<void> {
+  const want = titled > 0 ? 'content' : clips > 0 ? 'clip' : 'rest';
+  if (want !== inForce) {
+    inForce = want;
+    void apply(want === 'content' ? CONTENT_MODE : want === 'clip' ? CLIP_MODE : restingMode());
+  }
+  return applied;
+}
+
+/** A content player is about to play. A piece with a title stays on in the background; a clip without one does not. */
+export function holdContentAudio(hasTitle: boolean): ContentHold {
+  if (hasTitle) titled += 1;
+  else clips += 1;
+  const ready = sync();
   let released = false;
   return {
     ready,
     release: () => {
       if (released) return;
       released = true;
-      holders -= 1;
-      if (holders === 0) void apply(restingMode());
+      if (hasTitle) titled -= 1;
+      else clips -= 1;
+      void sync();
     },
   };
 }
 
 /** Forgets the count and the queue. Tests only. */
 export function resetContentAudioForTests(): void {
-  holders = 0;
+  titled = 0;
+  clips = 0;
+  inForce = 'rest';
   applied = Promise.resolve();
 }

@@ -127,7 +127,21 @@ const settle = () =>
 const noop = () => undefined;
 const A = 'https://files.example/a.mp3';
 const B = 'https://files.example/b.mp3';
-const piece = (uri: string, playing: boolean, title?: string) => <AudioSource key={uri} uri={uri} playing={playing} seek={null} title={title} onTime={noop} onEnded={noop} />;
+/** A piece has a title (an audio post, an audiobook, a podcast, a Studio result). NATIVE-FIX r2: the helper gives it one by default, as a real piece has. */
+const piece = (uri: string, playing: boolean, title = 'A titled piece') => <AudioSource key={uri} uri={uri} playing={playing} seek={null} title={title} onTime={noop} onEnded={noop} />;
+/** A short voice clip has no title (Hear name, Voice Intro playback, a voice sample). */
+const clip = (uri: string, playing: boolean) => <AudioSource key={uri} uri={uri} playing={playing} seek={null} onTime={noop} onEnded={noop} />;
+/** The audio session a mode makes, by expo-audio's native rules (iOS `setAudioMode` in AudioModule.swift; Android `requestAudioFocus` in AudioModule.kt). */
+const sessionOf = (os: string, m: Mode) =>
+  os === 'ios'
+    ? m.playsInSilentMode
+      ? `playback ${m.interruptionMode}`
+      : m.interruptionMode === 'doNotMix'
+        ? 'soloAmbient'
+        : 'ambient'
+    : `${m.playsInSilentMode ? 'plays' : 'obeys'} silent, focus ${m.interruptionMode === 'mixWithOthers' ? 'none' : m.interruptionMode === 'duckOthers' ? 'duck' : 'transient'}`;
+/** The session before anything sets a mode, which is all the app had for listening before R-115: iPhone `.soloAmbient` (system default), Android transient focus (mode null) and plays in silent mode. */
+const oldDefault = (os: string) => (os === 'ios' ? 'soloAmbient' : 'plays silent, focus transient');
 const lastMode = () => mockPhone.log.filter((l) => l.startsWith('mode ')).slice(-1)[0] ?? '';
 const index = (text: string) => mockPhone.log.findIndex((l) => l.startsWith(text));
 
@@ -232,7 +246,8 @@ describe.each(['android', 'ios'] as const)('listening on %s (R-115)', (os) => {
 
     await view.rerender(piece(A, false));
     await settle();
-    expect(mockPhone.mode).toMatchObject({ shouldPlayInBackground: false, playsInSilentMode: os !== 'ios', interruptionMode: 'mixWithOthers' });
+    // NATIVE-FIX r2 (assertion changed): the resting mode is the old default session, so interruptionMode is 'doNotMix' (it was 'mixWithOthers').
+    expect(mockPhone.mode).toMatchObject({ shouldPlayInBackground: false, playsInSilentMode: os !== 'ios', interruptionMode: 'doNotMix' });
 
     await act(async () => void (await music.toggleThemeMusic()));
     expect(theme.playing).toBe(true);
@@ -292,6 +307,60 @@ describe.each(['android', 'ios'] as const)('listening on %s (R-115)', (os) => {
     expect(mockPhone.players.get(A)!.setActiveForLockScreen).toHaveBeenLastCalledWith(false);
   });
 
+  it('after a piece the phone is back in the session it had before the app set any, so the theme sounds as it did before', async () => {
+    const view = await render(piece(A, true));
+    await settle();
+    expect(mockPhone.mode.shouldPlayInBackground).toBe(true);
+    await view.rerender(piece(A, false));
+    await settle();
+    expect(sessionOf(os, mockPhone.mode)).toBe(oldDefault(os));
+    expect(mockPhone.mode).toMatchObject({ shouldPlayInBackground: false, allowsRecording: false, shouldRouteThroughEarpiece: false });
+    // The theme, started now with the iPhone silent switch on, obeys the switch on iPhone and not on Android, as before.
+    mockPhone.silentSwitch = true;
+    await act(async () => void (await music.toggleThemeMusic()));
+    expect(mockPhone.players.get(THEME_FILE)!.audible).toBe(os !== 'ios');
+  });
+
+  it('a short voice clip without a title is heard, but takes no background mode and no lock screen, and stops when the app goes to the background', async () => {
+    const view = await render(clip(A, true));
+    await settle();
+    const audio = mockPhone.players.get(A)!;
+    expect(audio.playing).toBe(true);
+    expect(index('mode')).toBeLessThan(index('play'));
+    expect(mockPhone.mode).toMatchObject({ playsInSilentMode: true, shouldPlayInBackground: false });
+    expect(mockPhone.log.filter((l) => l.startsWith('mode ')).every((l) => l.includes('"shouldPlayInBackground":false'))).toBe(true);
+    expect(audio.setActiveForLockScreen).not.toHaveBeenCalled();
+
+    await appTo('inactive');
+    await appTo('background');
+    expect(audio.playing).toBe(false);
+
+    await view.rerender(clip(A, false));
+    await settle();
+    expect(sessionOf(os, mockPhone.mode)).toBe(oldDefault(os));
+    expect(audio.setActiveForLockScreen).not.toHaveBeenCalled();
+  });
+
+  it('a clip playing next to a titled piece: the piece keeps the background mode until it lets go, then the clip has its own, then the resting one', async () => {
+    const both = (a: boolean, b: boolean) => (
+      <>
+        {piece(A, a)}
+        {clip(B, b)}
+      </>
+    );
+    const view = await render(both(true, true));
+    await settle();
+    expect(mockPhone.mode.shouldPlayInBackground).toBe(true);
+    expect(mockPhone.players.get(A)!.setActiveForLockScreen).toHaveBeenCalledWith(true, { title: 'A titled piece' });
+    expect(mockPhone.players.get(B)!.setActiveForLockScreen).not.toHaveBeenCalled();
+    await view.rerender(both(false, true));
+    await settle();
+    expect(mockPhone.mode).toMatchObject({ playsInSilentMode: true, shouldPlayInBackground: false });
+    await view.rerender(both(false, false));
+    await settle();
+    expect(sessionOf(os, mockPhone.mode)).toBe(oldDefault(os));
+  });
+
   it('a phone that refuses the audio mode still plays the piece', async () => {
     mockPhone.modeFails = true;
     await render(piece(A, true));
@@ -325,6 +394,15 @@ describe('an audio piece with the iPhone silent switch on', () => {
     expect(audio.playing).toBe(true);
     expect(audio.audible).toBe(true);
     expect(mockPhone.log.find((l) => l.startsWith('mode '))).toContain('"playsInSilentMode":true');
+    expect(index('mode')).toBeLessThan(index('play'));
+  });
+
+  it('a short voice clip without a title is heard too, with the switch on', async () => {
+    platform = jest.replaceProperty(Platform, 'OS', 'ios');
+    mockPhone.mode = { playsInSilentMode: false, shouldPlayInBackground: false };
+    await render(clip(A, true));
+    await settle();
+    expect(mockPhone.players.get(A)!.audible).toBe(true);
     expect(index('mode')).toBeLessThan(index('play'));
   });
 
