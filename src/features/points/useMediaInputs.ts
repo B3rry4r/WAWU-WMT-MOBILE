@@ -58,28 +58,11 @@ export function useMediaInputs(tool: AiTool, busy: boolean) {
     setPhotoRefused(null);
   }, []);
 
-  const choosePhoto = useCallback(
-    async (from: 'library' | 'camera') => {
-      if (!photoRule || busy) return;
-      const turn = ++photoTurn.current;
+  /** A photo in hand (picked, taken, or handed over from Studio's home): checked against the Hub's rule, then it goes up. */
+  const acceptPhoto = useCallback(
+    async (picked: ChosenFile, turn: number) => {
+      if (!photoRule) return;
       const live = () => photoTurn.current === turn;
-      setPhotoRefused(null);
-      setCameraOff(false);
-      let picked: ChosenFile | null | 'refused';
-      try {
-        picked = from === 'camera' ? await takePhoto() : await pickFile(photoRule.accepts);
-      } catch {
-        if (live()) setPhotoRefused({ title: MEDIA_WORDS.photoPickFailedTitle, body: MEDIA_WORDS.photoPickFailedBody });
-        return;
-      }
-      if (picked === 'refused') {
-        if (live()) setCameraOff(true);
-        return;
-      }
-      if (!picked || !live()) {
-        picked?.discard?.();
-        return;
-      }
       const refusal = photoRefusal({ contentType: picked.contentType, bytes: picked.blob.size }, photoRule);
       if (refusal) {
         picked.discard?.();
@@ -105,7 +88,47 @@ export function useMediaInputs(tool: AiTool, busy: boolean) {
         setPhotoRefused({ title: MEDIA_WORDS.photoUploadFailedTitle, body: isApiError(error) && error.message ? error.message : MEDIA_WORDS.photoUploadFailedBody });
       }
     },
-    [photoRule, busy],
+    [photoRule],
+  );
+
+  const choosePhoto = useCallback(
+    async (from: 'library' | 'camera') => {
+      if (!photoRule || busy) return;
+      const turn = ++photoTurn.current;
+      const live = () => photoTurn.current === turn;
+      setPhotoRefused(null);
+      setCameraOff(false);
+      let picked: ChosenFile | null | 'refused';
+      try {
+        picked = from === 'camera' ? await takePhoto() : await pickFile(photoRule.accepts);
+      } catch {
+        if (live()) setPhotoRefused({ title: MEDIA_WORDS.photoPickFailedTitle, body: MEDIA_WORDS.photoPickFailedBody });
+        return;
+      }
+      if (picked === 'refused') {
+        if (live()) setCameraOff(true);
+        return;
+      }
+      if (!picked || !live()) {
+        picked?.discard?.();
+        return;
+      }
+      await acceptPhoto(picked, turn);
+    },
+    [photoRule, busy, acceptPhoto],
+  );
+
+  /** A photo Studio's home handed over (STUDIO-HOME): it goes up as a photo chosen here would. */
+  const takePicked = useCallback(
+    async (picked: ChosenFile) => {
+      if (!photoRule) {
+        picked.discard?.();
+        return;
+      }
+      setPhotoRefused(null);
+      await acceptPhoto(picked, ++photoTurn.current);
+    },
+    [photoRule, acceptPhoto],
   );
 
   /** The Hub reads the voice and prices its seconds; a voice it cannot read or that is too long is refused in its own sentence. */
@@ -216,5 +239,5 @@ export function useMediaInputs(tool: AiTool, busy: boolean) {
     else if (m.sourceJobId) setVoice({ source: 'job', jobId: m.sourceJobId, label: MEDIA_WORDS.voice, phase: 'ready' });
   }, []);
 
-  return { photoRule, speechRule, photo, photoRefused, cameraOff, choosePhoto, takeOffPhoto, voice, speech, voiceRefused, chooseRecording, useResult, clearVoice, settled, restore };
+  return { photoRule, speechRule, photo, photoRefused, cameraOff, choosePhoto, takePicked, takeOffPhoto, voice, speech, voiceRefused, chooseRecording, useResult, clearVoice, settled, restore };
 }

@@ -435,7 +435,7 @@ describe('PT1 · the tiles for the picture and video tools', () => {
     expect(screen.getByTestId('studio-tool-video')).toHaveAccessibleName('Make a video, 250 a second');
     expect(screen.queryByTestId('studio-tool-photo-edit')).toBeNull();
     expect(screen.queryByTestId('studio-tool-talking-photo')).toBeNull();
-    expect(screen.getByTestId('studio-line')).toHaveTextContent('Every AI tool, paid in points');
+    // STUDIO-HOME (R-113): the caption line under the bar is gone with the home's new title, so its assertion is removed.
     await fireEvent.press(screen.getByTestId('studio-tool-video'));
     await screen.findByTestId('tool-text');
     expect(screen.getByRole('header', { name: 'Make a video' })).toBeTruthy();

@@ -130,10 +130,11 @@ describe('PT1 · the tiles for the voice, music and long-audio tools', () => {
     hub.listed = ['voice-changer', 'stems', 'receptionist'];
     await renderRouter(routes, { initialUrl: '/studio' });
     expect(await screen.findByTestId('studio-tool-voice-changer')).toHaveAccessibleName('Voice changer, 400 a minute');
+    // STUDIO-HOME (R-113): Voice changer is a main tile; Split a song and the Receptionist are rows of the More menu. The caption line is gone, so its assertion is removed.
+    await fireEvent.press(await screen.findByTestId('studio-more'));
     expect(screen.getByTestId('studio-tool-stems')).toHaveAccessibleName('Split a song, 300');
     expect(screen.getByTestId('studio-tool-receptionist')).toHaveAccessibleName('Receptionist, 20 a message');
     for (const id of ['dialogue', 'my-voice', 'video-music', 'audiobook', 'podcast']) expect(screen.queryByTestId(`studio-tool-${id}`)).toBeNull();
-    expect(screen.getByTestId('studio-line')).toHaveTextContent('Every AI tool, paid in points');
   });
 
   it('a tool the Hub lists without what its screen reads is not drawn', async () => {
@@ -143,6 +144,7 @@ describe('PT1 · the tiles for the voice, music and long-audio tools', () => {
     SPECS['voice-changer'].input = { ...saved.vc, file: { ...(saved.vc.file as object), voice: undefined } };
     try {
       await renderRouter(routes, { initialUrl: '/studio' });
+      await fireEvent.press(await screen.findByTestId('studio-more'));
       await screen.findByTestId('studio-tool-stems');
       for (const id of ['dialogue', 'podcast', 'voice-changer']) expect(screen.queryByTestId(`studio-tool-${id}`)).toBeNull();
     } finally {

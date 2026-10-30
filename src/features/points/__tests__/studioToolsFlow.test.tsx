@@ -252,10 +252,13 @@ async function run() {
 describe('PT1 · the tiles Studio draws', () => {
   it('a person sees a tile for each of the three tools with the Hub’s cost, as the board words it, and opens each', async () => {
     await renderRouter(routes, { initialUrl: '/studio' });
+    // STUDIO-HOME (R-113): Music is a main tile; Quick voice and Sound effect are rows of the More menu, closed again before Music is pressed.
+    expect(await screen.findByTestId('studio-tool-music')).toHaveAccessibleName('Music track, 500');
+    await fireEvent.press(await screen.findByTestId('studio-more'));
     expect(await screen.findByTestId('studio-tool-quick-voice')).toHaveAccessibleName('Quick voice, 125 a minute');
     expect(screen.getByTestId('studio-tool-sound-effect')).toHaveAccessibleName('Sound effect, 75');
-    expect(screen.getByTestId('studio-tool-music')).toHaveAccessibleName('Music track, 500');
     expect(screen.queryByText(/a track|a use/)).toBeNull();
+    await fireEvent.press(screen.getByTestId('studio-more-menu-backdrop', { includeHiddenElements: true }));
     await fireEvent.press(screen.getByTestId('studio-tool-music'));
     await screen.findByTestId('tool-text');
     expect(screen.getByRole('header', { name: 'Music track' })).toBeTruthy();
@@ -265,6 +268,8 @@ describe('PT1 · the tiles Studio draws', () => {
     hub.listed = ['sound-effect'];
     hub.stranger = true;
     await renderRouter(routes, { initialUrl: '/studio' });
+    // STUDIO-HOME (R-113): Sound effect is a row of the More menu.
+    await fireEvent.press(await screen.findByTestId('studio-more'));
     await screen.findByTestId('studio-tool-sound-effect');
     expect(screen.queryByTestId('studio-tool-quick-voice')).toBeNull();
     expect(screen.queryByTestId('studio-tool-music')).toBeNull();

@@ -494,6 +494,9 @@ export async function openToolFromStudio(id: string, ready: string) {
   return rendered;
 }
 export async function pressTile(id: string, ready: string) {
+  // STUDIO-HOME (R-113): a tool that is not a main tile is a row of the More menu.
+  await screen.findByTestId('studio-balance');
+  if (!screen.queryByTestId(`studio-tool-${id}`)) await fireEvent.press(await screen.findByTestId('studio-more'));
   await fireEvent.press(await screen.findByTestId(`studio-tool-${id}`));
   await screen.findByTestId(ready);
 }

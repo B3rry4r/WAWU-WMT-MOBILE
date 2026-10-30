@@ -293,7 +293,7 @@ describe('PT1 and PT1a · Studio', () => {
   it('a user sees the tools the Hub lists with the cost the Hub gives, their points, and the line without any outside name', async () => {
     hub.points = 1250;
     await toStudio();
-    expect(screen.getByTestId('studio-line')).toHaveTextContent('Every AI voice tool, paid in points', { exact: false });
+    // STUDIO-HOME (R-113): the caption line under the bar is gone with the home's new title, so its assertion is removed.
     expect(screen.getByTestId('studio-tool-voiceover')).toHaveAccessibleName('VoiceOver, 250 a minute');
     expect(screen.getByTestId('studio-balance')).toHaveTextContent('1,250', { exact: false });
     expect(screen.getAllByTestId(/^studio-tool-/)).toHaveLength(1);

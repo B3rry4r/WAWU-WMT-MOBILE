@@ -336,6 +336,8 @@ async function run() {
 describe('PT1 · the tiles Studio draws', () => {
   it('a person sees a tile for Captions and Clean audio with the Hub’s cost, as the board words it, and opens each', async () => {
     await renderRouter(routes, { initialUrl: '/studio' });
+    // STUDIO-HOME (R-113): Captions and Clean audio are not among the grid's main tools, so they are rows of the More menu.
+    await fireEvent.press(await screen.findByTestId('studio-more'));
     expect(await screen.findByTestId('studio-tool-captions')).toHaveAccessibleName('Captions, 15 a minute');
     expect(screen.getByTestId('studio-tool-clean-audio')).toHaveAccessibleName('Clean audio, 400 a minute');
     await fireEvent.press(screen.getByTestId('studio-tool-clean-audio'));

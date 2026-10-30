@@ -56,6 +56,7 @@ import { CloneVoiceScreen } from './CloneVoiceScreen';
 import { ReceptionistScreen } from './ReceptionistScreen';
 import { VOICE, VoiceList } from './VoiceRows';
 import { charactersOf, clampText, countLine, EXTRAS_WORDS, failedWords, inputKindOf, lengthLine, TOOL_WORDS, toolReady, unitsFor, usedLine, type InputKind } from './voiceoverModel';
+import { takeHandoff, type Handoff } from './studioHandoff';
 import { dropJobIntent, findJobIntent, putJobIntent, type JobIntent, type MediaIntent } from './voiceoverIntent';
 import { hasResult, mediaResult, outputText, pollMsFor, resultFiles, startJob, voiceJobQuery, type JobRequest, type VoiceJob } from './voiceoverApi';
 
@@ -468,56 +469,6 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
     }
   };
 
-  // A job the person left running (or a request the Hub never answered) is picked up where it was.
-  useEffect(() => {
-    if (!owner) return;
-    let alive = true;
-    void findJobIntent(owner, tool.id).then((found) => {
-      if (alive && !found && openJobId && !sending.current) {
-        setChoicesKnown(false);
-        setJobId(openJobId);
-      }
-      if (!alive || !found || found.toolId !== tool.id || sending.current) return;
-      if (found.fileKey) {
-        // The recording was uploaded and the job sent: only its name is kept here (the file is on the Hub, and goes when the job settles).
-        setFileKey(found.fileKey);
-        if (found.targetLanguage) setTargetLanguage(found.targetLanguage);
-        setRecording({ name: found.text, bytes: 0, phase: 'ready', share: 1 });
-      } else if (found.media && talking) {
-        // A talking photo has no words: its record holds the photo and the voice.
-      } else if (found.lines) {
-        setLines(found.lines.map((l, i) => ({ id: i + 1, ...l })));
-        nextLine.current = found.lines.length + 1;
-      } else if (found.podcast) {
-        const q = found.podcast;
-        setPodcast((was) => ({
-          ...was,
-          source: 'text' in q.source ? 'text' : 'link',
-          text: 'text' in q.source ? q.source.text : '',
-          link: 'url' in q.source ? q.source.url : '',
-          hosts: q.mode === 'conversation' ? 2 : 1,
-          voiceIds: [q.voiceIds[0] ?? was.voiceIds[0], q.voiceIds[1] ?? was.voiceIds[1]],
-          duration: q.duration,
-          language: q.language,
-        }));
-      } else setText(found.text);
-      if (found.parts) setParts(found.parts);
-      if (found.description) setMood(found.description);
-      if (found.media) {
-        if (found.media.shape) setShape(found.media.shape);
-        if (found.media.seconds) setSeconds(found.media.seconds);
-        media.restore(found.media);
-      }
-      if (takesVoice && found.voiceId) setVoiceId(found.voiceId);
-      activeKey.current = found.key;
-      if (found.jobId) setJobId(found.jobId);
-      else void send(found);
-    });
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the record is read once for this tool; `media` and `talking` are the tool's own and do not change under it
-  }, [owner, tool.id, kind, send, openJobId]);
 
   // The Hub does not know this job: its record goes, so the app does not look for it again on the next visit (SWEEP-APP-3 row 167).
   const gone = isApiError(job.error) && job.error.status === 404;
@@ -637,6 +588,82 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   const cancelUpload = () => {
     uploading.current?.abort();
   };
+
+  // What Studio's home handed over (the words, the file, the voice): taken once, applied once the phone has looked for a job left running.
+  const handed = useRef<{ taken: boolean; value: Handoff | null }>({ taken: false, value: null });
+  const applyHandoff = (h: Handoff) => {
+    if (h.voiceId && takesVoice && tool.voices.some((v) => v.id === h.voiceId)) setVoiceId(h.voiceId);
+    if (h.text) {
+      if (kind === 'file') {
+        if (tool.id === 'video-music' && tool.input.file?.description) setMood(clampText(h.text, tool.input.file.description.maxCharacters));
+      } else if (kind === 'text' || kind === 'prompt' || kind === 'image' || kind === 'video') setText(clampText(h.text, tool.input.maxCharacters));
+    }
+    if (!h.file) return;
+    if (kind === 'file') void takeFile(h.file, ++choosing.current);
+    else if (media.photoRule) void media.takePicked(h.file);
+    else h.file.discard?.();
+  };
+
+  // A job the person left running (or a request the Hub never answered) is picked up where it was.
+  useEffect(() => {
+    if (!owner) return;
+    let alive = true;
+    if (!handed.current.taken) {
+      handed.current = { taken: true, value: takeHandoff(tool.id) };
+    }
+    void findJobIntent(owner, tool.id).then((found) => {
+      const h = handed.current.value;
+      if (alive && h) {
+        handed.current.value = null;
+        // A job left running wins over a new request; its file is let go.
+        if (found) h.file?.discard?.();
+        else applyHandoff(h);
+      }
+      if (alive && !found && openJobId && !sending.current) {
+        setChoicesKnown(false);
+        setJobId(openJobId);
+      }
+      if (!alive || !found || found.toolId !== tool.id || sending.current) return;
+      if (found.fileKey) {
+        // The recording was uploaded and the job sent: only its name is kept here (the file is on the Hub, and goes when the job settles).
+        setFileKey(found.fileKey);
+        if (found.targetLanguage) setTargetLanguage(found.targetLanguage);
+        setRecording({ name: found.text, bytes: 0, phase: 'ready', share: 1 });
+      } else if (found.media && talking) {
+        // A talking photo has no words: its record holds the photo and the voice.
+      } else if (found.lines) {
+        setLines(found.lines.map((l, i) => ({ id: i + 1, ...l })));
+        nextLine.current = found.lines.length + 1;
+      } else if (found.podcast) {
+        const q = found.podcast;
+        setPodcast((was) => ({
+          ...was,
+          source: 'text' in q.source ? 'text' : 'link',
+          text: 'text' in q.source ? q.source.text : '',
+          link: 'url' in q.source ? q.source.url : '',
+          hosts: q.mode === 'conversation' ? 2 : 1,
+          voiceIds: [q.voiceIds[0] ?? was.voiceIds[0], q.voiceIds[1] ?? was.voiceIds[1]],
+          duration: q.duration,
+          language: q.language,
+        }));
+      } else setText(found.text);
+      if (found.parts) setParts(found.parts);
+      if (found.description) setMood(found.description);
+      if (found.media) {
+        if (found.media.shape) setShape(found.media.shape);
+        if (found.media.seconds) setSeconds(found.media.seconds);
+        media.restore(found.media);
+      }
+      if (takesVoice && found.voiceId) setVoiceId(found.voiceId);
+      activeKey.current = found.key;
+      if (found.jobId) setJobId(found.jobId);
+      else void send(found);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the record is read once for this tool; `media` and `talking` are the tool's own and do not change under it
+  }, [owner, tool.id, kind, send, openJobId]);
 
   /** The Audiobook's text file: its words fill the box (the file itself is never sent); a file that is not text, or is over the Hub's characters, is refused with the reason. */
   const chooseTextFile = async () => {
