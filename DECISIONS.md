@@ -848,3 +848,10 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 - (Default (lead), owner may override: the mark's width, 120, read off the picture; the line's colour white; Sign in stays glass, which on this page is a lighter grey than the picture's dark pill.)
 - Replaces R-98 and R-111 (the video, its lift and its orbit measurement); amends R-90's replacement of the earlier mark by returning to its centring rule.
 **Carried out by:** WELCOME-LOGO (app).
+
+### R-120 · A buyer, tipper or payer never sees what the creator or seller receives from a purchase
+*Owner, 31 Oct 2026, on his iPhone build 7 screenshot of the Tip sheet on an audio piece: "This is madness at the core!!! Why would you show buyers creators cut?"* On any buying screen (tips, unlocks, tickets, paid questions, credits, school places, anything a person pays for) the buyer never sees what the creator or seller receives of it: no "Excel gets ₦170", no "They get", no share, no 85/15. The creator's own screens (pricing, earnings, the host's ticket terms) keep showing the creator their share. Person-to-person money (Send, Request pay, Send abroad, chat send, withdraw to your own bank) keeps "X gets ₦", because that is the transfer amount the person receives, not a cut (lead default, owner may override).
+- **Tip tiles in a store (lead default, owner may override).** When a tip is paid through a store (R-101), every tile shows the store's own price text for that tier, the same string the Tip button charges, so one sheet never shows two currencies. A tile whose store price is not known yet is the loading state, never naira; a tier the store sells no product for is not drawn. Paid from the wallet (the web), the tiles are naira as before.
+- The tile is one line (the price), 48 high as the board's chips; the sheet's head has no subtitle in a store (the wallet sheet keeps "Goes straight to their wallet. They see your name and note.", which says no amount).
+- Amends R-5 and R-101 (the tip tiles' "{name} gets ₦X" line is gone) and the PRICE-PICKER task's tip sheet.
+**Carried out by:** TIP-CUT (app).
