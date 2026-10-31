@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import { chosen, installXhr, presigned, ScriptedXhr } from '@/features/create/__helpers__/harness';
 import { pricesAnswer } from '@/features/prices/__helpers__/prices';
@@ -64,13 +64,15 @@ describe('Edit details · the cover (Android)', () => {
     mockPick.mockResolvedValue(chosen('new.png', 'image/png', 3, { previewUri: 'file:///cache/new.png' }));
     const handlers = await open();
     await fireEvent.press(screen.getByTestId('edit-cover-pick'));
-    expect(mockPick).toHaveBeenCalledWith(['image/png', 'image/jpeg', 'image/webp']);
+    // The photo is written smaller before it goes up (long edge 2048 px, JPEG about 0.85).
+    expect(mockPick).toHaveBeenCalledWith(['image/png', 'image/jpeg', 'image/webp'], { maxSide: 2048, jpeg: true, quality: 0.85 });
     await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
     expect(calls('POST', PRESIGN)[0].body).toMatchObject({ folder: 'content/cover', contentType: 'image/png' });
     await act(async () => {
       ScriptedXhr.last?.finish(200);
     });
-    expect((await screen.findByTestId('edit-cover-image')).props.source).toEqual([{ uri: 'file:///cache/new.png' }]);
+    // Drawn from the link the upload came back with: the phone's own copy is let go of when the upload settles.
+    expect((await screen.findByTestId('edit-cover-image')).props.source).toEqual([{ uri: 'https://storage.test/content/cover/u1/new.png?read=1' }]);
     expect(screen.getByTestId('edit-save').props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(screen.getByTestId('edit-save'));
     await waitFor(() => expect(handlers.saved).toHaveBeenCalledTimes(1));
@@ -108,5 +110,58 @@ describe('Edit details · the cover (Android)', () => {
     const start = { title: 'Pricing playbook', description: 'Eighty pages.', category: 'business_entrepreneurship', accessType: 'paid', price: '2000' } as never;
     expect(changesOf(p, start)).toBeNull();
     expect(changesOf(p, start, { kind: 'remove' })).toEqual({ coverAsset: null });
+  });
+
+  it('after Save the picture is the piece\'s: leaving does not send POST /uploads/release for it', async () => {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/cover', 'new.png');
+    hub.answers[`PATCH ${PATCH}`] = ok(rejected());
+    hub.answers['POST /api/hub/uploads/release'] = ok({ released: true });
+    mockPick.mockResolvedValue(chosen('new.png', 'image/png', 3, { previewUri: 'file:///cache/new.png' }));
+    const handlers = await open();
+    await fireEvent.press(screen.getByTestId('edit-cover-pick'));
+    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
+    await act(async () => {
+      ScriptedXhr.last?.finish(200);
+    });
+    await screen.findByTestId('edit-cover-image');
+    await fireEvent.press(screen.getByTestId('edit-save'));
+    await waitFor(() => expect(handlers.saved).toHaveBeenCalledTimes(1));
+    await handlers.unmount();
+    expect(calls('POST', '/api/hub/uploads/release')).toEqual([]);
+  });
+
+  it('a picture that went up and was never saved is given back when the person leaves', async () => {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/cover', 'new.png');
+    hub.answers['POST /api/hub/uploads/release'] = ok({ released: true });
+    mockPick.mockResolvedValue(chosen('new.png', 'image/png', 3, { previewUri: 'file:///cache/new.png' }));
+    const handlers = await open();
+    await fireEvent.press(screen.getByTestId('edit-cover-pick'));
+    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
+    await act(async () => {
+      ScriptedXhr.last?.finish(200);
+    });
+    await screen.findByTestId('edit-cover-image');
+    await handlers.unmount();
+    await waitFor(() => expect(calls('POST', '/api/hub/uploads/release')).toHaveLength(1));
+    expect(calls('POST', '/api/hub/uploads/release')[0].body).toEqual({ key: 'content/cover/u1/new.png' });
+  });
+
+  it('closing the photo picker (Android back) changes nothing and says nothing; a picker that cannot open says so', async () => {
+    mockPick.mockResolvedValueOnce(null);
+    await open();
+    await fireEvent.press(screen.getByTestId('edit-cover-pick'));
+    await waitFor(() => expect(mockPick).toHaveBeenCalledTimes(1));
+    expect(calls('POST', PRESIGN)).toEqual([]);
+    expect(screen.queryByTestId('edit-cover-failure')).toBeNull();
+    expect(screen.getByTestId('edit-save').props.accessibilityState.disabled).toBe(true);
+    mockPick.mockRejectedValueOnce(new Error('no photos'));
+    await fireEvent.press(screen.getByTestId('edit-cover-pick'));
+    expect(await screen.findByText("We couldn't open your photos. Try again.")).toBeTruthy();
+  });
+
+  it('the thumbnail is the price card\'s shape: 52 by 66, corner 10', async () => {
+    await open();
+    const box = StyleSheet.flatten(screen.getByTestId('edit-cover-image').parent?.props.style) as { width: number; height: number; borderRadius: number };
+    expect(box).toMatchObject({ width: 52, height: 66, borderRadius: 10 });
   });
 });

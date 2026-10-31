@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
@@ -104,6 +104,8 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
   const [picking, setPicking] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [coverEdit, setCoverEdit] = useState<CoverEdit>({ kind: 'keep' });
+  // Set when Save has taken the new cover: leaving the screen then must not give that picture back.
+  const coverSaved = useRef(false);
   const changes = changesOf(piece, details, coverEdit);
   const set = (patch: Partial<Details>) => {
     setFailure(null);
@@ -112,6 +114,7 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
   const save = useMutation({
     mutationFn: (body: UpdateBody) => updatePiece(piece.id, body),
     onSuccess: (saved) => {
+      coverSaved.current = true;
       client.setQueryData(pieceKey(piece.id), saved);
       void client.invalidateQueries({ queryKey: libraryKey });
       onSaved();
@@ -151,7 +154,7 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
         trailingIcon="ChevronDown"
         onPress={() => setPicking(true)}
       />
-      <EditCover piece={piece} edit={coverEdit} onEdit={(next) => (setFailure(null), setCoverEdit(next))} />
+      <EditCover piece={piece} edit={coverEdit} saved={coverSaved} onEdit={(next) => (setFailure(null), setCoverEdit(next))} />
       <SegmentedTabs testID="edit-mode" label="Paid or free" items={MODES} value={details.accessType} onChange={(accessType: AccessType) => set({ accessType })} />
       {free ? (
         <>

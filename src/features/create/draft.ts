@@ -139,7 +139,14 @@ export function setFull(full: UploadedFile | null): void {
 
 /** Replacing or removing the preview gives the old one back. */
 export function setPreview(preview: UploadedFile | null): void {
-  if (draft.preview?.key !== preview?.key) giveBack(draft.preview);
+  if (draft.preview?.key !== preview?.key) {
+    giveBack(draft.preview);
+    // A frame that went up as the default cover was read from the old preview: it is given back, and the new preview's frame is sent at Send.
+    if (cover.mode === 'default' && cover.file) {
+      giveBack(cover.file);
+      publishCover(noCover);
+    }
+  }
   publish({ ...draft, preview });
 }
 
@@ -159,8 +166,8 @@ export function abandonDraft(): void {
 }
 
 /**
- * The cover the person chose for the piece (R-114): `default` (the frame of a video preview, else none), a `picture` they picked and that went up
- * to `content/cover` (`file`), or `none`. Kept apart from the draft's own three fields so a piece that sets no cover reads exactly as before;
+ * The cover the person chose for the piece (R-114): `default` (the frame of a video preview, else none; `file` is that frame once Send has put it
+ * up, kept for a second try), a `picture` they picked and that went up to `content/cover` (`file`), or `none`. Kept apart from the draft's own three fields so a piece that sets no cover reads exactly as before;
  * every reset empties it, and a picture that went up and is no longer wanted is given back to the Hub like any file.
  */
 export type DraftCover = { mode: 'default' | 'picture' | 'none'; file: UploadedFile | null };

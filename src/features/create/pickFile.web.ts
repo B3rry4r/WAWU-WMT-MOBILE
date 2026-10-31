@@ -5,7 +5,8 @@ import { contentTypeFor, extensionOfName } from './fileTypes';
 export const canPickFile = true;
 
 /** Resolves with the chosen file (null when the person closes the chooser without choosing). */
-export function pickFile(types: readonly string[]): Promise<ChosenFile | null> {
+// `_options` (how a photo is written again) is the phone's: the browser sends the file as it is.
+export function pickFile(types: readonly string[], _options?: unknown): Promise<ChosenFile | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';

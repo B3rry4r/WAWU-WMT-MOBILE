@@ -102,7 +102,12 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         {...ring.handlers}
         style={[styles.center, ring.style]}
       >
-        <Book title={piece.title} by={by} pages={piece.pageCount} />
+        {cover.uri ? (
+          // R-114: a PDF with a cover draws it; one with none keeps its generated book (H19, H20). Either way the tap reads the pages.
+          <Image testID={`${testID}-cover`} source={{ uri: cover.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={cover.onError} style={StyleSheet.absoluteFill} />
+        ) : (
+          <Book title={piece.title} by={by} pages={piece.pageCount} />
+        )}
       </Pressable>
     );
   } else if (kind === 'video' || kind === 'audio') {

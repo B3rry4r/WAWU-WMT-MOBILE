@@ -7,15 +7,15 @@ import { ApiError } from '@/api/errors';
 import { Button } from '@/components/Button';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Text } from '@/components/Text';
-import { radius, space, useWawu } from '@/theme';
+import { space, useWawu } from '@/theme';
 
 import { setCover, useCover, type UploadedFile } from './draft';
-import { canPickFile, pickFile } from './pickFile';
+import { pickCover } from './coverPick';
+import { canPickFile } from './pickFile';
 import { UPLOAD_CANCELLED, uploadFile } from './upload';
 
-/** What the Hub takes for a cover (`content/cover`, R-114): png, jpeg or webp, at most 5 MB. The Hub says so again when it refuses one. */
-const COVER_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
-const thumb = 64;
+/** The picked cover's thumbnail is the shape the price card draws the same picture in on the next step: 52 by 66, corner 10 (PriceScreen). */
+const thumb = { width: 52, height: 66, corner: 10 } as const;
 
 export type CoverChoiceProps = { preview: UploadedFile };
 
@@ -45,12 +45,13 @@ export function CoverChoice({ preview }: CoverChoiceProps) {
     if (picking.current || stage.state === 'uploading') return;
     picking.current = true;
     try {
-      const file = await pickFile(COVER_TYPES);
+      const file = await pickCover();
       if (!file) return;
       setStage({ state: 'uploading' });
       try {
         const uploaded = await uploadFile(file, { folder: 'content/cover' }, () => undefined);
-        setCover({ mode: 'picture', file: uploaded });
+        // `uploadFile` has let go of the phone's own copy by now, so the picture is drawn from the link it came back with, never from that file.
+        setCover({ mode: 'picture', file: { ...uploaded, previewUri: uploaded.fileUrl } });
         setStage({ state: 'idle' });
       } catch (error) {
         if (error instanceof ApiError && error.code === UPLOAD_CANCELLED) return;
@@ -67,7 +68,7 @@ export function CoverChoice({ preview }: CoverChoiceProps) {
     setStage({ state: 'idle' });
     if (next === 'frame') setCover({ mode: 'default', file: null });
     else if (next === 'none') setCover({ mode: 'none', file: null });
-    else if (cover.file) setCover({ mode: 'picture', file: cover.file });
+    else if (cover.mode === 'picture' && cover.file) setCover({ mode: 'picture', file: cover.file });
     else void choosePicture();
   };
 
@@ -79,14 +80,14 @@ export function CoverChoice({ preview }: CoverChoiceProps) {
       {value === 'picture' ? (
         <View style={styles.picked} testID="cover-picked">
           <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
-            {cover.file?.previewUri ? <Image testID="cover-picked-image" source={{ uri: cover.file.previewUri }} contentFit="cover" style={StyleSheet.absoluteFill} /> : null}
+            {cover.mode === 'picture' && cover.file?.previewUri ? <Image testID="cover-picked-image" source={{ uri: cover.file.previewUri }} contentFit="cover" style={StyleSheet.absoluteFill} /> : null}
           </View>
           <View style={styles.pickedWords}>
             <Text variant="body" numberOfLines={1}>
-              {stage.state === 'uploading' ? 'Sending your picture' : cover.file ? cover.file.name : 'No picture yet'}
+              {stage.state === 'uploading' ? 'Sending your picture' : cover.mode === 'picture' && cover.file ? cover.file.name : 'No picture yet'}
             </Text>
           </View>
-          <Button testID="cover-pick" label={cover.file ? 'Change' : 'Pick a picture'} variant="secondary" size="sm" disabled={!canPickFile || stage.state === 'uploading'} onPress={() => void choosePicture()} />
+          <Button testID="cover-pick" label={cover.mode === 'picture' && cover.file ? 'Change' : 'Pick a picture'} variant="secondary" size="sm" disabled={!canPickFile || stage.state === 'uploading'} onPress={() => void choosePicture()} />
         </View>
       ) : null}
       {stage.state === 'failed' ? (
@@ -101,6 +102,6 @@ export function CoverChoice({ preview }: CoverChoiceProps) {
 const styles = StyleSheet.create({
   root: { gap: space.sm },
   picked: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  thumb: { width: thumb, height: thumb, borderRadius: radius.chip, overflow: 'hidden' },
+  thumb: { width: thumb.width, height: thumb.height, borderRadius: thumb.corner, overflow: 'hidden' },
   pickedWords: { flex: 1, minWidth: 0 },
 });

@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
+import { pictureCandidates } from '@/features/feed/model';
 import { usePicture } from '@/features/feed/usePicture';
 
 import { kindIcon, type GridTile } from './model';
@@ -56,7 +57,7 @@ export function ContentGrid({ tiles, onOpenDraft, onOpenPiece }: { tiles: readon
 function Tile({ tile, onOpenDraft, onOpenPiece }: { tile: GridTile; onOpenDraft?: () => void; onOpenPiece?: (id: string) => void }) {
   const { colors } = useWawu();
   // The creator's cover first (R-114), then the still; a picture that will not load (a link that has expired) gives way to the next, and the kind of file after them, never an empty box.
-  const { uri: still, onError: stillFailed } = usePicture([tile.cover, tile.still].filter((u): u is string => Boolean(u)));
+  const { uri: still, onError: stillFailed } = usePicture(pictureCandidates({ contentType: tile.kind, coverUrl: tile.cover }, tile.still));
   // A draft opens the shop that finishes it (VF2, VERIFY-01); a published piece opens its own page (WALK-FIX H1, design M5: the grid is the
   // way in). A screen that gives no opener leaves its tiles as plain pictures.
   const opens = tile.draft ? onOpenDraft ?? null : onOpenPiece ? () => onOpenPiece(tile.id) : null;

@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import { Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { FeedItem } from '../api';
 import type { VideoSurfaceProps } from '../player';
@@ -179,5 +180,21 @@ describe('H6 and H8: an audio and a template card with a cover (Android)', () =>
       fireEvent(view.getByTestId('work-image-w1'), 'error', errorEvent());
     });
     expect(view.queryByTestId('work-image-w1')).toBeNull();
+  });
+
+  it('a PDF card draws its cover as the front of its book (pressing it still reads), the generated cover when it has none', async () => {
+    const { PdfPost } = require('../PdfPost') as typeof import('../PdfPost');
+    const area = (node: React.ReactElement) => <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>{node}</SafeAreaProvider>;
+    const view = await wrap(area(<PdfPost item={item({ contentType: 'pdf', previewAssetUrl: 'https://cdn.test/previews/pages.pdf', coverUrl: COVER, pageCount: 84 })} active width={390} height={754} myId={null} chromeTop={50} />));
+    expect(view.getByTestId('book-cover-a').props.source).toEqual([{ uri: COVER }]);
+    expect(view.queryByText('84 pages')).toBeNull();
+    expect(view.getByTestId('book-a')).toBeTruthy();
+    await rtl.act(async () => {
+      fireEvent(view.getByTestId('book-cover-a'), 'error', errorEvent());
+    });
+    expect(view.getByText('84 pages')).toBeTruthy();
+    const plain = await wrap(area(<PdfPost item={item({ id: 'b', contentType: 'pdf', previewAssetUrl: 'https://cdn.test/previews/pages.pdf', coverUrl: null, pageCount: 12 })} active width={390} height={754} myId={null} chromeTop={50} />));
+    expect(plain.queryByTestId('book-cover-b')).toBeNull();
+    expect(plain.getByText('12 pages')).toBeTruthy();
   });
 });

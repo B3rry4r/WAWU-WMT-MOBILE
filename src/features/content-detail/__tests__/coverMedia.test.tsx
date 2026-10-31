@@ -1,6 +1,7 @@
 import * as rtl from '@testing-library/react-native';
 import { useVideoPlayer } from 'expo-video';
 import { Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { FeedItem } from '@/features/feed/api';
 
@@ -22,6 +23,8 @@ const bad = () => ({ nativeEvent: { error: 'gone' } });
 const piece = (contentType: FeedItem['contentType'], previewAssetUrl: string, over: Partial<FeedItem> = {}) =>
   ({ id: `${contentType}-1`, title: 'VFX for Beginners', contentType, accessType: 'paid', price: 8000, previewAssetUrl, fullAssetUrl: null, fullAssetLocked: true, pageCount: null, coverUrl: COVER, ...over }) as unknown as FeedItem;
 const tag = { icon: 'GraduationCap' as const, text: '12 lessons' };
+// The PDF's reader (opened by a tap on its picture) needs the safe area.
+const inArea = (node: React.ReactElement) => <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>{node}</SafeAreaProvider>;
 
 beforeEach(() => {
   jest.replaceProperty(Platform, 'OS', 'android');
@@ -82,5 +85,24 @@ describe('H25, H19 and H24 · covers on the piece page (Android)', () => {
       rtl.fireEvent(rtl.screen.getByTestId('detail-parent-course-image'), 'error', bad());
     });
     expect(rtl.screen.queryByTestId('detail-parent-course-image')).toBeNull();
+  });
+
+  it('a PDF with a cover draws it, and a tap still reads the pages; a PDF with none keeps the generated book', async () => {
+    await rtl.render(inArea(<Media piece={piece('pdf', 'https://cdn.test/previews/pages.pdf?sig=1', { title: 'Pricing playbook', pageCount: 84 })} tag={{ icon: 'Eye', text: 'Preview' }} by="Kemi Okafor" />));
+    expect(rtl.screen.getByTestId('detail-media-cover').props.source).toEqual([{ uri: COVER }]);
+    expect(rtl.screen.queryByText('84 pages')).toBeNull();
+    expect(rtl.screen.getByRole('button', { name: 'Read Pricing playbook' })).toBeTruthy();
+    await rtl.act(async () => {
+      rtl.fireEvent(rtl.screen.getByTestId('detail-media-cover'), 'error', bad());
+    });
+    // A cover that will not load gives way to the book.
+    expect(rtl.screen.getByText('84 pages')).toBeTruthy();
+  });
+
+  it('a PDF with no cover draws its generated book (H19)', async () => {
+    await rtl.render(inArea(<Media piece={piece('pdf', 'https://cdn.test/previews/pages.pdf?sig=1', { title: 'Pricing playbook', pageCount: 84, coverUrl: null })} tag={{ icon: 'Eye', text: 'Preview' }} by="Kemi Okafor" />));
+    expect(rtl.screen.queryByTestId('detail-media-cover')).toBeNull();
+    expect(rtl.screen.getByText('Pricing playbook')).toBeTruthy();
+    expect(rtl.screen.getByText('84 pages')).toBeTruthy();
   });
 });
