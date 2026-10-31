@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: verifying
 depends_on: [COVERS-APP]
-decisions: [R-118, R-8, R-114, R-27, R-47, R-29]
+decisions: [R-118, R-8, R-27, R-47, R-29]
 passes: [V1, V4, V5, V6, V9]
 artboards: []
 tier: T1
@@ -32,6 +32,27 @@ As of 31 Oct 2026, built by a Sonnet builder (T1). Mobile `wmt/PREVIEW-AUTO` (me
 **Existing assertions changed (R-118 names the defect they pinned):** `framesScreen.test.tsx` and `cover.test.tsx` opened the video clip step with `format video` and now open it as a `course` (whose preview is still an mp4 lesson, so the frame, discard and cover paths they prove still run), with the draft's full file mirrored onto a lesson (`asLesson`); `framesScreen.test.tsx` "an audio clip keeps the icon..." and `create.test.tsx` "asks for the clip length the Hub sets on an audio piece" now assert the new audio step (no drop box, the made-for-you line, Continue on). Two tests added in `cover.test.tsx` for the create body (paid sends `previewFromFile`, free sends neither).
 
 **Defaults (lead), owner may override:** (a) step 3 stays five steps for everyone (R-118 makes it the cover step for every piece, so a Free piece does not skip it); (b) "30 seconds" is the app's constant `MADE_PREVIEW_SECONDS`, the Hub's `PREVIEW_SECONDS`; (c) the Hub's `GET /uploads/formats` still lists the old 30 to 60 s clip rule for audio (unchanged: the web's rules stay); (d) editing a free audio piece to paid later still needs a separate preview (PATCH unchanged).
+
+## Round 1 (31 Oct 2026, R-118 for the other kinds)
+
+Hub `wmt/PREVIEW-AUTO` `b1a40fa` (one package added: `pdf-lib` 1.17.1, plain JavaScript, MIT); app `wmt/PREVIEW-AUTO` `24556a90`. Fingerprints held: android `e871fe1a355ac5a50d47a0b1325fe54fc159c80b`, ios `e8e7de8550c68bf499b295c2b0ed6414e50d12b8` (`npx expo-updates fingerprint:generate`, no native change, no new native module).
+
+| Kind | What step 3 does now | Who makes the preview |
+|---|---|---|
+| Audio, video | "Add a cover", line "first 30 seconds, made for you"; Video frame (default), Picture, None | Hub cuts the full file (`previewFromFile`) |
+| Picture | line "a smaller copy of your first picture"; the tiles draw the picture itself | the phone: long edge 640 px, JPEG 0.7, made when the picture is chosen (the phone's copy goes after the upload), uploaded at Send of a paid piece as `content/preview` |
+| PDF | line "the first pages, made for you" | Hub, pdf-lib: first 3 pages, a file under 6 pages its first page; one page refused; locked refused |
+| Course | video first lesson: "first 30 seconds of your first lesson" (Video frame default); other first lesson: "your cover is the preview, a cover is needed" | Hub cuts `fullAsset` (the first lesson) or copies the cover |
+| Template | the full file is never a picture (spreadsheet, document, deck, CSV, archive): the cover is the preview and a paid one needs it | Hub copies the cover to its own `content/preview` file |
+| Free (any) | no line, no tiles, cover optional | none: the whole file is open (R-8) |
+
+Also: M20's hints no longer say "30-60 second clip" or "give away an extract"; the stepper names step 3 "Cover"; the Hub's refusal words no longer send a creator to "your own clip". **Defaults (lead), owner may override:** a one page PDF is refused (nothing to keep back); the template preview is a stored copy of the cover so a later cover change never breaks it; a free piece shows no tiles on step 3.
+
+**Not done:** (1) the price step and the refusal pictures: the local stack's Hub did not answer the browser export (CORS), so those shots showed "Prices did not load" and are not kept; the cover-step pictures (audio, video frame, picture, PDF, course with video and with a document, template without and with a cover, free audio and template) are in `scratchpad/preview-auto/shots/` with M22 beside them; (2) VF12 Publish (`/publish`, product drafts) still asks for a preview file; (3) the app's `contract/openapi.json` copy was not refreshed (the Hub change is descriptions only).
+
+**Changed assertions (R-118 names the defect each pinned):** `model.test.ts` (M20 audio hint "30-60 second clip", pdf hint "give away an extract"; previewHint kept for VF12), `create.test.tsx` (M20 hint texts, "changes a row when the Hub changes its rule"; the whole M22 "upload a preview file / remove it / refused" block became the cover-step tests), `framesScreen.test.tsx` (rewritten: the frame is read at step 2 from the full file; the picture copy), `cover.test.tsx` (the frame source is the full file; the create call sends `previewFromFile`), `details.test.tsx`, `lessons.test.tsx`, `saleTerms.test.tsx` (no preview in the draft; `previewFromFile: true`; piece meta has no preview size). Hub: `preview-auto.contract.spec.ts` "a pdf that asks for a cut" is now "a picture that asks the Hub for its preview".
+
+**PHONE CHECK (add):** choose a picture on the phone and send a paid picture piece: the preview in review is a small copy (about 640 px); a PDF of 6 or more pages: the preview is 3 pages; a template: the cover shows as the preview; a video: "Video frame" shows the frame of the video just chosen.
 
 ## Capability checks
 
