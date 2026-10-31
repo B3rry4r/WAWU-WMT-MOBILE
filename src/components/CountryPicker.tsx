@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { font, space, useWawu } from '@/theme';
 
 import { BottomSheet } from './BottomSheet';
@@ -41,6 +42,9 @@ export type CountryPickerProps = {
 
 /** The list takes at most this share of the window, so the sheet never covers the whole screen. */
 const LIST_SHARE = 0.4;
+/** R-117: what the sheet's grabber, title and search field take above the list, and the phone's top edge; the list gives way to the keyboard inside what is left. */
+const CHROME = 260;
+const LIST_MIN = 120;
 const FLAG_SIZE = 24;
 const pickedMetrics = { icon: 18, stroke: 2.6 } as const;
 
@@ -88,6 +92,9 @@ function PickerBody({ title, searchLabel, items, selected, onPick, failed, onRet
   const { colors } = useWawu();
   const { height } = useWindowDimensions();
   const [query, setQuery] = useState('');
+  // R-117 part B: the sheet is a modal the keyboard covers (Android draws edge to edge), so it adds the keyboard's height under its list and the list shortens to fit.
+  const lift = useKeyboardLift();
+  const listHeight = lift > 0 ? Math.max(LIST_MIN, Math.min(height * LIST_SHARE, height - lift - CHROME)) : height * LIST_SHARE;
   const shown = useMemo(() => (items ? searchItems(items, query) : []), [items, query]);
 
   return (
@@ -121,7 +128,7 @@ function PickerBody({ title, searchLabel, items, selected, onPick, failed, onRet
               keyboardShouldPersistTaps="handled"
               initialNumToRender={20}
               windowSize={7}
-              style={{ maxHeight: height * LIST_SHARE }}
+              style={{ maxHeight: listHeight }}
               renderItem={({ item }) => (
                 <ListRow
                   testID={`${testID}-row-${item.code}`}
@@ -143,6 +150,7 @@ function PickerBody({ title, searchLabel, items, selected, onPick, failed, onRet
               )}
             />
           )}
+          {lift > 0 ? <View testID={`${testID}-keyboard-lift`} style={{ height: lift }} /> : null}
         </>
       )}
     </>

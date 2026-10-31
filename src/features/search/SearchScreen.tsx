@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View , Text as NativeText } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View, Text as NativeText } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -303,7 +303,8 @@ export function SearchScreen({ onCancel, onOpenRoom, onOpenContent, onOpenPerson
   }
 
   return (
-    <View testID="search-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    // R-117 part B: padded by the keyboard on both phones (Android draws edge to edge), so the results end at the keyboard, not under it.
+    <KeyboardAvoidingView testID="search-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.head}>
         <SearchField
           testID="search-input"
@@ -321,7 +322,7 @@ export function SearchScreen({ onCancel, onOpenRoom, onOpenContent, onOpenPerson
       </View>
       {body}
       <Toast message={notice} tone="alert" placement="bottom" offset={insets.bottom + space.s2xl} lines={2} duration={FOLLOW_NOTICE_MS} onHide={dismiss} testID="search-notice" />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

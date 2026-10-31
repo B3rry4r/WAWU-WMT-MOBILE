@@ -9,7 +9,8 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
-import { AudioSource, type SeekRequest } from '@/features/feed/player';
+import { PLAYER_FAILED } from '@/features/feed/model';
+import { AudioSource, type LoadState, type SeekRequest } from '@/features/feed/player';
 import { nameOf } from '@/features/me/model';
 import { fetchMe, meKey } from '@/features/profile-edit/api';
 import { space, useWawu } from '@/theme';
@@ -31,7 +32,7 @@ export type HearNameScreenProps = {
 type Mode = 'hear' | 'edit' | 'saved';
 
 /** The audio the Hub made, and the spelling it was made from ('' for the plain name), so a spelling that changed is never played from an older clip. */
-type Clip = { uri: string; spelling: string };
+type Clip = { uri: string; spelling: string; id: number };
 
 /**
  * VF3 · Hear your name, VF3a · Phonetic edit and VF3b · Name saved. The person's name (`GET /profile`), said in the studio voice
@@ -59,6 +60,8 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
   const [position, setPosition] = useState(0);
   const [length, setLength] = useState(0);
   const [seek, setSeek] = useState<SeekRequest>(null);
+  // R-117: the clip is still coming in (the disc shows its spinner); or it will not load (the failure line says so, and a press asks the Hub for the name again).
+  const [waiting, setWaiting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveFailure, setSaveFailure] = useState<string | null>(null);
   const [keptSpelling, setKeptSpelling] = useState<string | null>(null);
@@ -76,7 +79,7 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
       try {
         const preview = await previewName(plain, spellingToSay.trim() || undefined);
         if (mine !== latest.current) return;
-        setClip({ uri: preview.audioUrl, spelling: spellingToSay.trim() });
+        setClip({ uri: preview.audioUrl, spelling: spellingToSay.trim(), id: mine });
         setPosition(0);
         setSeek({ to: 0, at: Date.now() });
         setPlaying(true);
@@ -98,6 +101,13 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
     void say(saved ?? '');
   }, [plain, voice.data, available, saved, say]);
 
+  const onLoad = useCallback((state: LoadState) => {
+    setWaiting(state === 'waiting');
+    if (state === 'failed') {
+      setFailure(PLAYER_FAILED);
+      setPlaying(false);
+    }
+  }, []);
   const onTime = useCallback((at: number, total: number) => {
     setPosition(at);
     setLength(total);
@@ -198,7 +208,7 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
     return (
       <>
         <View style={styles.centre}>
-          <PlayDisc testID="hear-name-disc" playing={playing} busy={fetching} failed={failed} onPress={press} label="Play your name" />
+          <PlayDisc testID="hear-name-disc" playing={playing} busy={fetching || (playing && waiting)} failed={failed} onPress={press} label="Play your name" />
           <Text variant="title" accessibilityRole="header" testID="hear-name-name" style={styles.name}>
             {title}
           </Text>
@@ -263,7 +273,7 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
   return (
     <KeyboardAvoidingView testID="hear-name-keyboard" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ShopFrame testID="hear-name-screen" title="Hear your name" onBack={onBack} foot={foot}>
-        {clip ? <AudioSource uri={clip.uri} playing={playing} seek={seek} onTime={onTime} onEnded={onEnded} /> : null}
+        {clip ? <AudioSource key={clip.id} uri={clip.uri} playing={playing} seek={seek} onTime={onTime} onEnded={onEnded} onLoad={onLoad} /> : null}
         {body}
       </ShopFrame>
     </KeyboardAvoidingView>

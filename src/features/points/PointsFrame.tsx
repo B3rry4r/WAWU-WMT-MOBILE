@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import type { IconName } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, space, useWawu } from '@/theme';
@@ -40,6 +41,7 @@ export type PointsFrameProps = {
 export function PointsFrame({ title, subtitle, onBack, action, gap, foot, centered, children, testID }: PointsFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(Math.max(insets.bottom, frameMetrics.footBottom));
   return (
     <KeyboardAvoidingView testID={testID} behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.nav}>
@@ -56,10 +58,9 @@ export function PointsFrame({ title, subtitle, onBack, action, gap, foot, center
         </View>
         <View style={styles.side}>{action ? <IconButton icon={action.icon} label={action.label} onPress={action.onPress} testID={action.testID} /> : null}</View>
       </View>
-      <ScrollView
+      <FieldScroll
         style={styles.scroll}
         testID="points-scroll"
-        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.content,
           centered && styles.centered,
@@ -67,9 +68,9 @@ export function PointsFrame({ title, subtitle, onBack, action, gap, foot, center
         ]}
       >
         {children}
-      </ScrollView>
+      </FieldScroll>
       {foot ? (
-        <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, frameMetrics.footBottom), paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>{foot}</View>
+        <View style={[styles.foot, { paddingBottom: footBottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>{foot}</View>
       ) : null}
     </KeyboardAvoidingView>
   );

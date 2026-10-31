@@ -149,6 +149,22 @@ describe('VF3 · Hear your name', () => {
     expect(screen.getByLabelText('Pause')).toBeTruthy();
   });
 
+  it('R-117 part C: the name disc shows its spinner while the clip is still coming in, and the failure line (with a press that asks the Hub again) when it will not load', async () => {
+    await bootName();
+    expect(await screen.findByText('Lennox Emmanuel')).toBeTruthy();
+    await waitFor(() => expect(lastAudio()).toEqual(expect.objectContaining({ playing: true })));
+    const load = (state: 'waiting' | 'ready' | 'failed') => act(async () => (lastAudio() as unknown as { onLoad: (s: string) => void }).onLoad(state));
+    await load('waiting');
+    expect(screen.getByLabelText('Getting your name ready')).toBeTruthy();
+    await load('ready');
+    expect(screen.getByLabelText('Pause')).toBeTruthy();
+    await load('failed');
+    expect(await screen.findByTestId('hear-name-failure')).toBeTruthy();
+    expect(screen.getByText("Couldn't play this. Tap to try again.")).toBeTruthy();
+    expect(lastAudio()).toEqual(expect.objectContaining({ playing: false }));
+    expect(screen.getByLabelText('Try again')).toBeTruthy();
+  });
+
   it('says the name the way the person kept it: the saved spelling goes with the preview', async () => {
     await bootName({ [`GET ${VOICE}`]: ok(voiceView({ namePhonetic: 'Leh-nox Em-man-yoo-el', nameSavedAt: '2026-10-19T10:00:00.000Z' })) });
     await screen.findByText('Lennox Emmanuel');

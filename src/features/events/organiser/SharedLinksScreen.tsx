@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
@@ -29,6 +30,7 @@ export type SharedLinksScreenProps = { id: string; onBack: () => void };
 export function SharedLinksScreen({ id, onBack }: SharedLinksScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   const client = useQueryClient();
   const links = useQuery({ queryKey: referralsKey(id), queryFn: () => fetchReferrals(id) });
   useRefetchOnFocus(['events', 'referrals']);
@@ -59,9 +61,9 @@ export function SharedLinksScreen({ id, onBack }: SharedLinksScreenProps) {
   };
 
   return (
-    <View testID="links-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="links-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="Shared links" onBack={onBack} backTestID="links-back" />
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <FieldScroll contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         {links.isPending ? (
           <LoadingView label="Loading your links" testID="links-loading">
             <Skeleton height={64} />
@@ -95,9 +97,9 @@ export function SharedLinksScreen({ id, onBack }: SharedLinksScreenProps) {
             ))}
           </GroupedList>
         )}
-      </ScrollView>
+      </FieldScroll>
       {links.data ? (
-        <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom }]}>
+        <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}>
           <TextField
             testID="links-label"
             label="New link"
@@ -119,7 +121,7 @@ export function SharedLinksScreen({ id, onBack }: SharedLinksScreenProps) {
           <Button testID="links-make" label="Make a link" full loading={busy} onPress={() => void make()} />
         </View>
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

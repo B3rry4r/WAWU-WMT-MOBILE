@@ -9,6 +9,14 @@ import type { FeedItem } from '@/features/feed/api';
 import { PictureViewer } from '@/features/feed/PictureViewer';
 import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
 import { RequestSheet } from '@/features/chat/RequestSheet';
+import { queryClient } from '@/api/query';
+import { NewCommunityScreen } from '@/features/community-host/NewCommunityScreen';
+import { DetailsScreen } from '@/features/create/DetailsScreen';
+import { TrailerScreen } from '@/features/movies/TrailerScreen';
+import { detailKey } from '@/features/movies/api';
+import { SearchScreen } from '@/features/search/SearchScreen';
+import { BankSheet } from '@/features/wallet/BankSheet';
+import { banksQuery } from '@/features/wallet/api/payoutAccount';
 import { space, useWawu } from '@/theme';
 
 /**
@@ -104,7 +112,15 @@ function installAndroidPhone() {
   };
 }
 
+/** The reads the round 1 screens make, put in the app's cache so the page draws them with no Hub (the bank list, one movie with a trailer). */
+const BANKS = [{ code: '044', name: 'Access Bank' }, { code: '058', name: 'Guaranty Trust Bank' }, { code: '011', name: 'First Bank of Nigeria' }, { code: '033', name: 'United Bank for Africa' }, { code: '057', name: 'Zenith Bank' }, { code: '090267', name: 'Kuda Microfinance Bank' }];
+function seed() {
+  queryClient.setQueryData(banksQuery.queryKey, BANKS);
+  queryClient.setQueryData(detailKey('m1'), { id: 'm1', title: 'Night Market', premiering: false, premierDate: null, mustAgreeTerms: false, trailer: { kind: 'file', url: 'https://files.invalid/trailer.mp4' } });
+}
+
 export default function ViewFixPreview() {
+  useState(seed);
   const { colors } = useWawu();
   const { state = 'video' } = useLocalSearchParams<{ state?: string }>();
   const [phone] = useState(installAndroidPhone);
@@ -142,6 +158,11 @@ export default function ViewFixPreview() {
       ) : null}
       {state === 'comments' ? <CommentsSheet visible onClose={close} count={2} page={page} /> : null}
       {state === 'request' ? <RequestSheet visible chatId="c" name="Bisi" onClose={close} onSent={close} onOpenWallet={close} /> : null}
+      {state === 'community' ? <View style={styles.full}><NewCommunityScreen onClose={close} onCreated={close} /></View> : null}
+      {state === 'details' ? <View style={styles.full}><DetailsScreen format="video" onBack={close} onContinue={close} /></View> : null}
+      {state === 'search' ? <View style={styles.full}><SearchScreen onCancel={close} onOpenRoom={close} /></View> : null}
+      {state === 'trailer' ? <View style={styles.full}><TrailerScreen movieId="m1" onClose={close} /></View> : null}
+      {state === 'bank' ? <BankSheet visible onClose={close} onPick={close} selectedCode={null} /> : null}
       {keyboard ? (
         <Modal transparent visible animationType="none" statusBarTranslucent>
           <View pointerEvents="none" style={styles.keyboardHost}>
@@ -158,6 +179,7 @@ export default function ViewFixPreview() {
 const styles = StyleSheet.create({
   page: { flex: 1, padding: space.lg, justifyContent: 'center' },
   piece: { width: '100%' },
+  full: { ...StyleSheet.absoluteFill },
   keyboardHost: { flex: 1, justifyContent: 'flex-end' },
   keyboard: { alignItems: 'center', justifyContent: 'center' },
 });

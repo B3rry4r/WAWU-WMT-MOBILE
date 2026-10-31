@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler, ScrollView, StyleSheet, View } from 'react-native';
+import { BackHandler, KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -48,6 +49,7 @@ export type EditEventScreenProps = {
 export function EditEventScreen({ id, onBack, onDone, onMine, onSeeTiers, now = Date.now }: EditEventScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   const client = useQueryClient();
   const event = useQuery({ queryKey: detailKey(id), queryFn: () => fetchEvent(id) });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions });
@@ -153,7 +155,7 @@ export function EditEventScreen({ id, onBack, onDone, onMine, onSeeTiers, now = 
   const changed = draft && original ? eventChanged(draft, original, banner !== null) : false;
 
   return (
-    <View testID="edit-event-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="edit-event-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="Edit event" onBack={back} backTestID="edit-back" />
       {loading ? (
         <View style={styles.body} testID="edit-loading">
@@ -174,7 +176,7 @@ export function EditEventScreen({ id, onBack, onDone, onMine, onSeeTiers, now = 
         />
       ) : (
         <>
-          <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <FieldScroll contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
             <Stepper step={step} steps={EDIT_STEPS} />
             {step === 0 ? (
               <Basics draft={draft} errors={errors} options={opts} set={set} openKind={() => setSheet('kind')} />
@@ -190,8 +192,8 @@ export function EditEventScreen({ id, onBack, onDone, onMine, onSeeTiers, now = 
                 onBanner={canPickImage ? chooseBanner : null}
               />
             )}
-          </ScrollView>
-          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom }]}>
+          </FieldScroll>
+          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}>
             {failure ? (
               <Text variant="errorLine" tone="danger" accessibilityRole="alert" testID="edit-failure">
                 {failure}
@@ -207,7 +209,7 @@ export function EditEventScreen({ id, onBack, onDone, onMine, onSeeTiers, now = 
           <ReviewSheet visible={confirm} onClose={() => setConfirm(false)} onConfirm={() => void send()} busy={sending} />
         </>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
