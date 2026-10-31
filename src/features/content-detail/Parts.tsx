@@ -19,7 +19,7 @@ import { compactCount, isPicture, UNNAMED_CREATOR } from '@/features/feed/model'
 
 import type { Comment, PieceDetail } from './api';
 import { ago, commenterName, lessonLength, plural, type Thread } from './model';
-import { LongPressable } from '@/features/report/LongPressable';
+import { LongPressable, reportAction } from '@/features/report/LongPressable';
 
 /** design/_gen/home.js lines 61 to 75: the sizes of the piece's own page. */
 export const m = {
@@ -355,7 +355,9 @@ export function CommentRow({
           <NativeText style={[font(600), { color: colors.textPrimary }]}>{name}</NativeText>
           {` · ${ago(comment.createdAt)}`}
         </Text>
-        <NativeText style={[font(400), styles.commentText, { color: colors.textPrimary }]}>{comment.text}</NativeText>
+        <NativeText style={[font(400), styles.commentText, { color: colors.textPrimary }]} {...reportAction(onReport ? () => onReport(comment) : undefined)}>
+          {comment.text}
+        </NativeText>
         <View style={styles.commentFoot}>
           {onReply ? (
             <Pressable testID={testID ? `${testID}-reply` : undefined} accessibilityRole="button" accessibilityLabel={`Reply to ${name}`} onPress={() => onReply(comment)} hitSlop={space.sm}>

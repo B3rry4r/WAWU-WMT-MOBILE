@@ -10,7 +10,7 @@ import { MoneyGround } from '@/features/wallet/home/BalanceCard';
 import { font, space, useWawu } from '@/theme';
 
 import type { MoneyRequest } from './api';
-import { LongPressable } from '@/features/report/LongPressable';
+import { LongPressable, reportAction } from '@/features/report/LongPressable';
 
 /**
  * design/_gen/inbox.js lines 49 to 52 (`b`, `moneyB`, `reqB`): a text bubble is at most 78% wide, 10 by 14 inside, a 20 corner with a 6
@@ -76,7 +76,7 @@ export function TextBubble({ id, text, mine, at, stamp, pending, onLongPress }: 
   const { colors } = useWawu();
   return (
     <LongPressable onLongPress={onLongPress}>
-    <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]} accessible accessibilityLabel={`${mine ? 'You' : 'They'}${at ? `, ${clockTime(at)}` : stamp ? `, ${stamp}` : ''}, ${text}`}>
+    <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]} accessible accessibilityLabel={`${mine ? 'You' : 'They'}${at ? `, ${clockTime(at)}` : stamp ? `, ${stamp}` : ''}, ${text}`} {...reportAction(onLongPress)}>
       <View
         style={[
           styles.bubble,

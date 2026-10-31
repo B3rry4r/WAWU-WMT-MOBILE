@@ -10,7 +10,7 @@ import { font, space, useWawu } from '@/theme';
 import type { CommunityMessage, CommunitySender } from './api';
 import { clockTime } from './format';
 import type { OutgoingMessage } from './useRoomMessages';
-import { LongPressable } from '@/features/report/LongPressable';
+import { LongPressable, reportAction } from '@/features/report/LongPressable';
 
 /**
  * design/_gen/inbox.js line 72, `post`: a 34 avatar and the words 10 apart; the name 13 / 600 with a "Host" pill and the time 6
@@ -37,7 +37,7 @@ export function MessagePost({ message, sender, isHost, onLongPress }: PostProps 
   const name = who?.name || who?.handle || 'Member';
   return (
     <LongPressable onLongPress={onLongPress}>
-    <View style={styles.row} testID={`post-${message.id}`} accessible accessibilityLabel={`${name}${isHost ? ', host' : ''}, ${clockTime(message.sentAt)}, ${message.text ?? attachmentWords(message).toLowerCase()}`}>
+    <View style={styles.row} testID={`post-${message.id}`} accessible accessibilityLabel={`${name}${isHost ? ', host' : ''}, ${clockTime(message.sentAt)}, ${message.text ?? attachmentWords(message).toLowerCase()}`} {...reportAction(onLongPress)}>
       <Avatar name={name} hue={hueFor(message.senderWawuId)} size={postMetrics.avatar} source={who?.avatarUrl ?? undefined} decorative />
       <View style={styles.words}>
         <View style={styles.head}>

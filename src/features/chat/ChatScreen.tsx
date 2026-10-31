@@ -32,6 +32,9 @@ import { PhotoViewer } from './PhotoViewer';
 import { messageWords, threadItems, type ThreadItem } from './thread';
 import { queryClient } from '@/api/query';
 import { useReporting } from '@/features/report/useReporting';
+import { PersonMenu } from '@/features/report/PersonMenu';
+import { inboxKey } from '@/features/inbox/api';
+import { blockPerson } from '@/features/visitor/api';
 import { useChatThread } from './useChatThread';
 import { useRequestPay } from './useRequestPay';
 
@@ -73,7 +76,17 @@ export function ChatScreen(props: ChatScreenProps) {
   const owner = useSessionAccount(undefined);
   const thread = useChatThread(chatId, focused);
   // REPORT-UGC: press and hold the other person's message to report it; the Hub leaves it out of this person's chat.
-  const reporting = useReporting(() => void queryClient.invalidateQueries({ queryKey: chatKey(chatId) }));
+  // The thanks is drawn above the composer (REPORT-UGC r1), so the composer's height is read.
+  const [composerHeight, setComposerHeight] = useState(0);
+  const reporting = useReporting((kind) => {
+    void queryClient.invalidateQueries({ queryKey: chatKey(chatId) });
+    // A reported person is out of the reporter's lists: the chat with them closes, as the profile page does.
+    if (kind === 'profile') {
+      void queryClient.invalidateQueries({ queryKey: inboxKey });
+      props.onBack();
+    }
+  }, composerHeight);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { chat, messages } = thread;
   const sends = useQuery(chatSendsQuery(owner, chatId));
   const [attachOpen, setAttachOpen] = useState(false);
@@ -281,7 +294,6 @@ export function ChatScreen(props: ChatScreenProps) {
 
   return (
     <KeyboardAvoidingView testID="chat-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
-      {reporting.element}
       <View style={[styles.bar, { borderBottomColor: colors.borderHairline }]} testID="chat-header">
         <IconButton icon="ChevronLeft" label="Back" onPress={props.onBack} size={headMetrics.back} testID="chat-back" />
         {person ? (
@@ -300,6 +312,7 @@ export function ChatScreen(props: ChatScreenProps) {
                 </Text>
               )}
             </View>
+            {support ? null : <IconButton icon="Ellipsis" label="More" onPress={() => setMenuOpen(true)} size={headMetrics.back} testID="chat-menu" />}
           </>
         ) : null}
       </View>
@@ -319,7 +332,18 @@ export function ChatScreen(props: ChatScreenProps) {
           </Text>
         </Pressable>
       ) : null}
-      {ready ? closed ? <ChatClosedBar /> : <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={support ? undefined : () => setAttachOpen(true)} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {/* Always drawn with its `onLayout`: a View that gets the handler only later is never observed on the web export. */}
+      <View onLayout={(event) => setComposerHeight(Math.round(event.nativeEvent.layout.height))} testID="chat-bottom">
+        {ready ? (
+          closed ? (
+            <ChatClosedBar />
+          ) : (
+            <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={support ? undefined : () => setAttachOpen(true)} />
+          )
+        ) : (
+          <View style={{ height: Math.max(insets.bottom, space.lg) }} />
+        )}
+      </View>
       {person && !support ? (
         <>
           <AttachSheet
@@ -343,6 +367,22 @@ export function ChatScreen(props: ChatScreenProps) {
         </>
       ) : null}
       {pay.sheet ? <RequestPaySheet sheet={pay.sheet} name={name} notice={pay.notice} /> : null}
+      {person && !support ? (
+        <PersonMenu
+          visible={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          name={name || person.name}
+          report={{ title: 'Report this profile', onPress: () => reporting.ask('profile', person.wawuId) }}
+          onBlock={async () => {
+            await blockPerson(person.wawuId);
+            void queryClient.invalidateQueries({ queryKey: inboxKey });
+            void queryClient.invalidateQueries({ queryKey: ['feed'] });
+            props.onBack();
+          }}
+          testID="chat-person-menu"
+        />
+      ) : null}
+      {reporting.element}
       <PhotoViewer uri={viewing} onClose={() => setViewing(null)} />
     </KeyboardAvoidingView>
   );

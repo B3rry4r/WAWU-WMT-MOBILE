@@ -13,7 +13,11 @@ import { ReportSheet } from './ReportSheet';
  * once the Hub took the report the sheet closes, "Thanks. We'll review this." is said, and `onReported` lets the screen
  * take the item out of the reporter's view (a list refetch, or leaving the page). Draw `element` once on the screen.
  */
-export function useReporting(onReported?: (kind: ReportKind, targetId: string) => void): {
+export function useReporting(
+  onReported?: (kind: ReportKind, targetId: string) => void,
+  /** A screen with a composer along its bottom passes the composer's height: the thanks is drawn that far up, above it, and is not hidden behind it. */
+  above = 0,
+): {
   ask: (kind: ReportKind, targetId: string) => void;
   element: ReactNode;
 } {
@@ -36,7 +40,7 @@ export function useReporting(onReported?: (kind: ReportKind, targetId: string) =
           }}
         />
       ) : null}
-      <Toast message={toast} tone="success" placement="bottom" offset={insets.bottom + space.xl} duration={3000} onHide={() => setToast(null)} testID="report-toast" />
+      <Toast message={toast} tone="success" placement="bottom" offset={above > 0 ? above + space.md : insets.bottom + space.xl} duration={3000} onHide={() => setToast(null)} testID="report-toast" />
     </>
   );
   return { ask, element };

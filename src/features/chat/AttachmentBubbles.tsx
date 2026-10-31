@@ -10,7 +10,7 @@ import { font, space, useWawu } from '@/theme';
 
 import { bubbleMetrics, PendingNote, Time, type PendingState } from './Bubbles';
 import type { ChatFileKind } from './attachments';
-import { LongPressable } from '@/features/report/LongPressable';
+import { LongPressable, reportAction } from '@/features/report/LongPressable';
 
 /**
  * A photo, a video or a file in the chat (FIX-104). No board draws these bubbles, so they are built from the text bubble's own parts
@@ -126,11 +126,11 @@ export function AttachmentBubble({ id, kind, mine, contentType, uri, name, bytes
     <LongPressable onLongPress={onLongPress}>
     <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
       {onOpen && !pending ? (
-        <Pressable testID={`bubble-${id}-open`} accessibilityRole="button" accessibilityLabel={`${label}. Open`} disabled={opening} onPress={onOpen}>
+        <Pressable testID={`bubble-${id}-open`} accessibilityRole="button" accessibilityLabel={`${label}. Open`} disabled={opening} onPress={onOpen} {...reportAction(onLongPress)}>
           {body}
         </Pressable>
       ) : (
-        <View accessible accessibilityLabel={label}>
+        <View accessible accessibilityLabel={label} {...reportAction(onLongPress)}>
           {body}
         </View>
       )}
