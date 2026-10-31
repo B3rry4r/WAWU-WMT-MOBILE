@@ -9,7 +9,7 @@ repo: wawu-wmt-mobile
 type: mobile-screen
 status: verifying
 depends_on: []
-decisions: [R-92, R-116, R-47]
+decisions: [R-92, R-116, R-118, R-47]
 passes: [V1, V4, V5, V6, V9]
 artboards: []
 tier: T1
@@ -91,6 +91,33 @@ Taken from this branch's web export against a LOCAL Hub (backend `origin/main` `
 
 Look: the whole banner is shown with no crop on all four; the chip is small, top right, and legible on the light banners (1 and 3) and the dark one (2); on banner 1 it sits over the right edge of the painted "One SOUEAST Car" stamp (it hides part of the word "One"). That is the owner's art under the chip he asked for; moving the chip to another corner would cover the painted logo or the "Powered by" line, so it is left in the corner that covers least. The board H1 and X1 still draw the old 196 high card with words (they are not redrawn: R-116 overrides them, as BRIEF rule 1 allows for a ruling; the designer's boards are the lead's to update).
 
+### WALK1031-FIX · the Fable walk of the phone update (F1, F3 here; F2 and F5 below) (31 Oct 2026; R-116, R-118)
+
+Built by a Sonnet builder (T1), mobile `wmt/WALK1031-FIX` on `origin/wmt/BATCH-1031` `41427d6f`. App only: no Hub change, no new package, no native change (fingerprints unchanged, android `e871fe1a`, ios `e8e7de85`, read with `npx expo-updates fingerprint:generate`). Held for the next batch; nothing sent to a phone. **Pictures: NOT RUN** (see the end of this section). **Supersedes rows 5 and 7 of the table above** (the chip's 9 px and the dots' pill on the picture).
+
+**Default (lead), owner may override** (the lead's brief; recorded under R-116): on an advert slide nothing of ours is drawn on the picture except the SPONSORED chip.
+
+| # | Walk finding | Before (`41427d6f`) | After |
+|---|---|---|---|
+| F1 MEDIUM | the pager dots, on a small dark pill 8 in and 8 up, sat on the banner's painted "REGISTER NOW" (bottom right, where the owner's banners paint it) and hid part of it | dots and pill on the picture at the bottom right | on an advert the dots are off the picture: a centred row under the card, in the page's colours (the current dot `accent`, the rest `textMuted`, 6 high, the current one 16 wide), and the slider is that row taller (8 gap + the 6 dot = 14) only while an advert is the slide on show; between an advert and an event the row grows and shrinks with the swipe, exactly as the frame does (`sliderRowHeight` beside `sliderFrameHeight`, one straight line, never a jump); a pager of adverts only keeps the row all the way; an event slide keeps its white dots on the card (16 in, 18 up, as drawn, X16); one slide has no dots and no row; Today's single card is unchanged |
+| F3 LOW | the SPONSORED chip's words were 9 px | 9 | `type.size.label`, 11, the app's smallest type token; the chip is still 18 high, 6 in from the top and the right (the corner the banners leave bare: logo top left, call bottom right) |
+| F2 LOW | course step 2 said "The first lesson is free. The rest unlock when someone buys the course." beside step 3's "Your preview is the first 30 seconds of your first lesson" | the old line | `lessonsLine` (`create/model.ts`): "Your preview is the first 30 seconds of your first lesson, made for you. With two or more lessons, the first plays free and the rest unlock when someone buys the course." The first sentence is step 3's own words (`previewLine('course', 'cut')`; with a first lesson that is not a video it is step 3's cover words). See the finding below |
+| F5 records | `DECISIONS.md` at `41427d6f` had no heading for R-109, R-113, R-114 | none | R-109 and R-113 added word for word from `origin/wmt/STUDIO-HOME` (R-109 is also on `origin/wmt/STUDIO2-CUT` and the S2 branches); R-114 has no DECISIONS entry on any of the 556 remote branches, so its heading is made from the only two places the ruling was written, quoted word for word (the Hub's `docs/contract/COVERS.md` and this repo's `tasks/PREVIEWS-APP.md`), with that said in the heading. If the lead has the ruling's own wording, R-114 is the one to replace |
+
+**Finding for the lead (F2, hard rule 4: the live system first).** The brief's line for F2 said every lesson unlocks when someone buys the course. The live Hub (backend `origin/main` `37bbe96`, `src/content-piece/course-lessons.service.ts` `freeLessonCount`, and `content-detail.service.ts`) makes the first lesson of a course of two or more lessons free to play IN FULL for anyone who may open the piece (`isFree`, the app's "Free" tag on lesson 01 and its play, `ContentDetailScreen.tsx`), while the piece's PREVIEW (the card and the listing) is the first 30 seconds of that lesson (R-118). A course of one lesson has none free. So "every lesson unlocks when someone buys" would have been false, and the old line was true for two lessons or more and false for one. The new line is true for both, in step 3's words. If the owner wants the first lesson locked (preview only), that is a Hub change to `freeLessonCount`, the "Free" tag on a lesson card (`LessonCard`, M21) and this line together; it is not made here.
+
+### Changed assertions, WALK1031-FIX (named, with why)
+
+| Test | Was | Now |
+|---|---|---|
+| `explore/__tests__/slider.test.tsx` "a user sees an advert, then an event, then an advert, with a dot for each and the first long" | dots `opacity` `[1, 0.45, 0.45]` and the dots container `right: 8, bottom: 8` (on the picture, on a pill) | dots have no opacity (page colours: the current one a different colour from the rest), the container is not placed on a corner, it is not inside `explore-hero` (the picture's frame) and is inside `explore-hero-dots-row` under it. F1 names the defect this pinned |
+
+No other assertion changed; `adCardSize`, `adLink`, `bannerAndroid`, `sliderAuto` and `screens` pass untouched. New tests: `explore/__tests__/sliderDots.test.tsx` (17 cases, run on `Platform.OS` android and again on ios, fake timers, the pager's own scroll handler and the slider's own autoplay: the dots are in a row under the card and not on the picture, the card holds only the picture and SPONSORED, the colours in both themes, the height is a straight line between an advert (banner + 14) and an event (196) with no jump, a pager of adverts keeps its height, the event's white dots stay on the card and come back to the row, the long dot follows the autoplay and the slide back, one slide has no dots and no row, the chip's size is the smallest type token and its corner); `create/__tests__/model.test.ts` (4, `lessonsLine`); `create/__tests__/lessons.test.tsx` (1, run on android and ios: the line on the screen, the old line gone).
+
+Proof of the ruling (hard rule 3): `rg "bannerRight|bannerBottom|bannerPadX|bannerPadY|dotsOnBanner" src` finds nothing; `rg "chipWords: 9"` finds nothing; the only places dots are drawn are `SliderDots` in `ExploreSlider.tsx` (Today has one card and never draws them); `rg "The first lesson is free" src` finds nothing.
+
+**Pictures: NOT RUN (this builder).** The brief's pictures need the owner's real banners made by the lead's `create-ads.mjs --art-set original` against a local Hub. That script and the owner's original art are not in the repo, the backend or the walk's own folder, and the rules forbid searching the scratchpad for them, so no picture could be taken with the real banners; a local Hub with stand-in art would not show whether the dots clear the painted call, which is the whole finding. A verifier or the lead needs: the script's path, then `scripts/dev/stack.sh` on backend `origin/main` `37bbe96`, the web export of this branch, and `.../adslide-b/tools/shoot_slide.py` style shots at 390 x 844 dark and light, 360 x 640 light, slide 1, slide 2 and an event slide beside board X1, Today's card (unchanged) and course step 2 dark and light. The chip's reach at 360 and 430 wide is also only measured by those pictures (jest has no layout engine).
+
 ## PHONE CHECK (owner's phone list, before the update)
 
 - Explore: swipe the slider through the four banners with a thumb while the page is at the top: it pages one banner at a time, never sticks halfway, and the page behind does not scroll sideways or jump.
@@ -104,6 +131,9 @@ Look: the whole banner is shown with no crop on all four; the chip is small, top
 - AD-SLIDE, leaving: switch to another tab, open a banner's link, pull the notification shade down, or lock the phone: it stops, and starts again about 5 seconds after Explore is in front again. Count: the Hub's views for an advert go up once per day for the person, not per slide change.
 - AD-SLIDE, reduce motion: turn on "Remove animations" (Android) or "Reduce Motion" (iOS) in the phone's settings: the slider never moves by itself, a swipe still pages it. Turn it off again while Explore is open: it starts moving (5 s after).
 - AD-SLIDE, screen reader: with TalkBack or VoiceOver on and the focus on a banner, the slider still slides every 5 seconds; the screen reader's focus stays where it was and says nothing new when the slide changes. (If the owner finds an automatic slide unwelcome with a screen reader on, the lead's default can stop it there; it is not stopped today.)
+- WALK1031-FIX, dots: open Explore with the four banners: the little dots are in a row under the banner (the current one purple and long, the rest grey), centred; nothing but SPONSORED is on the banner, and the painted "REGISTER NOW" is whole and readable in both themes. Swipe to a featured event: the dots move onto the event card (white, bottom right) and the page under it moves smoothly with your finger, no jump; swipe back: they return to the row. With only one banner there are no dots and no gap under it.
+- WALK1031-FIX, chip: SPONSORED is readable at the phone's size (11) and never touches the banner's logo (top left) or its painted button (bottom right) on a small phone (360 wide) and a large one (430 wide).
+- WALK1031-FIX, course step 2: add the lessons: the line under "Add the lessons" reads as step 3 does (the preview is the first 30 seconds of the first lesson) and says the first lesson plays free once there are two lessons.
 - AD-SLIDE, loading: open Explore on a slow connection: the grey block where the slider will be is the banner's height, and the first banner arrives into it without the page jumping.
 
 ## Read first

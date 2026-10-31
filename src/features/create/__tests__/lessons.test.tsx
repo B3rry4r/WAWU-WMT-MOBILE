@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 
 import { ScriptedXhr, FORMATS, allowance, chosen, hub, installFetch, installXhr, ok, presigned, refusal, renderFrame } from '../__helpers__/harness';
 
@@ -69,6 +70,23 @@ describe('the course step 2: the lessons, one by one', () => {
   };
   const next = () => screen.getByTestId('create-continue');
   const keys = () => draft.getLessons().map((l) => l.key);
+
+  // WALK1031-FIX F2 (R-118): step 2's line used to say "The first lesson is free. The rest unlock when someone buys the course." beside step 3's
+  // "Your preview is the first 30 seconds of your first lesson". No test pinned the old line; this one pins what is true (the Hub's rule in
+  // `freeLessonCount`: with two lessons or more the first plays free, a course of one has none free) in step 3's words for the preview.
+  it.each(['android', 'ios'] as const)('says what a buyer sees: the first 30 seconds as the preview, and which lessons play free (%s)', async (os) => {
+    const platform = jest.replaceProperty(Platform, 'OS', os);
+    await open();
+    const line = screen.getByTestId('lessons-line');
+    expect(line.props.children).toBe(
+      'Your preview is the first 30 seconds of your first lesson, made for you. With two or more lessons, the first plays free and the rest unlock when someone buys the course.',
+    );
+    expect(screen.queryByText('The first lesson is free. The rest unlock when someone buys the course.')).toBeNull();
+    const [first] = keys();
+    await uploadFor(first, 'l1.mp4');
+    expect(screen.getByTestId('lessons-line').props.children).toBe(line.props.children);
+    platform.restore();
+  });
 
   it('a creator fills a lesson (title, length, a file each), adds a second, and Continue waits for every lesson', async () => {
     const calls = await open();

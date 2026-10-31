@@ -2,7 +2,7 @@ import { chosen as chosenFile } from '../__helpers__/harness';
 import { refusalFor } from '../chosen';
 import { getDraft, resetDraft, setFormat, setFull, setPreview } from '../draft';
 import { contentTypeFor, extensionOfName } from '../fileTypes';
-import { coverRequired, formatBytes, formatHint, previewLine, previewWayOf, secondsLine, typesLine, type FormatRule } from '../model';
+import { coverRequired, formatBytes, formatHint, lessonsLine, previewLine, previewWayOf, secondsLine, typesLine, type FormatRule } from '../model';
 import { pdfPageCount } from '../pdfPages';
 
 const MB = 1024 * 1024;
@@ -130,5 +130,25 @@ describe('page count', () => {
   });
   it('says nothing when the file does not say', () => {
     expect(pdfPageCount(pdf('1 0 obj << /Type /Catalog >> endobj'))).toBeNull();
+  });
+});
+
+// WALK1031-FIX F2 (R-118): a course's step 2 line says what the Hub does, in step 3's own words for the preview.
+describe('the course step 2 line (lessonsLine)', () => {
+  const FREE_FIRST = 'With two or more lessons, the first plays free and the rest unlock when someone buys the course.';
+  it('says the preview is the first 30 seconds of the first lesson (step 3\'s words), then which lessons play free', () => {
+    const line = lessonsLine({ contentType: 'video/mp4' });
+    expect(line).toBe(`${previewLine('course', 'cut')} ${FREE_FIRST}`);
+    expect(line).toBe('Your preview is the first 30 seconds of your first lesson, made for you. With two or more lessons, the first plays free and the rest unlock when someone buys the course.');
+  });
+  it('says the same before any file is chosen, and never says the old "The first lesson is free." on its own', () => {
+    expect(lessonsLine(null)).toBe(lessonsLine({ contentType: 'video/quicktime' }));
+    expect(lessonsLine(null)).not.toContain('The first lesson is free.');
+  });
+  it('says the cover is the preview when the first lesson is not a video, as step 3 does', () => {
+    expect(lessonsLine({ contentType: 'audio/mpeg' })).toBe(`Your first lesson is not a video, so your cover is the preview. ${FREE_FIRST}`);
+  });
+  it('has no em-dash', () => {
+    for (const full of [null, { contentType: 'video/mp4' }, { contentType: 'audio/mpeg' }]) expect(lessonsLine(full)).not.toContain('\u2014');
   });
 });
