@@ -11,6 +11,7 @@ import { useShownPrice } from '@/features/store/ladder/usePrice';
 import type { CardWork, CreatorCardData } from './api';
 import { ButtonRow, CardButton, CardFrame, CardName, Stat, StatsPanel, useCardFollow } from './CardFrame';
 import { cardMetrics as m, media, words } from './look';
+import { canFollow } from '@/features/home/model';
 import { cardTick, compactCount, followedByParts, hueFor, isPicture, placeLine, workTile } from './model';
 import { Pill } from './parts';
 
@@ -23,6 +24,8 @@ export type FeedCreatorCardProps = {
   onOpenWork?: (id: string) => void;
   /** Profile (M5, ME-02): opens the creator's profile. Left out, the button is not drawn (R-47). */
   onOpenProfile?: (wawuId: string) => void;
+  /** The viewer's own id: their own card draws no Follow, and none does until it is known (HOME-SELF, `canFollow`). */
+  myId?: string | null;
 };
 
 /** One piece in the strip: its kind, a lock and its price when it is locked, else its views and length. */
@@ -104,7 +107,7 @@ function KnownRow({ known }: { known: CreatorCardData['knownFollowers'] }) {
  * locked), and Follow. Every figure is the Hub's: a figure it does not have is left out with the
  * element around it. Profile opens M5 (ME-02).
  */
-export function FeedCreatorCard({ card, width, height, chromeTop, onOpenWork, onOpenProfile }: FeedCreatorCardProps) {
+export function FeedCreatorCard({ card, width, height, chromeTop, onOpenWork, onOpenProfile, myId }: FeedCreatorCardProps) {
   const name = card.displayName?.trim() ?? '';
   const follow = useCardFollow(card.wawuId, card.followsCreator);
   return (
@@ -137,14 +140,16 @@ export function FeedCreatorCard({ card, width, height, chromeTop, onOpenWork, on
         </Text>
       ) : null}
       <ButtonRow>
-        <CardButton
-          testID="card-follow"
-          tone={follow.on ? 'glass' : 'primary'}
-          icon={follow.on ? undefined : 'Plus'}
-          label={follow.on ? 'Following' : 'Follow'}
-          busy={follow.busy}
-          onPress={follow.toggle}
-        />
+        {canFollow(card.wawuId, myId) ? (
+          <CardButton
+            testID="card-follow"
+            tone={follow.on ? 'glass' : 'primary'}
+            icon={follow.on ? undefined : 'Plus'}
+            label={follow.on ? 'Following' : 'Follow'}
+            busy={follow.busy}
+            onPress={follow.toggle}
+          />
+        ) : null}
         {onOpenProfile ? <CardButton testID="card-profile" tone="glass" label="Profile" onPress={() => onOpenProfile(card.wawuId)} /> : null}
       </ButtonRow>
     </CardFrame>

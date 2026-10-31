@@ -12,6 +12,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { fetchMyId, meKey } from '@/features/feed/api';
+import { canFollow } from '@/features/home/model';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { categoriesKey, creatorsKey, fetchCategories, fetchCreatorsPage, type ExploreCreator } from './api';
@@ -164,7 +165,7 @@ export function CategoriesScreen({ initial, onBack, title = 'Categories', onSear
             width={cell}
             height={creatorCardMetrics.gridHeight}
             onPress={onOpenCreator ? () => onOpenCreator(item.wawuId) : undefined}
-            onToggleFollow={item.wawuId === me.data ? undefined : () => follow.toggle(item)}
+            onToggleFollow={canFollow(item.wawuId, me.data) ? () => follow.toggle(item) : undefined}
           />
         )}
         columnWrapperStyle={styles.columns}

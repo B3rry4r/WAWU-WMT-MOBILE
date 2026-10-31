@@ -3,6 +3,7 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
+import { canFollow } from '@/features/home/model';
 import { Button } from '@/components/Button';
 import { formatNaira } from '@/components/pay-sheet';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -244,7 +245,7 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
           avatarUrl={maker.avatarUrl}
           tick={tickKind(maker)}
           line={makerLine(maker)}
-          following={own ? null : e.followsCreator}
+          following={own || !canFollow(p.creatorWawuId, page.me.data) ? null : e.followsCreator}
           onToggleFollow={() => page.followMaker.mutate(!e.followsCreator)}
         />
 

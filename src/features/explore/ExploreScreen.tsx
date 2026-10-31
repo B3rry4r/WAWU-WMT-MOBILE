@@ -13,6 +13,7 @@ import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { useAdList } from '@/features/ads/useAd';
 import { ExploreEventsRail, useExploreEvents } from '@/features/events/ExploreEvents';
 import { fetchMyId, meKey } from '@/features/feed/api';
+import { canFollow } from '@/features/home/model';
 import { FlixRail } from '@/features/movies/FlixRail';
 import { NO_CREATORS_LINE, NO_CREATORS_TITLE } from '@/features/home/CreatorRail';
 import { TgifCard, TgifProblem } from '@/features/home/TgifCard';
@@ -205,7 +206,7 @@ export function ExploreScreen({ onOpenCategory, onOpenEvent, onSeeAllEvents, onF
                   testID={`explore-featured-${creator.wawuId}`}
                   creator={creator}
                   onPress={onOpenCreator ? () => onOpenCreator(creator.wawuId) : undefined}
-                  onToggleFollow={creator.wawuId === me.data ? undefined : () => follow.toggle(creator)}
+                  onToggleFollow={canFollow(creator.wawuId, me.data) ? () => follow.toggle(creator) : undefined}
                 />
               ))}
             </ScrollView>

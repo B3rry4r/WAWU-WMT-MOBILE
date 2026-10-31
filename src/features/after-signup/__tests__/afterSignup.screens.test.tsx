@@ -164,6 +164,7 @@ describe('A13 People to follow', () => {
     answers['GET /api/hub/explore/suggested-creators'] = ok({ items: [person('c1', 'Amaka Nwosu'), person('c2', 'Tife Adeola', { following: true, field: 'film_video' })] });
     answers['POST /api/hub/creators/c1/follow'] = ok({ following: true });
     answers['DELETE /api/hub/creators/c2/follow'] = ok({ following: false });
+    answers['GET /api/hub/users/me'] = ok({ wawuUserId: 'me-viewer' });
     const onDone = jest.fn(async () => undefined);
     await render(frame(<FollowScreen step="2 of 2" onDone={onDone} />));
     await screen.findByTestId('person-c1');
@@ -171,12 +172,22 @@ describe('A13 People to follow', () => {
     expect(screen.getByText('Photography')).toBeTruthy();
     expect(screen.getByText('Film & Video')).toBeTruthy();
     expect(screen.getByText('Based on what you picked.')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('follow-c1'));
+    await fireEvent.press(await screen.findByTestId('follow-c1'));
     await waitFor(() => expect(calls('POST', '/api/hub/creators/c1/follow')).toHaveLength(1));
     await fireEvent.press(screen.getByTestId('follow-c2'));
     await waitFor(() => expect(calls('DELETE', '/api/hub/creators/c2/follow')).toHaveLength(1));
     await fireEvent.press(screen.getByTestId('follow-done'));
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+  });
+
+  it('the viewer\'s own row draws no Follow, and another row still does (HOME-SELF)', async () => {
+    answers['GET /api/hub/users/me/interests'] = interests(['photography', 'film_video', 'technology']);
+    answers['GET /api/hub/explore/suggested-creators'] = ok({ items: [person('me-viewer', 'Me Myself'), person('c1', 'Amaka Nwosu')] });
+    answers['GET /api/hub/users/me'] = ok({ wawuUserId: 'me-viewer' });
+    await render(frame(<FollowScreen step="2 of 2" onDone={jest.fn(async () => undefined)} />));
+    await screen.findByTestId('follow-c1');
+    expect(screen.getByTestId('person-me-viewer')).toBeTruthy();
+    expect(screen.queryByTestId('follow-me-viewer')).toBeNull();
   });
 
   it('says so when nobody matches yet, and Go to Home still works', async () => {

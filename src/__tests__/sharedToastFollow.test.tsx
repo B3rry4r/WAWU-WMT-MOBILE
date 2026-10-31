@@ -161,7 +161,7 @@ describe('MediaCard placeholder (SHARED-CHANGES HOME-01 #3)', () => {
     };
     const hue = hueFor('c1');
     const ground = darkColors[`hue${hue.charAt(0).toUpperCase()}${hue.slice(1)}` as keyof typeof darkColors];
-    const rail = await render(<CreatorRail creators={[person]} onRetry={() => undefined} retrying={false} />);
+    const rail = await render(<CreatorRail creators={[person]} myId="viewer" onRetry={() => undefined} retrying={false} />);
     expect(screen.getByTestId('today-creator-c1-placeholder', hiddenOk)).toBeTruthy();
     // A saturated ground from the hue token, filling the picture, not the pale sunken block with a circle on it.
     expect(styleOf(screen.getByTestId('today-creator-c1-portrait', hiddenOk))).toMatchObject({ position: 'absolute', backgroundColor: ground });
@@ -185,7 +185,7 @@ describe('MediaCard placeholder (SHARED-CHANGES HOME-01 #3)', () => {
       following: false,
       badge: null,
     };
-    const rail = await render(<CreatorRail creators={[person]} onRetry={() => undefined} retrying={false} />);
+    const rail = await render(<CreatorRail creators={[person]} myId="viewer" onRetry={() => undefined} retrying={false} />);
     expect(screen.queryByTestId('today-creator-c1-placeholder', hiddenOk)).toBeNull();
     expect(screen.queryByTestId('today-creator-c1-portrait', hiddenOk)).toBeNull();
     await rail.unmount();
@@ -253,7 +253,7 @@ describe("THE creator-card Follow: Home and Explore draw it identically, through
     [false, 'Follow'],
     [true, 'Following'],
   ] as const)('following %s: the same button, words and fill on both cards (%s)', async (following, label) => {
-    const rail = await render(<CreatorRail creators={[person(following)]} onRetry={() => undefined} retrying={false} />);
+    const rail = await render(<CreatorRail creators={[person(following)]} myId="viewer" onRetry={() => undefined} retrying={false} />);
     const home = look('today-follow-c1', label);
     await rail.unmount();
     await render(<CreatorCard creator={person(following)} onToggleFollow={() => undefined} testID="explore-c1" />);
@@ -273,7 +273,7 @@ describe("THE creator-card Follow: Home and Explore draw it identically, through
   it('neither card styles the button by hand: no style reaches it beyond what the size and variant give', async () => {
     await render(<Button label="Following" variant="veil" size="card" full onPress={() => undefined} testID="shared" />);
     const shared = styleOf(screen.getByTestId('shared'));
-    const rail = await render(<CreatorRail creators={[person(true)]} onRetry={() => undefined} retrying={false} />);
+    const rail = await render(<CreatorRail creators={[person(true)]} myId="viewer" onRetry={() => undefined} retrying={false} />);
     expect(styleOf(screen.getByTestId('today-follow-c1'))).toEqual(shared);
     await rail.unmount();
     await render(<CreatorCard creator={person(true)} onToggleFollow={() => undefined} testID="explore-c1" />);
