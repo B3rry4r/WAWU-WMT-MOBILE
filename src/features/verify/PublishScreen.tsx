@@ -432,12 +432,17 @@ export function PublishScreen(props: PublishScreenProps) {
         <FileRow slot={full} title={format ? uploadTitle(format) : 'Add the file'} disabled={busy || published !== null} onPress={() => void add()} />
         {full.state === 'ready' && format && way && published === null ? (
           // The cover step (R-118): once the file is in, the cover and, for a paid piece, the one muted line saying what the preview is.
-          <View testID="publish-cover" pointerEvents={busy ? 'none' : 'auto'} style={styles.group}>
-            {free ? null : (
-              <Text variant="muted" testID="publish-preview-line">
-                {previewLine(format, way)}
+          <View testID="publish-cover" pointerEvents={busy ? 'none' : 'auto'} style={styles.cover}>
+            <View style={styles.coverHead}>
+              <Text variant="body" style={font(700)}>
+                Add a cover
               </Text>
-            )}
+              {free ? null : (
+                <Text variant="muted" testID="publish-preview-line">
+                  {previewLine(format, way)}
+                </Text>
+              )}
+            </View>
             <CoverChoice source={full.file} required={coverNeeded} value={cover} onChange={chooseCover} />
           </View>
         ) : null}
@@ -549,6 +554,8 @@ function Bar({ share, testID }: { share: number; testID: string }) {
 const styles = StyleSheet.create({
   stack: { gap: BODY_GAP },
   group: { gap: space.sm },
+  cover: { gap: space.lg, marginTop: space.sm },
+  coverHead: { gap: space.xs },
   note: { flexDirection: 'row', gap: space.md, padding: space.lg, borderRadius: radius.card },
   noteWords: { flex: 1, gap: space.xs },
   noteButton: { alignSelf: 'flex-start', marginTop: space.sm },

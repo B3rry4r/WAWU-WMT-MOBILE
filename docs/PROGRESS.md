@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 34 | 0 | 0 | 0 |
-| building | 4 | 0 | 0 | 0 |
-| verifying | 29 | 0 | 0 | 0 |
+| building | 3 | 0 | 0 | 0 |
+| verifying | 30 | 0 | 0 | 0 |
 | review | 243 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -266,6 +266,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [PREVIEWS-APP](../tasks/PREVIEWS-APP.md) A piece, a row or a card never shows an empty box where a picture should be (the app-only fixes, part A) (You)
 - [COVERS-APP](../tasks/COVERS-APP.md) The app draws a piece's cover and lets a creator set, change and remove it (part B of PREVIEWS-APP, R-114) (You)
 - [PREVIEW-AUTO](../tasks/PREVIEW-AUTO.md) Audio and video need no preview clip: the Hub makes it, step 3 is the cover step (R-118) (You)
+- [UPLOAD-REST](../tasks/UPLOAD-REST.md) The rest of R-118 (Edit details free to paid, VF12 Publish) and R-120 (a buyer never sees what the creator gets) (You)
 - [TIER-CARDS](../tasks/TIER-CARDS.md) A tier card reads like a subscription card (R-108), and a payment the store refused is told as refused, not as no store (You)
 - [TIER-OFFER-ALL](../tasks/TIER-OFFER-ALL.md) The tier offer is asked of the Hub for every signed-in account type, on every start, and shown exactly when the Hub says so (R-105) (You)
 - [OPEN-UPLOAD](../tasks/OPEN-UPLOAD.md) Open your wallet on Android: the ID and bill upload reaches the Hub, a lost photo is asked for again, ID photos are brought down in size, and a failed upload keeps the saved details in view (You)
@@ -293,7 +294,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
-- [UPLOAD-REST](../tasks/UPLOAD-REST.md) The rest of R-118 (Edit details free to paid, VF12 Publish) and R-120 (a buyer never sees what the creator gets) (You)
 - [TIER-COUNTS](../tasks/TIER-COUNTS.md) Products each tier allows are 4, 8 and 15, and a running tier gets the new count at once (R-112) (You)
 - [WELCOME-FULL](../tasks/WELCOME-FULL.md) The welcome video is the whole screen, with the words and buttons over it: no panel, no shade, no gradient (R-111) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
