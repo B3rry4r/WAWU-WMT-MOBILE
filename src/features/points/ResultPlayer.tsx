@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { pressScale } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/Text';
 import { barCountFor, playedBars, voiceClock, voicePlayerMetrics as m, waveShape } from '@/components/VoicePlayer';
-import { AudioSource, type SeekRequest } from '@/features/feed/player';
+import { PLAYER_FAILED_SHORT } from '@/features/feed/model';
+import { AudioSource, type LoadState, type SeekRequest } from '@/features/feed/player';
 import { font, layout, radius, type, useWawu } from '@/theme';
 
 export type ResultPlayerProps = {
@@ -30,6 +31,16 @@ export function ResultPlayer({ uri, name, testID }: ResultPlayerProps) {
   const [length, setLength] = useState(0);
   const [seek, setSeek] = useState<SeekRequest>(null);
   const [waveWidth, setWaveWidth] = useState<number | undefined>();
+  // R-117: the file is still coming in (the button shows the spinner in its place); or it will not load (the words stand where the clock is).
+  const [waiting, setWaiting] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const onLoad = useCallback((state: LoadState) => {
+    setWaiting(state === 'waiting');
+    if (state === 'failed') {
+      setFailed(true);
+      setPlaying(false);
+    } else if (state === 'ready') setFailed(false);
+  }, []);
 
   const onTime = useCallback((at: number, total: number) => {
     setPosition(at);
@@ -51,17 +62,25 @@ export function ResultPlayer({ uri, name, testID }: ResultPlayerProps) {
       testID={testID}
       style={[styles.pill, { backgroundColor: colors.surfaceCard, boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }] }]}
     >
-      <AudioSource uri={uri} playing={playing} seek={seek} title={name} onTime={onTime} onEnded={onEnded} />
+      <AudioSource uri={uri} playing={playing} seek={seek} title={name} onTime={onTime} onEnded={onEnded} onLoad={onLoad} />
       <Pressable
         testID={testID ? `${testID}-button` : undefined}
         accessibilityRole="button"
-        accessibilityLabel={playing ? `Pause ${name}` : length > 0 ? `Play ${name}, ${clock}` : `Play ${name}`}
-        onPress={() => setPlaying((on) => !on)}
+        accessibilityLabel={playing ? (waiting ? `Loading ${name}, tap to pause` : `Pause ${name}`) : length > 0 ? `Play ${name}, ${clock}` : `Play ${name}`}
+        accessibilityState={waiting && playing ? { busy: true } : undefined}
+        onPress={() => {
+          setFailed(false);
+          setPlaying((on) => !on);
+        }}
         hitSlop={(layout.tapMin - m.button) / 2}
         {...ring.handlers}
         style={({ pressed }) => [styles.button, { backgroundColor: colors.accent, transform: [{ scale: pressed ? pressScale : 1 }] }, ring.style]}
       >
-        <Icon name={playing ? 'Pause' : 'Play'} size={m.buttonIcon} color={colors.textOnAccent} strokeWidth={m.buttonIconStroke} fill={colors.textOnAccent} />
+        {playing && waiting ? (
+          <ActivityIndicator testID={testID ? `${testID}-spinner` : undefined} size="small" color={colors.textOnAccent} />
+        ) : (
+          <Icon name={playing ? 'Pause' : 'Play'} size={m.buttonIcon} color={colors.textOnAccent} strokeWidth={m.buttonIconStroke} fill={colors.textOnAccent} />
+        )}
       </Pressable>
       <View
         testID={testID ? `${testID}-wave` : undefined}
@@ -76,7 +95,7 @@ export function ResultPlayer({ uri, name, testID }: ResultPlayerProps) {
         ))}
       </View>
       <Text variant="body" tone="textMuted" testID={testID ? `${testID}-time` : undefined} style={styles.time}>
-        {clock}
+        {failed ? PLAYER_FAILED_SHORT : clock}
       </Text>
     </View>
   );

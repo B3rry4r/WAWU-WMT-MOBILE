@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 
-import { media, metrics } from './look';
-import { clock, pictureCandidates, playableUrl, SKIP_SECONDS, WAVEFORM_BARS } from './model';
-import { AudioSource, canPlay, loadPeaks, type SeekRequest } from './player';
+import { media, metrics, words } from './look';
+import { clock, pictureCandidates, PLAYER_FAILED, playableUrl, SKIP_SECONDS, WAVEFORM_BARS } from './model';
+import { AudioSource, canPlay, loadPeaks, type LoadState, type SeekRequest } from './player';
 import { fromTop, PostFrame, type PostProps } from './PostFrame';
 import { Seekable } from './parts';
 import { usePicture } from './usePicture';
@@ -26,18 +26,21 @@ const waveFit = (width: number) => Math.max(0, Math.min(1, (width - 2 * (metrics
 /** Bar heights while the file has not been read (or cannot be, on a phone build today): level. */
 const level = Array.from({ length: WAVEFORM_BARS }, () => 0.5);
 
-function RoundButton({ icon, label, onPress, big, testID }: { icon: 'RotateCcw' | 'RotateCw' | 'Play' | 'Pause'; label: string; onPress: () => void; big?: boolean; testID?: string }) {
+function RoundButton({ icon, label, onPress, big, loading, testID }: { icon: 'RotateCcw' | 'RotateCw' | 'Play' | 'Pause'; label: string; onPress: () => void; big?: boolean; /** R-117: the file is still coming in; the button keeps its place and shows the spinner. */ loading?: boolean; testID?: string }) {
   const ring = useFocusRing();
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={loading ? { busy: true } : undefined}
       onPress={onPress}
       {...ring.handlers}
       style={[big ? [styles.play, { backgroundColor: media.ink }] : styles.skip, ring.style]}
     >
-      {big ? (
+      {big && loading ? (
+        <ActivityIndicator testID={testID ? `${testID}-spinner` : undefined} size="small" color={media.inkOnLight} />
+      ) : big ? (
         <Icon name={icon} size={metrics.playIcon} color={media.inkOnLight} fill={media.inkOnLight} />
       ) : (
         <Icon name={icon} size={metrics.controlIcon} color={media.ink} />
@@ -63,6 +66,19 @@ export function AudioPost(props: PostProps) {
   const [time, setTime] = useState({ position: 0, length: 0 });
   const [seek, setSeek] = useState<SeekRequest>(null);
   const [peaks, setPeaks] = useState<number[] | null>(null);
+  // R-117: the file is still coming in (the play button shows the spinner until the sound runs); or it will not load (the words say so).
+  const [load, setLoad] = useState<LoadState>('ready');
+  const [failed, setFailed] = useState(false);
+  const onLoad = (state: LoadState) => {
+    if (state === 'failed') {
+      setFailed(true);
+      setPaused(true);
+      setLoad('ready');
+      return;
+    }
+    setLoad(state);
+    if (state === 'ready') setFailed(false);
+  };
 
   // Coming back to the post starts it playing again (a locked video's ended preview stays ended).
   const [wasActive, setWasActive] = useState(active);
@@ -117,6 +133,7 @@ export function AudioPost(props: PostProps) {
             title={item.title}
             onTime={(position, length) => setTime({ position, length })}
             onEnded={() => setPaused(true)}
+            onLoad={onLoad}
             testID={`audio-${item.id}`}
           />
         </View>
@@ -147,13 +164,22 @@ export function AudioPost(props: PostProps) {
               <RoundButton icon="RotateCcw" label={`Back ${SKIP_SECONDS} seconds`} onPress={() => seekTo(time.position - SKIP_SECONDS)} testID={`back-${item.id}`} />
               <RoundButton
                 big
+                loading={playing && load === 'waiting'}
                 icon={playing ? 'Pause' : 'Play'}
-                label={playing ? 'Pause' : 'Play'}
-                onPress={() => setPaused((p) => !p)}
+                label={playing ? (load === 'waiting' ? 'Loading, tap to pause' : 'Pause') : 'Play'}
+                onPress={() => {
+                  setFailed(false);
+                  setPaused((p) => !p);
+                }}
                 testID={`play-${item.id}`}
               />
               <RoundButton icon="RotateCw" label={`On ${SKIP_SECONDS} seconds`} onPress={() => seekTo(time.position + SKIP_SECONDS)} testID={`on-${item.id}`} />
             </View>
+          ) : null}
+          {failed ? (
+            <Text testID={`failed-${item.id}`} accessibilityRole="alert" style={[words.pill, { color: media.ink }]}>
+              {PLAYER_FAILED}
+            </Text>
           ) : null}
         </View>
       }

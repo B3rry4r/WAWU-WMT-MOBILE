@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
@@ -261,7 +261,7 @@ export function HearNameScreen({ onBack, onWriteIntro }: HearNameScreenProps) {
   );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { backgroundColor: colors.surfacePage }]}>
+    <KeyboardAvoidingView testID="hear-name-keyboard" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ShopFrame testID="hear-name-screen" title="Hear your name" onBack={onBack} foot={foot}>
         {clip ? <AudioSource uri={clip.uri} playing={playing} seek={seek} onTime={onTime} onEnded={onEnded} /> : null}
         {body}

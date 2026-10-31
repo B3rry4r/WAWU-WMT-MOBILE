@@ -5,9 +5,12 @@ import { pieceStartedSound } from '@/features/music/pieceSound';
 import { metrics } from '../look';
 import { peaksFrom } from '../model';
 
-import type { AudioSourceProps, PlayerEvents, VideoSurfaceProps } from './types';
+import { createLoadTracker } from './loadState';
 
-export type { AudioSourceProps, SeekRequest, VideoSurfaceProps } from './types';
+import type { AudioSourceProps, LoadState, PlayerEvents, VideoSurfaceProps } from './types';
+
+export type { AudioSourceProps, LoadState, SeekRequest, VideoSurfaceProps } from './types';
+export { LOAD_PATIENCE_MS } from './loadState';
 export { FRAME_BUFFER, PLAY_BUFFER } from './buffer';
 
 /** The web build plays through the browser's own `<video>` and `<audio>`. */
@@ -59,6 +62,41 @@ function useEvents(ref: { current: Media | null }, { onTime, onEnded }: PlayerEv
   }, [ref]);
 }
 
+/** R-117 · the browser's own word for the file coming in (`waiting`, `stalled`), running (`playing`) and not playable (`error`). */
+function useLoad(ref: { current: Media | null }, playing: boolean, onLoad: ((state: LoadState) => void) | undefined) {
+  const handler = useRef(onLoad);
+  useEffect(() => {
+    handler.current = onLoad;
+  });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const tracker = createLoadTracker((state) => handler.current?.(state));
+    if (!playing) {
+      tracker.idle();
+      return;
+    }
+    tracker.begin();
+    const wait = () => tracker.set('waiting');
+    const run = () => tracker.set('ready');
+    const fail = () => tracker.set('failed');
+    el.addEventListener('waiting', wait);
+    el.addEventListener('stalled', wait);
+    el.addEventListener('playing', run);
+    el.addEventListener('canplay', run);
+    el.addEventListener('error', fail);
+    if (el.readyState < 3) tracker.set('waiting');
+    return () => {
+      el.removeEventListener('waiting', wait);
+      el.removeEventListener('stalled', wait);
+      el.removeEventListener('playing', run);
+      el.removeEventListener('canplay', run);
+      el.removeEventListener('error', fail);
+      tracker.idle();
+    };
+  }, [ref, playing]);
+}
+
 function useSeek(ref: { current: Media | null }, seek: VideoSurfaceProps['seek']) {
   useEffect(() => {
     const el = ref.current;
@@ -70,11 +108,16 @@ const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', hei
 /** H5: the frame frosts, and grows past the edges so the blur has no rim. */
 const frost: CSSProperties = { filter: `blur(${metrics.backdropBlur}px)`, transform: 'scale(1.15)' };
 
-export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, onFirstFrame, testID }: VideoSurfaceProps) {
+export function VideoSurface({ uri, playing, seek, frosted, fullscreenAt, onTime, onEnded, onLoad, onFirstFrame, testID }: VideoSurfaceProps) {
   const ref = useRef<HTMLVideoElement>(null);
   usePlayback(ref, playing, uri);
   useEvents(ref, { onTime, onEnded });
+  useLoad(ref, playing, onLoad);
   useSeek(ref, seek);
+  // R-117: the browser's own full-screen video.
+  useEffect(() => {
+    if (fullscreenAt) void ref.current?.requestFullscreen?.().catch(() => undefined);
+  }, [fullscreenAt]);
   return (
     <video
       ref={ref}
@@ -88,10 +131,11 @@ export function VideoSurface({ uri, playing, seek, frosted, onTime, onEnded, onF
   );
 }
 
-export function AudioSource({ uri, playing, seek, onTime, onEnded, testID }: AudioSourceProps) {
+export function AudioSource({ uri, playing, seek, onTime, onEnded, onLoad, testID }: AudioSourceProps) {
   const ref = useRef<HTMLAudioElement>(null);
   usePlayback(ref, playing, uri);
   useEvents(ref, { onTime, onEnded });
+  useLoad(ref, playing, onLoad);
   useSeek(ref, seek);
   return <audio ref={ref} src={uri} data-testid={testID} preload="metadata" />;
 }

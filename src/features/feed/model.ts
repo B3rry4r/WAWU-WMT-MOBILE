@@ -12,6 +12,11 @@ import type { CardWork, ContentDetail, CreatorCardData, FeedCreator, FeedEntry, 
  * made up when a field is missing (the element around it stays, the figure is left out).
  */
 
+/** R-117 · said where a player's file will not load (the sentence the voice player uses). */
+export const PLAYER_FAILED = "Couldn't play this. Tap to try again.";
+/** The first half of it, where there is room for only that (a pill with a clock). */
+export const PLAYER_FAILED_SHORT = "Couldn't play this";
+
 /** The post layouts: H2 and H5 (video), H3, H4, H6, H7 (a course) and H8 (a template). */
 export type PostKind = 'video' | 'photos' | 'pdf' | 'audio' | 'course' | 'template';
 

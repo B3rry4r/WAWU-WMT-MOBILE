@@ -1,12 +1,14 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { layout, radius, space as gap } from '@/theme';
 
 import { media, metrics, words } from './look';
-import { clock, endedBodyWidth, isLocked, isPicture, minutesAdjective, pictureCandidates, playableUrl, roomPlacement, SKIP_SECONDS, type CourseDetail } from './model';
-import { canPlay, VideoSurface, type SeekRequest } from './player';
+import { clock, counterRight, endedBodyWidth, PLAYER_FAILED, isLocked, isPicture, minutesAdjective, pictureCandidates, playableUrl, roomPlacement, SKIP_SECONDS, type CourseDetail } from './model';
+import { canPlay, VideoSurface, type LoadState, type SeekRequest } from './player';
+import { FullscreenButton } from './player/FullscreenButton';
 import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 import { Seekable, TrackBar } from './parts';
 import { usePicture } from './usePicture';
@@ -38,6 +40,20 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
   // The message's own height, measured: on a narrow phone its words wrap onto more lines.
   const [messageH, setMessageH] = useState(0);
   const [seek, setSeek] = useState<SeekRequest>(null);
+  // R-117: the player's loading state (the spinner in the centre while the file comes in), the words when it will not load, and the full-screen button's number.
+  const [load, setLoad] = useState<LoadState>('ready');
+  const [failed, setFailed] = useState(false);
+  const [fullscreen, setFullscreen] = useState(0);
+  const onLoad = (state: LoadState) => {
+    if (state === 'failed') {
+      setFailed(true);
+      setPaused(true);
+      setLoad('ready');
+      return;
+    }
+    setLoad(state);
+    if (state === 'ready') setFailed(false);
+  };
 
   // Coming back to the post starts it playing again (a locked video's ended preview stays ended).
   const [wasActive, setWasActive] = useState(active);
@@ -64,6 +80,7 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
     setSeek({ to: Math.max(0, Math.min(time.length || 0, to)), at: Date.now() });
   };
   const toggle = () => {
+    setFailed(false);
     if (ended) {
       seekTo(0);
       setPaused(false);
@@ -86,6 +103,15 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
         <View style={styles.paused} testID={`paused-${item.id}`} pointerEvents="none">
           <Icon name="Play" size={metrics.pausedIcon} color={media.ink} fill={media.ink} />
         </View>
+      ) : playing && load === 'waiting' ? (
+        <View style={styles.paused} testID={`waiting-${item.id}`} pointerEvents="none">
+          <ActivityIndicator testID={`spinner-${item.id}`} size="large" color={media.ink} />
+        </View>
+      ) : null}
+      {failed ? (
+        <Text testID={`failed-${item.id}`} accessibilityRole="alert" style={[words.pill, styles.failed, { color: media.ink, backgroundColor: media.pill }]}>
+          {PLAYER_FAILED}
+        </Text>
       ) : null}
     </Pressable>
   ) : null;
@@ -121,6 +147,8 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
                 frosted={previewEnded}
                 onTime={(position, length) => setTime({ position, length })}
                 onEnded={() => setEnded(true)}
+                onLoad={onLoad}
+                fullscreenAt={fullscreen}
                 onFirstFrame={() => setFramed(uri)}
                 testID={`video-${item.id}`}
               />
@@ -129,6 +157,19 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
           {previewEnded ? <View style={[StyleSheet.absoluteFill, { backgroundColor: media.veil }]} /> : null}
         </View>
       }
+      corner={(space: MiddleSpace) => {
+        // R-117: the full-screen button, top right under the tabs where the photo set draws its counter; a still has no video, and an ended preview has nothing more to play.
+        if (!canPlay || still || previewEnded) return null;
+        const top = fromTop(props.chromeTop, metrics.counterTop);
+        return (
+          <View
+            pointerEvents="box-none"
+            style={[styles.fullscreen, { top, right: counterRight({ side: metrics.side, railClearRight: metrics.railClear, counterBottom: top + layout.tapMin, railTop: space.railTop, gap: metrics.counterRailGap }) }]}
+          >
+            <FullscreenButton onPress={() => setFullscreen((n) => n + 1)} label={`Full screen, ${item.title}`} testID={`fullscreen-${item.id}`} />
+          </View>
+        );
+      }}
       middle={(space: MiddleSpace) => {
         if (!previewEnded) return playLayer;
         const { top, scale } = roomPlacement({
@@ -182,6 +223,8 @@ const styles = StyleSheet.create({
   scrub: { marginRight: metrics.barRight },
   tapLayer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   paused: { opacity: 0.85 },
+  fullscreen: { position: 'absolute', zIndex: 7 },
+  failed: { position: 'absolute', bottom: '38%', paddingHorizontal: gap.md, paddingVertical: gap.sm, borderRadius: radius.chip, overflow: 'hidden' },
   mark: { alignItems: 'center', justifyContent: 'center' },
   ended: {
     position: 'absolute',

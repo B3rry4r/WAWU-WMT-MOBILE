@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { radius } from '@/theme';
@@ -8,6 +8,7 @@ import { radius } from '@/theme';
 import type { MediaFrame } from './api';
 import { media, metrics, words } from './look';
 import { counterRight } from './model';
+import { PictureViewer, picturesOf } from './PictureViewer';
 import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 
 /** The frames to draw: the Hub's list, or the public preview alone when the set has none yet. */
@@ -27,6 +28,9 @@ export function PhotoSetPost(props: PostProps) {
   const frames = framesOf(props);
   const total = Math.max(item.media?.frameCount ?? 0, frames.length);
   const [index, setIndex] = useState(0);
+  // R-117: a tap on a picture opens it full screen (pinch to zoom, swipe between the set's pictures). Frames the viewer has no address for stay shut.
+  const [viewing, setViewing] = useState<number | null>(null);
+  const pictures = picturesOf(item);
   const first = frames[0]?.url ?? null;
   const next = frames[index + 1];
   const counterTop = fromTop(props.chromeTop, metrics.counterTop);
@@ -55,7 +59,15 @@ export function PhotoSetPost(props: PostProps) {
           renderItem={({ item: frame }) => (
             <View style={{ width, height }} testID={`frame-${item.id}-${frame.position}`}>
               {frame.url ? (
-                <Image source={{ uri: frame.url }} contentFit="cover" style={StyleSheet.absoluteFill} accessibilityLabel={`Photo ${frame.position} of ${total}`} />
+                <Pressable
+                  testID={`open-frame-${item.id}-${frame.position}`}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={`Photo ${frame.position} of ${total}, full screen`}
+                  onPress={() => setViewing(Math.max(0, pictures.findIndex((p) => p.key === String(frame.position))))}
+                  style={StyleSheet.absoluteFill}
+                >
+                  <Image source={{ uri: frame.url }} contentFit="cover" style={StyleSheet.absoluteFill} accessibilityLabel={`Photo ${frame.position} of ${total}`} />
+                </Pressable>
               ) : (
                 <View style={StyleSheet.absoluteFill} accessible accessibilityLabel={`Photo ${frame.position} of ${total}, locked`}>
                   {first ? <Image source={{ uri: first }} contentFit="cover" blurRadius={metrics.backdropBlur} style={StyleSheet.absoluteFill} /> : null}
@@ -72,6 +84,7 @@ export function PhotoSetPost(props: PostProps) {
       }
       corner={(space: MiddleSpace) => (
         <>
+          {pictures.length > 0 ? <PictureViewer pictures={pictures} index={viewing ?? 0} visible={viewing !== null} onClose={() => setViewing(null)} testID={`viewer-${item.id}`} /> : null}
           {next ? (
             <View pointerEvents="none" style={[styles.peek, { top: fromTop(props.chromeTop, metrics.peekTop) }]} testID={`peek-${item.id}`}>
               {next.url ? (

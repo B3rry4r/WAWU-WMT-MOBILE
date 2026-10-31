@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as rtl from '@testing-library/react-native';
+import { Keyboard, Platform, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 /*
@@ -461,6 +462,25 @@ describe('FIX-109 · "+" and "..." in a paid thread (G-INBOX-18-2, -3)', () => {
     await rtl.fireEvent.press(await rtl.screen.findByTestId('attach-request-money'));
     expect(await rtl.screen.findByText('Request from Bisi')).toBeTruthy();
     expect(hub.chats).toBe(1);
+  });
+
+  it('R-117 part B (Android): the reply box rides above the keyboard, because Android draws edge to edge and does not resize the window', async () => {
+    const os = jest.replaceProperty(Platform, 'OS', 'android');
+    const handlers: ((e: unknown) => void)[] = [];
+    const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, fn: (e: unknown) => void) => {
+      if (event === 'keyboardDidShow') handlers.push(fn);
+      return { remove: jest.fn() };
+    }) as never);
+    hub.thread.questions = [question()];
+    await draw(<PaidThreadScreen wawuId="fan-bisi" onBack={jest.fn()} onOpenChat={jest.fn()} />);
+    await waitReady();
+    // The phone says the 336 high keyboard is up on an 844 screen: the screen pads its foot by it, so the reply box sits on the keyboard.
+    await rtl.act(async () => rtl.screen.getByTestId('paid-thread-screen').props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 844 } }, persist: () => undefined }));
+    await rtl.act(async () => handlers.forEach((h) => h({ endCoordinates: { screenY: 844 - 336, height: 336 }, duration: 0 })));
+    await rtl.act(async () => new Promise((r) => setTimeout(r, 0)));
+    expect(StyleSheet.flatten(rtl.screen.getByTestId('paid-thread-screen').props.style).paddingBottom).toBe(336);
+    spy.mockRestore();
+    os.restore();
   });
 
   it('draws no "+" when the screen was given no way to send or request money', async () => {
