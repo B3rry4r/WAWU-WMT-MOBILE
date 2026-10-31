@@ -21,6 +21,7 @@ export default function MeTab() {
       onOpenPaid={() => router.push('/paid-message-settings')}
       onOpenSettings={() => router.push('/settings')}
       onOpenInvite={() => router.push('/invite')}
+      onOpenSuspended={() => router.push('/suspended')}
       onOpenCourses={() => router.push('/schools/mine')}
       onOpenVerification={() => router.push('/verification')}
       onOpenTier={() => router.push('/your-tier')}

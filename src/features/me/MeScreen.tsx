@@ -56,6 +56,8 @@ import {
   type SocialLink,
 } from './model';
 import { BioPlayer } from './BioPlayer';
+import { SuspendedBanner } from '@/features/suspension/SuspendedBanner';
+
 import { Counts, HeaderSkeleton, NameBlock, ProfileTop, SocialChips, bodyTop } from './ProfileHeader';
 import { ProfileTabs } from './ProfileTabs';
 import { whereLine } from '@/features/geo/place';
@@ -92,6 +94,8 @@ export type MeScreenProps = {
   onOpenSettings: () => void;
   /** The gift button over the cover (M1) opens Invite and earn (RF1, REF-03). Not drawn without it. */
   onOpenInvite?: () => void;
+  /** USER-SUSPEND (R-121): the banner on a suspended person's Me opens the suspended screen. */
+  onOpenSuspended?: () => void;
   /** My courses (SCHOOLS-08): the menu's row, drawn only when given. */
   onOpenCourses?: () => void;
   /** Verification (ME-13): the menu's row, drawn only when given. */
@@ -138,7 +142,7 @@ export type MeScreenProps = {
  * bio instead (M1, "Bio" with the "AI voice" tag, R-66, FIX-103), playing `audioUrl` from the same read. A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onOpenPiece, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenSuspended, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onOpenPiece, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const room = useFloatingRoom();
@@ -234,6 +238,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
             </LoadingView>
           ) : (
             <>
+              <SuspendedBanner onOpen={onOpenSuspended} />
               <NameBlock
                 wawuId={ready.profile.wawuUserId}
                 name={nameOf(ready.profile)}

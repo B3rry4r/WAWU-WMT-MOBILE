@@ -3,13 +3,13 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 439.**
+**Launch tasks done: 176 of 440.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 34 | 0 | 0 | 0 |
 | building | 4 | 0 | 0 | 0 |
-| verifying | 35 | 0 | 0 | 0 |
+| verifying | 36 | 0 | 0 | 0 |
 | review | 243 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -273,6 +273,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-OFFER-ALL](../tasks/TIER-OFFER-ALL.md) The tier offer is asked of the Hub for every signed-in account type, on every start, and shown exactly when the Hub says so (R-105) (You)
 - [OPEN-UPLOAD](../tasks/OPEN-UPLOAD.md) Open your wallet on Android: the ID and bill upload reaches the Hub, a lost photo is asked for again, ID photos are brought down in size, and a failed upload keeps the saved details in view (You)
 - [REPORT-UGC](../tasks/REPORT-UGC.md) A person can report a piece, comment, profile, community message, chat message or paid question, and the Hub's moderators act on it (Apple 1.2, Google Play UGC) (You)
+- [USER-SUSPEND](../tasks/USER-SUSPEND.md) A moderator can suspend a person and lift it; a suspended person is hidden and cannot write, but is never trapped (Apple 1.2, Google Play UGC) (You)
 - [POLISH-1](../tasks/POLISH-1.md) Owner's two screenshots of 30 Oct (the abroad promo row, the products meter, the music button over content) (You)
 - [WALK-FIX](../tasks/WALK-FIX.md) Full user walk of 29 Oct (grid opens a piece, region read, "No connection" only for the network, bills off, Done on Sent, paste a code, consent tap, popular banks, price strips, Legal once) (You)
 - [STORE-QUESTION](../tasks/STORE-QUESTION.md) A paid question bought in the store, earned when answered, a question credit when not (Hub) (You)

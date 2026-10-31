@@ -4669,6 +4669,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/me/suspension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeSuspensionController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/creators/{wawuId}/evg": {
         parameters: {
             query?: never;
@@ -11584,11 +11600,37 @@ export interface components {
         };
         ResolveUgcReportDto: {
             /**
-             * @description `dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community message or chat message is deleted).
+             * @description `dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community
+             *     message or chat message is deleted); on a reported PROFILE it suspends the person (USER-SUSPEND, R-121).
+             *     `take_down_and_suspend`: the item comes down AND the person who made it is suspended. `suspend`: the person is
+             *     suspended and the item is left as it is (the way to act on a paid question, which carries money).
              * @enum {string}
              */
-            action: "dismiss" | "take_down";
-            /** @description Why. Required for a take-down (it is the only record of why it came down); optional for a dismissal. */
+            action: "dismiss" | "take_down" | "take_down_and_suspend" | "suspend";
+            /** @description Why. Required for a take-down or a suspension (it is the only record of why); optional for a dismissal. */
+            note?: string;
+            /**
+             * @description Why the person is suspended, from the same short list as a report. Defaults to the report's own reason.
+             * @enum {string}
+             */
+            suspendReason?: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
+        };
+        SuspendUserDto: {
+            /**
+             * @description Why, from the short fixed list the report sheet uses.
+             * @enum {string}
+             */
+            reason: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
+            /** @description What the moderator saw. Kept with the suspension and in the audit trail; the person is never shown it. */
+            note?: string;
+            /**
+             * Format: uuid
+             * @description The report that led to it, when there was one.
+             */
+            reportId?: string;
+        };
+        LiftSuspensionDto: {
+            /** @description Why it is lifted. Kept in the audit trail. */
             note?: string;
         };
         UpsertLearnGuideDto: {
@@ -16978,6 +17020,41 @@ export interface components {
             dmResponseHours: number;
             slotsTotal: number;
         };
+        SuspensionEntryView: {
+            id: string;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            reasonLabel: string;
+            note: string | null;
+            reportId: string | null;
+            /** Format: date-time */
+            suspendedAt: string;
+            suspendedBy: {
+                email: string;
+                role: string;
+            };
+            /** Format: date-time */
+            liftedAt: string | null;
+            liftNote: string | null;
+            liftedBy: {
+                email: string;
+                role: string;
+            } | null;
+        };
+        AdminSuspensionView: {
+            wawuId: string;
+            handle: string | null;
+            suspended: boolean;
+            current: components["schemas"]["SuspensionEntryView"];
+            history: components["schemas"]["SuspensionEntryView"][];
+        };
+        MySuspensionView: {
+            suspended: boolean;
+            /** Format: date-time */
+            since: string | null;
+            message: string;
+            supportEmail: string;
+        };
         AdminUgcPerson: {
             wawuId: string;
             name: string;
@@ -17008,6 +17085,8 @@ export interface components {
             };
             emailed: boolean;
             canTakeDown: boolean;
+            subjectSuspended: boolean;
+            canSuspend: boolean;
         };
         AdminUgcResolveView: {
             id: string;
@@ -17017,6 +17096,7 @@ export interface components {
             /** @enum {string} */
             status: "dismissed" | "actioned";
             resolved: number;
+            suspended: boolean;
         };
         UgcReportView: {
             id: string;
@@ -30002,6 +30082,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UgcReportView"];
+                };
+            };
+        };
+    };
+    MeSuspensionController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySuspensionView"];
                 };
             };
         };
