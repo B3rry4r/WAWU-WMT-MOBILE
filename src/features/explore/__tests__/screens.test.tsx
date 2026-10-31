@@ -2,9 +2,18 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react-native';
 import type { ReactNode } from 'react';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { ExploreScreenProps } from '../ExploreScreen';
+
+// AD-SLIDE (R-116): X14's slider block is the advert banner's shape (27 by 8) at the width the slider will have, the screen less the
+// body's two gutters, so the page does not jump when an advert arrives first. It was 196, the height of a featured event.
+const { layout } = require('@/theme') as typeof import('@/theme');
+const { Dimensions } = require('react-native') as typeof import('react-native');
+const bannerBlock = () => ((Dimensions.get('window').width - layout.gutter * 2) * 8) / 27;
+const sliderBlockHeight = (loading: Parameters<typeof rtl.within>[0]) =>
+  (StyleSheet.flatten(rtl.within(loading).getByTestId('explore-loading-slider').props.style) as { height: number }).height;
 
 let mockFocused = true;
 jest.mock('expo-router', () => ({ useIsFocused: () => mockFocused }));
@@ -931,11 +940,12 @@ describe('X1, X15 and X14 · the event entries (EVENTS-01, R-41)', () => {
     expect(rtl.screen.queryByTestId('explore-error')).toBeNull();
   });
 
-  it('a user sees the featured event block while Explore loads (X14)', async () => {
+  it('a user sees the slider block, at the advert banner height, while Explore loads (X14, R-116)', async () => {
     answers[featured] = ['hold'];
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     const loading = await rtl.screen.findByTestId('explore-loading');
-    expect(JSON.stringify(loading)).toMatch(/"height":196/);
+    expect(sliderBlockHeight(loading)).toBeCloseTo(bannerBlock(), 5);
+    expect(sliderBlockHeight(loading)).not.toBe(196);
   });
 });
 
@@ -952,7 +962,7 @@ describe('X1 and X14 · the event entries settle before Explore draws (EVENTS-01
     await rtl.render(wrap(screen()));
     await settle();
     expect(rtl.screen.getByTestId('explore-loading')).toBeTruthy();
-    expect(JSON.stringify(rtl.screen.getByTestId('explore-loading'))).toMatch(/"height":196/);
+    expect(sliderBlockHeight(rtl.screen.getByTestId('explore-loading'))).toBeCloseTo(bannerBlock(), 5);
     expect(rtl.screen.queryByTestId('explore-tiles')).toBeNull();
     // The reads answer: the tiles appear once, with the hero above them already in place.
     await rtl.act(async () => {

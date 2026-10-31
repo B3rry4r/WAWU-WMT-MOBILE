@@ -4,8 +4,8 @@ import { font } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
 /**
- * The sponsored card's sizes, from design/_gen/home.js: `tgifAd` (H33, the card in the TGIF reader). Today's slot is the
- * Explore advert slide since R-92 (see `AdSlide`). Colours are the theme's tokens; where the canvas paints a colour the tokens only have at
+ * The sponsored card's sizes, from design/_gen/home.js: `tgifAd` (H33, the card in the TGIF reader). The Today card and the Explore slider's
+ * advert are the banner card since R-116 (see `AdSlide`). Colours are the theme's tokens; where the canvas paints a colour the tokens only have at
  * another strength (white at 18%, the page colour at 20 to 92%), the token's own colour is used at that strength.
  */
 export const adMetrics = {
@@ -29,13 +29,6 @@ export const adMetrics = {
   skip: 13,
   /** `tgifAd`'s shade over the picture: the page colour at 55%, 20% a third of the way down and 92% three quarters down. */
   shade: { colors: [0.55, 0.2, 0.92], locations: [0, 0.35, 0.75] },
-  /**
-   * The button word on Today's ad card (R-92: the Today strip is the Explore advert slide, `AdSlide`, so only the pill is
-   * its own): 13 at 700 on a 32 high white pill, 14 in. The size, corner, fade and words are the slide's.
-   */
-  slotButtonHeight: 32,
-  slotButtonPadX: 14,
-  slotButton: 13,
 } as const;
 
 /** White text and controls over the picture, whatever the theme: the card is dark in both, as the reader's cards are. */
