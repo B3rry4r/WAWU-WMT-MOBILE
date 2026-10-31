@@ -3,7 +3,7 @@ id: PREVIEW-AUTO
 title: Audio and video need no preview clip: the Hub makes it, step 3 is the cover step (R-118)
 owner: YOU
 area: ME
-order: -10978
+order: -10977
 priority: launch
 repo: wawu-wmt-mobile
 type: mobile-screen
