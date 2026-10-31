@@ -216,8 +216,9 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
               ? waitingCard(q, name, now, fromOf(q.id), shown.native)
               : entry.status === 'responded'
                 ? answeredCard(name, entry.last ? shownFollowUp(followUpOf(terms, termsFailed), shown.forKobo) : null)
-                : // The refund's words name the account, so they wait for the payment's record (the card says only "refunded" until then).
-                  refundedCard(q, name, sourceOf(q.id).settled ? recordOf(q.id) : null, now, sourceOf(q.id).from);
+                : // The refund's words name the account, so they wait for the payment's record (the card names no account until then);
+                  // a question bought in a store gave a question credit back (R-101 point 6).
+                  refundedCard(q, name, sourceOf(q.id).settled ? recordOf(q.id) : null, now, fromOf(q.id), shown.native);
           return <StatusCardView key={entry.key} testID={`paid-card-${q.id}`} card={card} />;
         })}
       </ScrollView>

@@ -9,7 +9,7 @@ import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { Text } from '@/components/Text';
 import { space, useWawu } from '@/theme';
 
-import { setCover, useCover, type UploadedFile } from './draft';
+import { setCover as setCoverOfDraft, useCover, type DraftCover, type UploadedFile } from './draft';
 import { pickCover } from './coverPick';
 import { canPickFile } from './pickFile';
 import { UPLOAD_CANCELLED, uploadFile } from './upload';
@@ -21,7 +21,16 @@ const thumb = { width: 52, height: 66, corner: 10 } as const;
  * `source` is the full file the person uploaded (a course's first lesson): when it is a video with a readable frame, that frame is the default
  * cover ("Video frame"). `required` is a piece whose cover is also its preview (R-118): there is no frame and no "None", only a picture.
  */
-export type CoverChoiceProps = { source?: UploadedFile | null; required?: boolean };
+export type CoverChoiceProps = {
+  source?: UploadedFile | null;
+  required?: boolean;
+  /**
+   * A cover held by the screen itself (VF12 Publish keeps its own, never the Create draft's). Left out, the cover is the Create draft's: read
+   * with `useCover` and set with `setCover`. With `value`, `onChange` takes every change, and the screen gives back a picture it replaces.
+   */
+  value?: DraftCover;
+  onChange?: (next: DraftCover) => void;
+};
 
 type Stage = { state: 'idle' } | { state: 'uploading' } | { state: 'failed'; message: string };
 
@@ -31,9 +40,11 @@ type Stage = { state: 'idle' } | { state: 'uploading' } | { state: 'failed'; mes
  * of their own instead (the phone's photo picker), or choose none. A picture goes up to `content/cover` as soon as it is picked; a refusal (a
  * type or a size the Hub does not take, no room in storage) is the Hub's own sentence.
  */
-export function CoverChoice({ source, required = false }: CoverChoiceProps) {
+export function CoverChoice({ source, required = false, value: held, onChange: hold }: CoverChoiceProps) {
   const { colors } = useWawu();
-  const cover = useCover();
+  const drafted = useCover();
+  const cover = held ?? drafted;
+  const setCover = hold ?? setCoverOfDraft;
   const [stage, setStage] = useState<Stage>({ state: 'idle' });
   const picking = useRef(false);
   const hasFrame = !required && Boolean(source?.frame);

@@ -2,7 +2,7 @@ import { chosen as chosenFile } from '../__helpers__/harness';
 import { refusalFor } from '../chosen';
 import { getDraft, resetDraft, setFormat, setFull, setPreview } from '../draft';
 import { contentTypeFor, extensionOfName } from '../fileTypes';
-import { coverRequired, formatBytes, formatHint, previewHint, previewLine, previewWayOf, secondsLine, typesLine, type FormatRule } from '../model';
+import { coverRequired, formatBytes, formatHint, previewLine, previewWayOf, secondsLine, typesLine, type FormatRule } from '../model';
 import { pdfPageCount } from '../pdfPages';
 
 const MB = 1024 * 1024;
@@ -37,12 +37,6 @@ describe('the words on M20 come from the Hub rule', () => {
     expect(formatBytes(512 * MB)).toBe('512 MB');
     expect(formatBytes(1536 * MB)).toBe('1.5 GB');
     expect(secondsLine({ min: 30, max: 60 })).toBe('30–60');
-  });
-
-  it('the draft publish (VF12) still words its upload of a preview by the Hub rule', () => {
-    const base = rule('pdf', ['pdf']).preview;
-    expect(previewHint({ ...base, kind: 'extract' })).toBe('Buyers see this before paying. For a PDF, upload the extract you want to give away.');
-    expect(previewHint({ ...base, kind: 'clip', seconds: { min: 30, max: 60 } })).toBe('Buyers see this before paying. Upload a 30–60 second clip.');
   });
 });
 

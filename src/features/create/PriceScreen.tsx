@@ -178,16 +178,16 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
     }
   };
 
+  // The refusal is drawn at the end of the body, below the Listing fee card, and the body scrolls to it: in the foot it covered the card.
   const foot = (
     <>
-      {failure ? <Banner testID="price-failure" tone="danger" title={made ? 'Lessons not saved' : 'Not sent'} body={failure} /> : null}
       {free ? null : <NoteLine />}
       <Button testID="create-send" label={made ? 'Save the lessons' : 'Send for review'} full loading={busy} disabled={!priceReady(details)} onPress={() => void send()} />
     </>
   );
 
   return (
-    <CreateFrame testID="price-screen" title={`New ${labelOf(format)}`} subtitle="Step 5 of 5" onLeave={onBack} foot={foot}>
+    <CreateFrame testID="price-screen" title={`New ${labelOf(format)}`} subtitle="Step 5 of 5" onLeave={onBack} foot={foot} endKey={failure}>
       <Stepper active={3} />
       {full ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full)} cover={full} /> : null}
       <SegmentedTabs
@@ -220,6 +220,7 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
         />
       )}
       {!free && terms.data ? <ListingFeeCard terms={terms.data} /> : null}
+      {failure ? <Banner testID="price-failure" tone="danger" title={made ? 'Lessons not saved' : 'Not sent'} body={failure} /> : null}
     </CreateFrame>
   );
 }

@@ -1,5 +1,5 @@
-import type { ReactElement, ReactNode } from 'react';
-import { KeyboardAvoidingView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps } from 'react-native';
+import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
+import { KeyboardAvoidingView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps, type ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -31,6 +31,12 @@ export type CreateFrameProps = {
   onNearEnd?: () => void;
   /** A pull-to-refresh on the body (M31's list reads the Hub again). */
   refreshControl?: ReactElement<RefreshControlProps>;
+  /**
+   * A refusal or a notice drawn at the END of the body (the price step's "Not sent"): when this turns from empty to something the body
+   * scrolls to its end, so the notice is read in full and nothing is covered by it (UPLOAD-REST: it used to sit in the foot and push
+   * the Listing fee card behind it).
+   */
+  endKey?: string | null;
   children: ReactNode;
   testID?: string;
 };
@@ -44,8 +50,12 @@ const MORE_WITHIN = 600;
  * no longer resizes the window), so the pinned foot sits right on the keyboard, and the body is a `FieldScroll`, which brings the field being
  * typed in into view in the room that is left.
  */
-export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, refreshControl, children, testID }: CreateFrameProps) {
+export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, refreshControl, endKey, children, testID }: CreateFrameProps) {
   const { colors } = useWawu();
+  const scroller = useRef<ScrollView>(null);
+  useEffect(() => {
+    if (endKey) scroller.current?.scrollToEnd?.({ animated: true });
+  }, [endKey]);
   const insets = useSafeAreaInsets();
   const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   const onScroll = onNearEnd
@@ -73,6 +83,7 @@ export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, 
         <View style={styles.side}>{trailing}</View>
       </View>
       <FieldScroll
+        ref={scroller}
         testID={testID ? `${testID}-scroll` : undefined}
         style={styles.scroll}
         refreshControl={refreshControl}
