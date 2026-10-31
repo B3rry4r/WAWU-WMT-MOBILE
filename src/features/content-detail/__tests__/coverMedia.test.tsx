@@ -1,6 +1,6 @@
 import * as rtl from '@testing-library/react-native';
 import { useVideoPlayer } from 'expo-video';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { FeedItem } from '@/features/feed/api';
@@ -92,6 +92,13 @@ describe('H25, H19 and H24 · covers on the piece page (Android)', () => {
     expect(rtl.screen.getByTestId('detail-media-cover').props.source).toEqual([{ uri: COVER }]);
     expect(rtl.screen.queryByText('84 pages')).toBeNull();
     expect(rtl.screen.getByRole('button', { name: 'Read Pricing playbook' })).toBeTruthy();
+    // It is the front of the H19 book (150 by 210, corner 10), not drawn across the hero: its parent is the book's own frame.
+    const frame = StyleSheet.flatten(rtl.screen.getByTestId('detail-media-cover').parent?.props.style) as { width: number; height: number; borderRadius: number; overflow: string };
+    expect(frame).toMatchObject({ width: 150, height: 210, borderRadius: 10, overflow: 'hidden' });
+    const image = StyleSheet.flatten(rtl.screen.getByTestId('detail-media-cover').props.style) as { position: string };
+    expect(image.position).toBe('absolute');
+    const hero = rtl.screen.getByTestId('detail-media');
+    expect(rtl.screen.getByTestId('detail-media-cover').parent).not.toBe(hero);
     await rtl.act(async () => {
       rtl.fireEvent(rtl.screen.getByTestId('detail-media-cover'), 'error', bad());
     });

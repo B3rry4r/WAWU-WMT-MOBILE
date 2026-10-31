@@ -102,12 +102,8 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         {...ring.handlers}
         style={[styles.center, ring.style]}
       >
-        {cover.uri ? (
-          // R-114: a PDF with a cover draws it; one with none keeps its generated book (H19, H20). Either way the tap reads the pages.
-          <Image testID={`${testID}-cover`} source={{ uri: cover.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={cover.onError} style={StyleSheet.absoluteFill} />
-        ) : (
-          <Book title={piece.title} by={by} pages={piece.pageCount} />
-        )}
+        {/* R-114: a PDF with a cover draws it as the front of its book (H19, H20: the same portrait frame as the generated one); one with none, or a cover that will not load, keeps the generated book. Either way the tap reads the pages. */}
+        <Book title={piece.title} by={by} pages={piece.pageCount} cover={cover.uri} onCoverError={cover.onError} coverTestID={`${testID}-cover`} />
       </Pressable>
     );
   } else if (kind === 'video' || kind === 'audio') {
@@ -187,17 +183,24 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
 }
 
 /** The generated book of a PDF (H4 in the feed, H19 and H20 on the page): the title, who made it and how many pages. */
-function Book({ title, by, pages }: { title: string; by: string | null; pages: number | null }) {
+function Book({ title, by, pages, cover = null, onCoverError, coverTestID }: { title: string; by: string | null; pages: number | null; cover?: string | null; onCoverError?: () => void; coverTestID?: string }) {
   return (
     <View style={[styles.cover, { backgroundColor: media.cover, boxShadow: `0 30px 50px -10px ${media.coverShadow}` }]}>
-      <View style={[styles.spine, { backgroundColor: media.spine }]} />
-      <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
-        {by ?? ''}
-      </Text>
-      <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
-        {title}
-      </Text>
-      <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+      {cover ? (
+        // The creator's cover fills the front of the book, fitted inside its portrait frame (R-114).
+        <Image testID={coverTestID} source={{ uri: cover }} contentFit="cover" accessibilityLabel={title} onError={onCoverError} style={StyleSheet.absoluteFill} />
+      ) : (
+        <>
+          <View style={[styles.spine, { backgroundColor: media.spine }]} />
+          <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
+            {by ?? ''}
+          </Text>
+          <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
+            {title}
+          </Text>
+          <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+        </>
+      )}
     </View>
   );
 }
