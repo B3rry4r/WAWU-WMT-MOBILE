@@ -89,7 +89,7 @@ describe('a release build leaves the development-only routes', () => {
 
   it.each(['/preview/auth', '/dev/components'])('a signed-out visitor to %s lands on the welcome screen, not a blank page', async (url) => {
     await renderRouter(routes, { initialUrl: url });
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByTestId('welcome-sign-in')).not.toBeNull();
   });
 
@@ -126,11 +126,11 @@ describe('nothing is drawn until the stored session has been read', () => {
   it('a signed-out user on a slow keystore sees nothing until the read finishes, then the welcome screen', async () => {
     slowVault();
     await renderRouter(routes);
-    expect(screen.queryByText('The creators and professionals ecosystem.')).toBeNull();
+    expect(screen.queryByText('Create. Sell. Get paid. Connect. Grow.')).toBeNull();
     expect(screen.queryByText('Welcome back')).toBeNull();
     expect(jest.mocked(SplashScreen.hideAsync)).not.toHaveBeenCalled();
     await act(async () => open());
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByRole('header', { name: 'Home' })).toBeNull();
   });
 });
@@ -210,7 +210,7 @@ describe('signed-in screens outside the tabs (SHARED-CHANGES EXPLORE-01 #2, ME-1
 
   it.each(cases)('a signed-out visitor to %s lands on the welcome screen', async (url, title) => {
     await renderRouter(guarded, { initialUrl: url });
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByRole('header', { name: title })).toBeNull();
   });
 
