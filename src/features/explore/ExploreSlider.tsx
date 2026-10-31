@@ -10,6 +10,7 @@ import { darkColors } from '@/theme/tokens.generated';
 
 import { AdSlide, adSlideHeight, adSlideMetrics } from './AdSlide';
 import type { Slide } from './slider';
+import { useSliderAutoplay } from './useSliderAutoplay';
 
 /**
  * The slider's pager dots (design/_gen/explore.js `sdots`): 6 high, 5 apart, the current one 16 wide and white, the others 6
@@ -66,6 +67,8 @@ export type ExploreSliderProps = {
  * screen and as tapped when it is pressed, each once for the advert (ADS-05; the Hub keeps one of each a day per person).
  * An advert is the owner's banner shape (R-116) and an event is 196 high, so the frame follows the swipe (`sliderFrameHeight`).
  * With one slide it is not a pager: no dots, nothing to swipe. With none it is not drawn, which is the caller's call.
+ * With two or more it also moves by itself (R-116: every 5 seconds, the swipe's own animation, back to the first after the last),
+ * only while Explore is on show and the app is in front, never with the phone's reduce-motion setting on, and a touch pauses it.
  */
 export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderProps) {
   const window = useWindowDimensions();
@@ -83,7 +86,9 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
   const keyed = placeKey === null ? -1 : slides.findIndex((slide) => slide.key === placeKey);
   const current = keyed >= 0 ? keyed : Math.min(index, Math.max(count - 1, 0));
   const active = slides[current];
-  const reports = useAdReports(active?.kind === 'ad' ? active.ad : null, showing);
+  // R-116: the slider moves by itself (`useSliderAutoplay`). An advert passed on the slide back to the first is not an advert seen.
+  const auto = useSliderAutoplay({ count, showing, current, width, scroller });
+  const reports = useAdReports(active?.kind === 'ad' ? active.ad : null, showing && !auto.travelling);
   const paged = count > 1;
   // Only an event's words need room for the dots: an advert is a picture with a chip, and its dots sit on their own pill.
   const reserve = paged ? dotsWidth(count) + d.dotsGap : 0;
@@ -95,8 +100,10 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
     const next = e.nativeEvent.layout.width;
     if (next > 0) setMeasured((was) => (was === next ? was : next));
   }, []);
+  const { scrolledTo } = auto;
   const onScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrolledTo(e.nativeEvent.contentOffset.x);
       const next = Math.max(0, Math.round(e.nativeEvent.contentOffset.x / width));
       setIndex((was) => (was === next ? was : next));
       setPlaceKey(slides[next]?.key ?? null);
@@ -104,7 +111,7 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
       const along = e.nativeEvent.contentOffset.x / width;
       setPage((was) => (sliderFrameHeight(slides, was, width) === sliderFrameHeight(slides, along, width) ? was : along));
     },
-    [width, slides],
+    [width, slides, scrolledTo],
   );
   // The slides changed under the person: the pager goes to where their slide now is (its scroll event then brings `index` along).
   useEffect(() => {
@@ -125,6 +132,7 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={onScroll}
+        {...auto.touch}
         accessibilityLabel={paged ? `Slide ${current + 1} of ${count}` : undefined}
       >
         {slides.map((slide, i) => (

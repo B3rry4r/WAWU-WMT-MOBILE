@@ -18,7 +18,7 @@ tier: T1
 
 ## Current state
 
-As of 31 Oct 2026, built by a Sonnet builder (T1), mobile `wmt/AD-BANNER` on `origin/wmt/STORE-BUY-APP` `0d730a7a`. App only: no backend change, no new package, no native change (fingerprints unchanged, android `e871fe1a`, ios `e8e7de85`). Held for the next batch; nothing sent to a phone. Status verifying.
+As of 31 Oct 2026, built by a Sonnet builder (T1), mobile `wmt/AD-BANNER` on `origin/wmt/STORE-BUY-APP` `0d730a7a`; a second commit on the same branch (AD-SLIDE, below) makes the Explore slider slide by itself. App only: no backend change, no new package, no native change (fingerprints unchanged, android `e871fe1a`, ios `e8e7de85`). Held for the next batch; nothing sent to a phone. Status verifying.
 
 Owner, 31 Oct 2026, sending his 1350 x 400 "10 Prizes for Creators" banner: "the ads on the app both explore and home should be reduced to this orientation". Recorded as R-116 in `DECISIONS.md`.
 
@@ -55,6 +55,23 @@ All are R-116 consequences: the card is a different shape and draws no words. No
 
 New tests: `slider.test.tsx` (the frame is the banner shape on an advert, 196 on an event, the blend between, and the same height for a pager of adverts only), `ads/__tests__/bannerAndroid.test.tsx` (4 cases, `Platform.OS` android).
 
+### AD-SLIDE · the Explore slider slides by itself (owner, 31 Oct 2026: "Ads should be sliding automatically"; R-116 point 4)
+
+**Default (lead), owner may override** (the lead's brief; every number is the brief's): every 5 seconds, the swipe's own animated scroll, back to the first slide after the last; only with two or more slides, while Explore is the screen on show (the slider's `showing`), with the app in front and the phone's reduce-motion setting off; a touch or a drag pauses it and it starts again 5 seconds after the finger lifts; it never moves a screen reader's focus; the dots follow. Today's card is one card and never slides.
+
+What changed (the row-by-row table is in [history/AD-BANNER.md](history/AD-BANNER.md), AD-SLIDE builder report): one new file, `useSliderAutoplay.ts`, holds the timer, the touch and drag pause, the reduce-motion and AppState reads and the hold on views during the slide back; `ExploreSlider.tsx` uses it; the Explore loading block is the banner's height and the unused 196 skeleton is removed.
+
+Views and taps are counted as before (one view per advert per person per day at the Hub, taken when its slide is on screen; an automatic move is never a tap). No Hub change, no new package, no native change.
+
+### Changed assertions, AD-SLIDE (named, with why)
+
+| Test | Was | Now |
+|---|---|---|
+| `explore/__tests__/screens.test.tsx` "a user sees the slider block, at the advert banner height, while Explore loads (X14, R-116)" (renamed from "...the featured event block...") | the loading view held `"height":196` | the loading slider block (`explore-loading-slider`) is the banner's shape at the slider's width, `(window width less two gutters) x 8 / 27`, and is not 196 |
+| same file, "keeps X14, hero block included, while the events read is held, then draws the tiles once" | the loading view held `"height":196` | the same banner height |
+
+Both pinned the defect the verifier named (a low on AD-BANNER: the skeleton's slider block is 196 where the first slide is the banner), which the lead's brief rules a fix; no other assertion changed. New tests: `explore/__tests__/sliderAuto.test.tsx`, 19 cases run on `Platform.OS` android and again on ios (38), with fake timers and the pager's real handlers: advances at 5 s with `scrollTo({ x, animated: true })` and the label and dots follow; loops from the last to the first; takes an advert, an event and an advert in turn; the slide back does not count the adverts it passes, only the one it lands on, and releases after 1 s if the landing is never seen; one view per advert and never a tap over two laps; pauses on touch and resumes 5 s after `touchEnd`; pauses for a whole drag, including a `touchCancel` that arrives after `scrollBeginDrag`, and resumes 5 s after `scrollEndDrag` from the slide the person is on; a cancelled tap resumes; stops while `showing` is false and starts 5 s after it is back; stops on `background` and `inactive` and starts 5 s after `active`; does not start when the app opens in the background; nothing with one slide (no timer at all); nothing with reduce motion on, stops when it is turned on mid-run and carries on when it is turned off, and waits for the phone's answer; never touches the screen reader's focus or announcements; every timer and listener is cleared on unmount, also in the middle of the slide back. Each behaviour was also checked by removing it and seeing its tests fail (held views, touch pause, reduce motion).
+
 ## Pictures
 
 390 px (2x), dark and light, the built screen beside its board, in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/ad-banner/shots/`:
@@ -62,6 +79,13 @@ New tests: `slider.test.tsx` (the frame is the banner shape on an advert, 196 on
 - Today beside H1: `board-today-{dark,light}.png` (single: `today-{dark,light}.png`, card only `today-card-{dark,light}.png`).
 - Explore beside X1 and X17: `board-explore-{dark,light}.png` (single: `explore-{dark,light}.png`); each of the owner's four banners on the slider: `explore-{dark,light}-slide{1,2,3,4}.png`, and the four stacked: `explore-strip-{dark,light}.png`.
 - TGIF unchanged: `tgif-{dark,light}.png` (the sponsored step: tall portrait, words, "Register now", Skip).
+
+AD-SLIDE pictures, 390 px (2x), dark and light, in `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/ad-banner/shots-slide/`:
+
+- Explore beside X1: `board-slide-explore-{dark,light}.png` (X1 design | slide 1 at 2 s | slide 2 at 6 s | back on slide 1 at 22 s). Single shots: `explore-{dark,light}-t02s-slide1.png`, `explore-{dark,light}-t06s-slide2.png`, `explore-{dark,light}-t22s-slide1-again.png`.
+- The loading skeleton beside X14: `board-slide-loading-{dark,light}.png` (X14 design | built loading | the advert arrived); single `loading-{dark,light}.png`. The loading block and the first slide are both 350 x 103.703 at the same place (measured on the page), so nothing moves when the advert arrives.
+
+Taken from this branch's web export against a LOCAL Hub (backend `origin/main` `66f1e05`, `scripts/dev/stack.sh` `--with mobile`, ports 11840 to 11849 plus a storage stand-in on 11850, database `test_adslide`, `npm run db:seed`, the four campaigns made by `create-ads.mjs --art-set original --destination link`: "every campaign reads back right"; stack down, database dropped, nothing listening). The script watched the pager's own label on the page and logged each change: slide 2 at 5.15 s, slide 3 at 10.16 s, slide 4 at 15.24 s (dark; light 5.17, 10.13, 15.13), then back across 3 and 2 to slide 1 by 20.49 s (20.50 light): five seconds a slide, then the slide back, then slide 1 again. Scripts: `.../adslide-b/tools/shoot_slide.py`, `compose_slide.py` (not committed). The boards X1 and X14 still draw the old 196 card and the 196 loading block (not redrawn: R-116 overrides them; the designer's boards are the lead's to update).
 
 Taken from this branch's web export against a LOCAL Hub (backend `origin/main` `66f1e05`, `scripts/dev/stack.sh`, ports 11840 to 11849 plus a storage stand-in on 11850, database `test_adbanner`, `npm run db:seed`), the four campaigns made by the lead's `create-ads.mjs --art-set original --destination link` ("every campaign reads back right"), the owner's original files as the landscape and portrait pictures. Scripts: `.../ad-banner/tools/shoot.py`, `compose.py` (not committed). Measured on the page: the Today card and the Explore card are both 350 x 103.703 at 390 wide (350 x 8 / 27 = 103.704); the frame holds that height on all four slides. The web build runs with web security off in the test browser only because the stack's CORS list does not include a stand-alone export port.
 
@@ -75,6 +99,12 @@ Look: the whole banner is shown with no crop on all four; the chip is small, top
 - Tap a banner (a link campaign): the phone's browser opens the advertiser's address and Back returns to the app on the same screen. Tap the banner of a campaign set to "Does nothing": nothing happens, no ripple.
 - A screen reader (TalkBack): the card reads "Sponsored. Win a car and more. Enter WHO MADE THIS? today. Register now" as a button.
 - Dark and light theme: the chip and the dots stay readable on the light banners.
+- AD-SLIDE, auto-slide feel (the one thing jest cannot show): open Explore with the four banners and leave the phone alone. Each banner stays about 5 seconds, then slides in the way a swipe does, the dots follow, and after the fourth it slides back to the first (a quick slide back across the others is expected) and carries on.
+- AD-SLIDE, thumb: put a thumb on the slider (a hold, a swipe, a tap that opens a banner's link): it stops while the thumb is on it and moves again about 5 seconds after the thumb lifts, never mid-swipe. This is the one place a phone must show that a thumb on a banner reaches the pager's touch events (they bubble from the card to the pager; on Android the touch is cancelled when the pager takes a drag, which the drag events cover).
+- AD-SLIDE, leaving: switch to another tab, open a banner's link, pull the notification shade down, or lock the phone: it stops, and starts again about 5 seconds after Explore is in front again. Count: the Hub's views for an advert go up once per day for the person, not per slide change.
+- AD-SLIDE, reduce motion: turn on "Remove animations" (Android) or "Reduce Motion" (iOS) in the phone's settings: the slider never moves by itself, a swipe still pages it. Turn it off again while Explore is open: it starts moving (5 s after).
+- AD-SLIDE, screen reader: with TalkBack or VoiceOver on and the focus on a banner, the slider still slides every 5 seconds; the screen reader's focus stays where it was and says nothing new when the slide changes. (If the owner finds an automatic slide unwelcome with a screen reader on, the lead's default can stop it there; it is not stopped today.)
+- AD-SLIDE, loading: open Explore on a slow connection: the grey block where the slider will be is the banner's height, and the first banner arrives into it without the page jumping.
 
 ## Read first
 
@@ -87,7 +117,7 @@ The owner's wide banner is what a person sees on Explore and on Today: the whole
 
 ## Scope
 
-`wawu-wmt-mobile` only: `src/features/explore/AdSlide.tsx`, `ExploreSlider.tsx`, `src/features/ads/SponsoredSlot.tsx`, `look.ts`, the tests above, `DECISIONS.md` (R-116), `docs/LOG.md`, this file. Not touched: the TGIF reader and `SponsoredStep`, the Hub, the dashboard (its landscape hint, 1920 x 1080, is the Hub's and is for the lead to change), the Explore skeleton's 196 block (X14: it holds the place of whatever comes first).
+`wawu-wmt-mobile` only: `src/features/explore/AdSlide.tsx`, `ExploreSlider.tsx`, `src/features/ads/SponsoredSlot.tsx`, `look.ts`, the tests above, `DECISIONS.md` (R-116), `docs/LOG.md`, this file. Not touched: the TGIF reader and `SponsoredStep`, the Hub, the dashboard (its landscape hint, 1920 x 1080, is the Hub's and is for the lead to change). The Explore skeleton's 196 block was left at first (it held the place of whatever comes first) and is the banner's height since AD-SLIDE. AD-SLIDE adds `src/features/explore/useSliderAutoplay.ts`, `ExploreSkeleton.tsx` and `src/features/events/ExploreEvents.tsx` (its unused skeleton removed).
 
 ## Capability checks
 
@@ -97,12 +127,17 @@ The owner's wide banner is what a person sees on Explore and on Today: the whole
 - [x] A user tapping a link card on Android opens the address in the phone's browser (expo-linking) and one tap is counted; a card that does nothing opens nothing and counts no tap; no pill is drawn on either (`bannerAndroid.test.tsx`, `adLink.test.tsx`).
 - [x] The card's words are its accessibility label; a `none` card is read as an ad, not a button.
 - [x] The TGIF card is unchanged (`ReaderSponsored.test.tsx` passes untouched; picture).
+- [x] AD-SLIDE: a user on Explore with two or more slides sees them move by themselves every 5 seconds with the swipe's animation, the dots following, and the last go back to the first (`sliderAuto.test.tsx`, android and ios, fake timers; the pictures' timeline 5.15 s, 10.16 s, 15.24 s, back on slide 1 by 20.49 s).
+- [x] AD-SLIDE: a user who touches or swipes the slider stops it and it starts again 5 seconds after the finger lifts; it does not move while Explore is not on show, while the app is in the background or inactive, or with reduce motion on; with one slide there is not even a timer; nothing is left running after the screen goes (`sliderAuto.test.tsx`).
+- [x] AD-SLIDE: a user's views are counted as before: the slide back to the first counts only the advert it lands on, never a tap (`sliderAuto.test.tsx`).
+- [x] AD-SLIDE: a user sees Explore's loading block at the banner's height, the same as the first slide (`screens.test.tsx`, the pictures' measure 103.703 both).
 - [ ] On a phone: NOT RUN (no device in this session); see PHONE CHECK. The Android back button, the keyboard and permissions do not touch these two cards (no screen opens, no input, no permission), so they are not on the list.
 
 ## Proof of the ruling (grep, R-116 carried out everywhere)
 
 - The only users of the shared card are Today (`TodayScreen.tsx` via `SponsoredSlot`) and the Explore slider (`ExploreSlider.tsx`); the only places the app asks for an ad are `today_slot`, `explore_slider` and `tgif_card` (the last is the unchanged reader). `rg "slotButton|button=|-shade|contentFit=\"cover\""` over the card files finds nothing; the card's style is `aspectRatio: 1350 / 400` with `contentFit="contain"`.
 - Pictures above show it on both screens in both themes.
+- AD-SLIDE (R-116 point 4): the only pager of adverts is `ExploreSlider` (Today's `SponsoredSlot` is one card, and the TGIF reader steps by its own taps), and the only place a slide moves by itself is `useSliderAutoplay.ts`: `rg "setTimeout|setInterval" src/features/explore src/features/ads --glob '!**/__tests__/**'` finds only that file's two timers (the 5 s move and the 1 s held-views release). `rg "ExploreFeaturedEventSkeleton" src` finds nothing; `rg "196" src/features/explore/ExploreSkeleton.tsx` finds only the comment saying the board draws it. Pictures above show it on Explore in both themes.
 
 ## History
 
