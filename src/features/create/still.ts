@@ -13,3 +13,13 @@ export function stillOf(file: Pick<UploadedFile, 'contentType' | 'previewUri' | 
   if (file.contentType.startsWith('video/') && file.frame) return typeof file.frame === 'string' ? { uri: file.frame } : file.frame;
   return null;
 }
+
+/**
+ * The picture a listing will carry (R-114), for the tiles of "How it will look" and the price step's card: the picture the person picked
+ * for a cover, else (when they chose nothing, or "Video frame") the preview's own still, and none when they chose no cover.
+ */
+export function listingStill(file: Pick<UploadedFile, 'contentType' | 'previewUri' | 'frame'>, cover: { mode: 'default' | 'picture' | 'none'; file: { previewUri?: string } | null }): StillSource | null {
+  if (cover.mode === 'none') return null;
+  if (cover.mode === 'picture' && cover.file?.previewUri) return { uri: cover.file.previewUri };
+  return stillOf(file);
+}

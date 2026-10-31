@@ -62,14 +62,15 @@ export async function fetchFormats(): Promise<FormatRule[]> {
 export type Presigned = { uploadUrl: string; key: string; fileUrl: string };
 
 export async function presign(
-  folder: 'content/full' | 'content/preview',
-  format: FormatId,
+  folder: 'content/full' | 'content/preview' | 'content/cover',
+  /** Only for the full and preview files (the format's rules apply to them); a cover has none (R-114). */
+  format: FormatId | undefined,
   contentType: string,
   extension: string,
   contentLength: number,
 ): Promise<Presigned> {
   const out = dataOf<{ uploadUrl?: unknown; key?: unknown; fileUrl?: unknown }>(
-    await unwrap(api.POST('/api/hub/uploads/presign', { body: { folder, format, contentType, extension, contentLength } })),
+    await unwrap(api.POST('/api/hub/uploads/presign', { body: { folder, ...(format ? { format } : {}), contentType, extension, contentLength } })),
     'upload',
   );
   if (typeof out.uploadUrl !== 'string' || typeof out.key !== 'string' || typeof out.fileUrl !== 'string') throw unreadable('upload');

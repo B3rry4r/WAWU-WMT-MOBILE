@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 
 import { media, metrics } from './look';
-import { clock, playableUrl, SKIP_SECONDS, WAVEFORM_BARS } from './model';
+import { clock, pictureCandidates, playableUrl, SKIP_SECONDS, WAVEFORM_BARS } from './model';
 import { AudioSource, canPlay, loadPeaks, type SeekRequest } from './player';
 import { fromTop, PostFrame, type PostProps } from './PostFrame';
 import { Seekable } from './parts';
+import { usePicture } from './usePicture';
 
 /** The waveform at the canvas's size: every bar and the gaps between them (44 x 3 + 43 x 2.5 = 239.5 wide). */
 const WAVE_WIDTH = WAVEFORM_BARS * metrics.waveBar + (WAVEFORM_BARS - 1) * metrics.waveGap;
@@ -55,6 +57,8 @@ export function AudioPost(props: PostProps) {
   const { item, active, width } = props;
   const fit = waveFit(width);
   const uri = playableUrl(item);
+  // The square is the creator's cover when there is one (H6 draws a cover photo there, R-114); else the tile with the audio mark.
+  const { uri: cover, onError: coverFailed } = usePicture(pictureCandidates(item, null));
   const [paused, setPaused] = useState(false);
   const [time, setTime] = useState({ position: 0, length: 0 });
   const [seek, setSeek] = useState<SeekRequest>(null);
@@ -120,7 +124,7 @@ export function AudioPost(props: PostProps) {
       middle={
         <View pointerEvents="box-none" style={[styles.stage, { top: fromTop(props.chromeTop, metrics.bookTop) }]}>
           <View style={[styles.art, { backgroundColor: media.glass, borderColor: media.glassEdge, boxShadow: `0 30px 50px -12px ${media.coverShadow}` }]} testID={`art-${item.id}`}>
-            <Icon name="AudioLines" size={metrics.pausedIcon} color={media.ink} />
+            {cover ? <Image testID={`art-image-${item.id}`} source={{ uri: cover }} contentFit="cover" accessibilityLabel={item.title} onError={coverFailed} style={StyleSheet.absoluteFill} /> : <Icon name="AudioLines" size={metrics.pausedIcon} color={media.ink} />}
           </View>
           {canPlay ? (
             <Seekable
@@ -166,6 +170,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   wave: { flexDirection: 'row', alignItems: 'center', gap: metrics.waveGap, height: metrics.waveH },
   bar: { width: metrics.waveBar, borderRadius: metrics.trackRadius },

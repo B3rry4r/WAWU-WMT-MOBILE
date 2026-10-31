@@ -133,6 +133,8 @@ export type GridTile = {
   title: string;
   /** A picture to fill the tile, when the piece's preview is one (a photo, or a template with a picture cover). Other files have no still (BACKEND_GAPS G-290). */
   still: string | null;
+  /** The creator's own cover for the piece (R-114), or null: drawn before `still`. */
+  cover?: string | null;
   kind: ContentPiece['contentType'];
   locked: boolean;
   /** "12K" for a free piece, "₦8,000" for a paid one. */
@@ -151,6 +153,7 @@ export function tileOf(piece: ContentPiece): GridTile {
     id: piece.id,
     title: piece.title,
     still: rowPicture(piece.contentType, piece.previewAssetUrl),
+    cover: piece.coverUrl ?? null,
     kind: piece.contentType,
     locked: paid,
     caption,

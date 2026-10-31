@@ -110,6 +110,19 @@ export function rowPicture(contentType: string | null | undefined, url: string |
   return contentType === 'image' || isPicture(url) ? url : null;
 }
 
+/**
+ * The pictures a piece can draw, best first (R-114): its cover, the picture the creator uploaded for the listing (`coverUrl`, only on a
+ * request that carries `X-Wawu-Client: app`), then what `rowPicture` gives for the preview file (a photo, a file that is a picture).
+ * A screen draws the first one that loads (`usePicture`) and the kind's mark when none does.
+ */
+export function pictureCandidates(piece: { contentType?: string | null; coverUrl?: string | null }, previewUrl: string | null | undefined): string[] {
+  const out: string[] = [];
+  if (piece.coverUrl) out.push(piece.coverUrl);
+  const preview = rowPicture(piece.contentType, previewUrl);
+  if (preview && preview !== piece.coverUrl) out.push(preview);
+  return out;
+}
+
 /** Paid and not yet bought (or not the viewer's own): the full file is held back. */
 export function isLocked(item: Pick<FeedItem, 'accessType' | 'fullAssetLocked'>): boolean {
   return item.accessType === 'paid' && item.fullAssetLocked;

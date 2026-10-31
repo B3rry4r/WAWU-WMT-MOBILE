@@ -15,7 +15,8 @@ import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { countsKey } from '@/features/me/counts';
-import { rowPicture } from '@/features/feed/model';
+import { pictureCandidates } from '@/features/feed/model';
+import { usePicture } from '@/features/feed/usePicture';
 import { kindIcon } from '@/features/me/model';
 import { font, space, useWawu } from '@/theme';
 import { useShownPrice } from '@/features/store/ladder/usePrice';
@@ -181,12 +182,13 @@ function openerOf(
   return undefined;
 }
 
-function pictureOf(entry: SavedEntry): string | null {
-  // The Hub's thumbnail is the piece's public file: a clip or a PDF for most kinds, which is never handed to Image (it would be fetched to fail).
-  if (entry.kind === 'content') return rowPicture(entry.content?.contentType, entry.content?.thumbnailUrl);
-  if (entry.kind === 'event') return entry.event?.bannerUrl ?? null;
-  if (entry.kind === 'course') return entry.course?.schoolLogo ?? null;
-  return null;
+function picturesOf(entry: SavedEntry): string[] {
+  // The creator's cover first (R-114), then the Hub's thumbnail when it is a picture: the thumbnail is the piece's public file, a clip or a PDF for
+  // most kinds, which is never handed to Image (it would be fetched to fail).
+  if (entry.kind === 'content' && entry.content) return pictureCandidates(entry.content, entry.content.thumbnailUrl);
+  if (entry.kind === 'event' && entry.event?.bannerUrl) return [entry.event.bannerUrl];
+  if (entry.kind === 'course' && entry.course?.schoolLogo) return [entry.course.schoolLogo];
+  return [];
 }
 
 function glyphOf(entry: SavedEntry): IconName {
@@ -197,16 +199,15 @@ function glyphOf(entry: SavedEntry): IconName {
 
 function Tile({ entry, meta, onOpen, onRemove }: { entry: SavedEntry; meta: string; onOpen?: () => void; onRemove: () => void }) {
   const { colors } = useWawu();
-  const [broken, setBroken] = useState(false);
-  const picture = pictureOf(entry);
+  const { uri: picture, onError: pictureFailed } = usePicture(picturesOf(entry));
   const title = titleOf(entry);
   const label = [title, meta].filter(Boolean).join(', ');
   const creator = entry.kind === 'creator' ? entry.creator : null;
   const body = (
     <>
       <View style={[styles.picture, { backgroundColor: colors.surfaceSunken }]}>
-        {picture && !broken ? (
-          <Image testID="saved-thumb-image" source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+        {picture ? (
+          <Image testID="saved-thumb-image" source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={pictureFailed} />
         ) : creator ? (
           <Avatar name={title} size={72} source={creator.avatarUrl ?? undefined} decorative />
         ) : (

@@ -17,13 +17,14 @@ import { font, space, useWawu } from '@/theme';
 import { fetchFormats, formatsKey } from './api';
 import { refusalFor, type ChosenFile } from './chosen';
 import { CreateFrame } from './CreateFrame';
-import { setPreview, useDraft, type UploadedFile } from './draft';
+import { CoverChoice } from './CoverChoice';
+import { setPreview, useCover, useDraft, type UploadedFile } from './draft';
 import { formatBytes, iconOf, labelOf, previewHint, type FormatId, type PreviewRule } from './model';
 import { frameFor } from './frames';
 import { FileRow, Stepper, useFirstTap } from './parts';
 import { pagesOf } from './pdfPages';
 import { canPickFile, pickFile } from './pickFile';
-import { stillOf } from './still';
+import { listingStill, type StillSource } from './still';
 import { UPLOAD_CANCELLED, uploadFile } from './upload';
 
 /** me.js `previewStep`: the title at 20, 6 above its line; three 3:4 tiles 8 apart with 10 corners; the third frosted (8 blur, black at 0.3) with an 18 lock. */
@@ -153,6 +154,7 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
             removeLabel="Remove the preview"
           />
           <HowItLooks format={format} file={preview} />
+          <CoverChoice preview={preview} />
         </>
       ) : (
         <DropBox disabled={!canPickFile} onPress={() => void choose()} />
@@ -196,22 +198,23 @@ function DropBox({ disabled, onPress }: { disabled: boolean; onPress: () => void
 
 /** "How it will look": the preview twice, then once more behind a lock, as a buyer meets it before paying. */
 function HowItLooks({ format, file }: { format: FormatId; file: UploadedFile }) {
+  // The tiles draw what the listing will carry: the cover the person picked, else the preview's own frame or picture (R-114).
+  const picture = listingStill(file, useCover());
   return (
     <View style={styles.look} testID="preview-look">
       <Text variant="label">How it will look</Text>
       <View style={styles.tiles}>
-        <LookTile format={format} file={file} />
-        <LookTile format={format} file={file} />
-        <LookTile format={format} file={file} locked />
+        <LookTile format={format} picture={picture} />
+        <LookTile format={format} picture={picture} />
+        <LookTile format={format} picture={picture} locked />
       </View>
     </View>
   );
 }
 
-function LookTile({ format, file, locked }: { format: FormatId; file: UploadedFile; locked?: boolean }) {
+function LookTile({ format, picture, locked }: { format: FormatId; picture: StillSource | null; locked?: boolean }) {
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);
-  const picture = stillOf(file);
   const still = picture && !broken ? picture : null;
   return (
     <View testID={locked ? 'preview-tile-locked' : 'preview-tile'} style={[styles.tile, { backgroundColor: colors.surfaceSunken }]}>

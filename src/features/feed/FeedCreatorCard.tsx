@@ -11,7 +11,8 @@ import { useShownPrice } from '@/features/store/ladder/usePrice';
 import type { CardWork, CreatorCardData } from './api';
 import { ButtonRow, CardButton, CardFrame, CardName, Stat, StatsPanel, useCardFollow } from './CardFrame';
 import { cardMetrics as m, media, words } from './look';
-import { cardTick, compactCount, followedByParts, hueFor, isPicture, placeLine, workTile } from './model';
+import { cardTick, compactCount, followedByParts, hueFor, pictureCandidates, placeLine, workTile } from './model';
+import { usePicture } from './usePicture';
 import { Pill } from './parts';
 
 export type FeedCreatorCardProps = {
@@ -31,10 +32,11 @@ function WorkTile({ work, onOpen }: { work: CardWork; onOpen?: () => void }) {
   // R-101 point 10: on a phone with a store the locked price is the store's, never the list price.
   const shown = useShownPrice();
   const tile = workTile(work, shown);
-  const picture = isPicture(work.thumbnailUrl) ? work.thumbnailUrl : null;
+  // The work's cover first (R-114), then its thumbnail when that is a picture; a picture that will not load gives way to the next.
+  const { uri: picture, onError: pictureFailed } = usePicture(pictureCandidates(work, work.thumbnailUrl));
   const body = (
     <>
-      {picture ? <Image source={{ uri: picture }} contentFit="cover" blurRadius={tile.locked ? m.tileBlur : 0} style={StyleSheet.absoluteFill} /> : null}
+      {picture ? <Image testID={`work-image-${work.id}`} source={{ uri: picture }} contentFit="cover" blurRadius={tile.locked ? m.tileBlur : 0} onError={pictureFailed} style={StyleSheet.absoluteFill} /> : null}
       {tile.locked ? <View style={[StyleSheet.absoluteFill, { backgroundColor: media.tileVeil }]} /> : null}
       <LinearGradient
         pointerEvents="none"

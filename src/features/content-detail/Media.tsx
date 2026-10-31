@@ -7,10 +7,11 @@ import { Icon, ICON_STROKE, type IconName } from '@/components/icon';
 import { radius, useWawu } from '@/theme';
 import type { FeedItem } from '@/features/feed/api';
 import { media, words } from '@/features/feed/look';
-import { isPdfFile, isPicture, isVideoFile, playableUrl } from '@/features/feed/model';
+import { isPdfFile, isPicture, isVideoFile, pictureCandidates, playableUrl } from '@/features/feed/model';
 import { Pill } from '@/features/feed/parts';
 import { AudioSource, canPlay, VideoSurface } from '@/features/feed/player';
 import { PdfReader } from '@/features/feed/reader';
+import { usePicture } from '@/features/feed/usePicture';
 
 import { BAR_TITLE, kindOf, type Kind } from './model';
 
@@ -65,6 +66,9 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
   const [time, setTime] = useState({ position: 0, length: 0 });
   const ring = useFocusRing();
   const uri = playableUrl(piece);
+  // The creator's cover (R-114): under the player until its first frame, and in place of the audio mark; a cover that will not load gives way to the mark.
+  const cover = usePicture(pictureCandidates(piece, null));
+  const [framed, setFramed] = useState<string | null>(null);
   const [seen, setSeen] = useState(0);
   if (signal !== seen) {
     setSeen(signal);
@@ -113,13 +117,18 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         {...ring.handlers}
         style={[StyleSheet.absoluteFill, styles.center, ring.style]}
       >
+        {kind === 'video' && cover.uri && framed !== uri ? <Image testID={`${testID}-cover`} source={{ uri: cover.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={cover.onError} style={StyleSheet.absoluteFill} /> : null}
         {kind === 'video' && canPlay ? (
-          <VideoSurface uri={uri} playing={playing} seek={null} frosted={false} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} testID={`${testID}-video`} />
+          <VideoSurface uri={uri} playing={playing} seek={null} frosted={false} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} onFirstFrame={() => setFramed(uri)} testID={`${testID}-video`} />
         ) : null}
         {kind === 'audio' ? (
           <>
             <AudioSource uri={uri} playing={playing} seek={null} title={piece.title} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} testID={`${testID}-audio`} />
-            <Icon name="AudioLines" size={metrics.playDisc} color={colors.textMuted} strokeWidth={ICON_STROKE.fab} />
+            {cover.uri ? (
+              <Image testID={`${testID}-cover`} source={{ uri: cover.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={cover.onError} style={StyleSheet.absoluteFill} />
+            ) : (
+              <Icon name="AudioLines" size={metrics.playDisc} color={colors.textMuted} strokeWidth={ICON_STROKE.fab} />
+            )}
           </>
         ) : null}
         {!playing ? (
@@ -196,25 +205,26 @@ function Book({ title, by, pages }: { title: string; by: string | null; pages: n
 function Cover({ piece, kind, tag, by, testID }: { piece: FeedItem; kind: Kind; tag: MediaProps['tag']; by: string | null; testID: string }) {
   const { colors } = useWawu();
   const url = piece.previewAssetUrl || null;
-  // The address that failed to load, and the one whose first frame is on screen: a new address starts again.
-  const [broken, setBroken] = useState<string | null>(null);
+  // The creator's cover first (R-114), then the preview when it is a picture (a photo is always one); the one that will not load gives way to the next.
+  const picture = usePicture(pictureCandidates(piece, url));
+  // The address whose first frame is on screen: a new address starts again.
   const [framed, setFramed] = useState<string | null>(null);
   const mark = (
     <View testID={`${testID}-mark`} pointerEvents="none" style={[StyleSheet.absoluteFill, styles.center]}>
       <Icon name={tag.icon} size={metrics.playDisc} color={colors.textMuted} />
     </View>
   );
-  if (!url || broken === url) return mark;
+  if (picture.uri) {
+    return <Image testID={`${testID}-image`} source={{ uri: picture.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={picture.onError} style={StyleSheet.absoluteFill} />;
+  }
+  // A picture that failed to load is not handed to anything else: the mark.
+  if (!url || isPicture(url) || kind === 'photos') return mark;
   if (isPdfFile(url)) {
     return (
       <View testID={`${testID}-book`} style={styles.center}>
         <Book title={piece.title} by={by} pages={piece.pageCount} />
       </View>
     );
-  }
-  // A photo set's picture is a picture whatever its address says; elsewhere the file type decides.
-  if (isPicture(url) || kind === 'photos') {
-    return <Image testID={`${testID}-image`} source={{ uri: url }} contentFit="cover" accessibilityLabel={piece.title} onError={() => setBroken(url)} style={StyleSheet.absoluteFill} />;
   }
   // A course's preview is a lesson, an mp4 by the Hub's rule: its first frame, from a paused player (the mark shows until it is in).
   if (canPlay && (isVideoFile(url) || kind === 'course')) {

@@ -5,10 +5,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/components/icon';
 
 import { media, metrics, words } from './look';
-import { clock, endedBodyWidth, isLocked, isPicture, minutesAdjective, playableUrl, roomPlacement, SKIP_SECONDS, type CourseDetail } from './model';
+import { clock, endedBodyWidth, isLocked, isPicture, minutesAdjective, pictureCandidates, playableUrl, roomPlacement, SKIP_SECONDS, type CourseDetail } from './model';
 import { canPlay, VideoSurface, type SeekRequest } from './player';
 import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 import { Seekable, TrackBar } from './parts';
+import { usePicture } from './usePicture';
 
 /**
  * H2 (a video) and H5 (a locked video). It plays while it fills the screen; a tap pauses or
@@ -25,6 +26,9 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
   // A course's full file is the whole course (a video, a PDF or an archive): the feed only ever plays its free lesson.
   const uri = course ? item.previewAssetUrl : playableUrl(item);
   const still = course && isPicture(uri);
+  // The creator's cover (R-114) is the picture under the player until its first frame is in (and the picture itself for a course whose preview is one);
+  // without one, or when it will not load, the kind's mark stands there.
+  const picture = usePicture(pictureCandidates(item, uri));
   // The address whose first frame is on screen. Until it is, the backdrop draws the kind's mark, never plain black (a player is
   // transparent until its first frame); an unlocked post plays a new file, whose frame is awaited the same way.
   const [framed, setFramed] = useState<string | null>(null);
@@ -94,10 +98,18 @@ export function VideoPost(props: PostProps & { course?: boolean; detail?: Course
       backdrop={
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           {still ? (
-            <Image testID={`still-${item.id}`} source={{ uri }} contentFit="cover" accessibilityLabel={item.title} style={StyleSheet.absoluteFill} />
+            picture.uri ? (
+              <Image testID={`still-${item.id}`} source={{ uri: picture.uri }} contentFit="cover" accessibilityLabel={item.title} onError={picture.onError} style={StyleSheet.absoluteFill} />
+            ) : (
+              <View testID={`video-mark-${item.id}`} style={[StyleSheet.absoluteFill, styles.mark]}>
+                <Icon name={course ? 'GraduationCap' : 'Video'} size={metrics.loadingMark} color={media.dot} />
+              </View>
+            )
           ) : (
             <>
-              {framed === uri ? null : (
+              {framed === uri ? null : picture.uri ? (
+                <Image testID={`cover-${item.id}`} source={{ uri: picture.uri }} contentFit="cover" accessibilityLabel={item.title} onError={picture.onError} style={StyleSheet.absoluteFill} />
+              ) : (
                 <View testID={`video-mark-${item.id}`} style={[StyleSheet.absoluteFill, styles.mark]}>
                   <Icon name={course ? 'GraduationCap' : 'Video'} size={metrics.loadingMark} color={media.dot} />
                 </View>

@@ -122,6 +122,8 @@ export function setFormat(format: FormatId): void {
   giveBack(draft.full);
   giveBack(draft.preview);
   if (!made) lessons.forEach((l) => giveBack(l.file));
+  giveBack(cover.file);
+  publishCover(noCover);
   setMade(null);
   setLessons([]);
   resetDetails();
@@ -147,11 +149,43 @@ export function abandonDraft(): void {
   giveBack(draft.preview);
   // The files of a course the Hub has already taken belong to it, whether or not its lessons were saved.
   if (!made) lessons.forEach((l) => giveBack(l.file));
+  giveBack(cover.file);
+  publishCover(noCover);
   setMade(null);
   setLessons([]);
   resetDetails();
   setSent(null);
   publish(empty);
+}
+
+/**
+ * The cover the person chose for the piece (R-114): `default` (the frame of a video preview, else none), a `picture` they picked and that went up
+ * to `content/cover` (`file`), or `none`. Kept apart from the draft's own three fields so a piece that sets no cover reads exactly as before;
+ * every reset empties it, and a picture that went up and is no longer wanted is given back to the Hub like any file.
+ */
+export type DraftCover = { mode: 'default' | 'picture' | 'none'; file: UploadedFile | null };
+const noCover: DraftCover = { mode: 'default', file: null };
+let cover: DraftCover = noCover;
+const coverListeners = new Set<() => void>();
+function publishCover(next: DraftCover): void {
+  cover = next;
+  coverListeners.forEach((l) => l());
+}
+export const getCover = (): DraftCover => cover;
+/** Chooses the cover; a picture that is replaced or no longer chosen is given back to the Hub. */
+export function setCover(next: DraftCover): void {
+  if (cover.file && cover.file.key !== next.file?.key) giveBack(cover.file);
+  publishCover(next);
+}
+export function useCover(): DraftCover {
+  return useSyncExternalStore(
+    (listener) => {
+      coverListeners.add(listener);
+      return () => coverListeners.delete(listener);
+    },
+    getCover,
+    getCover,
+  );
 }
 
 let lessonCounter = 0;
@@ -210,6 +244,7 @@ export const fullFileOf = (d: Pick<Draft, 'format' | 'full'>, lessonList: readon
  * the session has ended and there is no one to ask on behalf of.
  */
 export function resetDraft(): void {
+  publishCover(noCover);
   setMade(null);
   setLessons([]);
   resetDetails();

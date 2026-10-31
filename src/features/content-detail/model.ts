@@ -253,6 +253,8 @@ export function asFeedItem(piece: Piece, detail: PieceDetail, engagement: Engage
   const creator: FeedCreator = { wawuId: c.wawuId, displayName: c.displayName, handle: c.handle, avatarUrl: c.avatarUrl, verification: c.verification };
   return {
     ...piece,
+    // The cover is the Hub's, on a request that carries the app header (R-114); null when the piece has none.
+    coverUrl: piece.coverUrl ?? null,
     likedByMe: engagement.likedByMe,
     savedByMe: engagement.savedByMe,
     followsCreator: engagement.followsCreator,

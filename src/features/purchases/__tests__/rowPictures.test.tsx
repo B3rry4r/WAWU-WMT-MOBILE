@@ -20,7 +20,7 @@ const { PurchasesScreen } = require('../PurchasesScreen') as typeof import('../P
 
 const LIST = '/api/hub/me/purchases/all';
 const maker = { wawuId: 'w-kemi', displayName: 'Kemi Okafor', handle: 'kemi', avatarUrl: null, verification: { creator: { verified: false, expiresAt: null }, professional: { verified: false, expiresAt: null } } };
-const entry = (id: string, contentType: string, thumbnailUrl: string | null) => ({
+const entry = (id: string, contentType: string, thumbnailUrl: string | null, coverUrl: string | null = null) => ({
   id,
   kind: 'content_unlock',
   title: `Piece ${id}`,
@@ -29,7 +29,7 @@ const entry = (id: string, contentType: string, thumbnailUrl: string | null) => 
   purchasedAt: `${new Date().getFullYear()}-02-26T10:00:00.000Z`,
   status: 'paid',
   openId: `c-${id}`,
-  content: { id: `c-${id}`, title: `Piece ${id}`, contentType, thumbnailUrl, creator: maker },
+  content: { id: `c-${id}`, title: `Piece ${id}`, contentType, thumbnailUrl, coverUrl, creator: maker },
   lessons: null,
   credits: null,
 });
@@ -42,6 +42,7 @@ const ENTRIES = [
   entry('tplpic', 'template', 'https://cdn.test/previews/cover.png?sig=1'),
   entry('photo', 'image', 'https://cdn.test/previews/shoot.jpg?sig=1'),
   entry('none', 'video', null),
+  entry('cov', 'video', 'https://cdn.test/previews/clip.mp4?sig=1', 'https://cdn.test/covers/v.jpg?sig=1'),
 ];
 
 beforeEach(() => {
@@ -77,5 +78,15 @@ describe('M29 · My purchases (Android)', () => {
     await fireEvent(row('photo').getByTestId('purchase-thumb-image'), 'error', { nativeEvent: { error: 'not an image' } });
     expect(row('photo').queryByTestId('purchase-thumb-image')).toBeNull();
     expect(row('photo').getByTestId('purchase-thumb-mark')).toBeTruthy();
+  });
+});
+
+describe('M29 · covers (R-114, Android)', () => {
+  it('a user sees the cover of a bought video, and the mark when it will not load', async () => {
+    await renderFrame(<PurchasesScreen onBack={jest.fn()} />);
+    await screen.findByText('Piece cov');
+    expect(row('cov').getByTestId('purchase-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/v.jpg?sig=1' }]);
+    await fireEvent(row('cov').getByTestId('purchase-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    expect(row('cov').getByTestId('purchase-thumb-mark')).toBeTruthy();
   });
 });

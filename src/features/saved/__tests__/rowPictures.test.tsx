@@ -25,11 +25,11 @@ const { SavedScreen } = require('../SavedScreen') as typeof import('../SavedScre
 
 const LIST = '/api/hub/me/saved';
 const maker = { wawuId: 'w-chidi', displayName: 'Chidi Eze', handle: 'chidi', avatarUrl: null, verification: { creator: { verified: false, expiresAt: null }, professional: { verified: false, expiresAt: null } } };
-const saved = (id: string, contentType: string, thumbnailUrl: string | null) => ({
+const saved = (id: string, contentType: string, thumbnailUrl: string | null, coverUrl: string | null = null) => ({
   id: `s-${id}`,
   kind: 'content',
   savedAt: '2026-10-01T10:00:00.000Z',
-  content: { id, title: `Piece ${id}`, contentType, accessType: 'free', priceKobo: null, thumbnailUrl, bought: false, creator: maker },
+  content: { id, title: `Piece ${id}`, contentType, accessType: 'free', priceKobo: null, thumbnailUrl, coverUrl, bought: false, creator: maker },
   event: null,
   creator: null,
 });
@@ -40,6 +40,7 @@ const ITEMS = [
   saved('pdf', 'pdf', 'https://cdn.test/previews/pages.pdf?sig=1'),
   saved('tplpic', 'template', 'https://cdn.test/previews/cover.png?sig=1'),
   saved('photo', 'image', 'https://cdn.test/previews/shoot.jpg?sig=1'),
+  saved('cov', 'audio', 'https://cdn.test/previews/clip.mp3?sig=1', 'https://cdn.test/covers/a.webp?sig=1'),
 ];
 
 beforeEach(() => {
@@ -77,5 +78,15 @@ describe('M30 · Saved (Android)', () => {
     await fireEvent(tile('photo').getByTestId('saved-thumb-image'), 'error', { nativeEvent: { error: 'not an image' } });
     expect(tile('photo').queryByTestId('saved-thumb-image')).toBeNull();
     expect(tile('photo').getByTestId('saved-thumb-mark')).toBeTruthy();
+  });
+});
+
+describe('M30 · covers (R-114, Android)', () => {
+  it('a user sees the cover of a saved audio, and the mark when it will not load', async () => {
+    await renderFrame(<SavedScreen onBack={jest.fn()} onOpenEvent={jest.fn()} onOpenContent={jest.fn()} />);
+    await screen.findByText('Piece cov');
+    expect(tile('cov').getByTestId('saved-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/a.webp?sig=1' }]);
+    await fireEvent(tile('cov').getByTestId('saved-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    expect(tile('cov').getByTestId('saved-thumb-mark')).toBeTruthy();
   });
 });
