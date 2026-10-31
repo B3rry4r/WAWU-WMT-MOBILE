@@ -4,8 +4,13 @@ import { Platform, ScrollView, TextInput, type LayoutChangeEvent, type NativeScr
 import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { space } from '@/theme';
 
-/** Room kept above and below the field that is brought into view, so its label and its error line show with it. */
-const ROOM = space.xl;
+/**
+ * Room kept above and below the focused input that is brought into view, so the WHOLE field shows with it. The input is the measured
+ * thing, and a `TextField` is more than that: above the input sit the box's padding (16) and the label (8 + 19), and under it the box's
+ * padding (16) and the error or hint line (8 + 17), so 43 above and 41 below on the phone's metrics (measured on the host form, E13).
+ * 48 clears both with a few px to spare; 20 left the line under a field with an error behind the Continue button (VIEW-FIX patch A).
+ */
+const ROOM = space.s3xl + space.lg;
 
 /** A field tells the scroll it sits in that it has the focus (`TextField` does), so a second field is brought into view while the keyboard stays up. */
 export const FieldFocusContext = createContext<(() => void) | null>(null);

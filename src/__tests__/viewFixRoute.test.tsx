@@ -20,10 +20,9 @@ jest.mock('@/features/shell/LeaveDevRoute', () => {
 });
 
 const globals = globalThis as unknown as { __DEV__: boolean };
-const Route = () => {
-  const View = (require('@/app/preview/view-fix') as typeof import('@/app/preview/view-fix')).default;
-  return <View />;
-};
+// The gallery pulls in the whole app (the heavy part of a cold cache): loaded here, once, so no test's 20 s timeout pays for it.
+const ViewFix = (require('@/app/preview/view-fix') as typeof import('@/app/preview/view-fix')).default;
+const Route = () => <ViewFix />;
 const avoiding = () => KeyboardAvoidingView.prototype as unknown as Record<string, unknown>;
 
 afterEach(() => {
