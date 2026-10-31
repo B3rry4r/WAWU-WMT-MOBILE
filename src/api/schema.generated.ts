@@ -18110,8 +18110,15 @@ export interface components {
             messageId: string;
             cursor: string;
         };
+        LiveCommunityMuteEvent: {
+            /** @enum {string} */
+            type: "community.mute.changed";
+            communityId: string;
+            muted: boolean;
+            cursor: string;
+        };
         LiveCatchUp: {
-            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveMoneyRequestEvent"] | components["schemas"]["LiveCommunityMessageEvent"] | components["schemas"]["LiveCommunityMessageRemovedEvent"])[];
+            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveMoneyRequestEvent"] | components["schemas"]["LiveCommunityMessageEvent"] | components["schemas"]["LiveCommunityMessageRemovedEvent"] | components["schemas"]["LiveCommunityMuteEvent"])[];
             cursor: string;
             hasMore: boolean;
         };

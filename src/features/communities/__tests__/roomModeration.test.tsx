@@ -214,6 +214,7 @@ async function connect(cursor = 'c0') {
   return socket;
 }
 const removed = (messageId: string, cursor: string, communityId = ROOM) => ({ type: 'community.message.removed', cursor, communityId, messageId });
+const muteChanged = (muted: boolean, cursor: string, communityId = ROOM) => ({ type: 'community.mute.changed', cursor, communityId, muted });
 const tell = async (socket: FakeSocket, frame: unknown) => {
   await rtl.act(async () => {
     socket.say(frame);
@@ -367,6 +368,88 @@ describe.each(['android', 'ios'] as const)('MOD-ROOMS: a room on %s', (os) => {
       await rtl.waitFor(() => expect(rtl.screen.queryByText('rude words')).toBeNull());
       await tell(socket, removed('m1', 'c1'));
       expect(rtl.screen.getByText('kind words')).toBeTruthy();
+    });
+  });
+
+  describe('a mute or an unmute while the room is open, live (MOD-ROOMS r2, M3)', () => {
+    it('muted: the composer becomes the calm line at once, with no reopening; unmuted: the composer comes back; the room reads throughout', async () => {
+      serve({ [MESSAGES]: [paged([message('still readable', 'u2')])], [MODERATION]: [mute(false), mute(true)] });
+      await renderRoom();
+      await rtl.screen.findByText('still readable');
+      expect(await rtl.screen.findByTestId('composer-input')).toBeTruthy();
+      expect(rtl.screen.queryByTestId('room-muted')).toBeNull();
+      const socket = await connect();
+
+      await tell(socket, muteChanged(true, 'c1'));
+      expect(await rtl.screen.findByTestId('room-muted')).toBeTruthy();
+      expect(rtl.screen.getByText('The host has muted you in this room. You can still read it.')).toBeTruthy();
+      expect(rtl.screen.queryByTestId('composer-input')).toBeNull();
+      expect(rtl.screen.queryByTestId('composer-send')).toBeNull();
+      expect(rtl.screen.getByText('still readable')).toBeTruthy();
+
+      // The Hub holds the same state, so the read behind the event agrees and the line stays.
+      await rtl.waitFor(() => expect(sent.filter((line) => line === MODERATION).length).toBeGreaterThan(1));
+      expect(rtl.screen.getByTestId('room-muted')).toBeTruthy();
+
+      answers[MODERATION] = [mute(false)];
+      await tell(socket, muteChanged(false, 'c2'));
+      await rtl.waitFor(() => expect(rtl.screen.queryByTestId('room-muted')).toBeNull());
+      expect(await rtl.screen.findByTestId('composer-input')).toBeTruthy();
+      expect(rtl.screen.getByText('still readable')).toBeTruthy();
+    });
+
+    it("a repeat changes nothing, another room's event changes nothing, and a send is not made by the event", async () => {
+      serve({ [MESSAGES]: [paged([message('hello', 'u2')])], [MODERATION]: [mute(false)] });
+      await renderRoom();
+      await rtl.screen.findByText('hello');
+      await rtl.screen.findByTestId('composer-input');
+      const socket = await connect();
+      await tell(socket, muteChanged(true, 'c1', 'another-room'));
+      expect(rtl.screen.queryByTestId('room-muted')).toBeNull();
+      expect(rtl.screen.getByTestId('composer-input')).toBeTruthy();
+      answers[MODERATION] = [mute(true)];
+      await tell(socket, muteChanged(true, 'c2'));
+      await tell(socket, muteChanged(true, 'c2'));
+      expect(await rtl.screen.findByTestId('room-muted')).toBeTruthy();
+      expect(rtl.screen.getAllByTestId('room-muted')).toHaveLength(1);
+      expect(posts).toEqual([]);
+    });
+
+    it('a phone that was away: the catch-up carries a mute and an unmute in the order the host did them, and the last one is the state', async () => {
+      serve({
+        [MESSAGES]: [paged([message('hello', 'u2')])],
+        [MODERATION]: [mute(false)],
+        'GET /live/catch-up?cursor=c0&limit=100': [ok({ events: [muteChanged(true, 'c5'), muteChanged(false, 'c6'), muteChanged(true, 'c7')], cursor: 'c7', hasMore: false })],
+      });
+      await renderRoom();
+      await rtl.screen.findByText('hello');
+      await rtl.screen.findByTestId('composer-input');
+      const first = await connect('c0');
+      expect(rtl.screen.getByTestId('composer-input')).toBeTruthy();
+      // The phone goes away (the socket drops) and comes back: the new socket's ready asks the Hub for what it missed since 'c0'.
+      answers[MODERATION] = [mute(true)];
+      const opened = FakeSocket.all.length;
+      await rtl.act(async () => {
+        first.readyState = 3;
+        first.onclose?.({ code: 1006 });
+      });
+      await rtl.waitFor(() => expect(FakeSocket.all.length).toBeGreaterThan(opened), { timeout: 8000 });
+      await connect('c0');
+      expect(await rtl.screen.findByTestId('room-muted')).toBeTruthy();
+      expect(rtl.screen.queryByTestId('composer-input')).toBeNull();
+      expect(sent).toContain('GET /live/catch-up?cursor=c0&limit=100');
+    });
+
+    it("the host is never muted by an event: the host's composer stays", async () => {
+      serveHost({ [MESSAGES]: [paged([message('hello', 'u2')])] });
+      await renderRoom();
+      await rtl.screen.findByText('hello');
+      await rtl.screen.findByTestId('composer-input');
+      const socket = await connect();
+      // The Hub sends this to the muted member only; if one ever reached the host's room it is not read as a mute.
+      await tell(socket, muteChanged(true, 'c1'));
+      expect(rtl.screen.queryByTestId('room-muted')).toBeNull();
+      expect(rtl.screen.getByTestId('composer-input')).toBeTruthy();
     });
   });
 

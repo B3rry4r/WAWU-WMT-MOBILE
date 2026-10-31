@@ -27,6 +27,7 @@ import { fetchRequestsCount, requestsCountKey } from '@/features/community-host/
 import { fetchHostHandle, fetchPass, hostKey, passKey } from '@/features/community-pass/api';
 import { BuyCreditsEntry } from '@/features/credits/BuyCreditsEntry';
 import { OutOfCreditsPanel } from '@/features/credits/OutOfCreditsPanel';
+import { onLiveEvent } from '@/features/inbox/live';
 import { sendableRoomLink } from '@/lib/appLinks';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
@@ -144,6 +145,21 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const inside = room.data?.role === 'host' || room.data?.role === 'member';
   const moderation = useQuery({ queryKey: moderationKey(id), queryFn: () => fetchRoomModeration(id), enabled: inside, retry: false }, queryClient);
   const muted = moderation.data?.muted === true;
+  // MOD-ROOMS r2 (R-122, M3). The host muted or unmuted THIS person while the room is open: the composer becomes the calm line, or comes
+  // back, at once, without reopening. The Hub sends `community.mute.changed` on the live socket (and in the catch-up for a phone that was
+  // away, in the order the host did them, so the last one applied is the state). Another room's event changes nothing, and a repeat is harmless.
+  const isHost = room.data?.role === 'host';
+  useEffect(
+    () =>
+      onLiveEvent((event) => {
+        // The host is never muted in their own room, so an event is not read as a mute there.
+        if (isHost || event.type !== 'community.mute.changed' || event.communityId !== id) return;
+        queryClient.setQueryData<RoomModeration>(moderationKey(id), (held) => ({ muted: event.muted, mutedMembers: held?.mutedMembers ?? [] }));
+        // The Hub's answer is read again behind it, so a read that was already on its way when the host acted cannot leave the old state.
+        void queryClient.invalidateQueries({ queryKey: moderationKey(id) });
+      }),
+    [id, isHost],
+  );
   const [buying, setBuying] = useState(false);
   const [draft, setDraft] = useState<ComposerDraft | undefined>(undefined);
   const edit = (localId: string) => {

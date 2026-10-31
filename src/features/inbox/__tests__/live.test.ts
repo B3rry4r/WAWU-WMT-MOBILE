@@ -418,7 +418,7 @@ describe('catching up', () => {
     await flush();
     await flush();
     expect(catchUp.mock.calls.map((c) => c[0])).toEqual(['live1', 'page1', 'page2']);
-    expect(events.map((e) => (e.type === 'chat.read' ? 'read' : e.type === 'community.message.removed' ? e.messageId : e.message.id))).toEqual(['m1', 'm2', 'r1', 'read', 'm3']);
+    expect(events.map((e) => (e.type === 'chat.read' ? 'read' : e.type === 'community.message.removed' ? e.messageId : e.type === 'community.mute.changed' ? 'mute' : e.message.id))).toEqual(['m1', 'm2', 'r1', 'read', 'm3']);
     expect(synced).toHaveBeenCalledTimes(2);
 
     // The next reconnect starts from where this catch-up ended.
