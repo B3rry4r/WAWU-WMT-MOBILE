@@ -119,7 +119,13 @@ function seed() {
   queryClient.setQueryData(detailKey('m1'), { id: 'm1', title: 'Night Market', premiering: false, premierDate: null, mustAgreeTerms: false, trailer: { kind: 'file', url: 'https://files.invalid/trailer.mp4' } });
 }
 
+/** A release build gets the redirect and nothing else: the gallery's set-up (android, the caught keyboard) is never run there. */
 export default function ViewFixPreview() {
+  if (!__DEV__) return <LeaveDevRoute />;
+  return <ViewFixGallery />;
+}
+
+function ViewFixGallery() {
   useState(seed);
   const { colors } = useWawu();
   const { state = 'video' } = useLocalSearchParams<{ state?: string }>();
@@ -133,7 +139,6 @@ export default function ViewFixPreview() {
     };
     return phone.restore;
   }, [phone]);
-  if (!__DEV__) return <LeaveDevRoute />;
   // Closing a sheet or the viewer leaves the gallery on an empty page.
   const close = () => router.setParams({ state: 'closed' });
 

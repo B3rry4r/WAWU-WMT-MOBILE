@@ -10,3 +10,43 @@
 
 **Checks** (EXIT lines in the hand-back): tsc, eslint on changed files, jest for content-detail, feed, chat, paid-answers, verify, me, points and `src/__tests__`, gates, check_tasks. New tests: `content-detail/__tests__/viewFix.test.tsx` (13), `viewFixKeyboard.test.tsx` (4), `feed/__tests__/viewFixFeed.test.tsx` (7), `viewFixPlayer.test.tsx` (6), `viewFixLock.test.tsx` (4); added to `verify/__tests__/voice.test.tsx` (2) and `paid-answers/__tests__/paidAnswers.test.tsx` (1). **Changed assertions: none.** `src/__tests__/route-guard.test.tsx` gained one map entry (`preview/view-fix`, development only) as every earlier preview route did. Mutations that make the new tests fail: the four `KeyboardAvoidingView`s back to iOS-only `padding` (4 fail), the lock-screen owner guard removed (1 fails, iPhone).
 
+## Round 1 tables (moved from Current state in round 2, unchanged)
+
+**Every file that holds a text field** (`grep -rlE 'TextInput|<TextField|<PhoneField' src`, tests and the preview page left out): **64 files, 63 handled, 1 not needing** (60 screens, sheets and parts on a frame or a sheet that rides above the keyboard, 3 shared field components, 1 dev gallery).
+
+| Count | Frame or sheet | How it keeps the field above the keyboard | Files |
+|---|---|---|---|
+| 20 | AuthFrame | AuthFrame, `behavior="padding"` on both phones (set before this task); the form scrolls the focused field into view | abroad/NewRecipientView.tsx, abroad/views.tsx, addmoney/WayScreen.tsx, auth/AuthField.tsx, auth/CodeScreen.tsx, auth/IdentityScreen.tsx, auth/SignInScreen.tsx, auth/SignUpScreen.tsx, bills/parts.tsx, bills/useKeepCaret.ts, chat/ChatSendScreen.tsx, delete-account/ConfirmDeletionScreen.tsx, open-wallet/OpenWalletScreen.tsx, send/AmountScreen.tsx, send/BankRecipientScreen.tsx, send/parts.tsx, settings/ChangePasswordScreen.tsx, wallet/PayoutAccountScreen.tsx, wallet/fx/CryptoSendScreen.tsx, withdraw/WithdrawScreen.tsx |
+| 5 | CreateFrame | `CreateFrame` is now a `KeyboardAvoidingView` (padding), its body a `FieldScroll`, its foot drops the bottom inset while the keyboard is up. Covers create/DetailsScreen, community-host/NewCommunityScreen, library/EditDetailsScreen, create price and upload, purchases | community-host/NewCommunityScreen.tsx, create/DetailsScreen.tsx, create/LessonCard.tsx, library/EditDetailsScreen.tsx, purchases/PurchaseSearch.tsx |
+| 1 | ShopFrame | `ShopFrame` padded the same way (the product draft form) | verify/DraftFormScreen.tsx |
+| 2 | LegalFrame keyboard | `LegalFrame` with `keyboard` pads the whole screen, foot included (the foot used to sit under the keyboard: it was outside the padded part) | legal/fixed/FixedPriceScreen.tsx, legal/matter/parts.tsx |
+| 6 | ScreenFrame keyboard | `ScreenFrame keyboard` was already padded; its body is now a `FieldScroll` (scrolls the focused field into view) | capital/ProductScreen.tsx, profile-edit/AboutSections.tsx, profile-edit/EditProfileScreen.tsx, profile-edit/RoleScreen.tsx, profile-edit/SocialLinksScreen.tsx, works/WorkFields.tsx |
+| 3 | PointsFrame / ProFrame | padded, body a `FieldScroll`, foot on the keyboard | points/ToolScreen.tsx, points/parts.tsx, pro-listing/ApplyScreen.tsx |
+| 7 | own KeyboardAvoidingView padding | `KeyboardAvoidingView` `padding` added (events host screens and shared links with a `FieldScroll` body and the foot on the keyboard; search, schools directory and wallet history, whose search field sits at the top: the list ends at the keyboard) | events/host/HostScreen.tsx, events/host/SentBackScreen.tsx, events/host/hostParts.tsx, events/organiser/SharedLinksScreen.tsx, schools/parts.tsx, search/parts.tsx, wallet/history/HistoryParts.tsx |
+| 8 | own KeyboardAvoidingView padding | `KeyboardAvoidingView` `padding` (round 0, or the chat and room screens before it) | chat/ChatComposer.tsx, communities/Composer.tsx, content-detail/CommentsSheet.tsx, legal/parts.tsx, paid-answers/PaidThreadScreen.tsx, paid-ask/parts.tsx, verify/HearNameScreen.tsx, verify/voiceParts.tsx |
+| 8 | bottom sheet that adds the keyboard under its last row | a bottom sheet is a modal the keyboard covers: `useKeyboardLift` adds its height under the last row (list sheets also shorten the list). Round 1 added BankSheet, CancelSheet, CountryPicker, the country sheet in CountryStep, DoorScreen type-code sheet (its `KeyboardAvoidingView` inside the sheet measured against the sheet, not the window, and moved nothing) | components/CountryPicker.tsx, chat/RequestSheet.tsx, events/door/DoorScreen.tsx, events/organiser/CancelSheet.tsx, open-wallet/CountryStep.tsx, paid-ask/AskSheets.tsx, tips/TipSheets.tsx, wallet/BankSheet.tsx |
+| 3 | shared field component | not a screen: the field components; `TextField` tells the `FieldScroll` it sits in when it takes the focus (`AreaField` and the points convert field do too) | components/FieldScroll.tsx, components/PhoneField.tsx, components/TextField.tsx |
+| 1 | development gallery | not needing: the dev-only component gallery, no user reaches it | showcase/Showcase.tsx |
+
+Other sheets that hold no text field, so need nothing: events host ChoiceSheet and WhenSheet, events FilterSheet, legal LetterSheet, open-wallet ChoiceField and StatePicker, EditProfile and Role discard and remove sheets, CryptoSend review sheet, create category and course sheets, the PIN sheet (`PinEntry` is a keypad, no `TextInput`), comments and bills `Modal`s (no field). Proof: `src/__tests__/viewFixRound1.test.tsx` (50 cases: the frames, the sheets, the scroll and the players on both phones, the source inventory, and a grep that no `KeyboardAvoidingView` is iOS-only) and `src/__tests__/viewFixRound1b.test.tsx` (6 cases: the door, country and pro-listing sheets, Android and iPhone).
+
+**Every player** (`grep -rnE '<(AudioSource|VideoSurface)\b' src` and every `expo-audio` / `expo-video` import): **13 uses of the shared players in 10 files, 12 wired, 1 not needing; plus 4 other uses of the libraries, none needing.**
+
+| Player | File | Loading state and failure line |
+|---|---|---|
+| Feed audio post | feed/AudioPost.tsx | wired (round 0) |
+| Feed video post | feed/VideoPost.tsx | wired (round 0) |
+| Piece page video, audio, course lesson (3) | content-detail/Media.tsx | wired (round 0) |
+| Bio player | me/BioPlayer.tsx | wired (round 0) |
+| Studio result player | points/ResultPlayer.tsx | wired (round 0) |
+| Trailer | movies/TrailerScreen.tsx | wired (round 1): spinner in place of pause, words over the picture, Play asks again |
+| Voice sample play | points/VoiceExtras.tsx | wired (round 1): spinner in the 32 button, the words under it |
+| Work video cover | works/WorkCover.tsx | wired (round 1): spinner in the middle, the words, the screen is told to stop |
+| Hear your name | verify/HearNameScreen.tsx | wired (round 1): the disc's busy state, the failure line, a press asks the Hub again |
+| Hear yourself (Voice Intro) | verify/VoiceHearScreen.tsx | wired (round 1): the pill's loading and error rows |
+| Frame grabber of the piece page | content-detail/Media.tsx (`playing={false}`) | not needing: nothing plays, no button |
+| Welcome video | auth/WelcomeScreen.tsx | not needing: a muted background loop, no play button |
+| Theme music | music/themeMusic.ts | not needing: background music, no player on screen |
+| Frame extraction, voice recorder | create/frames.ts, verify/voiceRecorder.ts | not needing: no listening, no button |
+
+Proof of the players: `src/__tests__/viewFixRound1.test.tsx` (each of the five, Android and iPhone: spinner on `waiting`, the line on `failed`) and `voice.test.tsx` (Hear your name).

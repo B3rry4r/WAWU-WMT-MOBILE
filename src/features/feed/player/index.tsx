@@ -61,12 +61,19 @@ function moveTo(player: VideoPlayer, to: number) {
  */
 export const FULLSCREEN: NonNullable<VideoViewProps['fullscreenOptions']> = { enable: true, orientation: 'default' };
 
-/** Asks the view for the phone's full-screen video. The Android activity that shows it is the module's; a view that is gone has nothing to open. */
-function openFullscreen(view: VideoView | null) {
+/**
+ * Asks the view for the phone's full-screen video. The Android activity that shows it is the module's; a view that is gone has nothing to open.
+ * `failed` is told when nothing opened, so the phone's own controls (turned on for the full-screen view) go back off.
+ */
+function openFullscreen(view: VideoView | null, failed: () => void) {
+  if (!view) {
+    failed();
+    return;
+  }
   try {
-    void Promise.resolve(view?.enterFullscreen()).catch(() => undefined);
+    void Promise.resolve(view.enterFullscreen()).catch(failed);
   } catch {
-    // A view the phone has let go of opens nothing.
+    failed();
   }
 }
 
@@ -108,13 +115,22 @@ export function VideoSurface({ uri, playing, seek, frosted, fullscreenAt, onTime
     return () => listeners.forEach((l) => l.remove());
   }, [player, events, asked, load]);
 
-  // R-117: the full-screen button was pressed (each press is a new number).
+  // R-117: the full-screen button was pressed (each press is a new number). The page's player has no controls of its own (the post draws
+  // them), so the phone's controls go ON for the full-screen view and OFF when it closes: on the iPhone a full-screen video with
+  // `showsPlaybackControls` false has no Done and no controls at all (Android's full-screen activity forces its controller on). The controls
+  // are committed first, then the view is asked to open, and the view's own enter/exit events keep them in step.
   const openedAt = useRef(fullscreenAt ?? 0);
+  const [controls, setControls] = useState(false);
+  const [openNow, setOpenNow] = useState(0);
   useEffect(() => {
     if (!fullscreenAt || openedAt.current === fullscreenAt) return;
     openedAt.current = fullscreenAt;
-    openFullscreen(view.current);
+    setControls(true);
+    setOpenNow(fullscreenAt);
   }, [fullscreenAt]);
+  useEffect(() => {
+    if (openNow) openFullscreen(view.current, () => setControls(false));
+  }, [openNow]);
 
   // The seek is declared before the play, so a restart from the end moves first and plays after.
   useSeekOnce(seek, (to) => moveTo(player, to));
@@ -140,8 +156,10 @@ export function VideoSurface({ uri, playing, seek, frosted, fullscreenAt, onTime
       ref={view}
       testID={testID}
       player={player}
-      nativeControls={false}
+      nativeControls={controls}
       fullscreenOptions={FULLSCREEN}
+      onFullscreenEnter={() => setControls(true)}
+      onFullscreenExit={() => setControls(false)}
       contentFit="cover"
       allowsPictureInPicture={false}
       playsInline
