@@ -837,9 +837,9 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 7. **Updates R-61 and R-109 (Studio's tiles):** PT1's two-column tile list with costs on the tiles is replaced. The cost of a tool is on its own screen (the quote) and is still in each tile's accessible name; the caption line under the bar is gone.
 **Carried out by:** STUDIO-HOME (app, held with the Studio line, not merged into the phones' line).
 
-### R-114 · A piece can carry a cover picture of its own (CONTENT-COVER), and the app draws it wherever a piece has a picture
-*Owner, 30 Oct 2026. Recorded from the two places the ruling was written, word for word, because DECISIONS.md had no entry for R-114 (added by WALK1031-FIX from the repo history; nothing added to what was recorded). The audit that led to it (`tasks/PREVIEWS-APP.md`): Owner, 30 Oct 2026: "if videos don't show preview what else doesn't show preview". The Hub's contract (`docs/contract/COVERS.md` in `wawu-backend`, "A cover picture on a piece (CONTENT-COVER, R-114)"): "Owner, 30 Oct 2026: every piece can carry a cover picture of its own. Until now the Hub kept one public file per piece (`previewAssetUrl`), an mp4 clip for a video or a course, an mp3 or wav clip for audio and a pdf extract for a pdf, so a card for those formats could only show a mark. A cover is a picture the creator uploads for the listing, whatever its format. It is optional, additive and never changes `thumbnailUrl` or `previewAssetUrl`."*
-The accepted types, the size limit and the calls that set, replace and remove a cover are the Hub's contract (`docs/contract/COVERS.md`, backend PR #242); the app takes them from there and never states one of its own.
+### R-114 · An optional cover on every piece
+*Lead ruling, 30 Oct 2026, 08:06, after the owner's "if videos don't show preview what else doesn't show preview": "an optional cover on every piece".* (Entered here by WALK1031-FIX on the lead's word: DECISIONS.md had no entry for R-114.)
+The accepted types, the size limit and the calls that set, replace and remove a cover are the Hub's contract (`docs/contract/COVERS.md` in `wawu-backend`, CONTENT-COVER, PR #242); the app takes them from there and never states one of its own.
 **Carried out by:** PREVIEWS-APP (part A, the app draws what the piece has, never an empty box) and COVERS-APP (part B, the app draws `coverUrl` first and a creator sends, changes and removes a cover; the Hub's CONTENT-COVER).
 
 ### R-115 · Audio a person presses play on keeps playing when the screen locks or the app is left
