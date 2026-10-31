@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { CommunityMessage } from '../api';
 
-// MOD-ROOMS (R-122): the host's tools in their own room, the muted member's line, and the Hub's word-filter refusal, with the real room
+// MOD-ROOMS (R-122): the host's tools in their own room, the muted member's line (there is no word filter, owner 31 Oct 2026), with the real room
 // screen and the real handlers (press and hold, the confirm sheets, the Android back button, the keyboard's composer), on both phones.
 const mockVault = new Map<string, string>();
 jest.mock('expo-secure-store', () => ({
@@ -489,24 +489,23 @@ describe.each(['android', 'ios'] as const)('MOD-ROOMS: a room on %s', (os) => {
       expect(posts.filter((request) => request.path === `/communities/${ROOM}/messages`)).toHaveLength(1);
     });
 
-    it('a message with a word the Hub does not allow: its own sentence under the bubble, nothing stored, Edit puts the words back in the field', async () => {
-      const sentence = 'Who Made This? does not allow some of those words. Change them and try again.';
+    it('there is no word filter: words the earlier filter refused are sent as typed, stay in the room, and no refusal line or Edit appears', async () => {
+      const rough = 'you are a piece of shit';
       serve({
         [MESSAGES]: [paged([message('hello', 'u2')])],
         [MODERATION]: [mute(false)],
-        [`POST /communities/${ROOM}/messages`]: [refuse(400, sentence, { reason: { code: 'content_blocked', message: sentence } })],
+        [`POST /communities/${ROOM}/messages`]: [ok(message(rough, ME))],
       });
       await renderRoom();
       await rtl.screen.findByText('hello');
-      await type('a rude sentence');
+      await type(rough);
       await pressSend();
-      expect(await rtl.screen.findByText('Not sent')).toBeTruthy();
-      expect(rtl.screen.getByText(sentence)).toBeTruthy();
-      expect(rtl.screen.queryByRole('button', { name: 'Send again' })).toBeNull();
-      await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Edit' }));
-      expect(rtl.screen.getByTestId('composer-input').props.value).toBe('a rude sentence');
+      expect(await rtl.screen.findByText(rough)).toBeTruthy();
       expect(rtl.screen.queryByText('Not sent')).toBeNull();
-      expect(posts.filter((request) => request.path === `/communities/${ROOM}/messages`)).toHaveLength(1);
+      expect(rtl.screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+      const sentToHub = posts.filter((request) => request.path === `/communities/${ROOM}/messages`);
+      expect(sentToHub).toHaveLength(1);
+      expect(sentToHub[0].body).toMatchObject({ text: rough });
     });
   });
 });

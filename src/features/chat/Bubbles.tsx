@@ -40,9 +40,9 @@ export function Time({ iso, mine }: { iso: string; mine: boolean }) {
   );
 }
 
-export type PendingState = { status: 'sending' | 'failed'; error?: string; onRetry: () => void; onDiscard: () => void; onEdit?: () => void };
+export type PendingState = { status: 'sending' | 'failed'; error?: string; onRetry: () => void; onDiscard: () => void };
 
-/** What sits under a message the Hub has not confirmed: "Sending", or why it was not sent with Try again (Edit, when the words themselves were refused) and Delete. */
+/** What sits under a message the Hub has not confirmed: "Sending", or why it was not sent with Try again and Delete. */
 export function PendingNote({ id, pending }: { id: string; pending: PendingState }) {
   return (
     <View style={styles.pending}>
@@ -51,11 +51,7 @@ export function PendingNote({ id, pending }: { id: string; pending: PendingState
       </Text>
       {pending.status === 'failed' ? (
         <View style={styles.pendingButtons}>
-          {pending.onEdit ? (
-            <Button testID={`bubble-${id}-edit`} label="Edit" size="sm" variant="secondary" onPress={pending.onEdit} />
-          ) : (
-            <Button testID={`bubble-${id}-retry`} label="Try again" size="sm" variant="secondary" onPress={pending.onRetry} />
-          )}
+          <Button testID={`bubble-${id}-retry`} label="Try again" size="sm" variant="secondary" onPress={pending.onRetry} />
           <Button testID={`bubble-${id}-discard`} label="Delete" size="sm" variant="secondary" onPress={pending.onDiscard} />
         </View>
       ) : null}

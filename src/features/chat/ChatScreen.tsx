@@ -75,8 +75,6 @@ export function ChatScreen(props: ChatScreenProps) {
   const focused = useIsFocused();
   const owner = useSessionAccount(undefined);
   const thread = useChatThread(chatId, focused);
-  // Words the Hub refused (R-122) come back into the field to be changed; a new object each time, so the same words can come back twice.
-  const [draft, setDraft] = useState<{ text: string } | null>(null);
   // REPORT-UGC: press and hold the other person's message to report it; the Hub leaves it out of this person's chat.
   // The thanks is drawn above the composer (REPORT-UGC r1), so the composer's height is read.
   const [composerHeight, setComposerHeight] = useState(0);
@@ -183,19 +181,7 @@ export function ChatScreen(props: ChatScreenProps) {
             id={item.entry.localId}
             text={item.entry.text}
             mine
-            pending={{
-              status: item.entry.status,
-              error: item.entry.error,
-              onRetry: () => thread.retry(item.entry.localId),
-              onDiscard: () => thread.discard(item.entry.localId),
-              onEdit:
-                item.entry.needsEdit && item.entry.status === 'failed'
-                  ? () => {
-                      const words = thread.edit(item.entry.localId);
-                      if (words !== null) setDraft({ text: words });
-                    }
-                  : undefined,
-            }}
+            pending={{ status: item.entry.status, error: item.entry.error, onRetry: () => thread.retry(item.entry.localId), onDiscard: () => thread.discard(item.entry.localId) }}
           />
         );
       }
@@ -352,7 +338,7 @@ export function ChatScreen(props: ChatScreenProps) {
           closed ? (
             <ChatClosedBar />
           ) : (
-            <ChatComposer onSend={thread.send} busy={thread.busy} draft={draft} onPlus={support ? undefined : () => setAttachOpen(true)} />
+            <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={support ? undefined : () => setAttachOpen(true)} />
           )
         ) : (
           <View style={{ height: Math.max(insets.bottom, space.lg) }} />

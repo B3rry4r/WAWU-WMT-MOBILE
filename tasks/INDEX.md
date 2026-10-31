@@ -38,7 +38,7 @@ Builder and verifier are always different sessions.
 20. [OPS-27](OPS-27.md) Admin screens: foreign currency and Capital (switches, every swap and send, one person's accounts, Capital orders)
 21. [REPORT-UGC](REPORT-UGC.md) A person can report a piece, comment, profile, community message, chat message or paid question, and the Hub's moderators act on it (Apple 1.2, Google Play UGC)
 22. [USER-SUSPEND](USER-SUSPEND.md) A moderator can suspend a person and lift it; a suspended person is hidden and cannot write, but is never trapped (Apple 1.2, Google Play UGC)
-23. [MOD-ROOMS](MOD-ROOMS.md) Objectionable words are refused where people write, the host of a room can delete a message and mute a member, and a block holds in rooms (Apple 1.2, Google Play UGC)
+23. [MOD-ROOMS](MOD-ROOMS.md) The host of a room can delete a message and mute a member, and a block holds in rooms; there is no automatic word filter (Apple 1.2, Google Play UGC)
 24. [WELCOME-LOGO](WELCOME-LOGO.md) The welcome screen draws the app's mark centred in the room above the words, with one line and the two buttons, and no video (R-119)
 25. [TIER-COUNTS](TIER-COUNTS.md) Products each tier allows are 4, 8 and 15, and a running tier gets the new count at once (R-112)
 26. [WELCOME-FULL](WELCOME-FULL.md) The welcome video is the whole screen, with the words and buttons over it: no panel, no shade, no gradient (R-111)

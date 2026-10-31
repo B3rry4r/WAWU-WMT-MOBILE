@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { CONTENT_BLOCKED, isApiError } from '@/api/errors';
+import { isApiError } from '@/api/errors';
 import { onLiveEvent, onLiveSynced, retainLive } from '@/features/inbox/live';
 import { refreshInbox } from '@/features/inbox/unread';
 
@@ -34,8 +34,6 @@ export type OutgoingText = {
   status: 'sending' | 'failed';
   /** The Hub's own sentence when it refused, or the phone's when no answer came. */
   error?: string;
-  /** The Hub refused the words themselves (R-122, `content_blocked`): sending them again cannot work, so the bubble offers Edit, not Try again. */
-  needsEdit?: boolean;
   createdAt: string;
 };
 
@@ -254,9 +252,7 @@ export function useChatThread(chatId: string, looking: boolean) {
         const refused = isApiError(error) ? error : null;
         setOutgoing((held) =>
           held.map((candidate) =>
-            candidate.localId === entry.localId
-              ? { ...candidate, status: 'failed', error: refused?.message ?? 'Something went wrong. Try again.', needsEdit: refused?.code === CONTENT_BLOCKED }
-              : candidate,
+            candidate.localId === entry.localId ? { ...candidate, status: 'failed', error: refused?.message ?? 'Something went wrong. Try again.' } : candidate,
           ),
         );
         if (refused?.status === 403) void client.invalidateQueries({ queryKey: chatKey(chatId) });
@@ -310,17 +306,6 @@ export function useChatThread(chatId: string, looking: boolean) {
     [outgoing],
   );
 
-  /** Takes a refused text message off the thread and returns its words, to be put back in the field and changed. */
-  const edit = useCallback(
-    (localId: string): string | null => {
-      const entry = outgoing.find((candidate) => candidate.localId === localId);
-      if (!entry || entry.file) return null;
-      setOutgoing((held) => held.filter((candidate) => candidate.localId !== localId));
-      return entry.text;
-    },
-    [outgoing],
-  );
-
   /** A message the person's own action made (a request they sent) goes into the thread at once. */
   const add = useCallback((message: ChatMessage) => take([message]), [take]);
 
@@ -333,7 +318,6 @@ export function useChatThread(chatId: string, looking: boolean) {
     sendFile,
     retry,
     discard,
-    edit,
     add,
     patchRequest,
     /** A text message is on its way: Send waits. A file on its way does not stop the next message. */

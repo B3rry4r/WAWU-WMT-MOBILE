@@ -16,7 +16,6 @@ jest.mock('expo-router', () => ({ useIsFocused: () => true }));
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => json(200, { statusCode: 200, message: 'OK', data, ...extra });
-const NOTE_SENTENCE = 'Who Made This? does not allow some of those words. Change them and try again.';
 const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
 
 const ME = '00000000-0000-4000-8000-0000000000aa';
@@ -62,7 +61,7 @@ function item(id: string, creator: string, over: Record<string, unknown> = {}) {
 
 const feedBody = (entries: unknown[]) => ok(entries, { pagination: { currentPage: 1, nextPage: null, perPage: 10, total: entries.length } });
 
-type Mode = 'note_refused' | 'paid' | 'pending' | 'failed' | 'lost_before' | 'lost_after' | 'short_at_pay' | 'changed_at_pay' | 'no_wallet' | 'in_progress';
+type Mode = 'paid' | 'pending' | 'failed' | 'lost_before' | 'lost_after' | 'short_at_pay' | 'changed_at_pay' | 'no_wallet' | 'in_progress';
 const hub = {
   mode: 'paid' as Mode,
   balanceKobo: 48_525_075,
@@ -192,8 +191,6 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (hub.paidKeys.has(key)) return json(201, { statusCode: 201, message: 'Created', data: tipView(hub.tipStatus, body) });
     if (hub.wrongFirst && hub.pays.length === 1) return refuse(403, { code: 'pin_incorrect', message: 'Wrong PIN. 4 tries left.', triesLeft: 4 });
     if (hub.mode === 'no_wallet') return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
-    // MOD-ROOMS r2 (L1, R-122): the Hub reads the note before anything moves and refuses a listed word in its own sentence.
-    if (hub.mode === 'note_refused') return refuse(400, { code: 'content_blocked', message: NOTE_SENTENCE });
     if (hub.mode === 'short_at_pay') {
       return refuse(402, { code: 'insufficient_funds', message: 'Not enough.', balanceKobo: 150_000, totalKobo: Number(body.expectedTotalKobo), shortfallKobo: Number(body.expectedTotalKobo) - 150_000 });
     }
@@ -558,20 +555,6 @@ describe('H26 to H28: paying', () => {
     await screen.findByText("Payment didn't go through");
     expect(screen.getByText('Your tip did not go through and nothing left your wallet.')).toBeTruthy();
     expect(hub.pays).toHaveLength(1);
-  });
-
-  it("a note with a word the Hub does not allow: the Hub's own sentence, nothing paid, no PIN asked again, and the note is still in the sheet to change", async () => {
-    hub.mode = 'note_refused';
-    const screen = await openSheet();
-    await rtl.fireEvent.changeText(screen.getByTestId('tip-note'), 'you are a piece of shit');
-    await rtl.fireEvent.press(await tipButton());
-    await screen.findByText(/^Approve /);
-    await enterPin('4829');
-    await screen.findByText("Payment didn't go through");
-    expect(screen.getByText(NOTE_SENTENCE)).toBeTruthy();
-    expect(hub.pays).toHaveLength(1);
-    expect(hub.payments).toBe(0);
-    expect(screen.queryByText(/^Tip sent|sent to /)).toBeNull();
   });
 
   it('with no wallet at the payment, leads to Open your wallet', async () => {
