@@ -17,8 +17,11 @@ import { UPLOAD_CANCELLED, uploadFile } from './upload';
 /** The picked cover's thumbnail is the shape the price card draws the same picture in on the next step: 52 by 66, corner 10 (PriceScreen). */
 const thumb = { width: 52, height: 66, corner: 10 } as const;
 
-/** `preview` is the clip the person uploaded, when there is one: its frame is the default cover. Audio and video have no clip (R-118): the Hub makes their preview. */
-export type CoverChoiceProps = { preview?: UploadedFile | null };
+/**
+ * `source` is the full file the person uploaded (a course's first lesson): when it is a video with a readable frame, that frame is the default
+ * cover ("Video frame"). `required` is a piece whose cover is also its preview (R-118): there is no frame and no "None", only a picture.
+ */
+export type CoverChoiceProps = { source?: UploadedFile | null; required?: boolean };
 
 type Stage = { state: 'idle' } | { state: 'uploading' } | { state: 'failed'; message: string };
 
@@ -28,14 +31,14 @@ type Stage = { state: 'idle' } | { state: 'uploading' } | { state: 'failed'; mes
  * of their own instead (the phone's photo picker), or choose none. A picture goes up to `content/cover` as soon as it is picked; a refusal (a
  * type or a size the Hub does not take, no room in storage) is the Hub's own sentence.
  */
-export function CoverChoice({ preview }: CoverChoiceProps) {
+export function CoverChoice({ source, required = false }: CoverChoiceProps) {
   const { colors } = useWawu();
   const cover = useCover();
   const [stage, setStage] = useState<Stage>({ state: 'idle' });
   const picking = useRef(false);
-  const hasFrame = Boolean(preview?.frame);
+  const hasFrame = !required && Boolean(source?.frame);
   // What the segment says: the frame, a picture the person picked, or none. Without a readable frame there is no default picture.
-  const value = cover.mode === 'picture' ? 'picture' : cover.mode === 'none' || !hasFrame ? 'none' : 'frame';
+  const value = required || cover.mode === 'picture' ? 'picture' : cover.mode === 'none' || !hasFrame ? 'none' : 'frame';
   const items = [
     ...(hasFrame ? [{ value: 'frame', label: 'Video frame' }] : []),
     { value: 'picture', label: 'Picture' },
@@ -77,7 +80,7 @@ export function CoverChoice({ preview }: CoverChoiceProps) {
     <View style={styles.root} testID="cover-choice">
       <Text variant="label">Cover</Text>
       <Text variant="muted">The picture your listing carries.</Text>
-      <SegmentedTabs testID="cover-mode" label="Cover" items={items} value={value} onChange={onChange} />
+      {required ? null : <SegmentedTabs testID="cover-mode" label="Cover" items={items} value={value} onChange={onChange} />}
       {value === 'picture' ? (
         <View style={styles.picked} testID="cover-picked">
           <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>

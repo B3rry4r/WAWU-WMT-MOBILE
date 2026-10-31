@@ -27,11 +27,10 @@ const TITLE = 'The Freelancer’s Pricing Playbook';
 const created = (title = TITLE) => ({ status: 201, body: { statusCode: 201, message: 'Created', data: { id: 'c1', title, status: 'pending' } } });
 const posts = () => hub.sent.filter((s) => s.method === 'POST' && s.path === CREATE);
 
-/** A piece with both files up, as M22 leaves it. */
+/** A piece with its full file up, as step 2 leaves it. R-118: nobody uploads a preview, so the draft holds none. */
 function haveFiles() {
   draft.setFormat('pdf');
   draft.setFull({ name: 'full.pdf', bytes: 5000, contentType: 'application/pdf', key: 'content/full/u1/f.pdf', fileUrl: 'https://storage.test/content/full/u1/f.pdf?read=1', pages: 84 });
-  draft.setPreview({ name: 'extract.pdf', bytes: 900, contentType: 'application/pdf', key: 'content/preview/u1/p.pdf', fileUrl: 'https://storage.test/content/preview/u1/p.pdf?read=1', pages: 12 });
 }
 const filled = () => details.setDetails({ title: TITLE, description: '84 pages on anchoring your rate.', category: 'business_entrepreneurship' });
 
@@ -117,7 +116,7 @@ describe('M24 · Price and M37 · Free piece', () => {
   /** A user picks a list price from the strip, once the Hub's list has loaded. */
   const pick = async (naira: number) => fireEvent.press(await screen.findByTestId(`price-stop-${naira}`));
 
-  it('a user can pick a price from the list, and Send for review sends the piece with that price and both files', async () => {
+  it('a user can pick a price from the list, and Send for review sends the piece with that price, its full file and a request for the Hub to make the preview (R-118)', async () => {
     hub.answers[`POST ${CREATE}`] = created();
     const calls = await open();
     expect(screen.getByText('Step 5 of 5')).toBeTruthy();
@@ -141,7 +140,7 @@ describe('M24 · Price and M37 · Free piece', () => {
       category: 'business_entrepreneurship',
       accessType: 'paid',
       price: 3000,
-      previewAsset: 'https://storage.test/content/preview/u1/p.pdf?read=1',
+      previewFromFile: true,
       fullAsset: 'https://storage.test/content/full/u1/f.pdf?read=1',
     });
     expect(details.getSent()).toEqual({ title: TITLE });
@@ -162,10 +161,8 @@ describe('M24 · Price and M37 · Free piece', () => {
     await open();
     expect(screen.getByTestId('price-piece')).toBeTruthy();
     expect(screen.getByText(TITLE)).toBeTruthy();
-    expect(screen.getByText('PDF · 84 pages · preview 12 pages')).toBeTruthy();
-    expect(pieceMeta('video', { name: 'a', bytes: 5 * 1024 * 1024, contentType: 'video/mp4', key: 'k', fileUrl: 'u' }, { name: 'b', bytes: 2 * 1024 * 1024, contentType: 'video/mp4', key: 'k2', fileUrl: 'u2' })).toBe(
-      'Video · 5 MB · preview 2 MB',
-    );
+    expect(screen.getByText('PDF · 84 pages')).toBeTruthy();
+    expect(pieceMeta('video', { name: 'a', bytes: 5 * 1024 * 1024, contentType: 'video/mp4', key: 'k', fileUrl: 'u' })).toBe('Video · 5 MB');
   });
 
   it('says the review happens, and draws nothing the Hub does not back: no currency picker, presets, share or listing fee', async () => {

@@ -183,7 +183,6 @@ describe('the course step 5: the piece, then its lessons', () => {
     draft.setLessonFile(a, file('l1.mp4'));
     draft.setLessonText(b, { title: 'The first job' });
     draft.setLessonFile(b, file('l2.mp4'));
-    draft.setPreview(file('p.mp4', 'content/preview'));
     details.setDetails({ title: 'VFX for Beginners', description: 'Twelve lessons.', category: 'media_communications', accessType: 'paid', price: '8000' });
   };
   const open = async () => {
@@ -204,7 +203,7 @@ describe('the course step 5: the piece, then its lessons', () => {
     expect(writes('POST', CREATE)[0].body).toMatchObject({
       contentType: 'course',
       price: 8000,
-      previewAsset: 'https://storage.test/content/preview/u1/p.mp4?read=1',
+      previewFromFile: true,
       fullAsset: 'https://storage.test/content/full/u1/l1.mp4?read=1',
     });
     expect(writes('PUT', PUT_LESSONS)[0].body).toEqual({
@@ -297,7 +296,6 @@ describe('M23: From a course (FIX-111, H24)', () => {
   it('a piece that names a course sends it as parentCourseId, and one that names none sends no such key', async () => {
     draft.setFormat('video');
     draft.setFull(file('full.mp4'));
-    draft.setPreview(file('clip.mp4', 'content/preview'));
     details.setDetails({ title: 'Orbit shot', description: 'One take.', category: 'media_communications', accessType: 'free', parentCourse: { id: 'c1', title: 'VFX for Beginners' } });
     hub.answers[`POST ${CREATE}`] = created('Orbit shot');
     const onSent = jest.fn();
@@ -312,7 +310,6 @@ describe('M23: From a course (FIX-111, H24)', () => {
   it('a piece with no course sends no parentCourseId', async () => {
     draft.setFormat('video');
     draft.setFull(file('full.mp4'));
-    draft.setPreview(file('clip.mp4', 'content/preview'));
     details.setDetails({ title: 'Orbit shot', description: 'One take.', category: 'media_communications', accessType: 'free' });
     hub.answers[`POST ${CREATE}`] = created('Orbit shot');
     const onSent = jest.fn();

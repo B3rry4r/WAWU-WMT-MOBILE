@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 import { servePrices } from '@/features/prices/__helpers__/prices';
 
-import { ScriptedXhr, FORMATS, chosen, hub, installFetch, installXhr, ok, presigned, renderFrame } from '../__helpers__/harness';
+import { ScriptedXhr, FORMATS, allowance, chosen, hub, installFetch, installXhr, ok, presigned, refusal, renderFrame } from '../__helpers__/harness';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(async () => null),
@@ -13,8 +13,10 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 /*
- * CREATE-FRAMES. The phone's gallery and its video reader are scripted (jest has neither); everything between them is the real
- * code: `pickFile` and `readPicked` for a gallery pick, the preview step's handlers, the draft and the price step.
+ * CREATE-FRAMES under R-118. The phone's gallery, its video reader and its image manipulator are scripted (jest has none of them); everything
+ * between them is the real code: `pickFile` and `readPicked` for a gallery pick, the upload step's handlers (the frame of a video and the
+ * smaller copy of a picture are read from the FULL file the creator picks, because nobody uploads a preview any more), the cover step, the
+ * draft and the price step.
  */
 const mockPicker = { assets: [] as unknown[] };
 jest.mock('expo-image-picker', () => ({
@@ -23,6 +25,35 @@ jest.mock('expo-image-picker', () => ({
 
 const mockThumbnail = { kind: 'thumbnail', width: 480, height: 270 };
 const mockReader: { calls: string[]; thumbnails: () => Promise<unknown[]>; events: string[] } = { calls: [], thumbnails: async () => [mockThumbnail], events: [] };
+const mockManipulator = { calls: [] as string[], size: { width: 4000, height: 3000 }, readable: true };
+jest.mock('expo-image-manipulator', () => {
+  const context = (source: unknown) => {
+    const c = {
+      resize: (size: unknown) => {
+        mockManipulator.calls.push(`resize ${JSON.stringify(size)}`);
+        return c;
+      },
+      renderAsync: async () => {
+        if (!mockManipulator.readable) throw new Error('Could not load the image');
+        mockManipulator.calls.push(`render ${typeof source === 'string' ? source : 'image'}`);
+        return {
+          width: mockManipulator.size.width,
+          height: mockManipulator.size.height,
+          saveAsync: async (options: { format: string; compress: number }) => {
+            mockManipulator.calls.push(`save ${options.format} ${options.compress}`);
+            return { uri: 'file:///cache/ImageManipulator/small.jpg', width: 640, height: 480 };
+          },
+          release: jest.fn(),
+        };
+      },
+      release: jest.fn(),
+    };
+    return c;
+  };
+  return { SaveFormat: { JPEG: 'jpeg', PNG: 'png', WEBP: 'webp' }, ImageManipulator: { manipulate: context } };
+});
+jest.mock('@/features/media/manipulatorCache', () => ({ forgetFile: jest.fn() }));
+
 jest.mock('expo-video', () => ({
   VideoView: 'VideoView',
   useVideoPlayer: jest.fn(),
@@ -44,13 +75,17 @@ jest.mock('expo-video', () => ({
 
 installFetch();
 const { queryClient: appClient } = require('@/api/query') as typeof import('@/api/query');
+const { UploadScreen } = require('../UploadScreen') as typeof import('../UploadScreen');
 const { PreviewScreen } = require('../PreviewScreen') as typeof import('../PreviewScreen');
 const { PriceScreen } = require('../PriceScreen') as typeof import('../PriceScreen');
 const draft = require('../draft') as typeof import('../draft');
 const details = require('../details') as typeof import('../details');
+const pickFileModule = require('../pickFile') as typeof import('../pickFile');
 
 const FORMATS_PATH = '/api/hub/uploads/formats';
+const ALLOWANCE_PATH = '/api/hub/uploads/allowance';
 const PRESIGN = '/api/hub/uploads/presign';
+const CREATE = '/api/hub/content';
 const GALLERY = 'content://media/external/video/media/42';
 const MB = 1024 * 1024;
 
@@ -65,12 +100,15 @@ function serveGallery() {
       mockReader.events.push('read-file');
       return new Response(new Uint8Array(4 * MB));
     }
+    if (typeof input === 'string' && input.startsWith('file:///cache/ImageManipulator/small')) return new Response(new Uint8Array(60_000));
     return hubFetch(input, init);
   }) as typeof fetch;
 }
 
 /** `expo-image` hands its native view the source as a list of one. */
 const imageSource = () => screen.getAllByTestId('preview-tile-image').map((n) => n.props.source);
+const posts = () => hub.sent.filter((s) => s.method === 'POST' && s.path === CREATE).map((s) => s.body as Record<string, unknown>);
+const presigns = () => hub.sent.filter((s) => s.method === 'POST' && s.path === PRESIGN).map((s) => s.body as Record<string, unknown>);
 
 beforeEach(() => {
   jest.replaceProperty(Platform, 'OS', 'android');
@@ -82,227 +120,250 @@ beforeEach(() => {
   mockReader.calls = [];
   mockReader.events = [];
   mockReader.thumbnails = async () => [mockThumbnail];
+  mockManipulator.calls = [];
+  mockManipulator.size = { width: 4000, height: 3000 };
+  mockManipulator.readable = true;
   mockPicker.assets = [galleryVideo];
   hub.answers[`GET ${FORMATS_PATH}`] = ok(FORMATS);
-  hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'clip.mp4');
+  hub.answers[`GET ${ALLOWANCE_PATH}`] = ok(allowance(0, 5));
+  hub.answers[`POST ${PRESIGN}`] = presigned('content/full', 'launch.mp4');
+  hub.answers[`POST ${CREATE}`] = { status: 201, body: { statusCode: 201, message: 'Created', data: { id: 'c1', title: 'Launch day', status: 'pending' } } };
   serveGallery();
 });
 afterEach(() => {
   jest.restoreAllMocks();
 });
 
-const open = (format: 'course' | 'image' | 'audio' = 'course', onBack = jest.fn()) => renderFrame(<PreviewScreen format={format} onBack={onBack} onContinue={jest.fn()} />);
+const openUpload = (format: 'video' | 'image' = 'video', onBack = jest.fn()) => renderFrame(<UploadScreen format={format} onBack={onBack} onContinue={jest.fn()} />);
+const openCover = (format: 'video' | 'course' | 'image' | 'audio' = 'video', onBack = jest.fn()) => renderFrame(<PreviewScreen format={format} onBack={onBack} onContinue={jest.fn()} />);
 const land = async () => {
   await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
   await act(async () => {
     ScriptedXhr.last?.finish(200);
   });
 };
+const toPrice = async (format: 'video' | 'image', paid = true) => {
+  details.setDetails({ title: 'Launch day', description: 'The whole day.', category: 'entertainment_creative', accessType: paid ? 'paid' : 'free', price: paid ? '3000' : '' });
+  servePrices();
+  await renderFrame(<PriceScreen format={format} onBack={jest.fn()} onSent={jest.fn()} />);
+};
 
-/** A course's full file is its first lesson's file (`fullFileOf`): puts the draft's full file on a lesson, as the lessons step leaves it. */
-function asLesson(): void {
-  draft.addLesson();
-  draft.setLessonFile(draft.getLessons()[0].key, draft.getDraft().full);
-}
-
-describe('M22 · Preview, a video (Android, from the gallery)', () => {
-  it('a user can pick a video from the gallery and see frames of it in How it will look: the preview twice, then the frosted locked one', async () => {
-    await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await land();
-    expect(await screen.findByText('launch-day.mp4')).toBeTruthy();
-    expect(screen.getByText('4 MB · public')).toBeTruthy();
-    expect(screen.getByText('How it will look')).toBeTruthy();
-    // The real gallery link went to the video reader, and the picture it gave back is what the three tiles draw.
-    expect(mockReader.calls).toEqual([GALLERY]);
-    expect(imageSource()).toEqual([[mockThumbnail], [mockThumbnail], [mockThumbnail]]);
-    expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
-    expect(screen.getByTestId('preview-tile-locked')).toBeTruthy();
-    const frosted = screen.getAllByTestId('preview-tile-image')[2];
-    expect(frosted.props.blurRadius).toBe(8);
-    expect(screen.getAllByTestId('preview-tile-image')[0].props.blurRadius).toBe(0);
-    expect(draft.getDraft().preview?.frame).toBe(mockThumbnail);
-    expect(screen.queryByTestId('preview-failure')).toBeNull();
-  });
-
-  it('reads the frame before the upload starts, so the phone\'s own copy is still there to read', async () => {
-    await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
+describe('R-118 · the frame of a video is read from the FULL file the creator picks (Android, from the gallery)', () => {
+  it('a user picks a video at step 2: the frame is read before the upload starts, while the phone\'s copy is still there, and kept on the full file', async () => {
+    await openUpload();
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
     await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
     expect(mockReader.events).toEqual(['read-file', 'player', 'frame']);
+    expect(mockReader.calls).toEqual([GALLERY]);
     expect(ScriptedXhr.last?.headers['content-type']).toBe('video/mp4');
+    expect(presigns()[0]).toMatchObject({ folder: 'content/full', format: 'video' });
     await act(async () => {
       ScriptedXhr.last?.finish(200);
     });
+    await waitFor(() => expect(draft.getDraft().full?.frame).toBe(mockThumbnail));
+    // No preview is uploaded for a video: one transfer, the full file.
+    expect(presigns()).toHaveLength(1);
   });
 
-  it('a user sees the same frame on the price step, as the piece card\'s cover', async () => {
-    draft.setFormat('course');
-    draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
-    if (draft.getDraft().format === 'course') asLesson();
-    const first = await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await land();
-    await screen.findByTestId('preview-look');
-    await first.unmount();
+  it('a user on the cover step sees that frame in How it will look (the cover twice, then the frosted locked one) and "Video frame" chosen', async () => {
+    draft.setFormat('video');
+    draft.setFull({ name: 'launch-day.mp4', bytes: 4 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1', frame: mockThumbnail as never });
+    await openCover('video');
+    expect(await screen.findByText('Add a cover')).toBeTruthy();
+    expect(screen.getByTestId('preview-line').props.children).toBe('Your preview is the first 30 seconds, made for you.');
+    expect(screen.queryByTestId('preview-drop')).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Video frame' }).props.accessibilityState.selected).toBe(true);
+    expect(imageSource()).toEqual([[mockThumbnail], [mockThumbnail], [mockThumbnail]]);
+    expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
+    expect(screen.getAllByTestId('preview-tile-image')[2].props.blurRadius).toBe(8);
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBeFalsy();
+  });
 
-    details.setDetails({ title: 'Launch day', description: 'The whole day.', category: 'entertainment_creative' });
-    servePrices();
-    await renderFrame(<PriceScreen format="video" onBack={jest.fn()} onSent={jest.fn()} />);
+  it('a user sees the same frame on the price step, as the piece card\'s cover, paid or free', async () => {
+    draft.setFormat('video');
+    draft.setFull({ name: 'launch-day.mp4', bytes: 4 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1', frame: mockThumbnail as never });
+    await toPrice('video', false);
     expect(await screen.findByTestId('price-piece')).toBeTruthy();
+    expect(screen.getByText('Free for everyone')).toBeTruthy();
     expect(screen.getByTestId('price-piece-image').props.source).toEqual([mockThumbnail]);
   });
 
-  it('a frame that cannot be read keeps the icon: the upload still goes up, nothing is said, the price step keeps its icon', async () => {
+  it('a frame that cannot be read keeps the icon: the upload still goes up, nothing is said, and the cover step offers Picture and None only', async () => {
     mockReader.thumbnails = async () => {
       throw new Error('Failed to generate thumbnail');
     };
-    draft.setFormat('course');
-    draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
-    if (draft.getDraft().format === 'course') asLesson();
-    const first = await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
+    const view = await openUpload();
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
     await land();
-    expect(await screen.findByTestId('preview-look')).toBeTruthy();
+    await waitFor(() => expect(draft.getDraft().full).toMatchObject({ name: 'launch-day.mp4' }));
+    expect(draft.getDraft().full?.frame).toBeUndefined();
+    expect(screen.queryByTestId('upload-failure')).toBeNull();
+    await view.unmount();
+    await openCover('video');
     expect(screen.queryByTestId('preview-tile-image')).toBeNull();
-    expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
-    expect(screen.getByTestId('preview-tile-locked')).toBeTruthy();
-    expect(screen.queryByTestId('preview-failure')).toBeNull();
-    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBeFalsy();
-    expect(draft.getDraft().preview).toMatchObject({ name: 'launch-day.mp4', key: 'content/preview/u1/clip.mp4' });
-    expect(draft.getDraft().preview?.frame).toBeUndefined();
-    await first.unmount();
-
-    details.setDetails({ title: 'Launch day', description: 'The whole day.', category: 'entertainment_creative' });
-    servePrices();
-    await renderFrame(<PriceScreen format="video" onBack={jest.fn()} onSent={jest.fn()} />);
-    expect(await screen.findByTestId('price-piece')).toBeTruthy();
-    expect(screen.queryByTestId('price-piece-image')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Video frame' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Picture' })).toBeTruthy();
   });
 
   it('a frame the picture view cannot draw falls back to the icon on that tile, never a broken box', async () => {
-    await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await land();
+    draft.setFormat('video');
+    draft.setFull({ name: 'launch-day.mp4', bytes: 4 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1', frame: mockThumbnail as never });
+    await openCover('video');
     const tiles = await screen.findAllByTestId('preview-tile-image');
     await fireEvent(tiles[0], 'error', { nativeEvent: { error: 'decode' } });
     expect(screen.getAllByTestId('preview-tile-image')).toHaveLength(2);
     expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
   });
 
-  it('leaving while the frame is being read starts no upload', async () => {
+  it('leaving while the frame is being read starts no upload and leaves no copy behind: the phone\'s copy of the video is discarded once', async () => {
     let finish: (value: unknown[]) => void = () => undefined;
     mockReader.thumbnails = () => new Promise<unknown[]>((resolve) => (finish = resolve));
+    const discard = jest.fn();
+    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue({ ...chosen('launch-day.mp4', 'video/mp4', 4, { previewUri: GALLERY }), discard });
     const onBack = jest.fn();
-    await open('course', onBack);
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
+    await openUpload('video', onBack);
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
     await waitFor(() => expect(mockReader.events).toContain('frame'));
+    expect(discard).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByLabelText('Back'));
     expect(onBack).toHaveBeenCalledTimes(1);
     await act(async () => finish([mockThumbnail]));
     expect(ScriptedXhr.last).toBeNull();
-    expect(draft.getDraft().preview).toBeNull();
+    expect(discard).toHaveBeenCalledTimes(1);
+    expect(draft.getDraft().full).toBeNull();
   });
 
-  it('a person who leaves during the frame read leaves no copy behind: the phone\'s copy of the video is discarded once', async () => {
-    let finish: (value: unknown[]) => void = () => undefined;
-    mockReader.thumbnails = () => new Promise<unknown[]>((resolve) => (finish = resolve));
-    const discard = jest.fn();
-    const pickFileModule = require('../pickFile') as typeof import('../pickFile');
-    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue({ ...chosen('launch-day.mp4', 'video/mp4', 4, { previewUri: GALLERY }), discard });
-    const onBack = jest.fn();
-    await open('course', onBack);
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await waitFor(() => expect(mockReader.events).toContain('frame'));
-    expect(discard).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByLabelText('Back'));
-    await act(async () => finish([mockThumbnail]));
-    expect(ScriptedXhr.last).toBeNull();
-    expect(discard).toHaveBeenCalledTimes(1);
-  });
-
-  it('a file the step refuses (a type the Hub does not take) leaves no copy behind either: the phone\'s copy is discarded once and nothing uploads', async () => {
-    const discard = jest.fn();
-    const pickFileModule = require('../pickFile') as typeof import('../pickFile');
-    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue({ ...chosen('launch-day.avi', 'video/x-msvideo', 4, { previewUri: GALLERY }), discard });
-    await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    expect(await screen.findByTestId('preview-failure')).toBeTruthy();
-    expect(discard).toHaveBeenCalledTimes(1);
+  it('a file the step refuses (a type the Hub does not take) opens no video reader and uploads nothing', async () => {
+    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue(chosen('launch-day.avi', 'video/x-msvideo', 4, { previewUri: GALLERY }));
+    await openUpload();
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
+    expect(await screen.findByTestId('upload-failure')).toBeTruthy();
     expect(ScriptedXhr.last).toBeNull();
     expect(mockReader.calls).toEqual([]);
   });
-});
 
-describe('M22 · Preview, an image or an audio clip looks exactly as before', () => {
-  it('a photo preview is drawn as itself in the three tiles and no video reader is opened', async () => {
-    mockPicker.assets = [];
-    const pickFileModule = require('../pickFile') as typeof import('../pickFile');
-    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue(chosen('cover.png', 'image/png', 5, { previewUri: 'file:///cache/cover.png' }));
-    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'cover.png');
-    await open('image');
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await land();
-    await screen.findByTestId('preview-look');
-    expect(imageSource()).toEqual([[{ uri: 'file:///cache/cover.png' }], [{ uri: 'file:///cache/cover.png' }], [{ uri: 'file:///cache/cover.png' }]]);
-    expect(mockReader.calls).toEqual([]);
-    expect(draft.getDraft().preview?.frame).toBeUndefined();
-  });
-
-  it('R-118: an audio piece uploads no clip: the step is the cover step, the tiles keep the icon and no video reader is opened', async () => {
-    await open('audio');
-    expect(await screen.findByText('Add a cover')).toBeTruthy();
-    expect(screen.queryByTestId('preview-drop')).toBeNull();
-    expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
-    expect(screen.queryByTestId('preview-tile-image')).toBeNull();
-    expect(mockReader.calls).toEqual([]);
-  });
-});
-
-/*
- * PREVIEWS-APP (rank 5): a course's preview is an mp4 lesson, so it is drawn as a frame of itself like a video's, and the step-5 card is
- * the piece, not the price: a Free piece shows it too.
- */
-describe('M22 and M24 · a course, and a Free piece (Android)', () => {
-  it('a user adding a course preview from the gallery sees its frame in How it will look, and on the price step\'s card', async () => {
-    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'lesson.mp4');
+  it('a course\'s first lesson that is a video gives the frame for the course\'s cover, read when the lesson file is chosen', async () => {
     draft.setFormat('course');
-    // A course's full file is its first lesson's: the price step reads it from there.
     draft.addLesson();
-    draft.setLessonFile(draft.getLessons()[0].key, { name: 'lesson-1.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/l1.mp4', fileUrl: 'https://storage.test/content/full/u1/l1.mp4?read=1' });
-    const first = await open('course' as never);
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await land();
-    await screen.findByTestId('preview-look');
-    expect(mockReader.calls).toEqual([GALLERY]);
+    draft.setLessonFile(draft.getLessons()[0].key, { name: 'lesson-1.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/l1.mp4', fileUrl: 'https://storage.test/content/full/u1/l1.mp4?read=1', frame: mockThumbnail as never });
+    await openCover('course');
+    expect(screen.getByTestId('preview-line').props.children).toBe('Your preview is the first 30 seconds of your first lesson, made for you.');
+    expect(screen.getByRole('tab', { name: 'Video frame' }).props.accessibilityState.selected).toBe(true);
     expect(imageSource()).toEqual([[mockThumbnail], [mockThumbnail], [mockThumbnail]]);
-    expect(draft.getDraft().preview?.frame).toBe(mockThumbnail);
-    await first.unmount();
+  });
+});
 
-    details.setDetails({ title: 'VFX for Beginners', description: 'Twelve lessons.', category: 'entertainment_creative' });
-    servePrices();
-    await renderFrame(<PriceScreen format="video" onBack={jest.fn()} onSent={jest.fn()} />);
-    expect(await screen.findByTestId('price-piece')).toBeTruthy();
-    expect(screen.getByTestId('price-piece-image').props.source).toEqual([mockThumbnail]);
+describe('R-118 · the preview of a picture is made on the phone from the creator\'s own first picture (Android)', () => {
+  const PICTURE = 'file:///cache/ImageManipulator/first.jpg';
+  const pickPicture = (discard = jest.fn()) =>
+    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue({ ...chosen('first.jpg', 'image/jpeg', 8, { previewUri: PICTURE }), discard });
+
+  it('choosing the first picture makes a smaller copy: long edge 640 px, a JPEG at 0.7, read from the phone\'s own copy before it goes; only the full picture uploads now', async () => {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/full', 'first.jpg');
+    pickPicture();
+    await openUpload('image');
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
+    await land();
+    await waitFor(() => expect(draft.getDraft().full).toMatchObject({ name: 'first.jpg' }));
+    // 4000 x 3000 brought down to 640 wide, never up; the encoder writes a JPEG at 0.7.
+    expect(mockManipulator.calls).toEqual([`render ${PICTURE}`, 'resize {"width":640}', 'render image', 'save jpeg 0.7']);
+    const copy = draft.getSmallCopy();
+    expect(copy).toMatchObject({ name: 'preview.jpg', contentType: 'image/jpeg', extension: 'jpg' });
+    expect(copy?.blob.size).toBe(60_000);
+    expect(presigns()).toHaveLength(1);
+    // The full picture is drawn from the link it came back with: the phone's copy is gone by now.
+    expect(draft.getDraft().full?.previewUri).toBe('https://storage.test/content/full/u1/first.jpg?read=1');
   });
 
-  it('a user who picks Free on the price step still sees the piece card, with the frame of their video as its cover, above the Free card', async () => {
-    draft.setFormat('course');
-    draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
-    if (draft.getDraft().format === 'course') asLesson();
-    const first = await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
+  it('a picture already under 640 px is not enlarged', async () => {
+    mockManipulator.size = { width: 500, height: 400 };
+    pickPicture();
+    await openUpload('image');
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
     await land();
-    await screen.findByTestId('preview-look');
-    await first.unmount();
+    await waitFor(() => expect(draft.getSmallCopy()).not.toBeNull());
+    expect(mockManipulator.calls.some((c) => c.startsWith('resize'))).toBe(false);
+    expect(mockManipulator.calls[mockManipulator.calls.length - 1]).toBe('save jpeg 0.7');
+  });
 
-    details.setDetails({ title: 'Launch day', description: 'The whole day.', category: 'entertainment_creative', accessType: 'free' });
-    servePrices();
-    await renderFrame(<PriceScreen format="video" onBack={jest.fn()} onSent={jest.fn()} />);
-    expect(await screen.findByTestId('price-free')).toBeTruthy();
-    expect(screen.getByText('Free for everyone')).toBeTruthy();
-    expect(screen.getByTestId('price-piece')).toBeTruthy();
-    expect(screen.getByText('Launch day')).toBeTruthy();
-    expect(screen.getByTestId('price-piece-image').props.source).toEqual([mockThumbnail]);
+  it('a tall picture is brought down by its height, so the long edge is 640 px', async () => {
+    mockManipulator.size = { width: 1200, height: 3000 };
+    pickPicture();
+    await openUpload('image');
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
+    await land();
+    await waitFor(() => expect(draft.getSmallCopy()).not.toBeNull());
+    expect(mockManipulator.calls).toContain('resize {"height":640}');
+  });
+
+  it('a picture the phone cannot read again is refused at step 2, in words, and nothing uploads', async () => {
+    mockManipulator.readable = false;
+    const discard = jest.fn();
+    pickPicture(discard);
+    await openUpload('image');
+    await fireEvent.press(await screen.findByTestId('upload-drop'));
+    expect(await screen.findByText('That picture could not be read. Choose another.')).toBeTruthy();
+    expect(ScriptedXhr.last).toBeNull();
+    expect(discard).toHaveBeenCalledTimes(1);
+    expect(draft.getSmallCopy()).toBeNull();
+  });
+
+  const sendPicture = async (paid: boolean) => {
+    draft.setFormat('image');
+    draft.setFull({ name: 'first.jpg', bytes: 8 * MB, contentType: 'image/jpeg', key: 'content/full/u1/first.jpg', fileUrl: 'https://storage.test/content/full/u1/first.jpg?read=1', previewUri: 'https://storage.test/content/full/u1/first.jpg?read=1' });
+    draft.setSmallCopy({ ...chosen('preview.jpg', 'image/jpeg', 60_000), extension: 'jpg' });
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'preview.jpg');
+    await toPrice('image', paid);
+    await waitFor(() => expect(screen.getByTestId('create-send').props.accessibilityState.disabled).toBe(false));
+    await fireEvent.press(screen.getByTestId('create-send'));
+  };
+
+  it('Send on a PAID picture uploads the smaller copy as the preview (format image, folder content/preview) and names it as previewAsset', async () => {
+    await sendPicture(true);
+    await land();
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(presigns()[0]).toMatchObject({ folder: 'content/preview', format: 'image', contentType: 'image/jpeg', extension: 'jpg' });
+    expect(posts()[0]).toMatchObject({ contentType: 'image', previewAsset: 'https://storage.test/content/preview/u1/preview.jpg?read=1', fullAsset: 'https://storage.test/content/full/u1/first.jpg?read=1' });
+    expect(posts()[0]).not.toHaveProperty('previewFromFile');
+  });
+
+  it('Send on a FREE picture uploads no preview and asks for none', async () => {
+    await sendPicture(false);
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(presigns()).toEqual([]);
+    expect(posts()[0]).not.toHaveProperty('previewAsset');
+    expect(posts()[0]).not.toHaveProperty('previewFromFile');
+  });
+
+  it('a Send that fails after the preview went up is tried again with the same preview: one upload, not two', async () => {
+    hub.answers[`POST ${CREATE}`] = refusal(500, 'Something went wrong.');
+    await sendPicture(true);
+    await land();
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(await screen.findByTestId('price-failure')).toBeTruthy();
+    hub.answers[`POST ${CREATE}`] = { status: 201, body: { statusCode: 201, message: 'Created', data: { id: 'c1', title: 'Launch day', status: 'pending' } } };
+    await fireEvent.press(screen.getByTestId('create-send'));
+    await waitFor(() => expect(posts()).toHaveLength(2));
+    expect(presigns().filter((b) => b.folder === 'content/preview')).toHaveLength(1);
+    expect(posts()[1].previewAsset).toBe(posts()[0].previewAsset);
+  });
+
+  it('a copy that is gone (the app was closed and opened again) says so in words and sends nothing', async () => {
+    draft.setFormat('image');
+    draft.setFull({ name: 'first.jpg', bytes: 8 * MB, contentType: 'image/jpeg', key: 'content/full/u1/first.jpg', fileUrl: 'https://storage.test/content/full/u1/first.jpg?read=1' });
+    await toPrice('image', true);
+    await waitFor(() => expect(screen.getByTestId('create-send').props.accessibilityState.disabled).toBe(false));
+    await fireEvent.press(screen.getByTestId('create-send'));
+    expect(await screen.findByText('Your preview could not be made. Choose your picture again.')).toBeTruthy();
+    expect(posts()).toEqual([]);
+  });
+
+  it('the cover step of a picture says the preview is a smaller copy, and draws the picture itself in the tiles', async () => {
+    draft.setFormat('image');
+    draft.setFull({ name: 'first.jpg', bytes: 8 * MB, contentType: 'image/jpeg', key: 'content/full/u1/first.jpg', fileUrl: 'https://storage.test/content/full/u1/first.jpg?read=1', previewUri: 'https://storage.test/content/full/u1/first.jpg?read=1' });
+    await openCover('image');
+    expect(screen.getByTestId('preview-line').props.children).toBe('Your preview is a smaller copy of your first picture.');
+    expect(imageSource()).toEqual(Array(3).fill([{ uri: 'https://storage.test/content/full/u1/first.jpg?read=1' }]));
+    expect(mockReader.calls).toEqual([]);
   });
 });

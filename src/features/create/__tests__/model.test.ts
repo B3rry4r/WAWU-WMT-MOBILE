@@ -2,7 +2,7 @@ import { chosen as chosenFile } from '../__helpers__/harness';
 import { refusalFor } from '../chosen';
 import { getDraft, resetDraft, setFormat, setFull, setPreview } from '../draft';
 import { contentTypeFor, extensionOfName } from '../fileTypes';
-import { formatBytes, formatHint, previewHint, secondsLine, typesLine, type FormatRule } from '../model';
+import { coverRequired, formatBytes, formatHint, previewHint, previewLine, previewWayOf, secondsLine, typesLine, type FormatRule } from '../model';
 import { pdfPageCount } from '../pdfPages';
 
 const MB = 1024 * 1024;
@@ -24,10 +24,12 @@ describe('the words on M20 come from the Hub rule', () => {
     expect(formatHint('video', rule('video', ['mp4']))).toBe('MP4 · buyers see a clip');
   });
 
-  it('an audio row says the clip length the Hub asks, and leaves the figure out when the Hub sends none', () => {
-    expect(formatHint('audio', rule('audio', ['mp3', 'wav'], { min: 30, max: 60 }))).toBe('MP3 or WAV · 30–60 second clip');
-    expect(formatHint('audio', rule('audio', ['mp3', 'wav'], { min: 20, max: 20 }))).toBe('MP3 or WAV · 20 second clip');
+  it('no row asks for a clip, a length or an extract: R-118 makes the preview for the creator', () => {
+    // The Hub still lists a 30 to 60 second clip for audio (the web uploads one); the app no longer reads or states it.
+    expect(formatHint('audio', rule('audio', ['mp3', 'wav'], { min: 30, max: 60 }))).toBe('MP3 or WAV · buyers hear a clip');
     expect(formatHint('audio', rule('audio', ['mp3', 'wav'], null))).toBe('MP3 or WAV · buyers hear a clip');
+    expect(formatHint('pdf', undefined)).toBe('Guides, ebooks · buyers read the first pages');
+    for (const id of ['video', 'course', 'audio', 'pdf', 'image', 'template'] as const) expect(formatHint(id, rule(id, ['x'], { min: 30, max: 60 }))).not.toMatch(/second|extract|upload/i);
   });
 
   it('sizes are read from bytes', () => {
@@ -37,10 +39,41 @@ describe('the words on M20 come from the Hub rule', () => {
     expect(secondsLine({ min: 30, max: 60 })).toBe('30–60');
   });
 
-  it('the preview line follows the kind of preview and the clip length', () => {
+  it('the draft publish (VF12) still words its upload of a preview by the Hub rule', () => {
     const base = rule('pdf', ['pdf']).preview;
     expect(previewHint({ ...base, kind: 'extract' })).toBe('Buyers see this before paying. For a PDF, upload the extract you want to give away.');
     expect(previewHint({ ...base, kind: 'clip', seconds: { min: 30, max: 60 } })).toBe('Buyers see this before paying. Upload a 30–60 second clip.');
+  });
+});
+
+describe('how each kind gets its preview (R-118): nobody uploads one', () => {
+  const video = { contentType: 'video/mp4' };
+  const doc = { contentType: 'application/pdf' };
+  it('audio, video and a course with a video first lesson are cut, a PDF is made into pages, a picture is copied on the phone', () => {
+    expect(previewWayOf('audio', null)).toBe('cut');
+    expect(previewWayOf('video', video)).toBe('cut');
+    expect(previewWayOf('course', video)).toBe('cut');
+    expect(previewWayOf('pdf', doc)).toBe('pages');
+    expect(previewWayOf('image', { contentType: 'image/png' })).toBe('copy');
+  });
+  it('a template, and a course whose first lesson is not a video, preview as their cover, which a paid one then needs', () => {
+    expect(previewWayOf('template', { contentType: 'application/zip' })).toBe('cover');
+    expect(previewWayOf('course', doc)).toBe('cover');
+    expect(previewWayOf('course', null)).toBe('cover');
+    expect(coverRequired('cover', false)).toBe(true);
+    expect(coverRequired('cover', true)).toBe(false);
+    expect(coverRequired('cut', false)).toBe(false);
+    expect(coverRequired('pages', false)).toBe(false);
+    expect(coverRequired('copy', false)).toBe(false);
+  });
+  it('the muted line says what the preview is, in one sentence each', () => {
+    expect(previewLine('audio', 'cut')).toBe('Your preview is the first 30 seconds, made for you.');
+    expect(previewLine('video', 'cut')).toBe('Your preview is the first 30 seconds, made for you.');
+    expect(previewLine('course', 'cut')).toBe('Your preview is the first 30 seconds of your first lesson, made for you.');
+    expect(previewLine('pdf', 'pages')).toBe('Your preview is the first pages, made for you.');
+    expect(previewLine('image', 'copy')).toBe('Your preview is a smaller copy of your first picture.');
+    expect(previewLine('template', 'cover')).toBe('Your cover is the preview buyers see. A cover is needed.');
+    expect(previewLine('course', 'cover')).toBe('Your first lesson is not a video, so your cover is the preview. A cover is needed.');
   });
 });
 
