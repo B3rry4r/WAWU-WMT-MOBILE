@@ -112,11 +112,13 @@ describe('what a tap does (openAd)', () => {
 });
 
 describe('the Today slot', () => {
-  it('a link ad is one button: the card and its pill open the address', async () => {
+  it('a link ad is one button, the whole card, which opens the address; it draws no pill (R-116: the picture paints its own button)', async () => {
     const onOpen = jest.fn(() => openAd(card('link'), jest.fn()));
     const screen = await rtl.render(<SponsoredSlot ad={card('link')} onOpen={onOpen} />);
     expect(screen.getByRole('button', { name: /Sponsored\. Shop with Acme\. Lagos\. Visit us/ })).toBeTruthy();
-    expect(screen.getByTestId('today-sponsored-cta')).toHaveTextContent('Visit us');
+    // Changed assertion: `today-sponsored-cta` was read as 'Visit us' (the drawn pill); R-116 draws no pill on the banner card.
+    expect(screen.queryByTestId('today-sponsored-cta')).toBeNull();
+    expect(screen.queryByTestId('today-sponsored-button')).toBeNull();
     await rtl.fireEvent.press(screen.getByTestId('today-sponsored'));
     expect(onOpen).toHaveBeenCalledTimes(1);
     expect(mockOpenURL).toHaveBeenCalledWith(LINK_URL);
@@ -125,7 +127,8 @@ describe('the Today slot', () => {
   it('an ad that does nothing has no button, nothing pressable and is read as an ad', async () => {
     const onOpen = jest.fn();
     const screen = await rtl.render(<SponsoredSlot ad={card('none')} onOpen={onOpen} />);
-    expect(screen.getByTestId('today-sponsored-headline')).toHaveTextContent('Shop with Acme');
+    // Changed assertion: the headline was a drawn text read by `today-sponsored-headline`; under R-116 it is only the card's label, checked below.
+    expect(screen.queryByTestId('today-sponsored-headline')).toBeNull();
     expect(screen.queryByTestId('today-sponsored-button')).toBeNull();
     expect(screen.queryByTestId('today-sponsored-cta')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
@@ -138,27 +141,33 @@ describe('the Today slot', () => {
     expect(mockOpenURL).not.toHaveBeenCalled();
   });
 
-  it('is the Explore slide at the Explore size: 196 high, corner 24, the same fade, with the pill added (R-92)', async () => {
+  it('is the Explore card in the banner shape: 27 by 8 at the full width, the whole picture, corner 24 (R-116)', async () => {
     const { exploreEventMetrics: ev } = require('@/features/events/ExploreEvents') as typeof import('@/features/events/ExploreEvents');
     const { StyleSheet } = require('react-native') as typeof import('react-native');
     const screen = await rtl.render(<SponsoredSlot ad={card('link')} onOpen={jest.fn()} />);
-    const style = StyleSheet.flatten(screen.getByTestId('today-sponsored').props.style) as { height: number; borderRadius: number };
-    expect(style.height).toBe(ev.heroHeight);
-    expect(style.height).toBe(196);
+    const style = StyleSheet.flatten(screen.getByTestId('today-sponsored').props.style) as { height?: number; width?: number; aspectRatio: number; borderRadius: number };
+    // Changed assertions: the card was 196 high ("height" 196); under R-116 it has no height of its own, only the owner's banner shape.
+    expect(style.aspectRatio).toBe(1350 / 400);
+    expect(style.aspectRatio).toBe(27 / 8);
+    expect(style.height).toBeUndefined();
+    expect(style.width).toBeUndefined();
     expect(style.borderRadius).toBe(ev.heroCorner);
     expect(style.borderRadius).toBe(24);
     expect(screen.getByText('SPONSORED')).toBeTruthy();
-    expect(screen.getByTestId('today-sponsored-shade')).toBeTruthy();
+    // The whole picture, on the exact shape: nothing is cropped, and nothing is laid over it but the chip (no shade, no words, no pill).
+    expect(screen.getByTestId('today-sponsored-artwork', { includeHiddenElements: true }).props.contentFit).toBe('contain');
+    expect(screen.queryByTestId('today-sponsored-shade')).toBeNull();
     const slide = await rtl.render(<AdSlide ad={card('link')} onOpen={jest.fn()} />);
-    const slideStyle = StyleSheet.flatten(slide.getByTestId('explore-ad').props.style) as { height: number; borderRadius: number };
-    expect({ height: slideStyle.height, borderRadius: slideStyle.borderRadius }).toEqual({ height: style.height, borderRadius: style.borderRadius });
+    const slideStyle = StyleSheet.flatten(slide.getByTestId('explore-ad').props.style) as { aspectRatio: number; borderRadius: number };
+    expect({ aspectRatio: slideStyle.aspectRatio, borderRadius: slideStyle.borderRadius }).toEqual({ aspectRatio: style.aspectRatio, borderRadius: style.borderRadius });
     expect(slide.queryByTestId('explore-ad-button')).toBeNull();
   });
 
-  it('an event ad is still one button with its pill', async () => {
+  it('an event ad is still one button, the whole card, with no pill drawn', async () => {
     const screen = await rtl.render(<SponsoredSlot ad={card('event')} onOpen={jest.fn()} />);
     expect(screen.getByRole('button', { name: /Get tickets/ })).toBeTruthy();
-    expect(screen.getByTestId('today-sponsored-button')).toBeTruthy();
+    // Changed assertion: `today-sponsored-button` (the drawn pill) was present; R-116 draws no pill.
+    expect(screen.queryByTestId('today-sponsored-button')).toBeNull();
   });
 });
 
