@@ -26,6 +26,7 @@ const PIECES = [
   piece('tplpic', 'template', 'https://cdn.test/previews/cover.png?sig=1'),
   piece('tplpdf', 'template', 'https://cdn.test/previews/cover.pdf?sig=1'),
   piece('photo', 'image', 'https://cdn.test/previews/shoot.jpg?sig=1'),
+  piece('cov', 'video', 'https://cdn.test/previews/clip2.mp4?sig=1', { coverUrl: 'https://cdn.test/covers/v.jpg?sig=1' }),
 ];
 
 beforeEach(() => {
@@ -60,5 +61,17 @@ describe.each([
     await fireEvent(tile('tplpic').getByTestId('grid-thumb-image'), 'error', { nativeEvent: { error: 'not an image' } });
     expect(tile('tplpic').queryByTestId('grid-thumb-image')).toBeNull();
     expect(tile('tplpic').getByTestId('grid-thumb-mark')).toBeTruthy();
+  });
+});
+
+describe.each([
+  ['own profile', (p: ContentPiece) => tileOf(p)],
+  ['a visitor', (p: ContentPiece) => visitorTileOf(p)],
+])('M1 · covers on %s (R-114, Android)', (_who, make) => {
+  it('draws the cover of a video, and the mark when it will not load', async () => {
+    await render(frame(<ContentGrid tiles={PIECES.map(make)} />));
+    expect(tile('cov').getByTestId('grid-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/v.jpg?sig=1' }]);
+    await fireEvent(tile('cov').getByTestId('grid-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    expect(tile('cov').getByTestId('grid-thumb-mark')).toBeTruthy();
   });
 });

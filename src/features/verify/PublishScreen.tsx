@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Image, Pressable, Share, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { ApiError } from '@/api/errors';
 import { isApiError } from '@/api/client';
@@ -18,9 +18,13 @@ import { Toast } from '@/components/Toast';
 import { fetchFormats, formatsKey } from '@/features/create/api';
 import type { ChosenFile } from '@/features/create/chosen';
 import { refusalFor } from '@/features/create/chosen';
-import type { UploadedFile } from '@/features/create/draft';
-import { formatBytes, previewHint, uploadTitle, type FormatId, type FormatRule } from '@/features/create/model';
+import { CoverChoice } from '@/features/create/CoverChoice';
+import { coverAssetFor } from '@/features/create/coverSend';
+import { giveBack, type DraftCover, type UploadedFile } from '@/features/create/draft';
+import { frameFor } from '@/features/create/frames';
+import { coverRequired, formatBytes, previewLine, previewWayOf, uploadTitle, type FormatId, type FormatRule } from '@/features/create/model';
 import { pickFile } from '@/features/create/pickFile';
+import { smallCopyOf } from '@/features/create/previewCopy';
 import { UPLOAD_CANCELLED, uploadFile } from '@/features/create/upload';
 import { useFirstTap } from '@/features/create/parts';
 import { fetchMyTier, tierKey, draftsKey } from '@/features/me/api';
@@ -36,12 +40,15 @@ import { identityStateOf } from './identityModel';
 import { ProductsFullSheet, type ProductsFullSheetProps } from './ProductsFullSheet';
 import { readableLink } from '@/lib/appLinks';
 
-import { CATEGORIES, productLink, publishDraft, type Published } from './publishApi';
+import { CATEGORIES, productLink, publishDraft, type PublishFiles, type Published } from './publishApi';
 
 const BODY_GAP = 12;
 const PREVIEW_HEIGHT = 190;
+/** The sentence when a picture's smaller copy is gone or was never made: the person chooses the picture again. */
+const COPY_GONE = 'Your preview could not be made. Choose your picture again.';
+const noCover: DraftCover = { mode: 'default', file: null };
 
-/** One file the person adds before publishing: nothing yet, on its way (the real share that has gone up), ready, or refused. */
+/** The file the person adds before publishing: nothing yet, on its way (the real share that has gone up), ready, or refused. */
 type Slot = { state: 'empty' } | { state: 'uploading'; name: string; share: number } | { state: 'ready'; file: UploadedFile } | { state: 'failed'; message: string };
 
 export type PublishScreenProps = Pick<ProductsFullSheetProps, 'onOpenLibrary'> & {
@@ -59,9 +66,14 @@ export type PublishScreenProps = Pick<ProductsFullSheetProps, 'onOpenLibrary'> &
 
 /**
  * VF12 · Publish, with VF12a (uploading), VF12b (published) and VF12c (shared). The draft's own details are the Hub's; the person adds
- * the file and the preview buyers see before paying, both through the create flow's upload (`POST /uploads/presign` under the draft's
- * format, the Hub's own type and size rules); the meter is the Hub's own count (`GET /me/tier`). Before the first publish the category
- * is asked here (the draft form stays without it), then `POST /product-drafts/{id}/publish`.
+ * the file through the create flow's upload (`POST /uploads/presign` under the draft's format, the Hub's own type and size rules); the
+ * meter is the Hub's own count (`GET /me/tier`). Before the first publish the category is asked here (the draft form stays without it),
+ * then `POST /product-drafts/{id}/publish`.
+ *
+ * R-118 (owner, 31 Oct 2026), exactly as Create: nobody uploads a preview. Once the file is ready the screen asks for a cover (its own, never
+ * Create's) with the kind's one muted line saying what the preview is. A PAID piece sends `previewFromFile: true` (the Hub cuts the first
+ * 30 seconds or makes the first pages), a paid picture sends the smaller copy the phone made of it as `previewAsset`, a template and a
+ * course with no video first preview as their cover so a paid one cannot go without it; a FREE piece sends none of these.
  *
  * Gates, in the Hub's order: no running tier is VF5 (or Renew, once ended); the identity check (VF15 to VF15b) has to have passed (the
  * Hub refuses a paused one itself, `403 identity_paused`, and its sentence is what VF15b shows); every place used is VF13. Share is the phone's own share sheet (R-33): no card is drawn. The Hub puts a published product up for
@@ -95,7 +107,7 @@ export function PublishScreen(props: PublishScreenProps) {
   const [hubPause, setHubPause] = useState<string | null>(null);
 
   const [full, setFull] = useState<Slot>({ state: 'empty' });
-  const [preview, setPreview] = useState<Slot>({ state: 'empty' });
+  const [cover, setCover] = useState<DraftCover>(noCover);
   const [category, setCategory] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [published, setPublished] = useState<Published | null>(null);
@@ -105,25 +117,46 @@ export function PublishScreen(props: PublishScreenProps) {
   const aborts = useRef<AbortController[]>([]);
   const publishing = useRef(false);
   const firstTap = useFirstTap();
-  useEffect(() => () => aborts.current.forEach((a) => a.abort()), []);
+  // What was made for a picture: the phone's smaller copy (held until Send uploads it) and, once up, the preview it became (kept so a publish
+  // that fails and is tried again uses it rather than sending a second one).
+  const smallCopy = useRef<ChosenFile | null>(null);
+  const madePreview = useRef<UploadedFile | null>(null);
+  const coverNow = useRef<DraftCover>(noCover);
+  const settled = useRef(false);
+  useEffect(() => {
+    coverNow.current = cover;
+  }, [cover]);
+  useEffect(
+    () => () => {
+      aborts.current.forEach((a) => a.abort());
+      smallCopy.current?.discard?.();
+      // Leaving without publishing: the cover and the preview that went up for this try are given back to the Hub.
+      if (!settled.current) {
+        giveBack(coverNow.current.file);
+        giveBack(madePreview.current);
+      }
+    },
+    [],
+  );
 
   const rule: FormatRule | undefined = formats.data?.find((r) => r.id === draft.data?.contentType);
   const format = (draft.data?.contentType ?? null) as FormatId | null;
   const running = tier.data ? tier.data.state === 'active' || tier.data.state === 'ending' : false;
 
-  const add = async (which: 'full' | 'preview') => {
+  const free = draft.data?.accessType === 'free';
+
+  const add = async () => {
     if (!rule || !format || !firstTap()) return;
-    const set = which === 'full' ? setFull : setPreview;
-    const fileRule = which === 'full' ? rule.full : rule.preview;
+    const set = setFull;
     let file: ChosenFile | null;
     try {
-      file = await pickFile(fileRule.contentTypes);
+      file = await pickFile(rule.full.contentTypes);
     } catch {
       set({ state: 'failed', message: "We couldn't open your files. Try again." });
       return;
     }
     if (!file) return;
-    const refusal = refusalFor(file, fileRule);
+    const refusal = refusalFor(file, rule.full);
     if (refusal) {
       set({ state: 'failed', message: refusal });
       return;
@@ -131,11 +164,40 @@ export function PublishScreen(props: PublishScreenProps) {
     const controller = new AbortController();
     aborts.current.push(controller);
     set({ state: 'uploading', name: file.name, share: 0 });
+    // What the cover and the preview are made from has to be read now, from the phone's own copy of the file, which goes once the upload has
+    // settled (R-118): a video's frame (the default cover), and a picture's smaller copy (the preview of a paid picture).
+    let copy: ChosenFile | null = null;
     try {
-      const uploaded = await uploadFile(file, { folder: which === 'full' ? 'content/full' : 'content/preview', format }, (share) => set((s) => (s.state === 'uploading' ? { ...s, share } : s)), controller.signal);
-      if (controller.signal.aborted) return;
-      set({ state: 'ready', file: uploaded });
+      const frame = await frameFor(file);
+      copy = format === 'image' && !free ? await smallCopyOf(file) : null;
+      if (format === 'image' && !free && !copy) {
+        // The phone cannot read the picture again, so it cannot make the preview from it: say so now, not when the piece is published.
+        file.discard?.();
+        set({ state: 'failed', message: 'That picture could not be read. Choose another.' });
+        return;
+      }
+      if (controller.signal.aborted) {
+        file.discard?.();
+        copy?.discard?.();
+        return;
+      }
+      const uploaded = await uploadFile(file, { folder: 'content/full', format }, (share) => set((s) => (s.state === 'uploading' ? { ...s, share } : s)), controller.signal);
+      if (controller.signal.aborted) {
+        copy?.discard?.();
+        return;
+      }
+      // A new file starts the cover and the preview again: whatever was made from the old one is not this one's.
+      smallCopy.current?.discard?.();
+      smallCopy.current = copy;
+      giveBack(madePreview.current);
+      madePreview.current = null;
+      if (coverNow.current.mode === 'default') {
+        giveBack(coverNow.current.file);
+        setCover(noCover);
+      }
+      set({ state: 'ready', file: { ...uploaded, ...(frame ? { frame } : {}) } });
     } catch (error) {
+      copy?.discard?.();
       if (error instanceof ApiError && error.code === UPLOAD_CANCELLED) return;
       // The Hub's own answer for a tier that is not running or every place used: the way up, not a sentence to read.
       if (isApiError(error) && error.code === 'tier_required') {
@@ -161,19 +223,50 @@ export function PublishScreen(props: PublishScreenProps) {
   const needsCategory = draft.data !== undefined && draft.data.category === null;
   const otherMissing = (draft.data?.missing ?? []).filter((m) => m !== 'category');
   const chosenCategory = category ?? draft.data?.category ?? null;
-  const filesReady = full.state === 'ready' && preview.state === 'ready';
+  // The preview of a paid piece (R-118): made for the person. A template, and a course with no video first, preview as their cover.
+  const way = full.state === 'ready' && format ? previewWayOf(format, full.file) : null;
+  const coverNeeded = way !== null && coverRequired(way, free);
+  const coverReady = !coverNeeded || (cover.mode === 'picture' && Boolean(cover.file));
+  const filesReady = full.state === 'ready' && coverReady;
   const canPublish = !busy && published === null && filesReady && chosenCategory !== null && otherMissing.length === 0;
 
+  /** A cover that is replaced or dropped is given back to the Hub; the screen keeps its own, never Create's. */
+  const chooseCover = (next: DraftCover) => {
+    if (cover.file && cover.file.key !== next.file?.key) giveBack(cover.file);
+    setCover(next);
+  };
+
+  /** The files a publish sends (R-118): the cover, and for a PAID piece its preview (the Hub makes it, or the phone's smaller copy of a picture). */
+  const filesFor = async (file: UploadedFile, kind: FormatId): Promise<PublishFiles> => {
+    const coverAsset = await coverAssetFor(file, cover, setCover);
+    let previewAsset: string | null = null;
+    if (!free && previewWayOf(kind, file) === 'copy') {
+      if (!madePreview.current) {
+        const copy = smallCopy.current;
+        if (!copy) throw new ApiError('unknown', 0, COPY_GONE);
+        madePreview.current = await uploadFile(copy, { folder: 'content/preview', format: 'image' }, () => undefined);
+        smallCopy.current = null;
+      }
+      previewAsset = madePreview.current.fileUrl;
+    }
+    return {
+      fullAsset: file.fileUrl,
+      ...(coverAsset ? { coverAsset } : {}),
+      ...(previewAsset ? { previewAsset } : free ? {} : { previewFromFile: true }),
+    };
+  };
+
   const publish = async () => {
-    if (publishing.current || !canPublish || full.state !== 'ready' || preview.state !== 'ready' || !draft.data) return;
+    if (publishing.current || !canPublish || full.state !== 'ready' || !format || !draft.data) return;
     publishing.current = true;
     setBusy(true);
     try {
       // The category is the Hub's field on the draft: it is saved before the publish reads the draft.
       if (needsCategory && category) await updateDraft(draft.data.id, { category: category as (typeof CATEGORIES)[number]['id'] });
-      const outcome = await publishDraft(draft.data.id, { previewAsset: preview.file.fileUrl, fullAsset: full.file.fileUrl });
+      const outcome = await publishDraft(draft.data.id, await filesFor(full.file, format));
       switch (outcome.kind) {
         case 'done':
+          settled.current = true;
           setPublished(outcome.piece);
           for (const key of [tierKey, draftsKey, ['uploads'], ['profile']]) void queryClient.invalidateQueries({ queryKey: key });
           break;
@@ -194,6 +287,7 @@ export function PublishScreen(props: PublishScreenProps) {
           break;
         case 'gone':
           // A first answer that was lost: the draft is gone because it was published. The piece is not known here, so there is no link.
+          settled.current = true;
           setGone(true);
           for (const key of [tierKey, draftsKey, ['uploads'], ['profile']]) void queryClient.invalidateQueries({ queryKey: key });
           break;
@@ -335,8 +429,23 @@ export function PublishScreen(props: PublishScreenProps) {
             </View>
           </View>
         ) : null}
-        <PreviewTile slot={preview} hint={previewHint(rule?.preview)} disabled={busy || published !== null} onPress={() => void add('preview')} />
-        <FileRow slot={full} title={format ? uploadTitle(format) : 'Add the file'} disabled={busy || published !== null} onPress={() => void add('full')} />
+        <FileRow slot={full} title={format ? uploadTitle(format) : 'Add the file'} disabled={busy || published !== null} onPress={() => void add()} />
+        {full.state === 'ready' && format && way && published === null ? (
+          // The cover step (R-118): once the file is in, the cover and, for a paid piece, the one muted line saying what the preview is.
+          <View testID="publish-cover" pointerEvents={busy ? 'none' : 'auto'} style={styles.cover}>
+            <View style={styles.coverHead}>
+              <Text variant="body" style={font(700)}>
+                Add a cover
+              </Text>
+              {free ? null : (
+                <Text variant="muted" testID="publish-preview-line">
+                  {previewLine(format, way)}
+                </Text>
+              )}
+            </View>
+            <CoverChoice source={full.file} required={coverNeeded} value={cover} onChange={chooseCover} />
+          </View>
+        ) : null}
         {published || gone ? (
           <View testID="publish-published" accessibilityLiveRegion="polite" style={[styles.note, { backgroundColor: colors.infoTint }]}>
             <Icon name="CircleCheck" size={22} color={colors.info} />
@@ -401,38 +510,6 @@ export function PublishScreen(props: PublishScreenProps) {
   );
 }
 
-/** The part buyers see before paying: a tile that takes the file, shows the real share that has gone up, and holds the Hub's own hint. */
-function PreviewTile({ slot, hint, disabled, onPress }: { slot: Slot; hint: string; disabled: boolean; onPress: () => void }) {
-  const { colors } = useWawu();
-  const uploading = slot.state === 'uploading';
-  const picture = slot.state === 'ready' ? slot.file.previewUri : undefined;
-  return (
-    <Pressable
-      testID="publish-preview"
-      accessibilityRole="button"
-      accessibilityLabel={slot.state === 'ready' ? `Preview, ${slot.file.name}. Replace` : 'Add a preview'}
-      disabled={disabled || uploading}
-      onPress={onPress}
-      style={[styles.preview, { backgroundColor: colors.surfaceSunken }]}
-    >
-      {picture ? (
-        <Image testID="publish-preview-picture" source={{ uri: picture }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
-      ) : (
-        <>
-          <IconTile icon={slot.state === 'ready' ? 'FileCheck2' : 'Image'} tone={slot.state === 'ready' ? 'in' : 'accent'} size={48} />
-          <Text variant="body" style={font(600)}>
-            {slot.state === 'ready' ? slot.file.name : 'Add a preview'}
-          </Text>
-          <Text variant="meta" tone={slot.state === 'failed' ? 'danger' : 'textMuted'} style={styles.centre} accessibilityLiveRegion={slot.state === 'failed' ? 'polite' : undefined}>
-            {slot.state === 'failed' ? slot.message : hint}
-          </Text>
-        </>
-      )}
-      {uploading ? <Bar share={slot.share} testID="publish-preview-bar" /> : null}
-    </Pressable>
-  );
-}
-
 /** The file row: "Add the file", then its name and size with the real share while it goes up (VF12a), then "ready". */
 function FileRow({ slot, title, disabled, onPress }: { slot: Slot; title: string; disabled: boolean; onPress: () => void }) {
   const uploading = slot.state === 'uploading';
@@ -477,10 +554,11 @@ function Bar({ share, testID }: { share: number; testID: string }) {
 const styles = StyleSheet.create({
   stack: { gap: BODY_GAP },
   group: { gap: space.sm },
+  cover: { gap: space.lg, marginTop: space.sm },
+  coverHead: { gap: space.xs },
   note: { flexDirection: 'row', gap: space.md, padding: space.lg, borderRadius: radius.card },
   noteWords: { flex: 1, gap: space.xs },
   noteButton: { alignSelf: 'flex-start', marginTop: space.sm },
-  preview: { height: PREVIEW_HEIGHT, borderRadius: radius.media, alignItems: 'center', justifyContent: 'center', gap: space.sm, padding: space.lg, overflow: 'hidden' },
   fileRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   fileWords: { flex: 1 },
   track: { height: productsMeterMetrics.track, borderRadius: productsMeterMetrics.trackRadius, marginTop: space.md, overflow: 'hidden', alignSelf: 'stretch' },

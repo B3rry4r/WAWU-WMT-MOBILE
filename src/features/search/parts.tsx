@@ -11,7 +11,8 @@ import { Text } from '@/components/Text';
 import { GroupTile, tileMetrics } from '@/features/communities/GroupTile';
 import { tickOf } from '@/features/explore/CreatorCard';
 import { useInterestLabel } from '@/features/explore/interestLabel';
-import { hueFor, rowPicture } from '@/features/feed/model';
+import { hueFor, pictureCandidates } from '@/features/feed/model';
+import { usePicture } from '@/features/feed/usePicture';
 import { kindIcon } from '@/features/me/model';
 import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, radius, space, useWawu } from '@/theme';
@@ -261,13 +262,13 @@ export function ContentRow({ row, testID, onPress }: { row: ContentRowModel; tes
   const label = `${row.title}, ${row.byline}, ${row.priceKobo === null ? 'free' : 'paid'}`;
   // The Hub gives the piece's public file, a clip, a sound or a PDF for most kinds: only a picture is drawn as one, and a picture that
   // will not load gives way to the kind's mark, so the square is never empty.
-  const [broken, setBroken] = useState(false);
-  const picture = broken ? null : rowPicture(row.kind, row.thumb);
+  // The creator's cover first (R-114), then the preview when it is a picture.
+  const { uri: picture, onError: pictureFailed } = usePicture(pictureCandidates({ contentType: row.kind, coverUrl: row.cover }, row.thumb));
   const inner = (
     <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
         {picture ? (
-          <Image testID="search-thumb-image" source={{ uri: picture }} contentFit="cover" blurRadius={row.locked ? 6 : 0} onError={() => setBroken(true)} style={StyleSheet.absoluteFill} />
+          <Image testID="search-thumb-image" source={{ uri: picture }} contentFit="cover" blurRadius={row.locked ? 6 : 0} onError={pictureFailed} style={StyleSheet.absoluteFill} />
         ) : (
           <View testID="search-thumb-mark" style={[StyleSheet.absoluteFill, styles.mark]}>
             <Icon name={kindIcon(row.kind ?? 'image')} size={rowMetrics.mark} color={colors.textMuted} />

@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { BackHandler, KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { PricePicker } from '@/components/PricePicker';
@@ -82,6 +83,7 @@ export type HostScreenProps = {
 export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now = Date.now }: HostScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   const client = useQueryClient();
   const verification = useQuery({ queryKey: verificationKey, queryFn: fetchMyVerification });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions });
@@ -196,7 +198,7 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
   };
 
   return (
-    <View testID="host-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="host-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="Host an event" onBack={back} backTestID="host-back" />
       <EventsTabs active="host" onChange={(tab) => (tab === 'discover' ? onDiscover() : tab === 'mine' ? onMine?.() : undefined)} />
       {loading ? (
@@ -214,9 +216,8 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
         />
       ) : (
         <>
-          <ScrollView
+          <FieldScroll
             contentContainerStyle={[styles.body, { gap: step === 2 ? bodyMetrics.ticketsGap : bodyMetrics.between }]}
-            keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             <Stepper step={step} />
@@ -243,8 +244,8 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
                 remove={(key) => set({ tickets: draft.tickets.filter((t) => t.key !== key) })}
               />
             )}
-          </ScrollView>
-          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom }]}>
+          </FieldScroll>
+          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}>
             {failure ? (
               <Text variant="errorLine" tone="danger" accessibilityRole="alert" testID="host-failure">
                 {failure}
@@ -259,7 +260,7 @@ export function HostScreen({ onBack, onDiscover, onDone, onMine, onSeeTiers, now
           <StepSheets sheet={sheet} setSheet={setSheet} draft={draft} options={opts} now={now()} set={set} />
         </>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

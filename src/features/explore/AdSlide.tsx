@@ -1,70 +1,58 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
 import { Text } from '@/components/Text';
 import { adOpensSomething, type AdCard } from '@/features/ads/api';
-import { adInk, adMetrics, shadeAt } from '@/features/ads/look';
+import { adInk, shadeAt } from '@/features/ads/look';
 import { exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
-import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
-import { darkColors } from '@/theme/tokens.generated';
+import { canvasNormalLineHeight, font, radius, type, useWawu } from '@/theme';
 
 /**
- * X1 and X17's advert slide (design/_gen/explore.js `adHero`): the same 196 high card at corner 24 as the event slide, the
- * advertiser's picture under a fade (the page colour at 88% along the bottom, 5% from 65% of the way up), the SPONSORED chip
- * 14 in from the top left, and the words 16 in from the sides and 14 up: the headline 20 bold, the line under it 12.5 at 80%,
- * 3 apart. The whole card opens what it is for. Every word but SPONSORED is the advertiser's, from the Hub (R-68). A card that does
- * nothing (R-92, `none`) is the same card with nothing pressable on it, and a screen reader reads it as an ad, not as a button.
+ * The advert card on Explore's slider and on Today (R-116, owner, 31 Oct 2026: "the ads on the app both explore and home should
+ * be reduced to this orientation", with his 1350 x 400 banner). It replaces R-92's 196 high landscape card at both places: the
+ * card is the banner's own shape, 27 by 8, at the full width the screen gives it, and it shows the WHOLE picture (`contain` on the
+ * exact shape, so nothing is cropped). The banners carry their own title, steps and button painted in, so the app draws the
+ * picture and only the small SPONSORED chip in the top right corner (the top left is where the banners paint their logo). The
+ * headline and the line are not drawn over the art; they are the card's accessibility label. The chip is a dark chip (the page
+ * colour at 55%, white words), because the picture under it may be light or dark.
+ *
+ * The whole card opens what it is for (R-92). A `link` card has no drawn pill: the painted button is the call. A card that does
+ * nothing (`none`) is the same card with nothing pressable on it, and a screen reader reads it as an ad, not as a button.
+ * The TGIF reader's card is the tall portrait and is not this component (R-92 stands there).
  */
 export const adSlideMetrics = {
-  fadeStrong: 0.88,
-  fadeWeak: 0.05,
-  /** The fade turns weak 65% of the way up, which is 35% of the way down. */
-  fadeTurn: 0.35,
-  chipTop: 14,
-  chipLeft: 14,
-  chipHeight: 26,
-  chipPadX: 10,
-  chipWords: 11.5,
+  /** The owner's banner: 1350 x 400, which is 27 by 8. The card is this shape at whatever width it is given. */
+  bannerWidth: 1350,
+  bannerHeight: 400,
+  chipTop: 6,
+  chipRight: 6,
+  chipHeight: 18,
+  chipPadX: 6,
+  /** The app's smallest type token (the walk's F3: 9 px was below the floor). */
+  chipWords: type.size.label,
   chipTracking: 0.06,
-  chipFill: 0.2,
-  wordsInset: 16,
-  wordsBottom: 14,
-  headline: 20,
-  headlineTracking: -0.02,
-  subline: 12.5,
-  sublineOpacity: 0.8,
-  sublineTop: 3,
-  /** The gap between the words and the dots at their right. */
-  dotsGap: 10,
-  /** The button word on a white pill at the bottom right (Today's slot draws it; the slider's slide does not): 13 at 700 on a 32 high pill, 14 in. */
-  pillGap: 10,
+  /** The chip's ground: the page colour at this strength, so white words read on a light picture and on a dark one. */
+  chipFill: 0.55,
 } as const;
 
 const m = adSlideMetrics;
-const chipFill = darkColors.surfaceGlass.replace(/[\d.]+\)$/, `${m.chipFill})`);
+
+/** The card's height at a width: the banner's own shape (R-116). */
+export const adSlideHeight = (width: number) => (width * m.bannerHeight) / m.bannerWidth;
 
 export type AdSlideProps = {
   ad: AdCard;
   /** Opens what the card is for (its web link, or its event). Never called for a card that does nothing. */
   onOpen: () => void;
-  /**
-   * Draw the campaign's button word on a white pill at the bottom right of the words. Today's slot does (R-92: the Today
-   * strip is this same card at this same size, so it is built from this component); the Explore slider's slide does not.
-   * A card that does nothing never has one, whatever this says.
-   */
-  button?: boolean;
   /** The picture is on screen: Today tells the Hub the card was viewed only from here. */
   onPictureLoad?: () => void;
   /** The picture would not load: Today then draws nothing at all, never a card with a bare ground. */
   onPictureError?: () => void;
-  /** The width the slider's dots take at the right of the words, so a long headline stops short of them. */
-  reserveRight?: number;
   testID?: string;
 };
 
-export function AdSlide({ ad, onOpen, button = false, onPictureLoad, onPictureError, reserveRight = 0, testID = 'explore-ad' }: AdSlideProps) {
+export function AdSlide({ ad, onOpen, onPictureLoad, onPictureError, testID = 'explore-ad' }: AdSlideProps) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const said = `Sponsored. ${ad.headline}.${ad.subline ? ` ${ad.subline}.` : ''}`;
@@ -74,43 +62,15 @@ export function AdSlide({ ad, onOpen, button = false, onPictureLoad, onPictureEr
         testID={`${testID}-artwork`}
         source={ad.artworkUrl}
         style={StyleSheet.absoluteFill}
-        contentFit="cover"
+        contentFit="contain"
         accessibilityElementsHidden
         onLoad={onPictureLoad}
         onError={onPictureError}
-      />
-      <LinearGradient
-        testID={`${testID}-shade`}
-        pointerEvents="none"
-        colors={[shadeAt(m.fadeWeak), shadeAt(m.fadeWeak), shadeAt(m.fadeStrong)]}
-        locations={[0, m.fadeTurn, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
       />
       <View style={styles.chip}>
         <Text variant="body" style={[font(700), styles.chipWords]}>
           SPONSORED
         </Text>
-      </View>
-      <View style={[styles.words, reserveRight ? { paddingRight: reserveRight } : null]}>
-        <View style={styles.text}>
-          <Text testID={`${testID}-headline`} variant="body" numberOfLines={2} style={[font(700), styles.headline]}>
-            {ad.headline}
-          </Text>
-          {ad.subline ? (
-            <Text testID={`${testID}-subline`} variant="body" numberOfLines={2} style={styles.subline}>
-              {ad.subline}
-            </Text>
-          ) : null}
-        </View>
-        {button && ad.ctaDestination !== 'none' ? (
-          <View testID={`${testID}-button`} style={styles.pill}>
-            <Text testID={`${testID}-cta`} variant="body" numberOfLines={1} style={[font(700), styles.pillWords]}>
-              {ad.ctaLabel}
-            </Text>
-          </View>
-        ) : null}
       </View>
     </>
   );
@@ -136,32 +96,17 @@ export function AdSlide({ ad, onOpen, button = false, onPictureLoad, onPictureEr
 }
 
 const styles = StyleSheet.create({
-  card: { height: ev.heroHeight, borderRadius: ev.heroCorner, overflow: 'hidden' },
+  card: { aspectRatio: m.bannerWidth / m.bannerHeight, borderRadius: ev.heroCorner, overflow: 'hidden' },
   chip: {
     position: 'absolute',
     top: m.chipTop,
-    left: m.chipLeft,
+    right: m.chipRight,
     height: m.chipHeight,
     paddingHorizontal: m.chipPadX,
     borderRadius: radius.chip,
-    backgroundColor: chipFill,
+    backgroundColor: shadeAt(m.chipFill),
     alignItems: 'center',
     justifyContent: 'center',
   },
   chipWords: { fontSize: m.chipWords, lineHeight: canvasNormalLineHeight(m.chipWords), letterSpacing: m.chipTracking * m.chipWords, color: adInk },
-  words: { position: 'absolute', left: m.wordsInset, right: m.wordsInset, bottom: m.wordsBottom, flexDirection: 'row', alignItems: 'flex-end', gap: m.pillGap },
-  text: { flex: 1, minWidth: 0 },
-  pill: {
-    height: adMetrics.slotButtonHeight,
-    paddingHorizontal: adMetrics.slotButtonPadX,
-    borderRadius: radius.button,
-    backgroundColor: adInk,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 1,
-    maxWidth: '45%',
-  },
-  pillWords: { fontSize: adMetrics.slotButton, lineHeight: canvasNormalLineHeight(adMetrics.slotButton), color: darkColors.textOnLight },
-  headline: { fontSize: m.headline, lineHeight: canvasNormalLineHeight(m.headline), letterSpacing: m.headlineTracking * m.headline, color: adInk },
-  subline: { fontSize: m.subline, lineHeight: canvasNormalLineHeight(m.subline), marginTop: m.sublineTop, opacity: m.sublineOpacity, color: adInk },
 });

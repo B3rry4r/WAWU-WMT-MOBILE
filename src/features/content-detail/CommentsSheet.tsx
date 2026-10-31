@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, IconButton } from '@/components/Button';
@@ -10,10 +10,13 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { font, layout, radius, space, useWawu } from '@/theme';
 import { compactCount } from '@/features/feed/model';
+import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 
 import type { Comment } from './api';
 import { COMMENT_MAX, commenterName, mentionFor, threads } from './model';
 import { ThreadList } from './Parts';
+import { useReporting } from '@/features/report/useReporting';
+import { useCloseOnSuspended } from '@/features/suspension/useCloseOnSuspended';
 import type { Page } from './usePage';
 
 /** design/_gen/home.js line 76: the sheet opens 170 from the top; the box is 44 tall and the send button a 44 disc. */
@@ -39,7 +42,11 @@ export type CommentsSheetProps = {
 export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetProps) {
   const { colors, shadows } = useWawu();
   const insets = useSafeAreaInsets();
+  // R-117 part B: while the keyboard is up it covers the bottom inset, so the composer sits right on it (the sheet itself is lifted by its KeyboardAvoidingView).
+  const keyboard = useKeyboardLift();
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  // REPORT-UGC: press and hold another person's comment to report it; the Hub then leaves it out of this person's list.
+  const reporting = useReporting(() => void page.comments.refetch());
   const [text, setText] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const input = useRef<TextInput>(null);
@@ -48,6 +55,8 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   const sending = useRef(false);
   const items = useMemo(() => page.comments.data?.pages.flatMap((p) => p.items) ?? [], [page.comments.data]);
   const tree = useMemo(() => threads(items), [items]);
+  // A refused comment from a suspended person opens a screen beneath this Modal: put the sheet away so it shows (USER-SUSPEND).
+  useCloseOnSuspended(visible, onClose);
   const posting = page.post.isPending;
   const clean = text.trim();
   const ready = clean.length > 0 && clean.length <= COMMENT_MAX && !posting;
@@ -103,7 +112,7 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   } else {
     body = (
       <View style={styles.list}>
-        <ThreadList idPrefix="comment" items={tree} onReply={reply} onLike={(c) => page.likeComment.mutate({ commentId: c.id, next: c.likedByMe !== true })} />
+        <ThreadList idPrefix="comment" items={tree} me={page.me.data} onReport={(c) => reporting.ask('comment', c.id)} onReply={reply} onLike={(c) => page.likeComment.mutate({ commentId: c.id, next: c.likedByMe !== true })} />
         {page.comments.hasNextPage ? (
           <Button testID="comments-more" label="Show more comments" variant="secondary" size="sm" onPress={() => void page.comments.fetchNextPage()} loading={page.comments.isFetchingNextPage} />
         ) : null}
@@ -114,8 +123,9 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root} testID="comments-sheet" accessibilityViewIsModal>
+        {reporting.element}
         <Pressable testID="comments-backdrop" accessible={false} onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: colors.surfaceScrim }]} tabIndex={-1} />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.sheet, { top: m.top, backgroundColor: colors.surfaceElevated, boxShadow: shadows.sheet }]} role="dialog">
+        <KeyboardAvoidingView testID="comments-keyboard" behavior="padding" style={[styles.sheet, { top: m.top, backgroundColor: colors.surfaceElevated, boxShadow: shadows.sheet }]} role="dialog">
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.grabberHit}>
             <View style={[styles.grabber, { backgroundColor: colors.borderStrong }]} />
           </Pressable>
@@ -128,7 +138,7 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
           <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollBody} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} testID="comments-scroll">
             {body}
           </ScrollView>
-          <View style={[styles.composer, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.borderHairline, paddingBottom: Math.max(insets.bottom, space.lg) }]}>
+          <View testID="comments-composer" style={[styles.composer, { backgroundColor: colors.surfaceElevated, borderTopColor: colors.borderHairline, paddingBottom: keyboard > 0 ? space.sm : Math.max(insets.bottom, space.lg) }]}>
             {replyTo ? (
               <View style={styles.replying} testID="comments-replying">
                 <Text variant="meta" numberOfLines={1} style={styles.replyingText}>

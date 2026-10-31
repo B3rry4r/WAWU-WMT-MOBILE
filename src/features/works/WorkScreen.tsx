@@ -173,7 +173,7 @@ function Work({ work, onBack, onOpenCreator, onEdit, onRemoved }: WorkProps) {
         showsVerticalScrollIndicator={false}
       >
         <View testID="work-hero" style={[styles.hero, { backgroundColor: colors.surfaceSunken }]}>
-          <WorkCover media={hero} playing={playing} onEnded={() => setPlaying(false)} testID="work-hero-cover" />
+          <WorkCover media={hero} playing={playing} onEnded={() => setPlaying(false)} onFailed={() => setPlaying(false)} testID="work-hero-cover" />
           <LinearGradient pointerEvents="none" colors={scrim.colors} locations={scrim.locations} start={ends.start} end={ends.end} style={StyleSheet.absoluteFill} />
           {video ? (
             <Pressable

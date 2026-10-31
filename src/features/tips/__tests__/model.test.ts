@@ -1,4 +1,5 @@
-import { DEFAULT_TIP_KOBO, firstName, getsWords, noteEcho, sentHeading, tipTitle } from '../model';
+import * as model from '../model';
+import { DEFAULT_TIP_KOBO, firstName, noteEcho, sentHeading, tipTitle } from '../model';
 
 describe('what the tip sheet decides', () => {
   it("names the creator by first name: 'Tip Tife', '₦2,000 sent to Tife'", () => {
@@ -15,10 +16,8 @@ describe('what the tip sheet decides', () => {
     expect(noteEcho(null)).toBeNull();
   });
 
-  it("says what the creator gets on a tile: 'Tife gets', or 'They get' without a name; and opens on the design's 1,000", () => {
-    expect(getsWords('Tife Adeola')).toBe('Tife gets');
-    expect(getsWords(null)).toBe('They get');
-    expect(getsWords('  ')).toBe('They get');
+  it("opens on the design's 1,000, and has no words for what the creator gets (R-120: a buyer never sees the creator's cut)", () => {
     expect(DEFAULT_TIP_KOBO).toBe(100_000);
+    expect(Object.keys(model).filter((k) => /gets|earn|share|keeps/i.test(k))).toEqual([]);
   });
 });

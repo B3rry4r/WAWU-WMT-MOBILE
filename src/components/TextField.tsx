@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View, ty
 
 import { canvasNormalLineHeight, font, layout, radius, space, text, type, useWawu } from '@/theme';
 
+import { useAnnounceFocus } from './FieldScroll';
 import { browserOutlineOff, useFocusRing } from './focusRing';
 import { Icon, type IconName } from './icon';
 import { Text } from './Text';
@@ -95,6 +96,8 @@ export function TextField({
 }: TextFieldProps) {
   const { colors } = useWawu();
   const [focused, setFocused] = useState(false);
+  // R-117: the scroll this field sits in brings it into view above the keyboard when it takes the focus.
+  const announceFocus = useAnnounceFocus();
   const [shown, setShown] = useState(false);
   const eyeRing = useFocusRing();
   const pickRing = useFocusRing();
@@ -187,6 +190,7 @@ export function TextField({
           cursorColor={colors.accent}
           onFocus={(e) => {
             setFocused(true);
+            announceFocus();
             onFocus?.(e);
           }}
           onBlur={(e) => {

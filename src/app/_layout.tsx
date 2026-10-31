@@ -1,16 +1,17 @@
 import { useDefaultPaySource } from '@/features/pay-source/usePaySource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, router as appRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useAcceptanceRetry } from '@/features/about/acceptance';
+import { onSuspendedRefusal } from '@/api/suspension';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
@@ -111,6 +112,21 @@ export default function RootLayout() {
   const offer = useClaimOfferStep(signedIn);
   // LEGAL-DOCS: a sign-up whose agreement could not reach the Hub sends it again once the person is signed in.
   useAcceptanceRetry(signedIn);
+  // USER-SUSPEND (R-121): a write the Hub refuses because the person is suspended opens the one calm screen, once while it is open.
+  const pathname = usePathname();
+  const here = useRef(pathname);
+  useEffect(() => {
+    here.current = pathname;
+  }, [pathname]);
+  useEffect(
+    () =>
+      signedIn
+        ? onSuspendedRefusal(() => {
+            if (here.current !== '/suspended') appRouter.push('/suspended');
+          })
+        : undefined,
+    [signedIn],
+  );
   // PAY-FX (R-91): where a wallet payment starts from (naira, or the main currency of a person with no naira wallet).
   useDefaultPaySource(signedIn);
   const bonus = useBonusStep(signedIn, gate.progress?.accountType);
@@ -185,6 +201,7 @@ export default function RootLayout() {
           <Stack.Screen name="open-wallet-rejected" />
           <Stack.Screen name="open-wallet-account" />
           <Stack.Screen name="open-wallet-pin" />
+          <Stack.Screen name="suspended" />
           <Stack.Screen name="settings/index" />
           <Stack.Screen name="settings/notifications" />
           <Stack.Screen name="settings/privacy" />

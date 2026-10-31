@@ -210,13 +210,15 @@ describe('H1 · Today', () => {
     expect(sent.filter((key) => /tgif/i.test(key))).toEqual([]);
   });
 
-  it('a user sees creators to discover, never themselves, with the tick each has', async () => {
+  it('a user sees creators to discover, their own card among them with no Follow (HOME-SELF), with the tick each has', async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId(`today-creator-${ADA}`)).toBeTruthy());
-    // The viewer's own id comes from GET /users/me, a separate answer that can land after GET /creators: until it has,
-    // the rail cannot tell who "themselves" is, so the "never themselves" line is read once every read has answered.
+    // The viewer's own id comes from GET /users/me, a separate answer that can land after GET /creators: until it has, no card can be
+    // told apart and none draws Follow; once every read has answered, the viewer's own card stays (it opens their profile) with no Follow.
     await rtl.waitFor(() => expect(clients.every((c) => c.isFetching() === 0)).toBe(true));
-    expect(screen.queryByTestId(`today-creator-${ME}`)).toBeNull();
+    expect(screen.getByTestId(`today-creator-${ME}`)).toBeTruthy();
+    expect(screen.queryByTestId(`today-follow-${ME}`)).toBeNull();
+    expect(screen.getByTestId(`today-follow-${ADA}`)).toBeTruthy();
     expect(screen.getByText('Funmi A.')).toBeTruthy();
     expect(await screen.findByText('Business & Finance')).toBeTruthy();
     expect(screen.queryByText('business_finance')).toBeNull();
@@ -373,7 +375,7 @@ describe('the balance card without a balance', () => {
 
 describe('Today empty and in error', () => {
   it('with no creators to suggest, a user is told so', async () => {
-    answers[T.creators] = [creatorsPage([creator(ME, 'Me Myself')])];
+    answers[T.creators] = [creatorsPage([])];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-creators-empty')).toBeTruthy());
   });

@@ -18,7 +18,7 @@ import { firstName } from '@/features/send/model';
 import { transferQuery } from '@/features/send/api';
 import { font, layout, space, useWawu } from '@/theme';
 
-import { tickOf, type ChatMessage, type ChatPerson } from './api';
+import { chatKey, tickOf, type ChatMessage, type ChatPerson } from './api';
 import { AttachmentBubble } from './AttachmentBubbles';
 import { attachmentRulesKey, fetchAttachmentLink, fetchAttachmentRules, fileLine, kindOfType, type ChatFile } from './attachments';
 import { AttachSheet } from './AttachSheet';
@@ -30,6 +30,11 @@ import { RequestSheet } from './RequestSheet';
 import { pickChatFile, pickPhotoOrVideo } from './pickAttachment';
 import { PhotoViewer } from './PhotoViewer';
 import { messageWords, threadItems, type ThreadItem } from './thread';
+import { queryClient } from '@/api/query';
+import { useReporting } from '@/features/report/useReporting';
+import { PersonMenu } from '@/features/report/PersonMenu';
+import { inboxKey } from '@/features/inbox/api';
+import { blockPerson } from '@/features/visitor/api';
 import { useChatThread } from './useChatThread';
 import { useRequestPay } from './useRequestPay';
 
@@ -70,6 +75,18 @@ export function ChatScreen(props: ChatScreenProps) {
   const focused = useIsFocused();
   const owner = useSessionAccount(undefined);
   const thread = useChatThread(chatId, focused);
+  // REPORT-UGC: press and hold the other person's message to report it; the Hub leaves it out of this person's chat.
+  // The thanks is drawn above the composer (REPORT-UGC r1), so the composer's height is read.
+  const [composerHeight, setComposerHeight] = useState(0);
+  const reporting = useReporting((kind) => {
+    void queryClient.invalidateQueries({ queryKey: chatKey(chatId) });
+    // A reported person is out of the reporter's lists: the chat with them closes, as the profile page does.
+    if (kind === 'profile') {
+      void queryClient.invalidateQueries({ queryKey: inboxKey });
+      props.onBack();
+    }
+  }, composerHeight);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { chat, messages } = thread;
   const sends = useQuery(chatSendsQuery(owner, chatId));
   const [attachOpen, setAttachOpen] = useState(false);
@@ -197,12 +214,13 @@ export function ChatScreen(props: ChatScreenProps) {
             at={message.createdAt}
             opening={opening === message.id}
             onOpen={() => void open(message)}
+            onLongPress={message.mine ? undefined : () => reporting.ask('chat_message', message.id)}
           />
         );
       }
-      return <TextBubble id={message.id} text={messageWords(message)} mine={message.mine} at={message.createdAt} />;
+      return <TextBubble id={message.id} text={messageWords(message)} mine={message.mine} at={message.createdAt} onLongPress={message.mine ? undefined : () => reporting.ask('chat_message', message.id)} />;
     },
-    [thread, pay, name, owner, chatId, open, opening],
+    [thread, pay, name, owner, chatId, open, opening, reporting],
   );
 
   let body;
@@ -294,6 +312,7 @@ export function ChatScreen(props: ChatScreenProps) {
                 </Text>
               )}
             </View>
+            {support ? null : <IconButton icon="Ellipsis" label="More" onPress={() => setMenuOpen(true)} size={headMetrics.back} testID="chat-menu" />}
           </>
         ) : null}
       </View>
@@ -313,7 +332,18 @@ export function ChatScreen(props: ChatScreenProps) {
           </Text>
         </Pressable>
       ) : null}
-      {ready ? closed ? <ChatClosedBar /> : <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={support ? undefined : () => setAttachOpen(true)} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {/* Always drawn with its `onLayout`: a View that gets the handler only later is never observed on the web export. */}
+      <View onLayout={(event) => setComposerHeight(Math.round(event.nativeEvent.layout.height))} testID="chat-bottom">
+        {ready ? (
+          closed ? (
+            <ChatClosedBar />
+          ) : (
+            <ChatComposer onSend={thread.send} busy={thread.busy} onPlus={support ? undefined : () => setAttachOpen(true)} />
+          )
+        ) : (
+          <View style={{ height: Math.max(insets.bottom, space.lg) }} />
+        )}
+      </View>
       {person && !support ? (
         <>
           <AttachSheet
@@ -337,6 +367,22 @@ export function ChatScreen(props: ChatScreenProps) {
         </>
       ) : null}
       {pay.sheet ? <RequestPaySheet sheet={pay.sheet} name={name} notice={pay.notice} /> : null}
+      {person && !support ? (
+        <PersonMenu
+          visible={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          name={name || person.name}
+          report={{ title: 'Report this profile', onPress: () => reporting.ask('profile', person.wawuId) }}
+          onBlock={async () => {
+            await blockPerson(person.wawuId);
+            void queryClient.invalidateQueries({ queryKey: inboxKey });
+            void queryClient.invalidateQueries({ queryKey: ['feed'] });
+            props.onBack();
+          }}
+          testID="chat-person-menu"
+        />
+      ) : null}
+      {reporting.element}
       <PhotoViewer uri={viewing} onClose={() => setViewing(null)} />
     </KeyboardAvoidingView>
   );

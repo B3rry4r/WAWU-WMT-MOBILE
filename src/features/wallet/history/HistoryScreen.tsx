@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/query';
@@ -165,7 +165,7 @@ export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup, o
   };
 
   return (
-    <View testID="history-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="history-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <ProsNav
         title="Transactions"
         onBack={onBack}
@@ -209,7 +209,7 @@ export function HistoryScreen({ group, onBack, onOpenTransaction, onOpenGroup, o
         style={styles.list}
         contentContainerStyle={[styles.content, { paddingTop: group ? HISTORY.bodyTop : HISTORY.partGap, paddingBottom: insets.bottom + HISTORY.bottom }]}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

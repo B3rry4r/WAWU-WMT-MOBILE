@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
+import { ApiError } from '@/api/errors';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { PricePicker } from '@/components/PricePicker';
@@ -23,10 +24,14 @@ import {
   type Details,
 } from '@/features/create/details';
 import { FreeCard, MODES, sendFailure } from '@/features/create/PriceScreen';
+import { releaseUpload } from '@/features/create/api';
+import type { UploadedFile } from '@/features/create/draft';
 import { refetchIfNotOnList } from '@/features/prices/api';
 import { radius, space } from '@/theme';
 
 import { fetchPiece, libraryKey, pieceKey, updatePiece, type LibraryPiece, type UpdateBody } from './api';
+import { EditCover, type CoverEdit } from './EditCover';
+import { COPY_FAILED, uploadPictureCopy } from './pictureCopy';
 
 const categoryOf = (id: string): ContentCategoryId | null => CONTENT_CATEGORIES.find((c) => c.id === id)?.id ?? null;
 
@@ -45,7 +50,7 @@ export function startingDetails(piece: LibraryPiece): Details {
  * The fields that differ from the piece, as `PATCH /content/{id}` takes them, or null when nothing differs or what is typed is not
  * one the Hub takes (an empty title or description, a paid piece with no price). Free sends the price 0 with it, as the Hub asks.
  */
-export function changesOf(piece: LibraryPiece, now: Details): UpdateBody | null {
+export function changesOf(piece: LibraryPiece, now: Details, cover: CoverEdit = { kind: 'keep' }): UpdateBody | null {
   const title = now.title.trim();
   const description = now.description.trim();
   if (!title || !description) return null;
@@ -59,8 +64,14 @@ export function changesOf(piece: LibraryPiece, now: Details): UpdateBody | null 
     body.accessType = now.accessType;
     body.price = price;
   }
+  // The cover (R-114): a new picture's key replaces it, null takes it off, and left out it stays.
+  if (cover.kind === 'set') body.coverAsset = cover.file.fileUrl;
+  if (cover.kind === 'remove') body.coverAsset = null;
   return Object.keys(body).length > 0 ? body : null;
 }
+
+/** A free piece being sent to paid has no preview of its own (its preview is its file), so the edit has to bring one (R-118). */
+export const goesToPaid = (piece: Pick<LibraryPiece, 'accessType'>, changes: UpdateBody): boolean => piece.accessType === 'free' && changes.accessType === 'paid';
 
 export type EditDetailsScreenProps = { id: string; onBack: () => void; onSaved: () => void };
 
@@ -99,14 +110,38 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
   const [details, setDetails] = useState<Details>(() => startingDetails(piece));
   const [picking, setPicking] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const changes = changesOf(piece, details);
+  const [coverEdit, setCoverEdit] = useState<CoverEdit>({ kind: 'keep' });
+  // Set when Save has taken the new cover: leaving the screen then must not give that picture back.
+  const coverSaved = useRef(false);
+  const changes = changesOf(piece, details, coverEdit);
   const set = (patch: Partial<Details>) => {
     setFailure(null);
     setDetails((d) => ({ ...d, ...patch }));
   };
+  // R-118: nobody uploads a preview. A free piece sent to paid asks the Hub to make it from the file (`previewFromFile`); a picture's is made on
+  // the phone from the piece's own picture. A picture's copy that went up is kept for a second try, and given back if the person leaves.
+  const copy = useRef<UploadedFile | null>(null);
+  const sentOk = useRef(false);
+  useEffect(
+    () => () => {
+      if (copy.current && !sentOk.current) void releaseUpload(copy.current.key).catch(() => undefined);
+    },
+    [],
+  );
   const save = useMutation({
-    mutationFn: (body: UpdateBody) => updatePiece(piece.id, body),
+    mutationFn: async (body: UpdateBody) => {
+      if (!goesToPaid(piece, body)) return updatePiece(piece.id, body);
+      if (piece.contentType !== 'image') return updatePiece(piece.id, { ...body, previewFromFile: true });
+      if (!copy.current) {
+        if (!piece.fullAssetUrl) throw new ApiError('unknown', 0, COPY_FAILED);
+        copy.current = await uploadPictureCopy(piece.fullAssetUrl);
+      }
+      const held = copy.current;
+      return updatePiece(piece.id, { ...body, previewAsset: held.fileUrl });
+    },
     onSuccess: (saved) => {
+      sentOk.current = true;
+      coverSaved.current = true;
       client.setQueryData(pieceKey(piece.id), saved);
       void client.invalidateQueries({ queryKey: libraryKey });
       onSaved();
@@ -121,13 +156,12 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
 
   const foot = (
     <>
-      {failure ? <Banner testID="edit-failure" tone="danger" title="Not saved" body={failure} /> : null}
       <Button testID="edit-save" label="Save" full loading={save.isPending} disabled={!changes} onPress={() => changes && save.mutate(changes)} />
     </>
   );
 
   return (
-    <CreateFrame testID="edit-screen" title="Edit details" onLeave={onBack} foot={foot}>
+    <CreateFrame testID="edit-screen" title="Edit details" onLeave={onBack} foot={foot} endKey={failure}>
       <TextField testID="edit-title" label="Title" value={details.title} onChangeText={(title) => set({ title })} maxLength={limits.title} autoCapitalize="sentences" returnKeyType="next" />
       <TextField
         testID="edit-description"
@@ -146,6 +180,7 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
         trailingIcon="ChevronDown"
         onPress={() => setPicking(true)}
       />
+      <EditCover piece={piece} edit={coverEdit} saved={coverSaved} onEdit={(next) => (setFailure(null), setCoverEdit(next))} />
       <SegmentedTabs testID="edit-mode" label="Paid or free" items={MODES} value={details.accessType} onChange={(accessType: AccessType) => set({ accessType })} />
       {free ? (
         <>
@@ -162,6 +197,7 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
           earnSuffix="a sale"
         />
       )}
+      {failure ? <Banner testID="edit-failure" tone="danger" title="Not saved" body={failure} /> : null}
       <CategorySheet
         visible={picking}
         onClose={() => setPicking(false)}

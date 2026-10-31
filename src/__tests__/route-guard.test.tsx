@@ -105,6 +105,7 @@ const PUBLIC: Record<string, string> = {
   'preview/studio-job': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/tier-badge': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/tier-cards': 'development only, a release build leaves (LeaveDevRoute)',
+  'preview/view-fix': 'development only, a release build leaves (LeaveDevRoute)',
   'preview/voice-player': 'development only, a release build leaves (LeaveDevRoute)',
 };
 
@@ -222,7 +223,7 @@ describe('FIX-63: the real layout sends a signed-out visitor away from every gua
 
   it.each(general)('a signed-out visitor to %s lands on the welcome screen and sees nothing of it', async (name) => {
     await renderRouter(routes, { initialUrl: urlOf(name) });
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByRole('header', { name: `route ${name}` })).toBeNull();
   });
 

@@ -166,17 +166,28 @@ describe('the slides take turns (R-59)', () => {
     await rtl.render(wrap(<ExploreScreen {...entries()} />));
     await rtl.screen.findByTestId('explore-hero');
     expect(slideIds()).toEqual(['explore-ad-a1', 'explore-featured-event-e1', 'explore-ad-a2']);
-    expect(rtl.screen.getByText('Gospel Night Live')).toBeTruthy();
-    expect(rtl.screen.getByText('Gospel Night Live line')).toBeTruthy();
+    // Changed assertions (R-116): the advert's headline and line were drawn text (getByText('Gospel Night Live') and its line); the owner's banner
+    // carries its own words painted in, so the app draws only the picture and the chip, and the words are the card's label.
+    expect(rtl.screen.queryByText('Gospel Night Live')).toBeNull();
+    expect(rtl.screen.queryByText('Gospel Night Live line')).toBeNull();
+    expect(rtl.screen.getByTestId('explore-ad-a1').props.accessibilityLabel).toBe('Sponsored. Gospel Night Live. Gospel Night Live line. Get tickets');
     expect(rtl.screen.getAllByText('SPONSORED').length).toBe(2);
     expect(rtl.screen.getByText('FEATURED EVENT')).toBeTruthy();
     const dots = [0, 1, 2].map((i) => flat(rtl.screen.getByTestId(`explore-hero-dot-${i}`, hidden)));
     expect(dots.map((d) => d.width)).toEqual([16, 6, 6]);
-    expect(dots.map((d) => d.opacity)).toEqual([1, 0.45, 0.45]);
     expect(dots.every((d) => d.height === 6 && d.borderRadius === 3)).toBe(true);
-    // Level with the foot of an advert's words: 16 in from the right, 14 up.
-    expect(flat(rtl.screen.getByTestId('explore-hero-dots', hidden))).toMatchObject({ right: 16, bottom: 14, gap: 5 });
+    // Changed assertions (WALK1031-FIX F1, R-116): on an advert the dots were white at 100% and 45% (opacity [1, 0.45, 0.45]) and sat 8 in and 8 up on a
+    // small pill ON the picture, on the banner's painted call to action. They now stand in a row under the card in the page's colours (the current dot
+    // the accent, the rest the muted text colour, no opacity), centred, not placed on a corner. The new file `sliderDots.test.tsx` pins the colours,
+    // the row and the heights on Android and on iOS.
+    expect(dots.map((d) => d.opacity)).toEqual([undefined, undefined, undefined]);
+    expect(dots[0].backgroundColor).not.toBe(dots[1].backgroundColor);
+    expect(flat(rtl.screen.getByTestId('explore-hero-dots', hidden))).toMatchObject({ gap: 5 });
+    expect(flat(rtl.screen.getByTestId('explore-hero-dots', hidden)).position).toBeUndefined();
+    expect(rtl.within(rtl.screen.getByTestId('explore-hero')).queryByTestId('explore-hero-dots', hidden)).toBeNull();
+    expect(rtl.within(rtl.screen.getByTestId('explore-hero-dots-row', hidden)).getByTestId('explore-hero-dots', hidden)).toBeTruthy();
     expect(rtl.screen.getByTestId('explore-ad-a1-artwork', hidden).props.source).toEqual([{ uri: 'https://img.example.test/a1.jpg' }]);
+    expect(rtl.screen.getByTestId('explore-ad-a1-artwork', hidden).props.contentFit).toBe('contain');
   });
 
   it('a swipe moves the long dot, and an event slide puts the dots 18 up (X16)', async () => {
@@ -297,6 +308,52 @@ describe('the slides take turns (R-59)', () => {
     await settle();
     expect(rtl.screen.getByTestId('explore-loading')).toBeTruthy();
     expect(rtl.screen.queryByTestId('explore-tiles')).toBeNull();
+  });
+
+  // R-116: the advert is the banner's shape (27 by 8) at the slide's full width and an event is 196 high, so the frame follows the swipe.
+  it('the frame is the banner shape on an advert, 196 on an event, and grows and shrinks with the finger between them', async () => {
+    answers[ADS] = [ok([a1, a2])];
+    answers[FEATURED_EVENTS] = [eventsPage([ev('e1', 'Creators Summit')])];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    await rtl.screen.findByTestId('explore-hero');
+    await measure();
+    const banner = (350 * 8) / 27;
+    const pager = rtl.screen.getByTestId('explore-slider');
+    const frame = () => flat(rtl.screen.getByTestId('explore-hero')).height as number;
+    const to = (x: number) => rtl.act(async () => {
+      rtl.fireEvent.scroll(pager, { nativeEvent: { contentOffset: { x, y: 0 }, contentSize: { width: 1050, height: 196 }, layoutMeasurement: { width: 350, height: 196 } } });
+    });
+    expect(frame()).toBeCloseTo(banner, 5);
+    expect(banner).toBeCloseTo(103.7, 1);
+    await to(175);
+    expect(frame()).toBeCloseTo((banner + 196) / 2, 5);
+    await to(350);
+    expect(frame()).toBe(196);
+    await to(525);
+    expect(frame()).toBeCloseTo((banner + 196) / 2, 5);
+    await to(700);
+    expect(frame()).toBeCloseTo(banner, 5);
+    // The advert card inside is the banner's shape, never a height of its own.
+    expect(flat(rtl.screen.getByTestId('explore-ad-a2')).aspectRatio).toBe(27 / 8);
+    expect(flat(rtl.screen.getByTestId('explore-ad-a2')).height).toBeUndefined();
+  });
+
+  it('a pager of adverts only keeps one height from the first slide to the last', async () => {
+    answers[ADS] = [ok([a1, a2])];
+    await rtl.render(wrap(<ExploreScreen {...entries()} />));
+    await rtl.screen.findByTestId('explore-hero');
+    await measure();
+    const pager = rtl.screen.getByTestId('explore-slider');
+    const first = flat(rtl.screen.getByTestId('explore-hero')).height;
+    await rtl.act(async () => {
+      rtl.fireEvent.scroll(pager, { nativeEvent: { contentOffset: { x: 175, y: 0 }, contentSize: { width: 700, height: 104 }, layoutMeasurement: { width: 350, height: 104 } } });
+    });
+    expect(flat(rtl.screen.getByTestId('explore-hero')).height).toBe(first);
+    await rtl.act(async () => {
+      rtl.fireEvent.scroll(pager, { nativeEvent: { contentOffset: { x: 350, y: 0 }, contentSize: { width: 700, height: 104 }, layoutMeasurement: { width: 350, height: 104 } } });
+    });
+    expect(flat(rtl.screen.getByTestId('explore-hero')).height).toBe(first);
+    expect(pager.props.accessibilityLabel).toBe('Slide 2 of 2');
   });
 
   it('the dots take room from a long headline so the two never meet', () => {

@@ -15,7 +15,9 @@ import { font, space, useWawu } from '@/theme';
 import { allowanceKey, fetchAllowance, fetchFormats, formatsKey } from './api';
 import { refusalFor, type ChosenFile } from './chosen';
 import { CreateFrame } from './CreateFrame';
-import { setFull, useDraft } from './draft';
+import { setFull, setSmallCopy, useDraft } from './draft';
+import { frameFor } from './frames';
+import { smallCopyOf } from './previewCopy';
 import { formatBytes, labelOf, uploadTitle, type FormatId, type FormatRule } from './model';
 import { FileRow, Stepper, useFirstTap } from './parts';
 import { canPickFile, pickFile } from './pickFile';
@@ -76,12 +78,34 @@ export function UploadScreen({ format, onBack, onContinue, onOpenLibrary, onGetV
     abort.current = controller;
     setFull(null);
     setStage({ state: 'uploading', file, share: 0 });
+    // What the preview and the cover are made from has to be read now, from the phone's own copy of the file, which goes once the upload has
+    // settled (R-118): a video's frame (the default cover), and a picture's smaller copy (the preview of a paid picture piece).
+    let copy: ChosenFile | null = null;
     try {
+      const frame = await frameFor(file);
+      copy = format === 'image' ? await smallCopyOf(file) : null;
+      if (format === 'image' && !copy) {
+        // The phone cannot read the picture again, so it cannot make the preview from it: say so now, not when the piece is sent.
+        file.discard?.();
+        setStage({ state: 'failed', file: null, message: 'That picture could not be read. Choose another.', retry: false });
+        return;
+      }
+      if (controller.signal.aborted) {
+        file.discard?.();
+        copy?.discard?.();
+        return;
+      }
       const uploaded = await uploadFile(file, { folder: 'content/full', format }, (share) => setStage((s) => (s.state === 'uploading' ? { ...s, share } : s)), controller.signal);
-      if (controller.signal.aborted) return;
-      setFull(uploaded);
+      if (controller.signal.aborted) {
+        copy?.discard?.();
+        return;
+      }
+      // The phone's copy of a picture is gone by now: it is drawn from the link it came back with, as a cover is.
+      setFull({ ...uploaded, ...(format === 'image' ? { previewUri: uploaded.fileUrl } : {}), ...(frame ? { frame } : {}) });
+      setSmallCopy(copy);
       setStage({ state: 'done', name: uploaded.name });
     } catch (error) {
+      copy?.discard?.();
       if (error instanceof ApiError && error.code === UPLOAD_CANCELLED) return;
       // The Hub's own answer for a tier that is not running, or every place used: the way up, not a sentence to read.
       if (isApiError(error) && error.code === 'tier_required' && onNeedTier) {

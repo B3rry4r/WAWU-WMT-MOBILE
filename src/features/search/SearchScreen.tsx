@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View , Text as NativeText } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View, Text as NativeText } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -15,6 +15,7 @@ import { useJoinCommunity } from '@/features/communities/useCommunities';
 import { LoadFailedBanner } from '@/features/explore/LoadFailedBanner';
 import { FOLLOW_NOTICE_MS, useFollow } from '@/features/explore/follow';
 import { fetchMyId, meKey } from '@/features/feed/api';
+import { canFollow } from '@/features/home/model';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { MAX_QUERY, type SearchCommunity, type SearchPerson } from './api';
@@ -108,7 +109,7 @@ export function SearchScreen({ onCancel, onOpenRoom, onOpenContent, onOpenPerson
     if (clean !== '') record.mutate(clean);
   };
 
-  const onToggle = (person: SearchPerson) => (person.wawuId === me.data ? undefined : () => follow.toggle(person));
+  const onToggle = (person: SearchPerson) => (canFollow(person.wawuId, me.data) ? () => follow.toggle(person) : undefined);
 
   const roomState = (room: SearchCommunity): RoomAction => (room.kind === 'open' ? 'join' : asked.has(room.id) ? 'asked' : 'ask');
   const onRoom = (room: SearchCommunity) => {
@@ -303,7 +304,8 @@ export function SearchScreen({ onCancel, onOpenRoom, onOpenContent, onOpenPerson
   }
 
   return (
-    <View testID="search-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    // R-117 part B: padded by the keyboard on both phones (Android draws edge to edge), so the results end at the keyboard, not under it.
+    <KeyboardAvoidingView testID="search-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.head}>
         <SearchField
           testID="search-input"
@@ -321,7 +323,7 @@ export function SearchScreen({ onCancel, onOpenRoom, onOpenContent, onOpenPerson
       </View>
       {body}
       <Toast message={notice} tone="alert" placement="bottom" offset={insets.bottom + space.s2xl} lines={2} duration={FOLLOW_NOTICE_MS} onHide={dismiss} testID="search-notice" />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

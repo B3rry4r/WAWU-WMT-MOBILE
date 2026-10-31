@@ -1,16 +1,19 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, ICON_STROKE, type IconName } from '@/components/icon';
-import { radius, useWawu } from '@/theme';
+import { radius, space, useWawu } from '@/theme';
 import type { FeedItem } from '@/features/feed/api';
 import { media, words } from '@/features/feed/look';
-import { isPdfFile, isPicture, isVideoFile, playableUrl } from '@/features/feed/model';
+import { isPdfFile, isPicture, isVideoFile, pictureCandidates, PLAYER_FAILED, playableUrl } from '@/features/feed/model';
 import { Pill } from '@/features/feed/parts';
-import { AudioSource, canPlay, VideoSurface } from '@/features/feed/player';
+import { PictureViewer, picturesOf } from '@/features/feed/PictureViewer';
+import { AudioSource, canPlay, VideoSurface, type LoadState } from '@/features/feed/player';
+import { FullscreenButton } from '@/features/feed/player/FullscreenButton';
 import { PdfReader } from '@/features/feed/reader';
+import { usePicture } from '@/features/feed/usePicture';
 
 import { BAR_TITLE, kindOf, type Kind } from './model';
 
@@ -38,7 +41,10 @@ const metrics = {
   tagInset: 12,
   playDisc: 62,
   playIcon: 26,
+  /** The full-screen button's inset from the frame's right and bottom (the type tag keeps the left, 12 in). */
+  fullscreenInset: 12,
 } as const;
+
 
 /** Heights by what is drawn. */
 const heightOf = (kind: Kind): number => (kind === 'pdf' ? metrics.pdf : kind === 'course' ? metrics.course : metrics.video);
@@ -63,8 +69,27 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [time, setTime] = useState({ position: 0, length: 0 });
+  // R-117: the player's loading state (the play button keeps its place and shows the spinner while the file comes in), the words when it
+  // will not load, the number the full-screen button raises, and the picture viewer.
+  const [load, setLoad] = useState<LoadState>('ready');
+  const [failed, setFailed] = useState(false);
+  const [fullscreen, setFullscreen] = useState(0);
+  const [viewing, setViewing] = useState(false);
+  const onLoad = (state: LoadState) => {
+    if (state === 'failed') {
+      setFailed(true);
+      setPlaying(false);
+      setLoad('ready');
+      return;
+    }
+    setLoad(state);
+    if (state === 'ready') setFailed(false);
+  };
   const ring = useFocusRing();
   const uri = playableUrl(piece);
+  // The creator's cover (R-114): under the player until its first frame, and in place of the audio mark; a cover that will not load gives way to the mark.
+  const cover = usePicture(pictureCandidates(piece, null));
+  const [framed, setFramed] = useState<string | null>(null);
   const [seen, setSeen] = useState(0);
   if (signal !== seen) {
     setSeen(signal);
@@ -84,8 +109,23 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
   }
   const tapToPlay = () => {
     setEnded(false);
+    setFailed(false);
     setPlaying((p) => !p);
   };
+  const waiting = playing && load === 'waiting';
+  // The button in the middle of the picture: Play when stopped, the spinner while the file comes in, nothing while it plays (a tap pauses).
+  const centre = !playing || waiting ? (
+    <View pointerEvents="none" testID={`${testID}-${waiting ? 'waiting' : 'disc'}`} style={[styles.disc, { backgroundColor: media.ink }]}>
+      {waiting ? <ActivityIndicator testID={`${testID}-spinner`} size="small" color={media.inkOnLight} /> : <Icon name="Play" size={metrics.playIcon} color={media.inkOnLight} fill={media.inkOnLight} strokeWidth={1.8} />}
+    </View>
+  ) : null;
+  const failure = failed ? (
+    <View pointerEvents="none" style={styles.failed}>
+      <Text testID={`${testID}-failed`} accessibilityRole="alert" style={[words.pill, { color: media.ink, backgroundColor: media.pill }, styles.failedText]}>
+        {PLAYER_FAILED}
+      </Text>
+    </View>
+  ) : null;
 
   let body;
   if (kind === 'pdf') {
@@ -98,7 +138,8 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         {...ring.handlers}
         style={[styles.center, ring.style]}
       >
-        <Book title={piece.title} by={by} pages={piece.pageCount} />
+        {/* R-114: a PDF with a cover draws it as the front of its book (H19, H20: the same portrait frame as the generated one); one with none, or a cover that will not load, keeps the generated book. Either way the tap reads the pages. */}
+        <Book title={piece.title} by={by} pages={piece.pageCount} cover={cover.uri} onCoverError={cover.onError} coverTestID={`${testID}-cover`} />
       </Pressable>
     );
   } else if (kind === 'video' || kind === 'audio') {
@@ -113,20 +154,22 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
         {...ring.handlers}
         style={[StyleSheet.absoluteFill, styles.center, ring.style]}
       >
+        {kind === 'video' && cover.uri && framed !== uri ? <Image testID={`${testID}-cover`} source={{ uri: cover.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={cover.onError} style={StyleSheet.absoluteFill} /> : null}
         {kind === 'video' && canPlay ? (
-          <VideoSurface uri={uri} playing={playing} seek={null} frosted={false} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} testID={`${testID}-video`} />
+          <VideoSurface uri={uri} playing={playing} seek={null} frosted={false} fullscreenAt={fullscreen} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} onLoad={onLoad} onFirstFrame={() => setFramed(uri)} testID={`${testID}-video`} />
         ) : null}
         {kind === 'audio' ? (
           <>
-            <AudioSource uri={uri} playing={playing} seek={null} title={piece.title} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} testID={`${testID}-audio`} />
-            <Icon name="AudioLines" size={metrics.playDisc} color={colors.textMuted} strokeWidth={ICON_STROKE.fab} />
+            <AudioSource uri={uri} playing={playing} seek={null} title={piece.title} onTime={(position, length) => setTime({ position, length })} onEnded={() => (setPlaying(false), setEnded(true))} onLoad={onLoad} testID={`${testID}-audio`} />
+            {cover.uri ? (
+              <Image testID={`${testID}-cover`} source={{ uri: cover.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={cover.onError} style={StyleSheet.absoluteFill} />
+            ) : (
+              <Icon name="AudioLines" size={metrics.playDisc} color={colors.textMuted} strokeWidth={ICON_STROKE.fab} />
+            )}
           </>
         ) : null}
-        {!playing ? (
-          <View pointerEvents="none" style={[styles.disc, { backgroundColor: media.ink }]}>
-            <Icon name="Play" size={metrics.playIcon} color={media.inkOnLight} fill={media.inkOnLight} strokeWidth={1.8} />
-          </View>
-        ) : null}
+        {centre}
+        {failure}
       </Pressable>
     );
   } else if (kind === 'course' && lesson && canPlay) {
@@ -146,20 +189,22 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
           playing={playing}
           seek={null}
           frosted={false}
+          fullscreenAt={fullscreen}
           onTime={(position, length) => setTime({ position, length })}
           onEnded={() => (setPlaying(false), setEnded(true), onLessonEnded?.())}
+          onLoad={onLoad}
           testID={`${testID}-lesson-video`}
         />
-        {!playing ? (
-          <View pointerEvents="none" style={[styles.disc, { backgroundColor: media.ink }]}>
-            <Icon name="Play" size={metrics.playIcon} color={media.inkOnLight} fill={media.inkOnLight} strokeWidth={1.8} />
-          </View>
-        ) : null}
+        {centre}
+        {failure}
       </Pressable>
     );
   } else {
-    body = <Cover piece={piece} kind={kind} tag={tag} by={by} testID={testID} />;
+    body = <Cover piece={piece} kind={kind} tag={tag} by={by} testID={testID} onOpenPicture={kind === 'photos' ? () => setViewing(true) : undefined} />;
   }
+  // R-117: the pictures the viewer may show are the ones this person may see: a locked set has no address for its locked frames.
+  const pictures = kind === 'photos' ? picturesOf(piece) : [];
+  const fullscreenVideo = canPlay && (kind === 'video' || (kind === 'course' && lesson !== null));
 
   return (
     <View testID={testID} accessibilityLabel={`${BAR_TITLE[kind]}${lesson ? `, ${lesson.title}` : ''}${ended ? ', finished' : ''}`} style={[styles.frame, { height: heightOf(kind), backgroundColor: colors.surfaceSunken }]}>
@@ -167,23 +212,36 @@ export function Media({ piece, tag, by, signal = 0, lesson = null, onLessonEnded
       <View pointerEvents="none" style={styles.tag}>
         <Pill icon={tag.icon} text={tag.text} testID={`${testID}-tag`} flush />
       </View>
+      {fullscreenVideo ? (
+        <View style={styles.fullscreen}>
+          <FullscreenButton onPress={() => setFullscreen((n) => n + 1)} label={`Full screen, ${piece.title}`} testID={`${testID}-fullscreen`} />
+        </View>
+      ) : null}
       {kind === 'pdf' ? <PdfReader uri={uri} title={piece.title} visible={reading} onClose={() => setReading(false)} testID={`${testID}-reader`} /> : null}
+      {kind === 'photos' && pictures.length > 0 ? <PictureViewer pictures={pictures} index={0} visible={viewing} onClose={() => setViewing(false)} testID={`${testID}-viewer`} /> : null}
     </View>
   );
 }
 
 /** The generated book of a PDF (H4 in the feed, H19 and H20 on the page): the title, who made it and how many pages. */
-function Book({ title, by, pages }: { title: string; by: string | null; pages: number | null }) {
+function Book({ title, by, pages, cover = null, onCoverError, coverTestID }: { title: string; by: string | null; pages: number | null; cover?: string | null; onCoverError?: () => void; coverTestID?: string }) {
   return (
     <View style={[styles.cover, { backgroundColor: media.cover, boxShadow: `0 30px 50px -10px ${media.coverShadow}` }]}>
-      <View style={[styles.spine, { backgroundColor: media.spine }]} />
-      <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
-        {by ?? ''}
-      </Text>
-      <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
-        {title}
-      </Text>
-      <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+      {cover ? (
+        // The creator's cover fills the front of the book, fitted inside its portrait frame (R-114).
+        <Image testID={coverTestID} source={{ uri: cover }} contentFit="cover" accessibilityLabel={title} onError={onCoverError} style={StyleSheet.absoluteFill} />
+      ) : (
+        <>
+          <View style={[styles.spine, { backgroundColor: media.spine }]} />
+          <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
+            {by ?? ''}
+          </Text>
+          <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
+            {title}
+          </Text>
+          <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+        </>
+      )}
     </View>
   );
 }
@@ -193,28 +251,37 @@ function Book({ title, by, pages }: { title: string; by: string | null; pages: n
  * mark. The address that failed to load, or whose frame is not in yet, shows the mark; a file is never handed to something that cannot
  * draw it (an mp4 or a PDF to `Image`).
  */
-function Cover({ piece, kind, tag, by, testID }: { piece: FeedItem; kind: Kind; tag: MediaProps['tag']; by: string | null; testID: string }) {
+function Cover({ piece, kind, tag, by, testID, onOpenPicture }: { piece: FeedItem; kind: Kind; tag: MediaProps['tag']; by: string | null; testID: string; onOpenPicture?: () => void }) {
   const { colors } = useWawu();
   const url = piece.previewAssetUrl || null;
-  // The address that failed to load, and the one whose first frame is on screen: a new address starts again.
-  const [broken, setBroken] = useState<string | null>(null);
+  // The creator's cover first (R-114), then the preview when it is a picture (a photo is always one); the one that will not load gives way to the next.
+  const picture = usePicture(pictureCandidates(piece, url));
+  // The address whose first frame is on screen: a new address starts again.
   const [framed, setFramed] = useState<string | null>(null);
   const mark = (
     <View testID={`${testID}-mark`} pointerEvents="none" style={[StyleSheet.absoluteFill, styles.center]}>
       <Icon name={tag.icon} size={metrics.playDisc} color={colors.textMuted} />
     </View>
   );
-  if (!url || broken === url) return mark;
+  if (picture.uri) {
+    const image = <Image testID={`${testID}-image`} source={{ uri: picture.uri }} contentFit="cover" accessibilityLabel={piece.title} onError={picture.onError} style={StyleSheet.absoluteFill} />;
+    // R-117: a photo opens full screen on a tap.
+    return onOpenPicture ? (
+      <Pressable testID={`${testID}-open-picture`} accessibilityRole="imagebutton" accessibilityLabel={`View ${piece.title} full screen`} onPress={onOpenPicture} style={StyleSheet.absoluteFill}>
+        {image}
+      </Pressable>
+    ) : (
+      image
+    );
+  }
+  // A picture that failed to load is not handed to anything else: the mark.
+  if (!url || isPicture(url) || kind === 'photos') return mark;
   if (isPdfFile(url)) {
     return (
       <View testID={`${testID}-book`} style={styles.center}>
         <Book title={piece.title} by={by} pages={piece.pageCount} />
       </View>
     );
-  }
-  // A photo set's picture is a picture whatever its address says; elsewhere the file type decides.
-  if (isPicture(url) || kind === 'photos') {
-    return <Image testID={`${testID}-image`} source={{ uri: url }} contentFit="cover" accessibilityLabel={piece.title} onError={() => setBroken(url)} style={StyleSheet.absoluteFill} />;
   }
   // A course's preview is a lesson, an mp4 by the Hub's rule: its first frame, from a paused player (the mark shows until it is in).
   if (canPlay && (isVideoFile(url) || kind === 'course')) {
@@ -252,6 +319,9 @@ const styles = StyleSheet.create({
   spine: { position: 'absolute', left: 0, top: 0, bottom: 0, width: metrics.spine },
   disc: { width: metrics.playDisc, height: metrics.playDisc, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center' },
   tag: { position: 'absolute', left: metrics.tagInset, bottom: metrics.tagInset },
+  fullscreen: { position: 'absolute', right: metrics.fullscreenInset, bottom: metrics.fullscreenInset },
+  failed: { position: 'absolute', left: 0, right: 0, bottom: metrics.tagInset, alignItems: 'center' },
+  failedText: { paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: radius.chip, overflow: 'hidden' },
 });
 
 export type { Kind };

@@ -15,7 +15,8 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { AllowanceMeter } from '@/features/create/UploadsMeter';
-import { rowPicture } from '@/features/feed/model';
+import { pictureCandidates } from '@/features/feed/model';
+import { usePicture } from '@/features/feed/usePicture';
 import { kindIcon } from '@/features/me/model';
 import { font, space, useWawu } from '@/theme';
 
@@ -118,13 +119,13 @@ function PieceRow({ piece, line, onSeeWhy }: { piece: LibraryPiece; line: string
   // Only a turned-down piece opens something (M26). A live piece's own page is HOME-03's and a piece in review has no screen drawn, so
   // neither row is pressed (R-47, G-ME-07-1).
   const opens = piece.status === 'rejected';
-  const [broken, setBroken] = useState(false);
-  const still = broken ? null : rowPicture(piece.contentType, piece.previewAssetUrl);
+  // The creator's cover first (R-114), then the preview when it is a picture.
+  const { uri: still, onError: stillFailed } = usePicture(pictureCandidates(piece, piece.previewAssetUrl));
   const body = (
     <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
         {still ? (
-          <Image testID="library-thumb-image" source={{ uri: still }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+          <Image testID="library-thumb-image" source={{ uri: still }} contentFit="cover" style={StyleSheet.absoluteFill} onError={stillFailed} />
         ) : (
           <View testID="library-thumb-mark">
             <Icon name={kindIcon(piece.contentType)} size={rowMetrics.mark} color={colors.textMuted} />

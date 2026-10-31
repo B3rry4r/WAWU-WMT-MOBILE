@@ -4,7 +4,7 @@ import { ApiError } from '@/api/errors';
 import { onSessionEnd } from '@/api/session';
 
 import { releaseUpload } from './api';
-import type { Frame } from './chosen';
+import type { ChosenFile, Frame } from './chosen';
 import { resetDetails, setSent } from './details';
 import type { FormatId } from './model';
 
@@ -100,7 +100,7 @@ async function release(key: string): Promise<void> {
   }
 }
 
-function giveBack(file: UploadedFile | null): void {
+export function giveBack(file: Pick<UploadedFile, 'key'> | null): void {
   if (file) void release(file.key);
 }
 
@@ -121,37 +121,104 @@ export function setFormat(format: FormatId): void {
   if (draft.format === format) return;
   giveBack(draft.full);
   giveBack(draft.preview);
+  setSmallCopy(null);
   if (!made) lessons.forEach((l) => giveBack(l.file));
+  giveBack(cover.file);
+  publishCover(noCover);
   setMade(null);
   setLessons([]);
   resetDetails();
   publish({ format, full: null, preview: null });
 }
 
-/** Replacing or clearing the full file gives the old one back; clearing it also drops the preview that went with it. */
+/**
+ * Replacing or clearing the full file gives the old one back, and with it everything made from it: the smaller copy of a picture, the preview
+ * that went up for it, and a frame that went up as the default cover (the new file's frame is sent at Send).
+ */
 export function setFull(full: UploadedFile | null): void {
-  if (draft.full?.key !== full?.key) giveBack(draft.full);
-  if (!full) giveBack(draft.preview);
-  publish({ ...draft, full, preview: full ? draft.preview : null });
+  if (draft.full?.key !== full?.key) {
+    giveBack(draft.full);
+    setSmallCopy(null);
+    giveBack(draft.preview);
+    dropDefaultCover();
+    publish({ ...draft, full, preview: null });
+    return;
+  }
+  publish({ ...draft, full });
 }
 
-/** Replacing or removing the preview gives the old one back. */
+/**
+ * The preview of a picture, once it has gone up (at Send, R-118): kept so a Send that fails and is tried again uses it rather than sending a
+ * second one. Replacing or removing it gives the old one back. No other kind has one: the Hub makes theirs.
+ */
 export function setPreview(preview: UploadedFile | null): void {
   if (draft.preview?.key !== preview?.key) giveBack(draft.preview);
   publish({ ...draft, preview });
+}
+
+/**
+ * R-118: the smaller copy the phone made of a picture piece's first picture (long edge 640 px, a JPEG), held in memory until Send uploads it as
+ * the preview of a PAID piece. It is made when the picture is chosen, because the phone's own copy of the picture goes once the picture has
+ * gone up. A copy that is replaced or no longer wanted is deleted from the phone.
+ */
+let smallCopy: ChosenFile | null = null;
+export const getSmallCopy = (): ChosenFile | null => smallCopy;
+export function setSmallCopy(next: ChosenFile | null): void {
+  if (smallCopy && smallCopy !== next) smallCopy.discard?.();
+  smallCopy = next;
 }
 
 /** Starts a fresh piece (the Content tile): whatever the old draft had uploaded is given back. */
 export function abandonDraft(): void {
   giveBack(draft.full);
   giveBack(draft.preview);
+  setSmallCopy(null);
   // The files of a course the Hub has already taken belong to it, whether or not its lessons were saved.
   if (!made) lessons.forEach((l) => giveBack(l.file));
+  giveBack(cover.file);
+  publishCover(noCover);
   setMade(null);
   setLessons([]);
   resetDetails();
   setSent(null);
   publish(empty);
+}
+
+/**
+ * The cover the person chose for the piece (R-114): `default` (the frame of the video they uploaded, else none; `file` is that frame once Send has put it
+ * up, kept for a second try), a `picture` they picked and that went up to `content/cover` (`file`), or `none`. Kept apart from the draft's own three fields so a piece that sets no cover reads exactly as before;
+ * every reset empties it, and a picture that went up and is no longer wanted is given back to the Hub like any file.
+ */
+export type DraftCover = { mode: 'default' | 'picture' | 'none'; file: UploadedFile | null };
+const noCover: DraftCover = { mode: 'default', file: null };
+let cover: DraftCover = noCover;
+/** A frame that went up as the default cover was read from a file that has changed: it is given back, and the new file's frame goes at Send. */
+function dropDefaultCover(): void {
+  if (cover.mode === 'default' && cover.file) {
+    giveBack(cover.file);
+    publishCover(noCover);
+  }
+}
+const coverListeners = new Set<() => void>();
+function publishCover(next: DraftCover): void {
+  cover = next;
+  coverListeners.forEach((l) => l());
+}
+export const getCover = (): DraftCover => cover;
+/** Chooses the cover; a picture that is replaced or no longer chosen is given back to the Hub. */
+export function setCover(next: DraftCover): void {
+  if (cover.file && cover.file.key !== next.file?.key) giveBack(cover.file);
+  publishCover(next);
+}
+export function useCover(): DraftCover {
+  return useSyncExternalStore(
+    (listener) => {
+      coverListeners.add(listener);
+      return () => coverListeners.delete(listener);
+    },
+    getCover,
+    getCover,
+  );
 }
 
 let lessonCounter = 0;
@@ -182,12 +249,14 @@ export function setLessonText(key: string, patch: Partial<Pick<DraftLesson, 'tit
 export function setLessonFile(key: string, file: UploadedFile | null): void {
   const had = lessons.find((l) => l.key === key)?.file ?? null;
   if (had && had.key !== file?.key) giveBack(had);
+  if (had?.key !== file?.key) dropDefaultCover();
   setLessons(lessons.map((l) => (l.key === key ? { ...l, file } : l)));
 }
 
 /** Takes a lesson out; its file is given back to the Hub. */
 export function removeLesson(key: string): void {
   giveBack(lessons.find((l) => l.key === key)?.file ?? null);
+  dropDefaultCover();
   setLessons(lessons.filter((l) => l.key !== key));
 }
 
@@ -198,6 +267,7 @@ export function moveLesson(key: string, by: -1 | 1): void {
   if (from < 0 || to < 0 || to >= lessons.length) return;
   const next = [...lessons];
   [next[from], next[to]] = [next[to], next[from]];
+  if (from === 0 || to === 0) dropDefaultCover();
   setLessons(next);
 }
 
@@ -210,6 +280,8 @@ export const fullFileOf = (d: Pick<Draft, 'format' | 'full'>, lessonList: readon
  * the session has ended and there is no one to ask on behalf of.
  */
 export function resetDraft(): void {
+  setSmallCopy(null);
+  publishCover(noCover);
   setMade(null);
   setLessons([]);
   resetDetails();

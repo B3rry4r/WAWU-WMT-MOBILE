@@ -6904,6 +6904,46 @@
         ]
       }
     },
+    "/api/hub/admin/content/{id}/cover": {
+      "get": {
+        "operationId": "AdminContentReviewController_cover",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coverUrl": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "coverUrl"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "CONTENT-COVER (R-114): the piece's own cover picture, as a short-lived link (15 minutes, like the other assets), so\na reviewer sees the picture they approve with the piece. Its own route and not a field of `queue` or `:id`, which the\ndashboard reads as they are; `coverUrl` is null when the piece has no cover.",
+        "tags": [
+          "AdminContentReview"
+        ]
+      }
+    },
     "/api/hub/admin/content/{id}/approve": {
       "post": {
         "operationId": "AdminContentReviewController_approve",
@@ -26271,6 +26311,277 @@
         ]
       }
     },
+    "/api/hub/reports": {
+      "post": {
+        "operationId": "UgcReportController_report",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUgcReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UgcReportView"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "UgcReport"
+        ]
+      }
+    },
+    "/api/hub/admin/reports": {
+      "get": {
+        "operationId": "AdminUgcReportsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "description": "Only this kind of item.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "piece",
+                "comment",
+                "profile",
+                "community_message",
+                "chat_message",
+                "direct_message"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUgcReportView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Open reports, one row per reported item, oldest first, with the item, the first reporter and the count.",
+        "tags": [
+          "AdminUgcReports"
+        ]
+      }
+    },
+    "/api/hub/admin/reports/{id}/resolve": {
+      "post": {
+        "operationId": "AdminUgcReportsController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveUgcReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUgcResolveView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Dismiss the report, or take the item down. Settles every open report on the same item.",
+        "tags": [
+          "AdminUgcReports"
+        ]
+      }
+    },
+    "/api/hub/admin/users/{id}/suspend": {
+      "post": {
+        "operationId": "AdminUserSuspensionController_suspend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSuspensionView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Suspend a person. Safe to repeat: a person already suspended answers their state and writes nothing.",
+        "tags": [
+          "AdminUserSuspension"
+        ]
+      }
+    },
+    "/api/hub/admin/users/{id}/lift": {
+      "post": {
+        "operationId": "AdminUserSuspensionController_lift",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiftSuspensionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSuspensionView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lift the suspension in force. Everything of theirs is back at once; nothing was deleted. Safe to repeat.",
+        "tags": [
+          "AdminUserSuspension"
+        ]
+      }
+    },
+    "/api/hub/admin/users/{id}/suspension": {
+      "get": {
+        "operationId": "AdminUserSuspensionController_read",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSuspensionView"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Whether the person is suspended, and every suspension they have had.",
+        "tags": [
+          "AdminUserSuspension"
+        ]
+      }
+    },
+    "/api/hub/me/suspension": {
+      "get": {
+        "operationId": "MeSuspensionController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MySuspensionView"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeSuspension"
+        ]
+      }
+    },
     "/api/hub/creators/{wawuId}/evg": {
       "get": {
         "operationId": "EvgScoreController_getEvgScore",
@@ -27154,8 +27465,8 @@
                     "shop": {
                       "type": "string",
                       "enum": [
-                        "basket",
-                        "beauty"
+                        "beauty",
+                        "basket"
                       ]
                     }
                   },
@@ -41137,6 +41448,776 @@
         "x-wawu-built-by": "AITOOLS-05"
       }
     },
+    "/api/hub/ai-tools/image/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createImage",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateImageJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Make an image job (AITOOLS-09, R-109): a `prompt`, an optional\n`shape` (one of `input.options.shapes` from `GET /ai-tools`) and the\n`quoteToken` of the `POST /points/quote` for the action `image_per_use`\n(units 1). Priced flat, one picture. The points are held and the job\nanswers `202 working` at once; the picture is made in the background, so\nthe app polls `GET /ai-tools/jobs/{id}` and may leave. Done, `outputs` hold\nthe picture (`kind: image`, with `contentType`, `bytes`, `name`,\n`downloadUrl` and `pieceFormat: image`). The points are kept only on\nsuccess; a refused or failed picture gives every point back with the Hub's\nown sentence. The request, the answer and the `Idempotency-Key` rule are\nthose of `POST /ai-tools/sound-effect/jobs`, plus `422 ai_shape_unsupported`.\nThe tool is listed, and the route answers, only while its switch\n`ai.listed.image` is on.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-09"
+      }
+    },
+    "/api/hub/ai-tools/photo-edit/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createPhotoEdit",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePhotoEditJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts an Edit a photo job (AITOOLS-09, R-109): the same body as Make an\nimage plus the `photoKey` of the person's own photo (`POST /uploads/presign`\nwith the folder `ai/input-image`, then `POST /uploads/confirm`; a JPEG, PNG\nor WebP picture up to 25 MB). The quote is for the action\n`photo_edit_per_use`. Another person's key is `404 not_found`; a file the\nHub cannot open as a picture is `422 ai_photo_unreadable`; each with nothing\nheld. The photo is deleted when the job ends, and the provider's copy of it\ntoo.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-09"
+      }
+    },
+    "/api/hub/ai-tools/video/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createVideo",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVideoJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Make a video job (AITOOLS-10, R-109): a `prompt`, an optional\n`shape` (wide or tall), the clip's `seconds` (one of `input.options.lengths`:\n4, 6 or 8), an optional `photoKey` to start from and the `quoteToken` of the\n`POST /points/quote` for the action `video_per_sec` (units = `seconds`).\nPriced by the second. A clip takes minutes: the job answers `202 working`,\nthe app polls `GET /ai-tools/jobs/{id}`, and a job that ran long writes an\n`ai_job_ready` notification when it ends. Done, `outputs` hold the clip\n(`kind: video`, `pieceFormat: video`). The request, the answer and the\nrefusals are those of `POST /ai-tools/photo-edit/jobs`, plus\n`422 ai_length_unsupported`.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-10"
+      }
+    },
+    "/api/hub/ai-tools/talking-photo/quote": {
+      "post": {
+        "operationId": "AiToolsController_quoteTalkingPhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteTalkingPhotoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiSpeechQuoteView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The points quote for a Talking photo's voice (AITOOLS-10): the `audioKey` of\na recording the person uploaded (`ai/input-audio`, MP3 or WAV) or the\n`sourceJobId` of one of their own finished voice results. The Hub reads the\nvoice's length itself and prices the seconds from that, so the phone sends no\nlength. Answers the same quote `POST /points/quote` does (with its\n`quoteToken`, to send to the job route with the same voice), plus\n`speech.seconds`. Nothing is held. `404 not_found`, `409 job_not_ready`,\n`422 ai_speech_unreadable`, `422 ai_length_too_long` over the setting.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-10"
+      }
+    },
+    "/api/hub/ai-tools/talking-photo/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createTalkingPhoto",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTalkingPhotoJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Talking photo job (AITOOLS-10, R-109): the `photoKey` of the\nperson's photo and exactly one voice, an `audioKey` or a `sourceJobId`, with\nthe `quoteToken` from `POST /ai-tools/talking-photo/quote` for the same\nvoice. Priced by the seconds of speech the Hub read; a voice longer than\n`input.options.speech.maxSeconds` is `422 ai_length_too_long`, with nothing\nheld. The photo and the recording are deleted when the job ends, and the\nprovider's copies too. The request, the answer and the other refusals are\nthose of `POST /ai-tools/video/jobs`.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-10"
+      }
+    },
+    "/api/hub/ai-tools/voice-changer/quote": {
+      "post": {
+        "operationId": "AiToolsController_quoteVoiceChanger",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiFileQuoteView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The points quote for a Voice changer recording (AITOOLS-11, R-109): exactly `POST /ai-tools/captions/quote`, for the\naction `voice_changer_per_min`. The Hub reads the recording's length itself. A video, or a file it cannot read, is\nrefused with nothing held. `503 ai_tool_unavailable` while the tool's switch `ai.listed.voice-changer` is off.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-11"
+      }
+    },
+    "/api/hub/ai-tools/voice-changer/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createVoiceChanger",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoiceChangerJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Voice changer job (AITOOLS-11, R-109): the `fileKey` of a recording the person uploaded (`ai/input-audio`),\nthe `voiceId` to hear it in (a voice from `GET /ai-tools`, or `own` for their saved voice) and the `quoteToken`\nfor the action `voice_changer_per_min`. The same words, timing and feeling come back in the new voice: the done\njob's `audioUrl` and its `audio` output (`pieceFormat: audio`). Priced by the minute of the recording as the Hub\nreads it. The request, the answer and every refusal are those of `POST /ai-tools/captions/jobs`, plus\n`400 ai_voice_unknown`. The recording is deleted when the job ends.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-11"
+      }
+    },
+    "/api/hub/ai-tools/dialogue/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createDialogue",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDialogueJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Dialogue job (AITOOLS-11, R-109): `lines`, each `{ text, voiceId }` (a voice from `GET /ai-tools`, or `own`\nfor the person's saved voice), and the `quoteToken` of the `POST /points/quote` for the action `dialogue_per_min`\n(units = the minutes the characters make, `characters` the total). At most 10 different voices and the character\nlimit in `GET /ai-tools` (`input.maxCharacters`); an empty line, too many voices, too many characters or a voice not on\nthe person's list is refused with the reason and nothing held. The done job's `audioUrl` is the whole scene.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-11"
+      }
+    },
+    "/api/hub/ai-tools/my-voice": {
+      "get": {
+        "operationId": "AiToolsController_myVoice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedVoiceView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "\"Clone your own voice\" (AITOOLS-11, R-109): whether the person keeps a clone of their voice (`state`: `none`,\n`making`, `ready`), its name, the words they agree to (`consent.line`, with their own name) and what the recording\nmust be. Read-only. `available` is false while the tool's switch `ai.listed.my-voice` is off.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-11"
+      },
+      "post": {
+        "operationId": "AiToolsController_createMyVoice",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMyVoiceJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Makes the clone (AITOOLS-11, R-109): the `fileKey` of the person's own recording (`ai/input-audio`), a `name` for\nthe voice, the `consentLine` they agreed to (`consent.line` from `GET /ai-tools/my-voice`, sent back unchanged) and\nthe `quoteToken` for the action `voice_clone_once`. One clone a person: a second is `409 clone_exists` with nothing\nheld, and two taps at once make one. The points are held and the job answers `202 working`; poll `GET\n/ai-tools/jobs/{id}` and `GET /ai-tools/my-voice`. Done, \"Your voice\" (`own`) is a choice in the voice tools for\nits owner only. The points are kept only when the clone is made. The recording is deleted when the job ends.\nRefusals with nothing held: `409 own_voice_consent_line_changed`, `409 own_voice_name_required`, `422\nai_length_too_short`, `422 ai_length_too_long`, `422 ai_file_unreadable`.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-11"
+      },
+      "delete": {
+        "operationId": "AiToolsController_removeMyVoice",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedVoiceRemovedView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Removes the person's saved voice (AITOOLS-11): \"Your voice\" leaves every list at once, the agreement goes with it\nand the Hub deletes the provider's copy. Always works (also while the tool's switch is off). `gone`: the provider\nholds none; `pending`: the Hub is still removing it and keeps trying. Nothing is charged or given back.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-11"
+      }
+    },
+    "/api/hub/ai-tools/my-voice/quote": {
+      "post": {
+        "operationId": "AiToolsController_quoteMyVoice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiFileQuoteView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The points quote for the recording a clone is made from (AITOOLS-11): exactly `POST /ai-tools/captions/quote`, priced once (units 1), for the action `voice_clone_once`. A recording that is too short or too long is refused here.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-11"
+      }
+    },
+    "/api/hub/ai-tools/video-music/quote": {
+      "post": {
+        "operationId": "AiToolsController_quoteVideoMusic",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiFileQuoteView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The points quote for the video Music for a video is made for (AITOOLS-12, R-109): exactly `POST /ai-tools/captions/quote`, priced flat (units 1), for the action `video_music_per_track`. An audio file, a video over the length setting or over 200 MB is refused here.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-12"
+      }
+    },
+    "/api/hub/ai-tools/video-music/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createVideoMusic",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVideoMusicJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Music for a video job (AITOOLS-12, R-109): the `fileKey` of the person's own video (`ai/input-video`), an\noptional `description` (the mood in words) and the `quoteToken` for the action `video_music_per_track`. Priced flat,\none track. The result is MUSIC as an audio file: the Hub does not put it on the video (the provider returns music\nonly), and the screen says so. A long job: the app polls `GET /ai-tools/jobs/{id}`. The request, the answer and\nthe refusals are those of `POST /ai-tools/captions/jobs`, plus `422 ai_length_too_long`, `422 ai_file_too_large` and\n`422 ai_prompt_too_long`. If the provider's plan does not cover the route the job fails with \"This isn't available\nright now. No points were taken.\" The video is deleted when the job ends.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-12"
+      }
+    },
+    "/api/hub/ai-tools/stems/quote": {
+      "post": {
+        "operationId": "AiToolsController_quoteStems",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiFileQuoteView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The points quote for the song Split a song takes (AITOOLS-12, R-109): exactly `POST /ai-tools/captions/quote`, priced flat (units 1), for the action `stems_per_song`.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-12"
+      }
+    },
+    "/api/hub/ai-tools/stems/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createStems",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStemsJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Split a song job (AITOOLS-12, R-109): the `fileKey` of the person's own song (`ai/input-audio`), `parts`\n(2: the voice and the rest, or 6; left out: 2) and the `quoteToken` for the action `stems_per_song`. Priced flat,\none song. Done, `outputs` hold one `audio` file for each part with its plain `name` (\"Voice\", \"Drums\"), each with\n`pieceFormat: audio`; `POST /ai-tools/jobs/{id}/piece` takes the `outputIndex` of the part the person picks. A long\njob: the app polls `GET /ai-tools/jobs/{id}`. The request, the answer and the refusals are those of `POST\n/ai-tools/video-music/jobs`. An answer from the provider the Hub cannot open safely fails the job and gives every\npoint back. The song is deleted when the job ends.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-12"
+      }
+    },
+    "/api/hub/ai-tools/audiobook/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createAudiobook",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAudiobookJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts an Audiobook job (AITOOLS-13, R-109): the `text` (or the `fileKey` of a plain text file uploaded to\n`ai/input-doc`), a `voiceId` from `GET /ai-tools` and the `quoteToken` for the action `audiobook_per_min` (units = the\nminutes the characters make, `characters` the total). The points for the whole text are held up front; the Hub speaks\nthe chapters one after the other and joins them into one audio file: poll `GET /ai-tools/jobs/{id}`; the done job's\n`audioUrl` is the whole book (`pieceFormat: audio`, one piece). An empty text, a text over the limit in `GET\n/ai-tools` (`input.maxCharacters`), a voice off the list and a file that is not text are refused with the reason and\nnothing held; the day's cap stops a longer book (`points_cap_reached`, with the reset time). `503\nai_tool_unavailable` while the tool's switch `ai.listed.audiobook` is off.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-13"
+      }
+    },
+    "/api/hub/ai-tools/podcast/jobs": {
+      "post": {
+        "operationId": "AiToolsController_createPodcast",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per job.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePodcastJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a Podcast maker job (AITOOLS-13, R-109): a `source` (`text`, or an `https` `url` of at most 2,000 characters,\nwhich the Hub never opens), a `mode` (`conversation` with two `voiceIds`, `bulletin` with one), a `duration` (`short`,\n`standard` or `long`, each its own plan action: the `quoteToken` is for that action, units 1) and a `language` from\n`GET /ai-tools` (`input.podcast.languages`). The provider works for minutes: poll `GET /ai-tools/jobs/{id}`; the done\njob's `audioUrl` is the podcast (`pieceFormat: audio`). A link that is not `https`, one over the limit, two voices that\nare the same and a language off the list are refused with the reason and nothing held. If the provider does not take\nour account (its Studio API is open to allowlisted accounts only) the job fails with \"This isn't available right now.\nNo points were taken.\" The tool is listed only while `ai.listed.podcast` and `ai.podcast_studio_api_ok` are both on.",
+        "tags": [
+          "AiTools"
+        ],
+        "x-wawu-built-by": "AITOOLS-13"
+      }
+    },
     "/api/hub/ai-tools/jobs": {
       "get": {
         "operationId": "AiToolsController_listJobs",
@@ -41399,6 +42480,82 @@
         "x-wawu-built-by": "AITOOLS-07"
       }
     },
+    "/api/hub/ai-tools/jobs/{id}/piece": {
+      "post": {
+        "operationId": "AiToolsPieceController_makePiece",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MakePieceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPieceView"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "reason.code: tier_required, product_limit_reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TierGateErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "reason.code: identity_paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityPausedErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "\"Make it a piece\": copies the chosen output of a finished job into the\nperson's own content folder (`content/full/<id>/...`) and answers what\nCreate's draft holds: `{ format, full: { key, fileUrl, contentType, bytes,\nname }, suggestedTitle }`. Send `full` as the draft's file (`fullAsset`) and\nthe format as the piece's format; `POST /content` and its tier and place\ngates run as today. Nothing is published, and no preview is made: the\npreview stays the person's own step in Create.\n\nOnly the person's own finished job (`404 not_found` for another person's,\n`409 job_not_ready` for one still working or failed). An output no Create\nformat takes (a FLAC dub, an AAC clip, words) is `409 no_format`. A person\nwho may not publish gets the presign's `402 tier_required`; one with no room\ngets its `413 storage_limit_reached`, and nothing is copied. Needs an\n`Idempotency-Key`; the same call again answers the same key (header\n`Idempotent-Replayed: true`) until the person releases it with `POST\n/uploads/release`, as for any abandoned upload.",
+        "tags": [
+          "AiToolsPiece"
+        ],
+        "x-wawu-built-by": "AITOOLS-08"
+      }
+    },
     "/api/hub/ai-tools/voices/{voiceId}/sample": {
       "get": {
         "operationId": "AiVoiceSamplesController_sample",
@@ -41429,6 +42586,304 @@
           "AiVoiceSamples"
         ],
         "x-wawu-built-by": "AITOOLS-07"
+      }
+    },
+    "/api/hub/ai-tools/receptionist": {
+      "get": {
+        "operationId": "ReceptionistController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceptionistView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "The caller's Receptionist: whether it is set up, its details, what it knows, and the limits and voices the screen draws. Read-only.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
+      },
+      "put": {
+        "operationId": "ReceptionistController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveReceptionistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceptionistView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Sets up or changes the Receptionist (`businessName`, `offer`, optional `replyStyle`, `language`, `voiceId`). The\nfirst save makes the agent; later saves edit it. A language or voice off the lists, or an empty name or offer, is\nrefused and nothing is created. `503` when it cannot be reached, with nothing changed.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
+      },
+      "delete": {
+        "operationId": "ReceptionistController_clear",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceptionistRemovedView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Clears the Receptionist: the agent, every document it knew and the earlier messages. `atProvider: pending` means the\nHub is still removing a copy: ask again. Always works, also while the tool is off.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
+      }
+    },
+    "/api/hub/ai-tools/receptionist/knowledge": {
+      "post": {
+        "operationId": "ReceptionistController_addKnowledge",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddKnowledgeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceptionistView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Adds something it knows: `kind: text` (`text`), `url` (`url`, an `https` page) or `file` (`fileKey` of a text or PDF\nuploaded to `ai/input-doc`), with a `name`. At most the limit in `GET /ai-tools/receptionist` (`limits.docsMax`);\na text, document or link over its limit, a link that is not `https`, a file type off the list and another person's\nkey are refused with the reason and nothing is created. The profile and listings are NOT read: what it knows is what\nthe person adds.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
+      }
+    },
+    "/api/hub/ai-tools/receptionist/knowledge/{id}": {
+      "delete": {
+        "operationId": "ReceptionistController_removeKnowledge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceptionistView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Makes it forget one thing: deleted at the provider, then the row. `404 not_found` for another person's.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
+      }
+    },
+    "/api/hub/ai-tools/receptionist/messages": {
+      "post": {
+        "operationId": "ReceptionistController_message",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per message.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReceptionistMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiJobView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Sends it a text message: `message` and the `quoteToken` of the `POST /points/quote` for the action\n`receptionist_message` (units 1). The points are held; the job answers `202 working`; poll `GET /ai-tools/jobs/{id}`:\nthe reply is the done job's `text` output, the points are kept only then and every point goes back on a failure.\nThe same Idempotency-Key twice sends one message. `409 receptionist_not_set_up` before the first save.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
+      }
+    },
+    "/api/hub/ai-tools/receptionist/voice-sessions": {
+      "post": {
+        "operationId": "ReceptionistController_startVoice",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "8 to 128 of letters, digits, - or _: one per session.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartVoiceSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceSessionView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Starts a talking session: holds the points for the longest session (`limits.voiceMaxMinutes`, the quote is\n`POST /points/quote` for `receptionist_voice_per_min` with that many units) and answers `{ id, signedUrl,\nconversationId, maxSeconds }`. The phone talks to the provider on `signedUrl` (used once); the Hub carries no audio.\nCall `end` when the talk is over.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
+      }
+    },
+    "/api/hub/ai-tools/receptionist/voice-sessions/{id}/end": {
+      "post": {
+        "operationId": "ReceptionistController_endVoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceSessionView"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "wawu-id": []
+          }
+        ],
+        "summary": "Ends a talking session: the Hub reads how long it was, keeps the real minutes (rounded up, at most what was held)\nand gives the rest back. `state: working` means the provider has not closed the conversation yet and the Hub settles\nit within a minute. A second `end` changes nothing. A session nobody ends is settled at the longest by the sweep.",
+        "tags": [
+          "Receptionist"
+        ],
+        "x-wawu-built-by": "AITOOLS-06"
       }
     },
     "/api/hub/me/voice": {
@@ -45107,6 +46562,7 @@
             "enum": [
               "content/preview",
               "content/full",
+              "content/cover",
               "kyc/id-document",
               "service-application/document",
               "professional/document",
@@ -45122,7 +46578,9 @@
               "profile/work",
               "voice/sample",
               "ai/input-audio",
-              "ai/input-video"
+              "ai/input-video",
+              "ai/input-image",
+              "ai/input-doc"
             ]
           },
           "contentType": {
@@ -46117,11 +47575,21 @@
           },
           "previewAsset": {
             "type": "string",
+            "description": "The public preview file, as `POST /uploads/presign` answered. PREVIEW-AUTO: optional now. A FREE piece may leave it out (its whole\nfile is open to everyone, so the preview is the file itself); a PAID audio or video piece may leave it out and send\n`previewFromFile: true` to have the Hub make it from `fullAsset` (R-118: a PDF too; a course from its first lesson, a template or\na course whose first lesson is not a video from `coverAsset`). A picture sends its own smaller copy. A request that carries one is\nread exactly as it always was.",
             "format": "uri"
+          },
+          "previewFromFile": {
+            "type": "boolean",
+            "description": "PREVIEW-AUTO: \"make my preview from the full file\". For a PAID audio, video, PDF, course, or template that sends no\n`previewAsset`: the Hub cuts the first 30 seconds of a recording (a third of a file under 45 seconds), the first 3 pages of a PDF\n(the first page of a file under 6 pages), the first lesson of a course the same way, or copies the cover (a template, or a course\nwhose first lesson is not a video), after the full file is stored, and stores the result as the piece's preview. Ignored when a\n`previewAsset` is sent, and for a free piece."
           },
           "fullAsset": {
             "type": "string",
             "format": "uri"
+          },
+          "coverAsset": {
+            "type": "string",
+            "description": "CONTENT-COVER (R-114): the piece's optional cover picture, as the `key` (or `fileUrl`) `POST /uploads/presign`\nanswered for the folder `content/cover` (png, jpeg or webp, at most 5 MB). Left out, the piece has no cover.\nIt must be the caller's own upload (400 otherwise).",
+            "maxLength": 2048
           },
           "parentCourseId": {
             "type": "string",
@@ -46136,7 +47604,6 @@
           "category",
           "accessType",
           "price",
-          "previewAsset",
           "fullAsset"
         ]
       },
@@ -46213,9 +47680,19 @@
             "type": "string",
             "format": "uri"
           },
+          "previewFromFile": {
+            "type": "boolean",
+            "description": "UPLOAD-REST (R-118): \"make my preview from the file I already have\". For a piece that this edit leaves PAID and that has no\npreview of its own yet (a free piece going to paid: its preview is its own file) and that sends no `previewAsset`, the Hub\nmakes the preview from the piece's stored full file exactly as `POST /content` does with the same flag: the first 30 seconds\nof audio or video (a third of a file under 45 seconds), the first 3 pages of a PDF (the first page of a file under 6 pages),\nthe same of a course's first lesson, or a copy of the cover for a template or a course whose first lesson is not a video. It is\nstored as the piece's preview, counted once in the creator's storage, and given back if the edit does not go through. A picture\nis refused in words (it sends its own smaller copy as `previewAsset`). Left out, the edit reads exactly as it always did; sent on\na piece that already has a preview of its own, or that stays free, it does nothing."
+          },
           "fullAsset": {
             "type": "string",
             "format": "uri"
+          },
+          "coverAsset": {
+            "type": "string",
+            "nullable": true,
+            "description": "CONTENT-COVER (R-114): the key (or `fileUrl`) of a cover uploaded to the folder `content/cover`, which replaces the\nold one (the old file is deleted); `null` takes the cover off. Left out, the cover stays as it is.",
+            "maxLength": 2048
           }
         }
       },
@@ -46519,15 +47996,24 @@
         "properties": {
           "previewAsset": {
             "type": "string",
+            "description": "Optional since PREVIEW-AUTO, exactly as on `POST /content`: a free piece may leave it out.",
             "format": "uri"
+          },
+          "previewFromFile": {
+            "type": "boolean",
+            "description": "PREVIEW-AUTO: \"make my preview from the full file\", as on `POST /content`."
           },
           "fullAsset": {
             "type": "string",
             "format": "uri"
+          },
+          "coverAsset": {
+            "type": "string",
+            "description": "CONTENT-COVER (R-114): the optional cover, as `POST /content` takes it.",
+            "maxLength": 2048
           }
         },
         "required": [
-          "previewAsset",
           "fullAsset"
         ]
       },
@@ -48941,6 +50427,128 @@
       "CreateDmReportDto": {
         "type": "object",
         "properties": {}
+      },
+      "CreateUgcReportDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "What is being reported.",
+            "enum": [
+              "piece",
+              "comment",
+              "profile",
+              "community_message",
+              "chat_message",
+              "direct_message"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "description": "The id of that thing (a piece, comment, community message, chat message or paid question), or the person's wawuId for a profile.",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why, from the short fixed list.",
+            "enum": [
+              "spam",
+              "harassment",
+              "hate",
+              "sexual",
+              "illegal",
+              "impersonation",
+              "other"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "description": "Anything the reporter wants a moderator to know. Optional.",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "kind",
+          "targetId",
+          "reason"
+        ]
+      },
+      "ResolveUgcReportDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "`dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community\nmessage or chat message is deleted); on a reported PROFILE it suspends the person (USER-SUSPEND, R-121).\n`take_down_and_suspend`: the item comes down AND the person who made it is suspended. `suspend`: the person is\nsuspended and the item is left as it is (the way to act on a paid question, which carries money).",
+            "enum": [
+              "dismiss",
+              "take_down",
+              "take_down_and_suspend",
+              "suspend"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "description": "Why. Required for a take-down or a suspension (it is the only record of why); optional for a dismissal.",
+            "maxLength": 1000
+          },
+          "suspendReason": {
+            "type": "string",
+            "description": "Why the person is suspended, from the same short list as a report. Defaults to the report's own reason.",
+            "enum": [
+              "spam",
+              "harassment",
+              "hate",
+              "sexual",
+              "illegal",
+              "impersonation",
+              "other"
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "SuspendUserDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Why, from the short fixed list the report sheet uses.",
+            "enum": [
+              "spam",
+              "harassment",
+              "hate",
+              "sexual",
+              "illegal",
+              "impersonation",
+              "other"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "description": "What the moderator saw. Kept with the suspension and in the audit trail; the person is never shown it.",
+            "maxLength": 1000
+          },
+          "reportId": {
+            "type": "string",
+            "description": "The report that led to it, when there was one.",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "LiftSuspensionDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Why it is lifted. Kept in the audit trail.",
+            "maxLength": 1000
+          }
+        }
       },
       "UpsertLearnGuideDto": {
         "type": "object",
@@ -51373,7 +52981,20 @@
               "dub_standard_per_min_lang",
               "dub_premium_per_min_lang",
               "receptionist_message",
-              "receptionist_voice_per_min"
+              "receptionist_voice_per_min",
+              "image_per_use",
+              "photo_edit_per_use",
+              "video_per_sec",
+              "talking_photo_per_sec",
+              "voice_changer_per_min",
+              "dialogue_per_min",
+              "voice_clone_once",
+              "video_music_per_track",
+              "stems_per_song",
+              "audiobook_per_min",
+              "podcast_short",
+              "podcast_standard",
+              "podcast_long"
             ]
           },
           "units": {
@@ -51418,7 +53039,20 @@
               "dub_standard_per_min_lang",
               "dub_premium_per_min_lang",
               "receptionist_message",
-              "receptionist_voice_per_min"
+              "receptionist_voice_per_min",
+              "image_per_use",
+              "photo_edit_per_use",
+              "video_per_sec",
+              "talking_photo_per_sec",
+              "voice_changer_per_min",
+              "dialogue_per_min",
+              "voice_clone_once",
+              "video_music_per_track",
+              "stems_per_song",
+              "audiobook_per_min",
+              "podcast_short",
+              "podcast_standard",
+              "podcast_long"
             ]
           },
           "units": {
@@ -51676,6 +53310,416 @@
           "quoteToken"
         ]
       },
+      "CreateImageJobDto": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "What the picture shows, in words.",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "shape": {
+            "type": "string",
+            "description": "The shape: one of `input.options.shapes` from `GET /ai-tools` (`1:1`, `4:5`, `9:16`, `16:9`). Left out: square.",
+            "pattern": "^\\d{1,2}:\\d{1,2}$"
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (action `image_per_use`, units 1). A different cost now is `409 quote_changed`.",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "prompt",
+          "quoteToken"
+        ]
+      },
+      "CreatePhotoEditJobDto": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "What the picture shows, in words.",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "shape": {
+            "type": "string",
+            "description": "The shape: one of `input.options.shapes` from `GET /ai-tools` (`1:1`, `4:5`, `9:16`, `16:9`). Left out: square.",
+            "pattern": "^\\d{1,2}:\\d{1,2}$"
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (action `image_per_use`, units 1). A different cost now is `409 quote_changed`.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "photoKey": {
+            "type": "string",
+            "description": "The `key` `POST /uploads/presign` gave for the person's photo (folder `ai/input-image`). Another person's key is `404 not_found`.",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "prompt",
+          "quoteToken",
+          "photoKey"
+        ]
+      },
+      "CreateVideoJobDto": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "What happens in the clip, in words.",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "shape": {
+            "type": "string",
+            "description": "Wide (`16:9`) or tall (`9:16`): one of `input.options.shapes`. Left out: wide.",
+            "pattern": "^\\d{1,2}:\\d{1,2}$"
+          },
+          "seconds": {
+            "type": "integer",
+            "description": "How long the clip is, in whole seconds: one of `input.options.lengths` (4, 6 or 8). It prices the job.",
+            "minimum": 1,
+            "maximum": 3600
+          },
+          "photoKey": {
+            "type": "string",
+            "description": "The `key` of a photo to start from (folder `ai/input-image`). Left out: the clip is made from the words alone.",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (action `video_per_sec`, units = `seconds`).",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "prompt",
+          "seconds",
+          "quoteToken"
+        ]
+      },
+      "QuoteTalkingPhotoDto": {
+        "type": "object",
+        "properties": {
+          "audioKey": {
+            "type": "string",
+            "description": "The `key` of a voice recording the person uploaded (folder `ai/input-audio`, MP3 or WAV).",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "sourceJobId": {
+            "type": "string",
+            "description": "The id of one of the person's own finished voice results whose audio is the voice.",
+            "format": "uuid"
+          }
+        }
+      },
+      "CreateTalkingPhotoJobDto": {
+        "type": "object",
+        "properties": {
+          "audioKey": {
+            "type": "string",
+            "description": "The `key` of a voice recording the person uploaded (folder `ai/input-audio`, MP3 or WAV).",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "sourceJobId": {
+            "type": "string",
+            "description": "The id of one of the person's own finished voice results whose audio is the voice.",
+            "format": "uuid"
+          },
+          "photoKey": {
+            "type": "string",
+            "description": "The `key` of the person's photo (folder `ai/input-image`).",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from `POST /ai-tools/talking-photo/quote` (sent with the same voice). A different cost now is `409 quote_changed`.",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "photoKey",
+          "quoteToken"
+        ]
+      },
+      "CreateVoiceChangerJobDto": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "description": "The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`.",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "voiceId": {
+            "type": "string",
+            "description": "The voice to hear it in: an id from `GET /ai-tools` (`voices`), `own` for the person's saved voice when `GET /ai-tools/my-voice` says `ready`.",
+            "pattern": "^[a-z0-9_-]{1,40}$"
+          }
+        },
+        "required": [
+          "fileKey",
+          "quoteToken",
+          "voiceId"
+        ]
+      },
+      "DialogueLineDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The words. A line with no words in it is refused by the Hub with its own sentence and nothing held.",
+            "minLength": 0,
+            "maxLength": 200000
+          },
+          "voiceId": {
+            "type": "string",
+            "description": "A voice id from `GET /ai-tools` (`voices`), or `own` for the person's saved voice.",
+            "pattern": "^[a-z0-9_-]{1,40}$"
+          }
+        },
+        "required": [
+          "text",
+          "voiceId"
+        ]
+      },
+      "CreateDialogueJobDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "description": "The lines of the scene, in order, up to 10 different voices and the character limit in `GET /ai-tools` (`input.maxCharacters`).",
+            "minItems": 1,
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DialogueLineDto"
+            }
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (action `dialogue_per_min`, units = the minutes the characters make).",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "lines",
+          "quoteToken"
+        ]
+      },
+      "CreateMyVoiceJobDto": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "description": "The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`.",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the person gives their voice. It stays on the Hub; the provider is told a plain name.",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "consentLine": {
+            "type": "string",
+            "description": "The words the person agreed to: `consent.line` from `GET /ai-tools/my-voice`, sent back unchanged. Any other words are `409 own_voice_consent_line_changed`.",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "fileKey",
+          "quoteToken",
+          "name",
+          "consentLine"
+        ]
+      },
+      "CreateVideoMusicJobDto": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "description": "The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`.",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "description": {
+            "type": "string",
+            "description": "The mood in words, up to the limit in `GET /ai-tools`. Left out: the music follows the video alone.",
+            "maxLength": 20000
+          }
+        },
+        "required": [
+          "fileKey",
+          "quoteToken"
+        ]
+      },
+      "CreateStemsJobDto": {
+        "type": "object",
+        "properties": {
+          "fileKey": {
+            "type": "string",
+            "description": "The `key` `POST /uploads/presign` gave for the person's own file. Another person's key is `404 not_found`.",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the quote route of the tool (sent with the same `fileKey`). A different cost now is `409 quote_changed`.",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "parts": {
+            "description": "Two parts (the voice and the rest) or six. Left out: two.",
+            "enum": [
+              2,
+              6
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "fileKey",
+          "quoteToken"
+        ]
+      },
+      "CreateAudiobookJobDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The words to read. Never stored beyond the job: the Hub keeps them in a private file until the job ends.",
+            "minLength": 1,
+            "maxLength": 200000
+          },
+          "fileKey": {
+            "type": "string",
+            "description": "Instead of `text`: the key of a plain text file the person uploaded (`POST /uploads/presign` with the folder `ai/input-doc`, then `POST /uploads/confirm`).",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "voiceId": {
+            "type": "string",
+            "description": "A voice id from `GET /ai-tools`.",
+            "pattern": "^[a-z0-9_-]{1,40}$"
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (action `audiobook_per_min`, units = the minutes the characters make).",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "voiceId",
+          "quoteToken"
+        ]
+      },
+      "PodcastSourceDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200000
+          },
+          "url": {
+            "type": "string",
+            "description": "A web link: `https` only, at most 2,000 characters. The Hub never opens it.",
+            "maxLength": 4000
+          }
+        }
+      },
+      "CreatePodcastJobDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/PodcastSourceDto"
+          },
+          "mode": {
+            "description": "`conversation`: two voices talk it over. `bulletin`: one host reads it.",
+            "enum": [
+              "conversation",
+              "bulletin"
+            ],
+            "type": "string"
+          },
+          "voiceIds": {
+            "description": "Voice ids from `GET /ai-tools`: one for a bulletin, two for a conversation (host, then guest).",
+            "minItems": 1,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9_-]{1,40}$"
+            }
+          },
+          "duration": {
+            "description": "How long: `short` (under 3 minutes), `standard` (about 3 to 7) or `long` (over 7).",
+            "enum": [
+              "short",
+              "standard",
+              "long"
+            ],
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "description": "Two letters from the list in `GET /ai-tools` (`input.podcast.languages`).",
+            "pattern": "^[A-Za-z]{2}$",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (the action for the length chosen, units 1).",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "source",
+          "mode",
+          "voiceIds",
+          "duration",
+          "language",
+          "quoteToken"
+        ]
+      },
       "OwnVoiceConsentDto": {
         "type": "object",
         "properties": {
@@ -51687,6 +53731,127 @@
         },
         "required": [
           "line"
+        ]
+      },
+      "MakePieceDto": {
+        "type": "object",
+        "properties": {
+          "outputIndex": {
+            "type": "integer",
+            "description": "The place of the output in the job's `outputs`, from 0.",
+            "minimum": 0,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "outputIndex"
+        ]
+      },
+      "SaveReceptionistDto": {
+        "type": "object",
+        "properties": {
+          "businessName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "offer": {
+            "type": "string",
+            "description": "What the business offers, in the person's own words.",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "replyStyle": {
+            "type": "string",
+            "description": "How it should reply (tone, length). Optional.",
+            "maxLength": 1000
+          },
+          "language": {
+            "type": "string",
+            "description": "A code from `limits.languages`; English when left out.",
+            "pattern": "^[A-Za-z]{2}$",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "voiceId": {
+            "type": "string",
+            "description": "A voice id from `voices`; the first when left out.",
+            "pattern": "^[a-z0-9_-]{1,40}$"
+          }
+        },
+        "required": [
+          "businessName",
+          "offer"
+        ]
+      },
+      "AddKnowledgeDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "text",
+              "url",
+              "file"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 400000
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "fileKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ]
+      },
+      "CreateReceptionistMessageDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The person's message. Never logged by the Hub.",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (action `receptionist_message`, units 1).",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "message",
+          "quoteToken"
+        ]
+      },
+      "StartVoiceSessionDto": {
+        "type": "object",
+        "properties": {
+          "quoteToken": {
+            "type": "string",
+            "description": "`quoteToken` from the `POST /points/quote` the person saw (action `receptionist_voice_per_min`, units = `limits.voiceMaxMinutes`).",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "quoteToken"
         ]
       },
       "NamePreviewDto": {
@@ -54253,6 +56418,10 @@
           "title": {
             "type": "string"
           },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "amountKobo": {
             "type": "integer"
           },
@@ -54339,6 +56508,10 @@
           },
           "title": {
             "type": "string"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
           },
           "earnedKobo": {
             "type": "integer"
@@ -58691,7 +60864,8 @@
               "minute",
               "track",
               "message",
-              "minute_per_language"
+              "minute_per_language",
+              "second"
             ]
           }
         },
@@ -60823,6 +62997,10 @@
           },
           "fullAssetLocked": {
             "type": "boolean"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -60952,6 +63130,10 @@
           "fullAssetLocked": {
             "type": "boolean"
           },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "salesCount": {
             "type": "number"
           },
@@ -60989,6 +63171,7 @@
           "likes",
           "fullAssetUrl",
           "fullAssetLocked",
+          "coverUrl",
           "salesCount",
           "rejectionReason",
           "rejectedAt"
@@ -61300,6 +63483,10 @@
           "fullAssetLocked": {
             "type": "boolean"
           },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "likedByMe": {
             "type": "boolean"
           },
@@ -61343,6 +63530,7 @@
           "likes",
           "fullAssetUrl",
           "fullAssetLocked",
+          "coverUrl",
           "likedByMe",
           "savedByMe",
           "followsCreator",
@@ -61421,6 +63609,10 @@
             "type": "string",
             "nullable": true
           },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "durationLabel": {
             "type": "string",
             "nullable": true
@@ -61444,6 +63636,7 @@
           "locked",
           "title",
           "thumbnailUrl",
+          "coverUrl",
           "durationLabel",
           "pageCount",
           "frameCount",
@@ -61713,6 +63906,10 @@
             "type": "number"
           },
           "previewAssetUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "coverUrl": {
             "type": "string",
             "nullable": true
           }
@@ -69585,6 +71782,389 @@
           "slotsTotal"
         ]
       },
+      "SuspensionEntryView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "other",
+              "spam",
+              "harassment",
+              "hate",
+              "sexual",
+              "illegal",
+              "impersonation"
+            ]
+          },
+          "reasonLabel": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "reportId": {
+            "type": "string",
+            "nullable": true
+          },
+          "suspendedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "suspendedBy": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "email",
+              "role"
+            ]
+          },
+          "liftedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "liftNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "liftedBy": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "email",
+              "role"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "reasonLabel",
+          "note",
+          "reportId",
+          "suspendedAt",
+          "suspendedBy",
+          "liftedAt",
+          "liftNote",
+          "liftedBy"
+        ]
+      },
+      "AdminSuspensionView": {
+        "type": "object",
+        "properties": {
+          "wawuId": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string",
+            "nullable": true
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "current": {
+            "$ref": "#/components/schemas/SuspensionEntryView",
+            "nullable": true
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuspensionEntryView"
+            }
+          }
+        },
+        "required": [
+          "wawuId",
+          "handle",
+          "suspended",
+          "current",
+          "history"
+        ]
+      },
+      "MySuspensionView": {
+        "type": "object",
+        "properties": {
+          "suspended": {
+            "type": "boolean"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          },
+          "supportEmail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "suspended",
+          "since",
+          "message",
+          "supportEmail"
+        ]
+      },
+      "AdminUgcPerson": {
+        "type": "object",
+        "properties": {
+          "wawuId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "wawuId",
+          "name",
+          "handle"
+        ]
+      },
+      "AdminUgcReportView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "piece",
+              "profile",
+              "community_message",
+              "chat_message",
+              "direct_message"
+            ]
+          },
+          "kindLabel": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "other",
+              "spam",
+              "harassment",
+              "hate",
+              "sexual",
+              "illegal",
+              "impersonation"
+            ]
+          },
+          "reasonLabel": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "reportedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastReportedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reporter": {
+            "$ref": "#/components/schemas/AdminUgcPerson"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/AdminUgcPerson"
+          },
+          "item": {
+            "type": "object",
+            "properties": {
+              "exists": {
+                "type": "boolean"
+              },
+              "title": {
+                "type": "string",
+                "nullable": true
+              },
+              "excerpt": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "exists",
+              "title",
+              "excerpt",
+              "status"
+            ]
+          },
+          "emailed": {
+            "type": "boolean"
+          },
+          "canTakeDown": {
+            "type": "boolean"
+          },
+          "subjectSuspended": {
+            "type": "boolean"
+          },
+          "canSuspend": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "kindLabel",
+          "targetId",
+          "count",
+          "reason",
+          "reasonLabel",
+          "note",
+          "reportedAt",
+          "lastReportedAt",
+          "reporter",
+          "subject",
+          "item",
+          "emailed",
+          "canTakeDown",
+          "subjectSuspended",
+          "canSuspend"
+        ]
+      },
+      "AdminUgcResolveView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "piece",
+              "profile",
+              "community_message",
+              "chat_message",
+              "direct_message"
+            ]
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "dismissed",
+              "actioned"
+            ]
+          },
+          "resolved": {
+            "type": "number"
+          },
+          "suspended": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "targetId",
+          "status",
+          "resolved",
+          "suspended"
+        ]
+      },
+      "UgcReportView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "piece",
+              "profile",
+              "community_message",
+              "chat_message",
+              "direct_message"
+            ]
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "other",
+              "spam",
+              "harassment",
+              "hate",
+              "sexual",
+              "illegal",
+              "impersonation"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "dismissed",
+              "actioned"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "alreadyReported": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "targetId",
+          "reason",
+          "status",
+          "createdAt",
+          "alreadyReported"
+        ]
+      },
       "LearnGuideSection": {
         "type": "object",
         "properties": {
@@ -74349,6 +76929,10 @@
             "type": "string",
             "nullable": true
           },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "bought": {
             "type": "boolean"
           },
@@ -74363,6 +76947,7 @@
           "accessType",
           "priceKobo",
           "thumbnailUrl",
+          "coverUrl",
           "bought",
           "creator"
         ]
@@ -74574,6 +77159,10 @@
             "type": "string",
             "nullable": true
           },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "creator": {
             "$ref": "#/components/schemas/FeedCreator"
           }
@@ -74583,6 +77172,7 @@
           "title",
           "contentType",
           "thumbnailUrl",
+          "coverUrl",
           "creator"
         ]
       },
@@ -74774,9 +77364,10 @@
             "enum": [
               "community",
               "content",
-              "transaction",
               "profile",
-              "paid_question"
+              "transaction",
+              "paid_question",
+              "ai_job"
             ]
           },
           "id": {
@@ -76404,6 +78995,10 @@
           "priceKobo": {
             "type": "integer"
           },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "payment": {
             "$ref": "#/components/schemas/PaymentQuoteView"
           }
@@ -76413,6 +79008,7 @@
           "title",
           "creator",
           "priceKobo",
+          "coverUrl",
           "payment"
         ]
       },
@@ -77285,7 +79881,8 @@
               "minute",
               "track",
               "message",
-              "minute_per_language"
+              "minute_per_language",
+              "second"
             ]
           },
           "units": {
@@ -77511,6 +80108,45 @@
           "languageCode": {
             "type": "boolean"
           },
+          "only": {
+            "type": "string",
+            "enum": [
+              "video",
+              "audio"
+            ],
+            "nullable": true
+          },
+          "maxSeconds": {
+            "type": "number",
+            "nullable": true
+          },
+          "voice": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "clone": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "description": {
+            "type": "object",
+            "properties": {
+              "maxCharacters": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "maxCharacters"
+            ],
+            "nullable": true
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "nullable": true
+          },
           "dubbing": {
             "$ref": "#/components/schemas/AiToolDubbingView",
             "nullable": true
@@ -77522,6 +80158,158 @@
           "maxBytes",
           "maxMinutes",
           "languageCode"
+        ]
+      },
+      "AiToolOptionsView": {
+        "type": "object",
+        "properties": {
+          "shapes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lengths": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "nullable": true
+          },
+          "photo": {
+            "type": "object",
+            "properties": {
+              "use": {
+                "type": "string",
+                "enum": [
+                  "required",
+                  "optional"
+                ]
+              },
+              "folder": {
+                "type": "string"
+              },
+              "accepts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "maxBytes": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "use",
+              "folder",
+              "accepts",
+              "maxBytes"
+            ],
+            "nullable": true
+          },
+          "speech": {
+            "type": "object",
+            "properties": {
+              "audioFolder": {
+                "type": "string"
+              },
+              "accepts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "maxSeconds": {
+                "type": "number"
+              },
+              "fromJob": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "audioFolder",
+              "accepts",
+              "maxSeconds",
+              "fromJob"
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "shapes"
+        ]
+      },
+      "AiToolPodcastView": {
+        "type": "object",
+        "properties": {
+          "modes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "conversation",
+                "bulletin"
+              ]
+            }
+          },
+          "maxVoices": {
+            "type": "number"
+          },
+          "durations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "enum": [
+                    "short",
+                    "standard",
+                    "long"
+                  ]
+                },
+                "action": {
+                  "type": "string"
+                },
+                "costPoints": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "action",
+                "costPoints"
+              ]
+            }
+          },
+          "maxLinkCharacters": {
+            "type": "number"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "modes",
+          "maxVoices",
+          "durations",
+          "maxLinkCharacters",
+          "languages"
         ]
       },
       "AiVoiceView": {
@@ -77553,13 +80341,25 @@
           "id": {
             "type": "string",
             "enum": [
+              "video",
+              "image",
               "music",
               "voiceover",
               "quick-voice",
               "sound-effect",
               "captions",
               "clean-audio",
-              "dubbing"
+              "dubbing",
+              "photo-edit",
+              "talking-photo",
+              "voice-changer",
+              "dialogue",
+              "my-voice",
+              "video-music",
+              "stems",
+              "audiobook",
+              "podcast",
+              "receptionist"
             ]
           },
           "action": {
@@ -77576,7 +80376,9 @@
             "enum": [
               "use",
               "minute",
-              "track"
+              "track",
+              "message",
+              "second"
             ]
           },
           "costPointsPerUnit": {
@@ -77592,7 +80394,12 @@
                 "type": "string",
                 "enum": [
                   "text",
+                  "video",
+                  "image",
+                  "chat",
                   "file",
+                  "dialogue",
+                  "podcast",
                   "prompt"
                 ]
               },
@@ -77608,6 +80415,26 @@
               },
               "file": {
                 "$ref": "#/components/schemas/AiToolFileView",
+                "nullable": true
+              },
+              "options": {
+                "$ref": "#/components/schemas/AiToolOptionsView",
+                "nullable": true
+              },
+              "dialogue": {
+                "type": "object",
+                "properties": {
+                  "maxVoices": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "maxVoices"
+                ],
+                "nullable": true
+              },
+              "podcast": {
+                "$ref": "#/components/schemas/AiToolPodcastView",
                 "nullable": true
               }
             },
@@ -77680,7 +80507,9 @@
             "type": "string",
             "enum": [
               "text",
+              "video",
               "audio",
+              "image",
               "subtitles"
             ]
           },
@@ -77690,6 +80519,31 @@
           },
           "text": {
             "type": "string",
+            "nullable": true
+          },
+          "contentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "bytes": {
+            "type": "number",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "downloadUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "pieceFormat": {
+            "type": "string",
+            "enum": [
+              "video",
+              "audio",
+              "image"
+            ],
             "nullable": true
           }
         },
@@ -77706,13 +80560,25 @@
           "tool": {
             "type": "string",
             "enum": [
+              "video",
+              "image",
               "music",
               "voiceover",
               "quick-voice",
               "sound-effect",
               "captions",
               "clean-audio",
-              "dubbing"
+              "dubbing",
+              "photo-edit",
+              "talking-photo",
+              "voice-changer",
+              "dialogue",
+              "my-voice",
+              "video-music",
+              "stems",
+              "audiobook",
+              "podcast",
+              "receptionist"
             ]
           },
           "state": {
@@ -77812,7 +80678,8 @@
               "minute",
               "track",
               "message",
-              "minute_per_language"
+              "minute_per_language",
+              "second"
             ]
           },
           "units": {
@@ -77872,6 +80739,188 @@
           "cap",
           "wallet",
           "walletNote"
+        ]
+      },
+      "AiSpeechQuoteView": {
+        "type": "object",
+        "properties": {
+          "speech": {
+            "type": "object",
+            "properties": {
+              "seconds": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "seconds"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "per": {
+            "type": "string",
+            "enum": [
+              "use",
+              "minute",
+              "track",
+              "message",
+              "minute_per_language",
+              "second"
+            ]
+          },
+          "units": {
+            "type": "number"
+          },
+          "languages": {
+            "type": "number"
+          },
+          "perUnitPoints": {
+            "type": "number"
+          },
+          "costPoints": {
+            "type": "number"
+          },
+          "balancePoints": {
+            "type": "number"
+          },
+          "shortfallPoints": {
+            "type": "number"
+          },
+          "useWallet": {
+            "type": "boolean"
+          },
+          "quoteToken": {
+            "type": "string"
+          },
+          "canRun": {
+            "type": "boolean"
+          },
+          "cap": {
+            "$ref": "#/components/schemas/PointsCapView",
+            "nullable": true
+          },
+          "wallet": {
+            "$ref": "#/components/schemas/PointsShortfallOfferView",
+            "nullable": true
+          },
+          "walletNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "speech",
+          "action",
+          "title",
+          "per",
+          "units",
+          "languages",
+          "perUnitPoints",
+          "costPoints",
+          "balancePoints",
+          "shortfallPoints",
+          "useWallet",
+          "quoteToken",
+          "canRun",
+          "cap",
+          "wallet",
+          "walletNote"
+        ]
+      },
+      "SavedVoiceView": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "none",
+              "ready",
+              "making"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "consent": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "line"
+            ]
+          },
+          "recording": {
+            "type": "object",
+            "properties": {
+              "folder": {
+                "type": "string"
+              },
+              "accepts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "minSeconds": {
+                "type": "number"
+              },
+              "maxSeconds": {
+                "type": "number"
+              },
+              "maxBytes": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "folder",
+              "accepts",
+              "minSeconds",
+              "maxSeconds",
+              "maxBytes"
+            ]
+          }
+        },
+        "required": [
+          "available",
+          "state",
+          "name",
+          "createdAt",
+          "consent",
+          "recording"
+        ]
+      },
+      "SavedVoiceRemovedView": {
+        "type": "object",
+        "properties": {
+          "myVoice": {
+            "$ref": "#/components/schemas/SavedVoiceView"
+          },
+          "atProvider": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "gone"
+            ]
+          }
+        },
+        "required": [
+          "myVoice",
+          "atProvider"
         ]
       },
       "AiJobPage": {
@@ -77945,6 +80994,257 @@
         "required": [
           "own",
           "atProvider"
+        ]
+      },
+      "AiPieceView": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "video",
+              "audio",
+              "image"
+            ]
+          },
+          "full": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "fileUrl": {
+                "type": "string"
+              },
+              "contentType": {
+                "type": "string"
+              },
+              "bytes": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "fileUrl",
+              "contentType",
+              "bytes",
+              "name"
+            ]
+          },
+          "suggestedTitle": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "format",
+          "full",
+          "suggestedTitle"
+        ]
+      },
+      "ReceptionistKnowledgeView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "file",
+              "url"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "bytes",
+          "createdAt"
+        ]
+      },
+      "ReceptionistView": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "setUp": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "businessName": {
+                "type": "string"
+              },
+              "offer": {
+                "type": "string"
+              },
+              "replyStyle": {
+                "type": "string"
+              },
+              "language": {
+                "type": "string"
+              },
+              "voiceId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "businessName",
+              "offer",
+              "replyStyle",
+              "language",
+              "voiceId"
+            ],
+            "nullable": true
+          },
+          "knowledge": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceptionistKnowledgeView"
+            }
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "docsMax": {
+                "type": "number"
+              },
+              "docMaxBytes": {
+                "type": "number"
+              },
+              "textMaxChars": {
+                "type": "number"
+              },
+              "messageMaxChars": {
+                "type": "number"
+              },
+              "voiceMaxMinutes": {
+                "type": "number"
+              },
+              "languages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "docsMax",
+              "docMaxBytes",
+              "textMaxChars",
+              "messageMaxChars",
+              "voiceMaxMinutes",
+              "languages"
+            ]
+          },
+          "voices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiVoiceView"
+            }
+          }
+        },
+        "required": [
+          "available",
+          "setUp",
+          "details",
+          "knowledge",
+          "limits",
+          "voices"
+        ]
+      },
+      "ReceptionistRemovedView": {
+        "type": "object",
+        "properties": {
+          "receptionist": {
+            "$ref": "#/components/schemas/ReceptionistView"
+          },
+          "atProvider": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "gone"
+            ]
+          }
+        },
+        "required": [
+          "receptionist",
+          "atProvider"
+        ]
+      },
+      "VoiceSessionView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "failed",
+              "done",
+              "working"
+            ]
+          },
+          "signedUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "conversationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxSeconds": {
+            "type": "number"
+          },
+          "heldPoints": {
+            "type": "number"
+          },
+          "keptPoints": {
+            "type": "number"
+          },
+          "minutes": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "signedUrl",
+          "conversationId",
+          "maxSeconds",
+          "heldPoints",
+          "keptPoints",
+          "minutes"
         ]
       },
       "MovieCardView": {

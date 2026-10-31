@@ -100,3 +100,28 @@ describe('M26 · Rejected (Android)', () => {
     expect(JSON.stringify(screen.toJSON())).not.toContain('previews/cover.pdf');
   });
 });
+
+describe('M28 and M26 · covers (R-114, Android)', () => {
+  it('a user sees the cover of a video, an audio and a PDF in My content, and the preview picture when the cover will not load', async () => {
+    hub.answers[`GET ${LIST}`] = page([
+      piece({ id: 'cv', title: 'Covered video', contentType: 'video', previewAssetUrl: 'https://cdn.test/previews/clip.mp4?sig=1', coverUrl: 'https://cdn.test/covers/v.jpg?sig=1' }),
+      piece({ id: 'ct', title: 'Covered deck', contentType: 'template', previewAssetUrl: 'https://cdn.test/previews/cover.png?sig=1', coverUrl: 'https://cdn.test/covers/t.png?sig=1' }),
+    ]);
+    await renderFrame(<LibraryScreen onBack={jest.fn()} onCreate={jest.fn()} onSeeWhy={jest.fn()} />);
+    await screen.findByText('Covered video');
+    expect(row('cv').getByTestId('library-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/v.jpg?sig=1' }]);
+    await fireEvent(row('ct').getByTestId('library-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    expect(row('ct').getByTestId('library-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/previews/cover.png?sig=1' }]);
+    await fireEvent(row('cv').getByTestId('library-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    expect(row('cv').getByTestId('library-thumb-mark')).toBeTruthy();
+  });
+
+  it('a turned down video with a cover shows the cover on the Rejected card', async () => {
+    hub.answers[`GET /api/hub/content/mine/library/r1`] = ok(
+      piece({ id: 'r1', title: 'A turned down piece', status: 'rejected', salesCount: 0, rejectionReason: 'Not clear.', rejectedAt: new Date().toISOString(), contentType: 'video', previewAssetUrl: 'https://cdn.test/previews/clip.mp4?sig=1', coverUrl: 'https://cdn.test/covers/v.jpg?sig=1' }),
+    );
+    await renderFrame(<RejectedScreen id="r1" onBack={jest.fn()} onReplace={jest.fn()} onEdit={jest.fn()} onDeleted={jest.fn()} onSent={jest.fn()} />);
+    await screen.findByText('Not approved');
+    expect(screen.getByTestId('rejected-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/v.jpg?sig=1' }]);
+  });
+});
