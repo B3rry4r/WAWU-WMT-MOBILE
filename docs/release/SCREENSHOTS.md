@@ -68,7 +68,7 @@ Folder: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpa
 
 | File | Screen | Artboard |
 |---|---|---|
-| `welcome-light.jpg` | Welcome ("The creators and professionals ecosystem.") | A1 |
+| `welcome-light.jpg` | Welcome (the mark and "Create. Sell. Get paid. Connect. Grow.", R-119) | A1 |
 | `account-type-light.jpg` | Why you're here | A2 |
 | `sign-up-light.jpg` | Create your account | A3 |
 | `sign-in-light.jpg` | Sign in | A22 |
