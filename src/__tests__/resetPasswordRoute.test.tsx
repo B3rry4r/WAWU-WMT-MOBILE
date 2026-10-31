@@ -277,3 +277,145 @@ describe('RESET-APP · Android\'s back button', () => {
     expect(held).toBe(false);
   });
 });
+
+/**
+ * RESET-APP round 1 (M1, L1): the reset token is a secret that lives in the link and in the one request that spends it. It goes
+ * nowhere else: not on to the sign-in route, not into a log, not into the phone's storage, and not held in the route while
+ * "Password changed" shows. Each probe below first shows it can see the token (so a pass is never an empty look), then proves it is gone.
+ */
+type Navigator = { getRootState: () => unknown };
+function navigationState(): string {
+  const { store } = jest.requireActual('expo-router/build/global-state/router-store') as {
+    store: { navigationRef: { current: Navigator | null } };
+  };
+  return JSON.stringify(store.navigationRef.current?.getRootState() ?? null);
+}
+const routeParams = () => pathnameAndParams().params;
+const secureStore = jest.requireMock('expo-secure-store') as { setItemAsync: jest.Mock; deleteItemAsync: jest.Mock };
+
+describe.each(OSES)('RESET-APP round 1 · the token goes nowhere but the one request (%s)', (name) => {
+  beforeEach(() => {
+    os = jest.replaceProperty(Platform, 'OS', name);
+  });
+
+  it.each([
+    ['signed out', false],
+    ['signed in', true],
+  ])('%s: the route holds the token while the form is open, drops it the moment the password is saved, and Sign in carries only the email', async (_who, signedInPhone) => {
+    if (signedInPhone) signIn();
+    await open(LINK);
+    await screen.findByTestId('reset-password');
+    // The probe sees it: the link's token is in the route's params and in the navigation state.
+    expect(routeParams().token).toBe(TOKEN);
+    expect(navigationState()).toContain(TOKEN);
+
+    await setNewPassword('brand-new-pass-1');
+    expect(await screen.findByTestId('reset-done')).toBeTruthy();
+    // L1: "Password changed" is showing and the token is already gone from the route (it is spent, nothing holds it).
+    await waitFor(() => expect(routeParams().token).toBeUndefined());
+    expect(navigationState()).not.toContain(TOKEN);
+    expect(pathname()).toBe('/reset-password');
+    // The screen stayed (the route was reset under it, not replaced): "Password changed" is up, and the spent-link screen never took its place.
+    expect(screen.getByTestId('reset-done')).toBeTruthy();
+    expect(screen.queryByTestId('reset-invalid')).toBeNull();
+
+    await press(screen.getByText('Sign in'));
+    expect(await screen.findByTestId('sign-in')).toBeTruthy();
+    await waitFor(() => expect(pathname()).toBe('/sign-in'));
+    // M1: the sign-in route's params are the email and nothing else, and the whole navigation state has no token in it.
+    expect(routeParams()).toEqual({ email: EMAIL });
+    expect(routeParams().token).toBeUndefined();
+    expect(navigationState()).not.toContain(TOKEN);
+  });
+
+  it('a refused save (spent link) still opens Forgot password with the email only, never the token', async () => {
+    resetAnswer = 'spent';
+    await open(LINK);
+    await setNewPassword('brand-new-pass-1');
+    expect(await screen.findByTestId('reset-invalid')).toBeTruthy();
+    await press(screen.getByText('Back to Forgot password'));
+    expect(await screen.findByTestId('forgot-password')).toBeTruthy();
+    await waitFor(() => expect(pathname()).toBe('/forgot-password'));
+    expect(routeParams()).toEqual({ email: EMAIL });
+    expect(navigationState()).not.toContain(TOKEN);
+  });
+
+  it('a console spy sees no token in any log, warning or error, from opening the link to signing in with the new password, and in a refused save and a dead connection', async () => {
+    const said: unknown[][] = [];
+    for (const method of ['log', 'info', 'warn', 'error', 'debug', 'trace'] as const) {
+      jest.spyOn(console, method).mockImplementation((...args: unknown[]) => void said.push(args));
+    }
+    const everything = () => said.map((args) => args.map((a) => (a instanceof Error ? `${a.name} ${a.message} ${a.stack}` : typeof a === 'string' ? a : JSON.stringify(a))).join(' ')).join('\n');
+
+    // The spy is wired: a line logged by the app's own code path is seen. (The probe never carries the token.)
+    console.log('probe');
+    expect(said).toEqual([['probe']]);
+
+    // Whole flow, saved.
+    await open(LINK);
+    await setNewPassword('brand-new-pass-1');
+    await screen.findByTestId('reset-done');
+    await press(screen.getByText('Sign in'));
+    await screen.findByTestId('sign-in');
+    await type('sign-in-password', 'brand-new-pass-1');
+    await press('sign-in-submit');
+    await waitFor(() => expect(seen.some((s) => s.path === '/auth/login')).toBe(true));
+    expect(everything()).not.toContain(TOKEN);
+  });
+
+  it('a console spy sees no token when the save is refused, the connection is dead, or the link is a mangled one', async () => {
+    const said: unknown[][] = [];
+    for (const method of ['log', 'info', 'warn', 'error', 'debug', 'trace'] as const) {
+      jest.spyOn(console, method).mockImplementation((...args: unknown[]) => void said.push(args));
+    }
+    const everything = () => said.map((args) => args.map((a) => (a instanceof Error ? `${a.name} ${a.message} ${a.stack}` : typeof a === 'string' ? a : JSON.stringify(a))).join(' ')).join('\n');
+
+    resetAnswer = 'spent';
+    await open(LINK);
+    await setNewPassword('brand-new-pass-2');
+    await screen.findByTestId('reset-invalid');
+    expect(everything()).not.toContain(TOKEN);
+
+    resetAnswer = 'offline';
+    await open(LINK);
+    await setNewPassword('brand-new-pass-3');
+    await screen.findByTestId('reset-banner');
+    expect(everything()).not.toContain(TOKEN);
+
+    await open(`https://wawuafrica.com/reset-password?token=${TOKEN}%20x&email=${encodeURIComponent(EMAIL)}`);
+    await screen.findByTestId('reset-invalid');
+    expect(everything()).not.toContain(TOKEN);
+  });
+
+  it.each([
+    ['signed out', false],
+    ['signed in', true],
+  ])('%s: the phone\'s vault and any other storage never receive the token: no write, no key, no value', async (_who, signedInPhone) => {
+    const localWrites: [string, string][] = [];
+    const hadLocal = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: { getItem: () => null, setItem: (key: string, value: string) => void localWrites.push([key, value]), removeItem: () => undefined },
+    });
+    try {
+      secureStore.setItemAsync.mockClear();
+      if (signedInPhone) signIn();
+      await open(LINK);
+      await setNewPassword('brand-new-pass-1');
+      await screen.findByTestId('reset-done');
+      await press(screen.getByText('Sign in'));
+      await screen.findByTestId('sign-in');
+      await type('sign-in-password', 'brand-new-pass-1');
+      await press('sign-in-submit');
+      await waitFor(() => expect(seen.some((s) => s.path === '/auth/login')).toBe(true));
+      // The probe sees the vault: signing in with the new password did write its own tokens.
+      await waitFor(() => expect(secureStore.setItemAsync).toHaveBeenCalled());
+      expect(JSON.stringify(secureStore.setItemAsync.mock.calls)).not.toContain(TOKEN);
+      expect(JSON.stringify([...mockVault.entries()])).not.toContain(TOKEN);
+      expect(JSON.stringify(localWrites)).not.toContain(TOKEN);
+    } finally {
+      if (hadLocal) Object.defineProperty(globalThis, 'localStorage', hadLocal);
+      else delete (globalThis as { localStorage?: unknown }).localStorage;
+    }
+  });
+});

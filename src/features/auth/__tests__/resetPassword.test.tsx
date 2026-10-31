@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiError } from '@/api/errors';
 
 import { passwordsMatch, readResetLink, resetPasswordOutcome, resetPasswordProblems } from '../resetPassword';
-import { ResetPasswordScreen, type ResetPasswordScreenProps } from '../ResetPasswordScreen';
+import { ResetPasswordScreen, SPENT_LINK_MESSAGE, type ResetPasswordScreenProps } from '../ResetPasswordScreen';
 
 /**
  * RESET-APP (R-123): the New password screen the emailed reset link opens, as a person uses it, on the Android phone and on the iPhone.
@@ -286,5 +286,56 @@ describe.each(OSES)('RESET-APP · the New password screen (%s)', (name) => {
     expect(rtl.screen.getByTestId('reset-new').props.textContentType).toBe('newPassword');
     expect(rtl.screen.getByTestId('reset-new').props.autoComplete).toBe('new-password');
     expect(rtl.screen.getByTestId('reset-confirm').props.autoComplete).toBe('new-password');
+  });
+});
+
+describe.each(OSES)('RESET-APP round 1 · the token is dropped the moment the password is saved, and the spent-link line has no orphan (%s)', (name) => {
+  beforeEach(() => phone(name));
+
+  it('onSaved is called once, after "Password changed" is up, and never for a refused save', async () => {
+    const order: string[] = [];
+    const onSaved = jest.fn(() => void order.push(rtl.screen.queryByTestId('reset-done') ? 'done is showing' : 'done is NOT showing'));
+    await draw({ onSaved });
+    await typeInto('reset-new', 'new-password-1');
+    await typeInto('reset-confirm', 'new-password-1');
+    await save();
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    expect(rtl.screen.getByTestId('reset-done')).toBeTruthy();
+    expect(order).toEqual(['done is showing']);
+  });
+
+  it.each([
+    ['a spent link', new ApiError('unauthorized', 401, 'Invalid or expired reset token')],
+    ['a short password', new ApiError('validation', 400, 'password must be longer')],
+    ['no connection', new ApiError('network', 0, 'No connection.')],
+  ])('%s: onSaved is not called (the token is still the one thing the person can retry with)', async (_label, error) => {
+    const onSaved = jest.fn();
+    await draw({ onSave: jest.fn(async () => Promise.reject(error)), onSaved });
+    await typeInto('reset-new', 'new-password-1');
+    await typeInto('reset-confirm', 'new-password-1');
+    await save();
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it('a throw in onSaved is never read as a refused save: "Password changed" stays', async () => {
+    const onSaved = jest.fn(() => {
+      throw new Error('route is gone');
+    });
+    await draw({ onSaved });
+    await typeInto('reset-new', 'new-password-1');
+    await typeInto('reset-confirm', 'new-password-1');
+    await save();
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    expect(rtl.screen.getByTestId('reset-done')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('reset-banner')).toBeNull();
+  });
+
+  it('the spent-link line is two sentences on two lines, so no short word is left alone at the end of a wrapped line (L2)', async () => {
+    await draw({ linkUsable: false, email: '' });
+    const line = rtl.screen.getByText('It has expired or was already used. Ask for a new one.');
+    expect(line.props.children).toBe(SPENT_LINK_MESSAGE);
+    expect(SPENT_LINK_MESSAGE.split('\n')).toEqual(['It has expired or was already used.', 'Ask for a new one.']);
+    // Each line is short enough for a 320 wide phone at the line's size (14.5): well under 36 characters, so neither wraps.
+    for (const part of SPENT_LINK_MESSAGE.split('\n')) expect(part.length).toBeLessThanOrEqual(36);
   });
 });
