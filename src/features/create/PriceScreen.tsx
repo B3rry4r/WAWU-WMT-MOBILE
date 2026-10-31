@@ -21,12 +21,13 @@ import { font, space, useWawu } from '@/theme';
 
 import { allowanceKey, createContent, fetchSaleTerms, saleTermsKey, saveLessons, type LessonInput, type SaleTerms } from './api';
 import { CreateFrame } from './CreateFrame';
-import { fullFileOf, getCover, resetDraft, setMade, useCover, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
+import { fullFileOf, getCover, getDraft, getSmallCopy, resetDraft, setMade, setPreview, useCover, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
 import { priceOf, priceReady, setDetails, setSent, useDetails, type AccessType } from './details';
-import { formatBytes, iconOf, labelOf, type FormatId } from './model';
+import { coverRequired, formatBytes, iconOf, labelOf, previewWayOf, type FormatId } from './model';
 import { Stepper } from './parts';
 import { listingStill } from './still';
 import { coverAssetFor } from './coverSend';
+import { uploadFile } from './upload';
 
 /** The cover 52 by 66 with 10 corners; the summary card 12 by 14 (the picker's own measures are in `PricePicker`). */
 const priceMetrics = { coverW: 52, coverH: 66, coverCorner: 10, title: 14.5, meta: 12.5, metaGap: 3, padV: space.md, padH: 14, note: 12.5 } as const;
@@ -41,10 +42,13 @@ export const MODES = [
 /** `84 pages`, or what the file weighs when it does not say how many pages it has. */
 const sizeOf = (file: UploadedFile): string => (file.pages ? `${file.pages} ${file.pages === 1 ? 'page' : 'pages'}` : formatBytes(file.bytes));
 
-/** "PDF · 84 pages · preview 12 pages": the format, then the full file and the preview, each as the person's own file says. */
-export function pieceMeta(format: FormatId, full: UploadedFile, preview: UploadedFile): string {
-  return `${labelOf(format)} · ${sizeOf(full)} · preview ${sizeOf(preview)}`;
+/** "PDF · 84 pages": the format, then the full file as the person's own file says. R-118: the preview is made for them, so it is not listed. */
+export function pieceMeta(format: FormatId, full: UploadedFile): string {
+  return `${labelOf(format)} · ${sizeOf(full)}`;
 }
+
+/** The sentence when a picture's smaller copy is gone (the app was closed and opened again, or the phone could not keep it). */
+export const COPY_GONE = 'Your preview could not be made. Choose your picture again.';
 
 /** The sentence under a refused send: the Hub's own words when it gave them, else one the person can act on. */
 export const sendFailure = (error: unknown): string => (error instanceof ApiError && error.message ? error.message : 'We could not send it. Check your connection and try again.');
@@ -59,6 +63,25 @@ export function lessonInputs(lessons: readonly DraftLesson[]): LessonInput[] {
 /** The sentence under a course that was taken for review while its lessons were not saved. */
 export const lessonsFailure = (error: unknown): string =>
   `Your course is in review, but its lessons did not save. ${error instanceof ApiError && error.message ? error.message : 'Check your connection and try again.'}`;
+
+/**
+ * The `previewAsset` a piece is sent with, or null when it sends none (R-118). Only a PAID picture has one to send: the smaller copy the phone
+ * made when the picture was chosen, uploaded now as the preview and kept in the draft, so a Send that fails and is tried again uses it rather
+ * than sending a second. A free piece sends none, and one left over from an earlier try at paid is given back.
+ */
+export async function previewFor(format: FormatId, full: UploadedFile, free: boolean): Promise<string | null> {
+  if (free || previewWayOf(format, full) !== 'copy') {
+    if (getDraft().preview) setPreview(null);
+    return null;
+  }
+  const held = getDraft().preview;
+  if (held) return held.fileUrl;
+  const copy = getSmallCopy();
+  if (!copy) throw new ApiError('unknown', 0, COPY_GONE);
+  const uploaded = await uploadFile(copy, { folder: 'content/preview', format: 'image' }, () => undefined);
+  setPreview(uploaded);
+  return uploaded.fileUrl;
+}
 
 export type PriceScreenProps = {
   format: FormatId;
@@ -78,7 +101,6 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   const details = useDetails();
   const draft = useDraft();
   const lessons = useLessons();
-  const { preview } = draft;
   const full = fullFileOf(draft, lessons);
   const made = useMade();
   const queryClient = useQueryClient();
@@ -98,7 +120,12 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
 
   const send = async () => {
     const price = free ? 0 : priceOf(details.price);
-    if (sending.current || price === null || !full || !preview || details.category === null) return;
+    if (sending.current || price === null || !full || details.category === null) return;
+    // A template, or a course with no video first, previews as its cover: a paid one cannot be sent without it (step 3 holds Continue for the same reason).
+    if (coverRequired(previewWayOf(format, full), free) && !(getCover().mode === 'picture' && getCover().file)) {
+      setFailure('Add a cover first. It is the preview buyers see.');
+      return;
+    }
     sending.current = true;
     setBusy(true);
     setFailure(null);
@@ -106,7 +133,8 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
       let taken = made;
       if (!taken) {
         // The cover (R-114): the picture the person picked, none, or by default the frame of a video preview, sent to `content/cover` now.
-        const coverAsset = await coverAssetFor(preview, getCover());
+        const coverAsset = await coverAssetFor(full, getCover());
+        const previewAsset = await previewFor(format, full, free);
         const sent = await createContent({
           contentType: format,
           title: details.title.trim(),
@@ -114,7 +142,9 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
           category: details.category,
           accessType: details.accessType,
           price,
-          previewAsset: preview.fileUrl,
+          // R-118: nobody uploads a preview. A free piece has none; a paid picture sends the smaller copy the phone made; any other paid piece
+          // asks the Hub to make it (the first 30 seconds, the first pages, or its cover).
+          ...(previewAsset ? { previewAsset } : free ? {} : { previewFromFile: true }),
           fullAsset: full.fileUrl,
           ...(coverAsset ? { coverAsset } : {}),
           ...(details.parentCourse ? { parentCourseId: details.parentCourse.id } : {}),
@@ -159,7 +189,7 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   return (
     <CreateFrame testID="price-screen" title={`New ${labelOf(format)}`} subtitle="Step 5 of 5" onLeave={onBack} foot={foot}>
       <Stepper active={3} />
-      {full && preview ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview} /> : null}
+      {full ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full)} cover={full} /> : null}
       <SegmentedTabs
         testID="price-mode"
         label="Paid or free"
@@ -214,7 +244,7 @@ function NoteLine() {
 }
 
 /** The piece as a buyer will meet it: its cover (the preview, when that is a picture, or a frame of it when it is a video), its title, and what was uploaded. Paid or free: the card is the piece, not the price. */
-function PieceCard({ format, title, meta, cover }: { format: FormatId; title: string; meta: string; cover: UploadedFile }) {
+function PieceCard({ format, title, meta, cover }: { format: FormatId; title: string; meta: string; cover: Pick<UploadedFile, 'contentType' | 'previewUri' | 'frame'> }) {
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);
   const picture = listingStill(cover, useCover());

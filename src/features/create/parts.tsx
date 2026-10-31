@@ -33,9 +33,9 @@ export function useFirstTap(ms = 800): () => boolean {
   };
 }
 
-export const STEP_NAMES = ['Upload', 'Preview', 'Details', 'Price'] as const;
+export const STEP_NAMES = ['Upload', 'Cover', 'Details', 'Price'] as const;
 
-/** Upload / Preview / Details / Price, the bars up to the current step lit and its name in full colour. */
+/** Upload / Cover / Details / Price (R-118: step 3 is the cover step), the bars up to the current step lit and its name in full colour. */
 export function Stepper({ active }: { active: 0 | 1 | 2 | 3 }) {
   const { colors } = useWawu();
   return (
