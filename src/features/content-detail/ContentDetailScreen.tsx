@@ -3,6 +3,12 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
+import { queryClient } from '@/api/query';
+import { BottomSheet } from '@/components/BottomSheet';
+import { GroupedList } from '@/components/Card';
+import { IconTile } from '@/components/IconTile';
+import { ListRow } from '@/components/ListRow';
+import { useReporting } from '@/features/report/useReporting';
 import { Button } from '@/components/Button';
 import { formatNaira } from '@/components/pay-sheet';
 import { LoadingView, Skeleton } from '@/components/Skeleton';
@@ -99,6 +105,12 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
   const shown = useShownPrice();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // REPORT-UGC: a piece (and a comment on it) the person reports is gone from their feed, search and comments; the page leaves.
+  const reporting = useReporting((kind) => {
+    void queryClient.invalidateQueries();
+    if (kind === 'piece') onBack();
+  });
   const [rateOpen, setRateOpen] = useState(false);
   const [allLessons, setAllLessons] = useState(false);
   const [open, setOpen] = useState(0);
@@ -227,7 +239,7 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
 
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="content-detail">
-      <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} />
+      <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} onMore={own ? undefined : () => setMenuOpen(true)} />
       <ScrollView testID="detail-scroll" contentContainerStyle={[styles.body, { paddingBottom: footed ? footHeight + space.lg : m.bottom + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <Media piece={item} tag={mediaTag(p, d)} by={by} signal={open} lesson={playing} onLessonEnded={lessonEnded} />
         <View style={styles.title}>
@@ -302,7 +314,7 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
               <Button label="Try again" variant="secondary" size="sm" onPress={() => void page.comments.refetch()} loading={page.comments.isFetching} />
             </View>
           ) : preview.length > 0 ? (
-            <ThreadList idPrefix="preview" items={preview} onReply={() => setCommentsOpen(true)} onLike={(c) => page.likeComment.mutate({ commentId: c.id, next: c.likedByMe !== true })} />
+            <ThreadList idPrefix="preview" items={preview} me={page.me.data} onReport={(c) => reporting.ask('comment', c.id)} onReply={() => setCommentsOpen(true)} onLike={(c) => page.likeComment.mutate({ commentId: c.id, next: c.likedByMe !== true })} />
           ) : null}
         </View>
       </ScrollView>
@@ -321,6 +333,20 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
       <Toast message={notice?.text ?? null} tone={notice?.tone ?? 'alert'} placement="top" offset={insets.top + space.sm} duration={NOTICE_MS} onHide={() => setNotice(null)} />
 
       <CommentsSheet visible={commentsOpen} onClose={() => setCommentsOpen(false)} count={count} page={page} />
+      <BottomSheet visible={menuOpen} onClose={() => setMenuOpen(false)} label="More" gap={space.md} testID="detail-menu-sheet">
+        <GroupedList testID="detail-menu-list">
+          <ListRow
+            testID="detail-menu-report"
+            lead={<IconTile icon="Flag" />}
+            title="Report this piece"
+            onPress={() => {
+              setMenuOpen(false);
+              reporting.ask('piece', p.id);
+            }}
+          />
+        </GroupedList>
+      </BottomSheet>
+      {reporting.element}
       <ShareSheet visible={shareOpen} onClose={() => setShareOpen(false)} piece={{ id: p.id, title: p.title, by }} onShared={() => page.shared.mutate()} />
       <RateSheet
         visible={rateOpen}

@@ -9475,6 +9475,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["UgcReportController_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -18928,6 +18944,87 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
+        };
+        CreateUgcReportDto: {
+            /**
+             * @description What is being reported.
+             * @enum {string}
+             */
+            kind: "piece" | "comment" | "profile" | "community_message" | "chat_message" | "direct_message";
+            /**
+             * Format: uuid
+             * @description The id of that thing (a piece, comment, community message, chat message or paid question), or the person's wawuId for a profile.
+             */
+            targetId: string;
+            /**
+             * @description Why, from the short fixed list.
+             * @enum {string}
+             */
+            reason: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
+            /** @description Anything the reporter wants a moderator to know. Optional. */
+            note?: string;
+        };
+        UgcReportView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            targetId: string;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            /** @enum {string} */
+            status: "open" | "dismissed" | "actioned";
+            /** Format: date-time */
+            createdAt: string;
+            alreadyReported: boolean;
+        };
+        AdminUgcPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+        };
+        AdminUgcReportView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            kindLabel: string;
+            targetId: string;
+            count: number;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            reasonLabel: string;
+            note: string | null;
+            /** Format: date-time */
+            reportedAt: string;
+            /** Format: date-time */
+            lastReportedAt: string;
+            reporter: components["schemas"]["AdminUgcPerson"];
+            subject: components["schemas"]["AdminUgcPerson"];
+            item: {
+                exists: boolean;
+                title: string | null;
+                excerpt: string | null;
+                status: string | null;
+            };
+            emailed: boolean;
+            canTakeDown: boolean;
+        };
+        AdminUgcResolveView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            targetId: string;
+            /** @enum {string} */
+            status: "dismissed" | "actioned";
+            resolved: number;
+        };
+        ResolveUgcReportDto: {
+            /**
+             * @description `dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community message or chat message is deleted).
+             * @enum {string}
+             */
+            action: "dismiss" | "take_down";
+            /** @description Why. Required for a take-down (it is the only record of why it came down); optional for a dismissal. */
+            note?: string;
         };
     };
     responses: never;
@@ -37730,6 +37827,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StorePurchaseView"];
+                };
+            };
+        };
+    };
+    UgcReportController_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUgcReportDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UgcReportView"];
                 };
             };
         };

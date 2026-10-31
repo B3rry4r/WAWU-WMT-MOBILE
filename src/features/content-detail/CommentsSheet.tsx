@@ -14,6 +14,7 @@ import { compactCount } from '@/features/feed/model';
 import type { Comment } from './api';
 import { COMMENT_MAX, commenterName, mentionFor, threads } from './model';
 import { ThreadList } from './Parts';
+import { useReporting } from '@/features/report/useReporting';
 import type { Page } from './usePage';
 
 /** design/_gen/home.js line 76: the sheet opens 170 from the top; the box is 44 tall and the send button a 44 disc. */
@@ -40,6 +41,8 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   const { colors, shadows } = useWawu();
   const insets = useSafeAreaInsets();
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  // REPORT-UGC: press and hold another person's comment to report it; the Hub then leaves it out of this person's list.
+  const reporting = useReporting(() => void page.comments.refetch());
   const [text, setText] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const input = useRef<TextInput>(null);
@@ -103,7 +106,7 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   } else {
     body = (
       <View style={styles.list}>
-        <ThreadList idPrefix="comment" items={tree} onReply={reply} onLike={(c) => page.likeComment.mutate({ commentId: c.id, next: c.likedByMe !== true })} />
+        <ThreadList idPrefix="comment" items={tree} me={page.me.data} onReport={(c) => reporting.ask('comment', c.id)} onReply={reply} onLike={(c) => page.likeComment.mutate({ commentId: c.id, next: c.likedByMe !== true })} />
         {page.comments.hasNextPage ? (
           <Button testID="comments-more" label="Show more comments" variant="secondary" size="sm" onPress={() => void page.comments.fetchNextPage()} loading={page.comments.isFetchingNextPage} />
         ) : null}
@@ -114,6 +117,7 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root} testID="comments-sheet" accessibilityViewIsModal>
+        {reporting.element}
         <Pressable testID="comments-backdrop" accessible={false} onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: colors.surfaceScrim }]} tabIndex={-1} />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.sheet, { top: m.top, backgroundColor: colors.surfaceElevated, boxShadow: shadows.sheet }]} role="dialog">
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.grabberHit}>

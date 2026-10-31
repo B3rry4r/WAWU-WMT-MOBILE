@@ -10,6 +10,7 @@ import { font, space, useWawu } from '@/theme';
 import type { CommunityMessage, CommunitySender } from './api';
 import { clockTime } from './format';
 import type { OutgoingMessage } from './useRoomMessages';
+import { LongPressable } from '@/features/report/LongPressable';
 
 /**
  * design/_gen/inbox.js line 72, `post`: a 34 avatar and the words 10 apart; the name 13 / 600 with a "Host" pill and the time 6
@@ -31,10 +32,11 @@ export type PostProps = {
 };
 
 /** One message in the room: who wrote it, a Host tag when the room's host did, when, and what they said. */
-export function MessagePost({ message, sender, isHost }: PostProps) {
+export function MessagePost({ message, sender, isHost, onLongPress }: PostProps & { onLongPress?: () => void }) {
   const who = message.sender ?? sender ?? null;
   const name = who?.name || who?.handle || 'Member';
   return (
+    <LongPressable onLongPress={onLongPress}>
     <View style={styles.row} testID={`post-${message.id}`} accessible accessibilityLabel={`${name}${isHost ? ', host' : ''}, ${clockTime(message.sentAt)}, ${message.text ?? attachmentWords(message).toLowerCase()}`}>
       <Avatar name={name} hue={hueFor(message.senderWawuId)} size={postMetrics.avatar} source={who?.avatarUrl ?? undefined} decorative />
       <View style={styles.words}>
@@ -50,6 +52,7 @@ export function MessagePost({ message, sender, isHost }: PostProps) {
         <Bubble text={message.text} photo={message.imageUrl ?? undefined} fallback={attachmentWords(message)} testID={`post-${message.id}-bubble`} />
       </View>
     </View>
+    </LongPressable>
   );
 }
 

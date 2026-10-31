@@ -18,7 +18,7 @@ import { firstName } from '@/features/send/model';
 import { transferQuery } from '@/features/send/api';
 import { font, layout, space, useWawu } from '@/theme';
 
-import { tickOf, type ChatMessage, type ChatPerson } from './api';
+import { chatKey, tickOf, type ChatMessage, type ChatPerson } from './api';
 import { AttachmentBubble } from './AttachmentBubbles';
 import { attachmentRulesKey, fetchAttachmentLink, fetchAttachmentRules, fileLine, kindOfType, type ChatFile } from './attachments';
 import { AttachSheet } from './AttachSheet';
@@ -30,6 +30,8 @@ import { RequestSheet } from './RequestSheet';
 import { pickChatFile, pickPhotoOrVideo } from './pickAttachment';
 import { PhotoViewer } from './PhotoViewer';
 import { messageWords, threadItems, type ThreadItem } from './thread';
+import { queryClient } from '@/api/query';
+import { useReporting } from '@/features/report/useReporting';
 import { useChatThread } from './useChatThread';
 import { useRequestPay } from './useRequestPay';
 
@@ -70,6 +72,8 @@ export function ChatScreen(props: ChatScreenProps) {
   const focused = useIsFocused();
   const owner = useSessionAccount(undefined);
   const thread = useChatThread(chatId, focused);
+  // REPORT-UGC: press and hold the other person's message to report it; the Hub leaves it out of this person's chat.
+  const reporting = useReporting(() => void queryClient.invalidateQueries({ queryKey: chatKey(chatId) }));
   const { chat, messages } = thread;
   const sends = useQuery(chatSendsQuery(owner, chatId));
   const [attachOpen, setAttachOpen] = useState(false);
@@ -197,12 +201,13 @@ export function ChatScreen(props: ChatScreenProps) {
             at={message.createdAt}
             opening={opening === message.id}
             onOpen={() => void open(message)}
+            onLongPress={message.mine ? undefined : () => reporting.ask('chat_message', message.id)}
           />
         );
       }
-      return <TextBubble id={message.id} text={messageWords(message)} mine={message.mine} at={message.createdAt} />;
+      return <TextBubble id={message.id} text={messageWords(message)} mine={message.mine} at={message.createdAt} onLongPress={message.mine ? undefined : () => reporting.ask('chat_message', message.id)} />;
     },
-    [thread, pay, name, owner, chatId, open, opening],
+    [thread, pay, name, owner, chatId, open, opening, reporting],
   );
 
   let body;
@@ -276,6 +281,7 @@ export function ChatScreen(props: ChatScreenProps) {
 
   return (
     <KeyboardAvoidingView testID="chat-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+      {reporting.element}
       <View style={[styles.bar, { borderBottomColor: colors.borderHairline }]} testID="chat-header">
         <IconButton icon="ChevronLeft" label="Back" onPress={props.onBack} size={headMetrics.back} testID="chat-back" />
         {person ? (
