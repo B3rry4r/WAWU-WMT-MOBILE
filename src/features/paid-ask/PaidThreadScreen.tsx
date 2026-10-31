@@ -1,6 +1,6 @@
 import { QueryClientContext, useQueries, useQuery } from '@tanstack/react-query';
 import { useIsFocused } from 'expo-router';
-import { useContext, useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,8 +18,10 @@ import { hueFor } from '@/features/feed/model';
 import type { FlowHandlers } from '@/features/feedpay/usePaymentFlow';
 import { usePaidFromMany, type PaidFromRead } from '@/features/pay-source/usePaidFrom';
 import { readFailure } from '@/features/profile-edit/failure';
-import { fetchVisitorProfile, visitorKey } from '@/features/visitor/api';
+import { blockPerson, fetchVisitorProfile, visitorKey } from '@/features/visitor/api';
 import { visitorName } from '@/features/visitor/model';
+import { PersonMenu } from '@/features/report/PersonMenu';
+import { useReporting } from '@/features/report/useReporting';
 import { font, layout, space, useWawu } from '@/theme';
 import { useShownPrice } from '@/features/store/ladder/usePrice';
 
@@ -126,6 +128,12 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
     if (records[at]?.pending) return { from: null, settled: false };
     return sources[at] ?? { from: null, settled: true };
   };
+
+  // REPORT-UGC r1 (store gap B): the "..." menu the creator's side has. Report is for the conversation (the newest question of
+  // this person's own); Block closes it, as the profile's Block does. The thanks is drawn above the composer.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [composerHeight, setComposerHeight] = useState(0);
+  const reporting = useReporting(() => void cache.invalidateQueries({ queryKey: threadKey(wawuId) }), composerHeight);
 
   const ask = useAsk(
     pay,
@@ -252,11 +260,30 @@ export function PaidThreadScreen({ wawuId, onBack, pay }: PaidThreadScreenProps)
                 {ready ? sub.text : 'Paid DM'}
               </Text>
             </View>
+            <IconButton icon="Ellipsis" label="More" onPress={() => setMenuOpen(true)} size={head.back} testID="paid-thread-menu" />
           </>
         ) : null}
       </View>
       <View style={styles.body}>{body}</View>
-      {composer}
+      <View onLayout={(event) => setComposerHeight(Math.round(event.nativeEvent.layout.height))} testID="paid-thread-bottom">
+        {composer}
+      </View>
+      {name ? (
+        <PersonMenu
+          visible={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          name={name}
+          report={latest ? { title: 'Report this conversation', onPress: () => reporting.ask('direct_message', latest.id) } : undefined}
+          onBlock={async () => {
+            await blockPerson(wawuId);
+            void cache.invalidateQueries({ queryKey: ['inbox'] });
+            void cache.invalidateQueries({ queryKey: ['feed'] });
+            onBack();
+          }}
+          testID="paid-thread-menu-sheet"
+        />
+      ) : null}
+      {reporting.element}
       <AskSheets ask={ask} onAddMoney={pay.onAddMoney} onOpenWallet={pay.onOpenWallet} onForgotPin={pay.onForgotPin} />
     </KeyboardAvoidingView>
   );

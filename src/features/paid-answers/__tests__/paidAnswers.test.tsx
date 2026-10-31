@@ -125,6 +125,13 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (hub.replyMode === 'lost_after') throw new TypeError('Network request failed');
     return ok(q, 201);
   }
+  if (key === 'POST /reports') {
+    // REPORT-UGC: the paid thread's Report is the shared sheet; it posts to the one report route (kind direct_message).
+    const body = (await request.json()) as { kind: string; targetId: string; reason: string };
+    hub.reports.push(`${body.kind}:${body.targetId}:${body.reason}`);
+    if (hub.reportMode === 'fail') return refuse(500, 'Something went wrong');
+    return ok({ id: 'rep-1', kind: body.kind, targetId: body.targetId, reason: body.reason, status: 'open', createdAt: new Date().toISOString(), alreadyReported: hub.reportMode === 'dup' }, 200);
+  }
   if (key === 'POST /chats') {
     hub.chats += 1;
     return ok({ id: 'chat-9' });
@@ -499,7 +506,7 @@ describe('FIX-109 · "+" and "..." in a paid thread (G-INBOX-18-2, -3)', () => {
     expect(rtl.screen.getByTestId('paid-thread-menu')).toBeTruthy();
   });
 
-  it('"..." offers Report and Block; Report asks first, reports the open question once and says so', async () => {
+  it('"..." offers Report and Block; Report opens the shared sheet, asks for a reason, reports the open question once and says thanks', async () => {
     hub.thread.questions = [question()];
     await draw(open().ui);
     await waitReady();
@@ -507,25 +514,27 @@ describe('FIX-109 · "+" and "..." in a paid thread (G-INBOX-18-2, -3)', () => {
     expect(await rtl.screen.findByTestId('paid-menu-report')).toBeTruthy();
     expect(rtl.screen.getByText('Block Bisi')).toBeTruthy();
     await rtl.fireEvent.press(rtl.screen.getByTestId('paid-menu-report'));
-    expect(rtl.screen.getByText('Report this conversation?')).toBeTruthy();
+    expect(await rtl.screen.findByText('Report this conversation')).toBeTruthy();
     expect(hub.reports).toEqual([]);
-    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-report-yes'));
-    await rtl.waitFor(() => expect(hub.reports).toEqual(['q1']));
-    expect(await rtl.screen.findByText('Reported. Thank you.')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('report-sheet-reason-harassment'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('report-sheet-send'));
+    await rtl.waitFor(() => expect(hub.reports).toEqual(['direct_message:q1:harassment']));
+    expect(await rtl.screen.findByText('Thanks. We’ll review this.')).toBeTruthy();
   });
 
-  it('a second report of the same question is the Hub\'s 409 and reads "already reported"; a failed one says so and keeps the sheet', async () => {
+  it('a repeat report answers the same report (no error, the thanks again); a failed one says so and keeps the sheet', async () => {
     hub.thread.questions = [question()];
     hub.reportMode = 'fail';
     await draw(open().ui);
     await waitReady();
     await rtl.fireEvent.press(rtl.screen.getByTestId('paid-thread-menu'));
     await rtl.fireEvent.press(await rtl.screen.findByTestId('paid-menu-report'));
-    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-report-yes'));
-    expect(await rtl.screen.findByTestId('paid-menu-failed')).toBeTruthy();
+    await rtl.fireEvent.press(await rtl.screen.findByTestId('report-sheet-reason-spam'));
+    await rtl.fireEvent.press(rtl.screen.getByTestId('report-sheet-send'));
+    expect(await rtl.screen.findByTestId('report-sheet-failed')).toBeTruthy();
     hub.reportMode = 'dup';
-    await rtl.fireEvent.press(rtl.screen.getByTestId('paid-report-yes'));
-    expect(await rtl.screen.findByText('You already reported this conversation.')).toBeTruthy();
+    await rtl.fireEvent.press(rtl.screen.getByTestId('report-sheet-send'));
+    expect(await rtl.screen.findByText('Thanks. We’ll review this.')).toBeTruthy();
   });
 
   it('Block asks first, blocks the asker once, refreshes the lists and leaves the thread; a failure keeps the sheet', async () => {

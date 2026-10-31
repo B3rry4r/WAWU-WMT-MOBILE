@@ -20,6 +20,7 @@ import { usePicture } from '@/features/feed/usePicture';
 
 import type { Comment, PieceDetail } from './api';
 import { ago, commenterName, lessonLength, plural, type Thread } from './model';
+import { LongPressable, reportAction } from '@/features/report/LongPressable';
 
 /** design/_gen/home.js lines 61 to 75: the sizes of the piece's own page. */
 export const m = {
@@ -49,16 +50,19 @@ export const m = {
 } as const;
 
 /** The bar: a round back button, the title centred, and the share button (kit `nav` with `right`). */
-export function Header({ title, onBack, onShare }: { title: string; onBack: () => void; onShare?: () => void }) {
+export function Header({ title, onBack, onShare, onMore }: { title: string; onBack: () => void; onShare?: () => void; onMore?: () => void }) {
   return (
     <View style={styles.nav}>
-      <View style={styles.side}>
+      <View style={[styles.side, onMore ? styles.sideWide : null]}>
         <IconButton icon="ChevronLeft" label="Back" onPress={onBack} testID="detail-back" />
       </View>
       <Text variant="body" accessibilityRole="header" style={[styles.navTitle, font(700)]}>
         {title}
       </Text>
-      <View style={[styles.side, styles.end]}>{onShare ? <IconButton icon="Share" label="Share" onPress={onShare} testID="detail-share" /> : null}</View>
+      <View style={[styles.side, onMore ? styles.sideWide : null, styles.end, styles.endRow]}>
+        {onShare ? <IconButton icon="Share" label="Share" onPress={onShare} testID="detail-share" /> : null}
+        {onMore ? <IconButton icon="Ellipsis" label="More" onPress={onMore} testID="detail-menu" /> : null}
+      </View>
     </View>
   );
 }
@@ -329,10 +333,13 @@ export function CommentRow({
   reply,
   onReply,
   onLike,
+  onReport,
   testID,
 }: {
   comment: Comment;
   reply?: boolean;
+  /** REPORT-UGC: press and hold reports it. Not given for the person's own comment. */
+  onReport?: (comment: Comment) => void;
   /** Without it (the page's own preview) no Reply is drawn. */
   onReply?: (comment: Comment) => void;
   onLike?: (comment: Comment) => void;
@@ -342,6 +349,7 @@ export function CommentRow({
   const name = commenterName(comment);
   const liked = comment.likedByMe === true;
   return (
+    <LongPressable onLongPress={onReport ? () => onReport(comment) : undefined}>
     <View testID={testID} style={[styles.comment, reply && { paddingLeft: m.replyIndent }]}>
       <Avatar name={name} hue="sky" source={comment.author?.avatarUrl ?? undefined} size={reply ? m.replyAvatar : m.commentAvatar} decorative />
       <View style={styles.commentWords}>
@@ -349,7 +357,9 @@ export function CommentRow({
           <NativeText style={[font(600), { color: colors.textPrimary }]}>{name}</NativeText>
           {` · ${ago(comment.createdAt)}`}
         </Text>
-        <NativeText style={[font(400), styles.commentText, { color: colors.textPrimary }]}>{comment.text}</NativeText>
+        <NativeText style={[font(400), styles.commentText, { color: colors.textPrimary }]} {...reportAction(onReport ? () => onReport(comment) : undefined)}>
+          {comment.text}
+        </NativeText>
         <View style={styles.commentFoot}>
           {onReply ? (
             <Pressable testID={testID ? `${testID}-reply` : undefined} accessibilityRole="button" accessibilityLabel={`Reply to ${name}`} onPress={() => onReply(comment)} hitSlop={space.sm}>
@@ -372,6 +382,7 @@ export function CommentRow({
         </View>
       </View>
     </View>
+    </LongPressable>
   );
 }
 
@@ -380,20 +391,26 @@ export function ThreadList({
   items,
   onReply,
   onLike,
+  onReport,
+  me,
   idPrefix,
 }: {
   items: Thread[];
   onReply?: (comment: Comment) => void;
   onLike?: (comment: Comment) => void;
+  /** REPORT-UGC: with it, press and hold reports a comment that is not `me`'s. */
+  onReport?: (comment: Comment) => void;
+  me?: string | null;
   idPrefix: string;
 }) {
+  const reportOf = (c: Comment) => (onReport && c.authorWawuId !== me ? onReport : undefined);
   return (
     <View style={styles.threads}>
       {items.map(({ comment, replies }) => (
         <View key={comment.id} style={styles.threads}>
-          <CommentRow testID={`${idPrefix}-${comment.id}`} comment={comment} onReply={onReply} onLike={onLike} />
+          <CommentRow testID={`${idPrefix}-${comment.id}`} comment={comment} onReply={onReply} onLike={onLike} onReport={reportOf(comment)} />
           {replies.map((r) => (
-            <CommentRow key={r.id} testID={`${idPrefix}-${r.id}`} comment={r} reply onReply={onReply} onLike={onLike} />
+            <CommentRow key={r.id} testID={`${idPrefix}-${r.id}`} comment={r} reply onReply={onReply} onLike={onLike} onReport={reportOf(r)} />
           ))}
         </View>
       ))}
@@ -423,6 +440,8 @@ const styles = StyleSheet.create({
   nav: { height: m.nav, flexDirection: 'row', alignItems: 'center', paddingHorizontal: layout.gutter, gap: space.md },
   side: { width: m.navButton, alignItems: 'flex-start' },
   end: { alignItems: 'flex-end' },
+  endRow: { flexDirection: 'row' },
+  sideWide: { width: 84 },
   navTitle: { flex: 1, textAlign: 'center', fontSize: m.navTitle },
   maker: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   makerWords: { flex: 1, minWidth: 0, gap: m.makerSpace },

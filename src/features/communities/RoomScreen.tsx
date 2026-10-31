@@ -37,6 +37,7 @@ import { dayKey, dayLabel, membersFull, outOfCreditsLine, priceLine } from './fo
 import { GroupTile, tileMetrics } from './GroupTile';
 import { MessagePost, OutgoingPost } from './MessagePost';
 import { CreditPill, RoomHeader } from './RoomHeader';
+import { useReporting } from '@/features/report/useReporting';
 import { useJoinCommunity } from './useCommunities';
 import { useCredits, useMessageCost } from './useCredits';
 import { useRoomMessages, type OutgoingMessage } from './useRoomMessages';
@@ -285,6 +286,8 @@ function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined;
   const [atBottom, setAtBottom] = useState(true);
   const [seenNewest, setSeenNewest] = useState<string | undefined>(undefined);
   const newest = messages.items[0];
+  // REPORT-UGC: press and hold another member's message to report it; the Hub leaves it out of this person's room.
+  const reporting = useReporting(() => void messages.refetch());
   const newestId = useRef(newest?.id);
   useEffect(() => {
     newestId.current = newest?.id;
@@ -339,9 +342,16 @@ function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined;
           />
         );
       }
-      return <MessagePost message={item.message} sender={null} isHost={room !== undefined && item.message.senderWawuId === room.hostWawuId} />;
+      return (
+        <MessagePost
+          message={item.message}
+          sender={null}
+          isHost={room !== undefined && item.message.senderWawuId === room.hostWawuId}
+          onLongPress={item.message.senderWawuId === messages.me?.wawuId ? undefined : () => reporting.ask('community_message', item.message.id)}
+        />
+      );
     },
-    [room, messages, onEdit, onBuy],
+    [room, messages, onEdit, onBuy, reporting],
   );
 
   if (messages.items.length === 0 && messages.outgoing.length === 0 && !hasNextPage) {
@@ -354,6 +364,7 @@ function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined;
 
   return (
     <View style={styles.thread}>
+      {reporting.element}
       <FlatList
         ref={list}
         testID="room-messages"

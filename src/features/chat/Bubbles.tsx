@@ -10,6 +10,7 @@ import { MoneyGround } from '@/features/wallet/home/BalanceCard';
 import { font, space, useWawu } from '@/theme';
 
 import type { MoneyRequest } from './api';
+import { LongPressable, reportAction } from '@/features/report/LongPressable';
 
 /**
  * design/_gen/inbox.js lines 49 to 52 (`b`, `moneyB`, `reqB`): a text bubble is at most 78% wide, 10 by 14 inside, a 20 corner with a 6
@@ -71,10 +72,11 @@ export type TextBubbleProps = {
 };
 
 /** One text message: the person's own on the right in the accent, theirs on the left on a card. */
-export function TextBubble({ id, text, mine, at, stamp, pending }: TextBubbleProps) {
+export function TextBubble({ id, text, mine, at, stamp, pending, onLongPress }: TextBubbleProps & { onLongPress?: () => void }) {
   const { colors } = useWawu();
   return (
-    <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]} accessible accessibilityLabel={`${mine ? 'You' : 'They'}${at ? `, ${clockTime(at)}` : stamp ? `, ${stamp}` : ''}, ${text}`}>
+    <LongPressable onLongPress={onLongPress}>
+    <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]} accessible accessibilityLabel={`${mine ? 'You' : 'They'}${at ? `, ${clockTime(at)}` : stamp ? `, ${stamp}` : ''}, ${text}`} {...reportAction(onLongPress)}>
       <View
         style={[
           styles.bubble,
@@ -99,6 +101,7 @@ export function TextBubble({ id, text, mine, at, stamp, pending }: TextBubblePro
         <Time iso={at} mine={mine} />
       ) : null}
     </View>
+    </LongPressable>
   );
 }
 

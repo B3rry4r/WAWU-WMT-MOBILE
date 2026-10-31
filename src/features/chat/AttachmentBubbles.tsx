@@ -10,6 +10,7 @@ import { font, space, useWawu } from '@/theme';
 
 import { bubbleMetrics, PendingNote, Time, type PendingState } from './Bubbles';
 import type { ChatFileKind } from './attachments';
+import { LongPressable, reportAction } from '@/features/report/LongPressable';
 
 /**
  * A photo, a video or a file in the chat (FIX-104). No board draws these bubbles, so they are built from the text bubble's own parts
@@ -56,7 +57,7 @@ export type AttachmentBubbleProps = {
 
 const kindWord = (kind: ChatFileKind) => (kind === 'image' ? 'Photo' : kind === 'video' ? 'Video' : 'File');
 
-export function AttachmentBubble({ id, kind, mine, contentType, uri, name, bytes, caption, at, onOpen, opening, pending }: AttachmentBubbleProps) {
+export function AttachmentBubble({ id, kind, mine, contentType, uri, name, bytes, caption, at, onOpen, opening, pending, onLongPress }: AttachmentBubbleProps & { onLongPress?: () => void }) {
   const { colors } = useWawu();
   const size = bytes && bytes > 0 ? sizeWords(bytes, pending?.status === 'failed') : null;
   const fileKind = FILE_WORDS[contentType] ?? 'File';
@@ -122,18 +123,20 @@ export function AttachmentBubble({ id, kind, mine, contentType, uri, name, bytes
   );
 
   return (
+    <LongPressable onLongPress={onLongPress}>
     <View testID={`bubble-${id}`} style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
       {onOpen && !pending ? (
-        <Pressable testID={`bubble-${id}-open`} accessibilityRole="button" accessibilityLabel={`${label}. Open`} disabled={opening} onPress={onOpen}>
+        <Pressable testID={`bubble-${id}-open`} accessibilityRole="button" accessibilityLabel={`${label}. Open`} disabled={opening} onPress={onOpen} {...reportAction(onLongPress)}>
           {body}
         </Pressable>
       ) : (
-        <View accessible accessibilityLabel={label}>
+        <View accessible accessibilityLabel={label} {...reportAction(onLongPress)}>
           {body}
         </View>
       )}
       {pending ? <PendingNote id={id} pending={pending} /> : at ? <Time iso={at} mine={mine} /> : null}
     </View>
+    </LongPressable>
   );
 }
 

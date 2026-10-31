@@ -29,7 +29,9 @@ import { inboxKey } from '@/features/inbox/api';
 import { newRequestKey } from '@/features/wallet/api/settings';
 import { font, layout, radius, space, text as textStyles, useWawu } from '@/theme';
 
-import { blockAsker, fetchThreadPage, openFreeChat, paidKeys, postReply, reportQuestion, type PaidPerson, type PaidQuestion, type PaidThreadDetail } from './api';
+import { ReportSheet } from '@/features/report/ReportSheet';
+import { REPORT_THANKS } from '@/features/report/reasons';
+import { blockAsker, fetchThreadPage, openFreeChat, paidKeys, postReply, type PaidPerson, type PaidQuestion, type PaidThreadDetail } from './api';
 import { cardOf, stateOf, type QuestionCard } from './model';
 import { useNow } from './useNow';
 
@@ -184,7 +186,8 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat, on
 
   // "..." (G-INBOX-18-3): Report and Block. Report is for the question in hand; Block takes the person out of every list, so the screen leaves.
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirm, setConfirm] = useState<'report' | 'block' | null>(null);
+  const [confirm, setConfirm] = useState<'block' | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const [acting, setActing] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -195,29 +198,6 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat, on
     setConfirm(null);
     setMenuError(null);
   };
-  const report = useCallback(async () => {
-    if (acts.current || !reportTarget) return;
-    acts.current = true;
-    setActing(true);
-    setMenuError(null);
-    try {
-      await reportQuestion(reportTarget.id);
-      setMenuOpen(false);
-      setConfirm(null);
-      setToast('Reported. Thank you.');
-    } catch (error) {
-      if (isApiError(error) && error.status === 409) {
-        setMenuOpen(false);
-        setConfirm(null);
-        setToast('You already reported this conversation.');
-      } else {
-        setMenuError(isApiError(error) && error.kind === 'network' ? error.message : 'Could not send the report. Try again.');
-      }
-    } finally {
-      acts.current = false;
-      setActing(false);
-    }
-  }, [reportTarget]);
   const block = useCallback(async () => {
     if (acts.current) return;
     acts.current = true;
@@ -332,27 +312,39 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat, on
         <BottomSheet visible={menuOpen} onClose={closeMenu} label="More" gap={space.md} testID="paid-thread-menu-sheet">
           {confirm === null ? (
             <GroupedList testID="paid-thread-menu-list">
-              {reportTarget ? <ListRow testID="paid-menu-report" lead={<IconTile icon="Flag" />} title="Report this conversation" onPress={() => setConfirm('report')} /> : null}
+              {reportTarget ? <ListRow testID="paid-menu-report" lead={<IconTile icon="Flag" />} title="Report this conversation" onPress={() => { setMenuOpen(false); setReportOpen(true); }} /> : null}
               <ListRow testID="paid-menu-block" lead={<IconTile icon="Ban" />} title={`Block ${asker ?? person.name}`} onPress={() => setConfirm('block')} />
             </GroupedList>
           ) : (
             <View style={styles.confirm} testID={`paid-${confirm}-confirm`}>
               <Text variant="h2" accessibilityRole="header">
-                {confirm === 'report' ? 'Report this conversation?' : `Block ${asker ?? person.name}?`}
+                {`Block ${asker ?? person.name}?`}
               </Text>
               <Text variant="body" tone="textSecondary">
-                {confirm === 'report' ? 'Tell us if this conversation breaks the rules.' : 'You will not see each other’s profiles, and any follow between you ends.'}
+                {'You will not see each other’s profiles, and any follow between you ends.'}
               </Text>
               {menuError ? (
                 <Text variant="body" tone="danger" accessibilityRole="alert" testID="paid-menu-failed">
                   {menuError}
                 </Text>
               ) : null}
-              <Button testID={`paid-${confirm}-yes`} label={confirm === 'report' ? 'Report' : 'Block'} variant="primary" loading={acting} onPress={() => void (confirm === 'report' ? report() : block())} full />
+              <Button testID={`paid-${confirm}-yes`} label="Block" variant="primary" loading={acting} onPress={() => void block()} full />
               <Button testID={`paid-${confirm}-no`} label="Cancel" variant="secondary" onPress={() => { setConfirm(null); setMenuError(null); }} full />
             </View>
           )}
         </BottomSheet>
+      ) : null}
+      {reportTarget ? (
+        <ReportSheet
+          visible={reportOpen}
+          kind="direct_message"
+          targetId={reportTarget.id}
+          onClose={() => setReportOpen(false)}
+          onReported={() => {
+            setReportOpen(false);
+            setToast(REPORT_THANKS);
+          }}
+        />
       ) : null}
       {person && canAdd ? (
         <>
