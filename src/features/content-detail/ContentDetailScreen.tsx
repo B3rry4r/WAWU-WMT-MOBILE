@@ -8,6 +8,7 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
+import { canFollow } from '@/features/home/model';
 import { useReporting } from '@/features/report/useReporting';
 import { Button } from '@/components/Button';
 import { formatNaira } from '@/components/pay-sheet';
@@ -256,7 +257,7 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
           avatarUrl={maker.avatarUrl}
           tick={tickKind(maker)}
           line={makerLine(maker)}
-          following={own ? null : e.followsCreator}
+          following={own || !canFollow(p.creatorWawuId, page.me.data) ? null : e.followsCreator}
           onToggleFollow={() => page.followMaker.mutate(!e.followsCreator)}
         />
 

@@ -45,9 +45,13 @@ export function tgifMeta(day: TgifDay, readers: number | null | undefined): stri
   return parts.join(' · ');
 }
 
-/** The people the rail offers: the Hub's list without the viewer, who can never follow themselves. */
-export function discoverable(items: readonly CreatorSuggestion[], myId: string | null | undefined): CreatorSuggestion[] {
-  return items.filter((item) => item.wawuId !== myId);
+/**
+ * Whether a creator's card draws Follow for this viewer (HOME-SELF). The viewer's own card stays in a list (it opens their profile) and
+ * never draws Follow: a person cannot follow themselves. While the viewer's own id is not known yet, no card can be told apart, so none
+ * draws Follow until it is (the same rule as a feed post, `PostFrame`).
+ */
+export function canFollow(wawuId: string, myId: string | null | undefined): boolean {
+  return typeof myId === 'string' && myId !== '' && wawuId !== myId;
 }
 
 /** Which tick follows the name on a card: the creator tick (purple), else the professional tick (blue). */

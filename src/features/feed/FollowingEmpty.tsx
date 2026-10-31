@@ -8,7 +8,6 @@ import { fetchCreatorSuggestions, suggestionsKey } from '@/features/home/api';
 import { useTodayClient } from '@/features/home/client';
 import { CreatorRail } from '@/features/home/CreatorRail';
 import { gutter, todayMetrics } from '@/features/home/look';
-import { discoverable } from '@/features/home/model';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { feedKey, followingCountKey } from './api';
@@ -19,7 +18,7 @@ const empty = { icon: 56, maxWidth: 280, padV: 26, stack: 10, titleGap: space.xs
 export type FollowingEmptyProps = {
   /** How far down the tabs reach: the card starts under them. */
   top: number;
-  /** The viewer's own id, so the rail never offers them to themselves. */
+  /** The viewer's own id, so the rail's card for them draws no Follow (HOME-SELF). */
   myId: string | null;
   /** "Find people to follow" and the rail's "See all" open All creators (X4). Neither is drawn without it. */
   onFindPeople?: () => void;
@@ -35,7 +34,7 @@ export function FollowingEmpty({ top, myId, onFindPeople }: FollowingEmptyProps)
   const client = useTodayClient();
   const queries = useQueryClient();
   const creators = useQuery({ queryKey: suggestionsKey, queryFn: fetchCreatorSuggestions }, client);
-  const people = creators.data ? discoverable(creators.data, myId) : null;
+  const people = creators.data ?? null;
   const refreshFollowing = () => {
     void queries.invalidateQueries({ queryKey: feedKey('following'), refetchType: 'none' });
     void queries.invalidateQueries({ queryKey: followingCountKey, refetchType: 'none' });
@@ -65,6 +64,7 @@ export function FollowingEmpty({ top, myId, onFindPeople }: FollowingEmptyProps)
       {creators.isPending ? null : (
         <CreatorRail
           creators={people}
+          myId={myId}
           onRetry={() => void creators.refetch()}
           retrying={creators.isFetching}
           onSeeAll={onFindPeople}

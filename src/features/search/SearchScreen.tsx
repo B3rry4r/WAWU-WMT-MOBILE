@@ -15,6 +15,7 @@ import { useJoinCommunity } from '@/features/communities/useCommunities';
 import { LoadFailedBanner } from '@/features/explore/LoadFailedBanner';
 import { FOLLOW_NOTICE_MS, useFollow } from '@/features/explore/follow';
 import { fetchMyId, meKey } from '@/features/feed/api';
+import { canFollow } from '@/features/home/model';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { MAX_QUERY, type SearchCommunity, type SearchPerson } from './api';
@@ -108,7 +109,7 @@ export function SearchScreen({ onCancel, onOpenRoom, onOpenContent, onOpenPerson
     if (clean !== '') record.mutate(clean);
   };
 
-  const onToggle = (person: SearchPerson) => (person.wawuId === me.data ? undefined : () => follow.toggle(person));
+  const onToggle = (person: SearchPerson) => (canFollow(person.wawuId, me.data) ? () => follow.toggle(person) : undefined);
 
   const roomState = (room: SearchCommunity): RoomAction => (room.kind === 'open' ? 'join' : asked.has(room.id) ? 'asked' : 'ask');
   const onRoom = (room: SearchCommunity) => {

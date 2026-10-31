@@ -9,11 +9,14 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
+import { queryClient } from '@/api/query';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { displayHandle, tickOf } from '@/features/explore/CreatorCard';
 import { interestLabelOf } from '@/features/explore/interestLabel';
 import { FOLLOW_NOTICE_MS, useFollow } from '@/features/explore/follow';
+import { fetchMyId, meKey } from '@/features/feed/api';
 import { hueFor } from '@/features/feed/model';
+import { canFollow } from '@/features/home/model';
 import { font, space } from '@/theme';
 
 import { fetchInterests, fetchSuggested, interestsKey, suggestedKey } from './api';
@@ -40,6 +43,8 @@ export function FollowScreen({ step, onBack, onDone }: FollowScreenProps) {
   const ids = picks.data?.selected ?? [];
   const list = useQuery({ queryKey: suggestedKey(ids), queryFn: () => fetchSuggested(ids), enabled: picks.isSuccess });
   const follow = useFollow();
+  // The viewer's own card (a new account can be in its own suggestions) draws no Follow (HOME-SELF).
+  const me = useQuery({ queryKey: meKey, queryFn: fetchMyId }, queryClient);
   const options = picks.data?.options;
   const labelOf = (id: string | null | undefined) => interestLabelOf(options, id);
 
@@ -87,14 +92,16 @@ export function FollowScreen({ step, onBack, onDone }: FollowScreenProps) {
                       </Text>
                     ) : null}
                   </View>
-                  <Button
-                    label={person.following ? 'Following' : 'Follow'}
-                    variant={person.following ? 'secondary' : 'primary'}
-                    size="sm"
-                    selected={person.following}
-                    onPress={() => follow.toggle(person)}
-                    testID={`follow-${person.wawuId}`}
-                  />
+                  {canFollow(person.wawuId, me.data) ? (
+                    <Button
+                      label={person.following ? 'Following' : 'Follow'}
+                      variant={person.following ? 'secondary' : 'primary'}
+                      size="sm"
+                      selected={person.following}
+                      onPress={() => follow.toggle(person)}
+                      testID={`follow-${person.wawuId}`}
+                    />
+                  ) : null}
                 </View>
               );
             })
