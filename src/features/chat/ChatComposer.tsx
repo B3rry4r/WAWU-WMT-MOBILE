@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -45,6 +45,8 @@ export type ChatComposerProps = {
    * Add to chat offers only Send money and Request money.
    */
   onPlus?: () => void;
+  /** Words to put back in the field, to be changed (a message the Hub refused for its words, R-122). A new object puts them back again. */
+  draft?: { text: string } | null;
   testID?: string;
 };
 
@@ -74,12 +76,21 @@ export function ChatPlusButton({ onPress, testID = 'chat-plus' }: { onPress: () 
 }
 
 /** I12's composer: +, a field, and Send. */
-export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }: ChatComposerProps) {
+export function ChatComposer({ onSend, busy, onPlus, draft, testID = 'chat-composer' }: ChatComposerProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
   const input = useRef<TextInput>(null);
+  // Words put back to be changed (R-122): taken while rendering, once per draft, the way React asks for a prop that resets state.
+  const [seenDraft, setSeenDraft] = useState(draft);
+  if (draft !== seenDraft) {
+    setSeenDraft(draft);
+    if (draft) setValue(draft.text);
+  }
+  useEffect(() => {
+    if (draft) input.current?.focus();
+  }, [draft]);
   const hasWords = value.trim().length > 0;
   const canSend = hasWords && !busy;
   // In a browser the field is a textarea that does not grow: it takes the height of its text, up to `maxLines`.

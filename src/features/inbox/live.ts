@@ -317,7 +317,10 @@ export class LiveClient {
     const type = (frame as { type?: unknown }).type;
     if (type === 'ready') {
       void this.onReady(socket, generation, (frame as { cursor?: unknown }).cursor);
-    } else if (type === 'chat.message' || type === 'chat.read' || type === 'community.message') {
+    } else if (type === 'chat.message' || type === 'chat.read' || type === 'community.message' || type === 'community.message.removed') {
+      // `community.message.removed` (MOD-ROOMS r1, R-122): the host deleted a room message. It has a cursor like a message and
+      // is in the catch-up, so a phone that was away drops it too; it names an id and carries no words, and applying it twice
+      // changes nothing, so it needs no seen-key.
       const event = frame as LiveEvent;
       if (this.catchingUp) this.pendingCursor = event.cursor;
       else this.cursor = event.cursor;

@@ -108,6 +108,7 @@ export function useRoomMessages(id: string, looking: boolean) {
     queryClient,
   );
   const [arrived, setArrived] = useState<CommunityMessage[]>([]);
+  const [gone, setGone] = useState<ReadonlySet<string>>(() => new Set());
   const [outgoing, setOutgoing] = useState<OutgoingMessage[]>([]);
   const outgoingRef = useRef(outgoing);
   useEffect(() => {
@@ -122,9 +123,30 @@ export function useRoomMessages(id: string, looking: boolean) {
     });
   }, []);
 
+  /**
+   * MOD-ROOMS (R-122). A message the host deleted is gone from this screen: out of the live arrivals and out of every page held.
+   * The host's own screen calls it when its request is answered; every other member's open room calls it when the Hub's
+   * `community.message.removed` arrives on the live socket (or in the catch-up after the phone was away), so it disappears
+   * for everyone at once. Removing a message that is not held changes nothing.
+   */
+  const remove = useCallback(
+    (messageId: string) => {
+      // Remembered, so a page that was already on its way when the host deleted cannot bring the message back.
+      setGone((held) => (held.has(messageId) ? held : new Set(held).add(messageId)));
+      setArrived((held) => (held.some((message) => message.id === messageId) ? held.filter((message) => message.id !== messageId) : held));
+      queryClient.setQueryData(messagesKey(id), (data: typeof query.data) =>
+        data ? { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((message) => message.id !== messageId) })) } : data,
+      );
+    },
+    // `query.data` is only the cache's type here; the current pages are read inside the updater.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [id],
+  );
+
   useEffect(() => {
     const offEvent = onLiveEvent((event) => {
       if (event.type === 'community.message' && event.communityId === id) take([event.message]);
+      else if (event.type === 'community.message.removed' && event.communityId === id) remove(event.messageId);
     });
     // The socket is up and caught up: read the newest page, in case an event was lost while it was down.
     const offSynced = onLiveSynced(() => {
@@ -147,13 +169,13 @@ export function useRoomMessages(id: string, looking: boolean) {
     };
     // The cache's current pages are read inside the cleanup only to shorten them; they are not a reason to resubscribe.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, take]);
+  }, [id, take, remove]);
 
   const items = useMemo(() => {
     const paged = query.data?.pages.flatMap((page) => page.items) ?? [];
-    const merged = firstSeen([...arrived, ...paged]);
+    const merged = firstSeen([...arrived, ...paged]).filter((message) => !gone.has(message.id));
     return merged.sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt));
-  }, [query.data, arrived]);
+  }, [query.data, arrived, gone]);
 
   const itemsRef = useRef(items);
   useEffect(() => {
@@ -321,22 +343,6 @@ export function useRoomMessages(id: string, looking: boolean) {
     if (!keepPhoto) outgoingRef.current.find((entry) => entry.localId === localId)?.photo?.discard?.();
     setOutgoing((held) => held.filter((entry) => entry.localId !== localId));
   }, []);
-
-  /**
-   * MOD-ROOMS (R-122). A message the host deleted is gone from this screen at once: out of the live arrivals and out of every page
-   * held. (Other people's open screens lose it the next time they read the room.)
-   */
-  const remove = useCallback(
-    (messageId: string) => {
-      setArrived((held) => held.filter((message) => message.id !== messageId));
-      queryClient.setQueryData(messagesKey(id), (data: typeof query.data) =>
-        data ? { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((message) => message.id !== messageId) })) } : data,
-      );
-    },
-    // `query.data` is only the cache's type here; the current pages are read inside the updater.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [id],
-  );
 
   return {
     ...query,

@@ -82,6 +82,7 @@ const hub = {
   noComments: false,
   commentsFail: false,
   postFails: false,
+  postBlocked: false,
   posts: [] as Record<string, unknown>[],
   ratings: [] as number[],
   shares: 0,
@@ -214,6 +215,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (rest === '/comments' && method === 'POST') {
     const body = (await request.json()) as { text: string; replyToId?: string };
     if (hub.postFails) return refuse(500, 'Something went wrong');
+    // MOD-ROOMS r1 (R-122): words the Hub does not allow are refused with 400 `content_blocked`, and nothing is saved.
+    if (hub.postBlocked) {
+      const sentence = 'Who Made This? does not allow some of those words. Change them and try again.';
+      return json(400, { data: null, statusCode: 400, message: sentence, reason: { code: 'content_blocked', message: sentence } });
+    }
     hub.posts.push(body);
     const made = comment(`new-${hub.posts.length}`, ME, body.text, body.replyToId ?? null, { likes: 0 });
     hub.comments = [...hub.comments, made];
@@ -295,6 +301,7 @@ beforeEach(() => {
     noComments: false,
     commentsFail: false,
     postFails: false,
+    postBlocked: false,
     posts: [],
     ratings: [],
     shares: 0,
@@ -494,6 +501,24 @@ describe('H21: comments', () => {
     await rtl.fireEvent.press(sheet.getByTestId('comments-send'));
     await rtl.waitFor(() => expect(hub.posts).toHaveLength(1));
     expect(sheet.queryByText("Your comment couldn't be posted. Try again.")).toBeNull();
+  });
+
+  it("a comment the Hub refuses for its words shows the Hub's own sentence, keeps the words in the box, and changed words post (MOD-ROOMS r1, R-122)", async () => {
+    const sentence = 'Who Made This? does not allow some of those words. Change them and try again.';
+    hub.postBlocked = true;
+    const { screen } = await open();
+    const sheet = rtl.within(screen.getByTestId('comments-sheet'));
+    await rtl.fireEvent.changeText(sheet.getByTestId('comments-input'), 'some rude words');
+    await rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+    await sheet.findByText(sentence);
+    expect(sheet.queryByText("Your comment couldn't be posted. Try again.")).toBeNull();
+    expect(sheet.getByTestId('comments-input').props.value).toBe('some rude words');
+    expect(hub.posts).toHaveLength(0);
+    hub.postBlocked = false;
+    await rtl.fireEvent.changeText(sheet.getByTestId('comments-input'), 'some kind words');
+    await rtl.fireEvent.press(sheet.getByTestId('comments-send'));
+    await rtl.waitFor(() => expect(hub.posts).toHaveLength(1));
+    expect(sheet.queryByText(sentence)).toBeNull();
   });
 
   it('a piece with no comments says so, and the box is there to write the first', async () => {

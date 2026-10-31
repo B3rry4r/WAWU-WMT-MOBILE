@@ -31,7 +31,7 @@ export const hub = {
   unnamedOther: false,
   messages: [] as Record<string, unknown>[],
   sentTexts: [] as { text: string; clientMessageId: string | null }[],
-  textMode: 'ok' as 'ok' | 'lost_before' | 'lost_after',
+  textMode: 'ok' as 'ok' | 'lost_before' | 'lost_after' | 'blocked_words',
   requests: [] as { body: Record<string, unknown> }[],
   requestMode: 'ok' as 'ok' | 'lost_before' | 'no_wallet',
   requestStatus: 'pending' as 'pending' | 'paid' | 'declined' | 'cancelled',
@@ -310,6 +310,11 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       return created(made);
     }
     hub.sentTexts.push({ text: body.text, clientMessageId: body.clientMessageId });
+    // MOD-ROOMS r1 (R-122): the Hub refuses words it does not allow with 400 `content_blocked` and stores nothing.
+    if (hub.textMode === 'blocked_words') {
+      const sentence = 'Who Made This? does not allow some of those words. Change them and try again.';
+      return json(400, { statusCode: 400, message: sentence, reason: { code: 'content_blocked', message: sentence } });
+    }
     const known = hub.messages.find((m) => m.clientMessageId === body.clientMessageId);
     if (hub.textMode === 'lost_before' && hub.sentTexts.length === 1) return json(500, { statusCode: 500, message: 'Something went wrong' });
     const message = known ?? { ...textMessage(body.text, true, new Date().toISOString()), clientMessageId: body.clientMessageId };

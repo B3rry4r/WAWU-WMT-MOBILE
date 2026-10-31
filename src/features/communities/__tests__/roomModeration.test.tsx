@@ -202,6 +202,24 @@ const serveHost = (extra: Record<string, Answer[]> = {}) => {
 };
 const hold = async (id: string) => rtl.fireEvent(await rtl.screen.findByTestId(`post-${id}`), 'longPress');
 
+const lastSocket = () => FakeSocket.all[FakeSocket.all.length - 1] as FakeSocket;
+async function connect(cursor = 'c0') {
+  await rtl.waitFor(() => expect(FakeSocket.all.length).toBeGreaterThan(0));
+  const socket = lastSocket();
+  await rtl.act(async () => {
+    socket.readyState = 1;
+    socket.onopen?.({});
+    socket.say({ type: 'ready', wawuId: ME, cursor });
+  });
+  return socket;
+}
+const removed = (messageId: string, cursor: string, communityId = ROOM) => ({ type: 'community.message.removed', cursor, communityId, messageId });
+const tell = async (socket: FakeSocket, frame: unknown) => {
+  await rtl.act(async () => {
+    socket.say(frame);
+  });
+};
+
 describe.each(['android', 'ios'] as const)('MOD-ROOMS: a room on %s', (os) => {
   beforeEach(() => {
     jest.replaceProperty(Platform, 'OS', os);
@@ -294,6 +312,64 @@ describe.each(['android', 'ios'] as const)('MOD-ROOMS: a room on %s', (os) => {
     });
   });
 
+  // MOD-ROOMS r1 (R-122): a message the host deletes leaves every member's open room at once, through the live channel new messages use.
+  describe('a message the host deleted, live', () => {
+    it("a member's open room drops it the moment the Hub says so; the other messages stay; a repeat, another room's id and an id it never held change nothing", async () => {
+      serve({ [MESSAGES]: [paged([message('rude words', 'u2'), message('kind words', 'u2'), message('also kind', HOST)])], [MODERATION]: [mute(false)] });
+      await renderRoom();
+      await rtl.screen.findByText('rude words');
+      const socket = await connect();
+      await tell(socket, removed('m1', 'c1'));
+      await rtl.waitFor(() => expect(rtl.screen.queryByText('rude words')).toBeNull());
+      expect(rtl.screen.getByText('kind words')).toBeTruthy();
+      expect(rtl.screen.getByText('also kind')).toBeTruthy();
+      await tell(socket, removed('m1', 'c1'));
+      await tell(socket, removed('m2', 'c2', 'another-room'));
+      await tell(socket, removed('never-held', 'c3'));
+      expect(rtl.screen.getByText('kind words')).toBeTruthy();
+      expect(rtl.screen.getByText('also kind')).toBeTruthy();
+      await tell(socket, removed('m2', 'c4'));
+      await rtl.waitFor(() => expect(rtl.screen.queryByText('kind words')).toBeNull());
+      expect(rtl.screen.getByText('also kind')).toBeTruthy();
+      expect(sent.filter((line) => line.startsWith('DELETE'))).toEqual([]);
+    });
+
+    it("a message that arrived live and is then deleted leaves the room too, and does not come back when the room is read again on the next ready", async () => {
+      const first = message('first', 'u2');
+      serve({ [MESSAGES]: [paged([first])], [MODERATION]: [mute(false)] });
+      await renderRoom();
+      await rtl.screen.findByText('first');
+      const socket = await connect();
+      const arrived = message('just arrived', 'u2');
+      await tell(socket, { type: 'community.message', cursor: 'c1', communityId: ROOM, message: arrived });
+      expect(await rtl.screen.findByText('just arrived')).toBeTruthy();
+      await tell(socket, removed(arrived.id, 'c2'));
+      await rtl.waitFor(() => expect(rtl.screen.queryByText('just arrived')).toBeNull());
+      // A read of the newest page that was already on its way holds the message: it stays gone.
+      answers[MESSAGES] = [paged([first, arrived])];
+      await tell(socket, { type: 'ready', wawuId: ME, cursor: 'c3' });
+      await rtl.waitFor(() => expect(sent.filter((line) => line === MESSAGES).length).toBeGreaterThan(1));
+      expect(rtl.screen.queryByText('just arrived')).toBeNull();
+      expect(rtl.screen.getByText('first')).toBeTruthy();
+    });
+
+    it("the host's own screen: the delete drops the message at once, and the Hub's note for the same message afterwards changes nothing", async () => {
+      serveHost({
+        [MESSAGES]: [paged([message('rude words', 'u2'), message('kind words', 'u2')])],
+        [`DELETE /communities/${ROOM}/messages/m1`]: [ok({ removed: true })],
+      });
+      await renderRoom();
+      await rtl.screen.findByText('rude words');
+      const socket = await connect();
+      await hold('m1');
+      await rtl.fireEvent.press(await rtl.screen.findByTestId('host-menu-delete'));
+      await rtl.fireEvent.press(rtl.screen.getByTestId('host-menu-delete-yes'));
+      await rtl.waitFor(() => expect(rtl.screen.queryByText('rude words')).toBeNull());
+      await tell(socket, removed('m1', 'c1'));
+      expect(rtl.screen.getByText('kind words')).toBeTruthy();
+    });
+  });
+
   describe('a member', () => {
     it('presses and holds another member\'s message and gets the report sheet at once, with no host menu; the moderation state is read but never shown', async () => {
       serve({ [MESSAGES]: [paged([message('a message', 'u2')])], [MODERATION]: [mute(false)] });
@@ -331,7 +407,7 @@ describe.each(['android', 'ios'] as const)('MOD-ROOMS: a room on %s', (os) => {
     });
 
     it('a message with a word the Hub does not allow: its own sentence under the bubble, nothing stored, Edit puts the words back in the field', async () => {
-      const sentence = "That has words we don't allow on Who Made This. Change them and try again.";
+      const sentence = 'Who Made This? does not allow some of those words. Change them and try again.';
       serve({
         [MESSAGES]: [paged([message('hello', 'u2')])],
         [MODERATION]: [mute(false)],

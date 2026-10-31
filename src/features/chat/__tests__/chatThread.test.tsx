@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as rtl from '@testing-library/react-native';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { clearClients, CHAT, enterPin, hub, ME, OTHER, REQUEST_ID, renderWith, requestMessage, requestView, resetHub, textMessage } from '../testing/hubDouble';
 
@@ -384,3 +384,35 @@ describe('I18 and I19: a request someone made of the person', () => {
 });
 
 void ME;
+
+// MOD-ROOMS r1 (R-122): words the Hub refuses come back to be changed. Sending them again cannot work, so the bubble offers Edit, not Try again.
+describe.each(['android', 'ios'] as const)('a chat message with words the Hub does not allow, on %s', (os) => {
+  beforeEach(() => {
+    jest.replaceProperty(Platform, 'OS', os);
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("shows the Hub's sentence under the bubble with Edit and Delete and no Try again; Edit puts the words back in the field; the changed words send once", async () => {
+    const sentence = 'Who Made This? does not allow some of those words. Change them and try again.';
+    hub.textMode = 'blocked_words';
+    hub.messages = [textMessage('Hi', false)];
+    await boot();
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('chat-composer-input'), 'some rude words');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('chat-composer-send'));
+    expect(await rtl.screen.findByText(sentence)).toBeTruthy();
+    expect(rtl.screen.queryByText('Try again')).toBeNull();
+    expect(rtl.screen.getByText('Delete')).toBeTruthy();
+    expect(hub.messages.filter((m) => m.text === 'some rude words')).toHaveLength(0);
+    await rtl.fireEvent.press(rtl.screen.getAllByTestId(/^bubble-local-\d+-edit$/)[0]);
+    expect(rtl.screen.getByTestId('chat-composer-input').props.value).toBe('some rude words');
+    expect(rtl.screen.queryByText(sentence)).toBeNull();
+    expect(hub.sentTexts).toHaveLength(1);
+    hub.textMode = 'ok';
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('chat-composer-input'), 'some kind words');
+    await rtl.fireEvent.press(rtl.screen.getByTestId('chat-composer-send'));
+    await rtl.screen.findByText('some kind words');
+    expect(hub.messages.filter((m) => m.text === 'some kind words')).toHaveLength(1);
+  });
+});

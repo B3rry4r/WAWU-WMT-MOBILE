@@ -47,6 +47,8 @@ const message = (id: string, cursor: string): LiveEvent =>
   ({ type: 'chat.message', cursor, message: { id, chatId: 'c1', senderWawuId: 'u2', mine: false, kind: 'text', text: id, attachment: null, clientMessageId: null, createdAt: '2026-10-07T10:00:00Z', readState: null } }) as LiveEvent;
 const roomMessage = (id: string, cursor: string): LiveEvent =>
   ({ type: 'community.message', cursor, communityId: 'r1', message: { id } }) as unknown as LiveEvent;
+const roomRemoval = (messageId: string, cursor: string): LiveEvent =>
+  ({ type: 'community.message.removed', cursor, communityId: 'r1', messageId }) as LiveEvent;
 const readMark = (cursor: string): LiveEvent =>
   ({ type: 'chat.read', cursor, chatId: 'c1', readerWawuId: 'u2', mine: false, lastReadAt: null, lastReadMessageId: null }) as LiveEvent;
 
@@ -149,6 +151,27 @@ describe('the live connection', () => {
     last().say(readMark('c3'));
     last().say(readMark('c3'));
     expect(events.map((e) => e.type)).toEqual(['chat.message', 'community.message', 'chat.read', 'chat.read']);
+  });
+
+  it('MOD-ROOMS r1: a message the host deleted arrives on the socket and in the catch-up, moves the cursor like a message, and a repeat is harmless', async () => {
+    const { client, events } = make();
+    client.retain();
+    await connectAndReady('c0');
+    last().say(roomRemoval('r9', 'c1'));
+    last().say(roomRemoval('r9', 'c1'));
+    expect(events.map((e) => e.type)).toEqual(['community.message.removed', 'community.message.removed']);
+    expect(events[0]).toMatchObject({ communityId: 'r1', messageId: 'r9' });
+
+    // The phone drops and comes back: the catch-up starts from the removal's cursor and carries a removal it missed.
+    last().drop(1006);
+    catchUp.mockResolvedValueOnce({ events: [roomRemoval('r10', 'c2')], cursor: 'c2', hasMore: false });
+    await advance(LIVE_TIMING.capMs);
+    last().open();
+    last().say({ type: 'ready', wawuId: 'me', cursor: 'ready1' });
+    await flush();
+    await flush();
+    expect(catchUp.mock.calls.map((call) => call[0])).toEqual(['c1']);
+    expect(events.map((e) => (e.type === 'community.message.removed' ? e.messageId : e.type))).toEqual(['r9', 'r9', 'r10']);
   });
 
   it('drops a repeat of any of the last 500 messages, not only the newest', async () => {
@@ -395,7 +418,7 @@ describe('catching up', () => {
     await flush();
     await flush();
     expect(catchUp.mock.calls.map((c) => c[0])).toEqual(['live1', 'page1', 'page2']);
-    expect(events.map((e) => (e.type === 'chat.read' ? 'read' : e.message.id))).toEqual(['m1', 'm2', 'r1', 'read', 'm3']);
+    expect(events.map((e) => (e.type === 'chat.read' ? 'read' : e.type === 'community.message.removed' ? e.messageId : e.message.id))).toEqual(['m1', 'm2', 'r1', 'read', 'm3']);
     expect(synced).toHaveBeenCalledTimes(2);
 
     // The next reconnect starts from where this catch-up ended.

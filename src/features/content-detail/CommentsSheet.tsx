@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CONTENT_BLOCKED, isApiError } from '@/api/errors';
 import { Button, IconButton } from '@/components/Button';
 import { sheetMetrics } from '@/components/BottomSheet';
 import { Icon } from '@/components/icon';
@@ -82,7 +83,8 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
           setText('');
           setReplyTo(null);
         },
-        onError: () => setProblem(POST_FAILED),
+        // The Hub's own sentence when it refused the words themselves (R-122); the words stay in the box to be changed.
+        onError: (error) => setProblem(isApiError(error) && error.code === CONTENT_BLOCKED ? error.message : POST_FAILED),
         onSettled: () => {
           sending.current = false;
         },

@@ -16,6 +16,13 @@ export type ApiErrorKind =
   | 'client'
   | 'unknown';
 
+/**
+ * `code` of the Hub's refusal of words it does not allow (MOD-ROOMS, R-122): 400, `content_blocked`, with the sentence to show as it is
+ * ("Who Made This? does not allow some of those words. Change them and try again."). Nothing was saved, so sending the same words
+ * again cannot work: the person edits them.
+ */
+export const CONTENT_BLOCKED = 'content_blocked';
+
 export class ApiError extends Error {
   readonly kind: ApiErrorKind;
   /** HTTP status, or 0 when the request never got an answer. */

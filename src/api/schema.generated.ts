@@ -18103,8 +18103,15 @@ export interface components {
             message: components["schemas"]["CommunityMessage"];
             cursor: string;
         };
+        LiveCommunityMessageRemovedEvent: {
+            /** @enum {string} */
+            type: "community.message.removed";
+            communityId: string;
+            messageId: string;
+            cursor: string;
+        };
         LiveCatchUp: {
-            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveMoneyRequestEvent"] | components["schemas"]["LiveCommunityMessageEvent"])[];
+            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveMoneyRequestEvent"] | components["schemas"]["LiveCommunityMessageEvent"] | components["schemas"]["LiveCommunityMessageRemovedEvent"])[];
             cursor: string;
             hasMore: boolean;
         };
