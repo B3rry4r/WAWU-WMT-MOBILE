@@ -83,6 +83,8 @@ export const refundLine = (totalKobo: number | null, from?: PaidFrom | null): st
 const backTo = (from?: PaidFrom | null): string => (from ? `your ${accountNameOf(from.currency)}` : 'your wallet');
 /** I3 on a phone with a store (R-101 point 6): an unanswered question is not refunded to a wallet, it gives a question credit. Never cash. */
 export const creditLine = 'No reply in time? You get a question credit, to ask anyone at this price or less.';
+/** What a question credit is good for, said on the refunded card of a question that gave one (R-101 point 6). */
+const creditBack = 'Use it to ask anyone at this price or less.';
 export const heldLine = (name: string | null | undefined): string => `Held by ${APP_NAME_COPY} until ${whoOf(name)} answers`;
 
 /** What the pay sheet says when the wallet is short (I6). */
@@ -248,15 +250,22 @@ export function answeredCard(name: string | null | undefined, followUp: FollowUp
 /**
  * A question that went unanswered (I7). The amount and the time are the wallet's own record of the refund (the hold's
  * `refundedKobo` and `settledAt`); a question that has no wallet record says only that it was refunded. `from` is the account that paid
- * (null for the Naira wallet).
+ * (null for the Naira wallet, `SOURCE_PENDING` while the payment's record is still being read).
+ *
+ * The words that name an account wait for the record that says which one (UPLOAD-REST r2): while it is being read, and when there is no
+ * record to read, the card names no account (a foreign-currency payer must never read "Naira wallet"), and says nothing about what anyone
+ * but the asker gets (R-120). A question bought in a store ends as a question credit (R-101 point 6), never money, so on a phone with a
+ * store (`store`) a question with no wallet record says the credit came back.
  */
 export function refundedCard(
   q: Pick<ThreadQuestion, 'sentAt' | 'deadlineAt'>,
   name: string | null | undefined,
   wallet: QuestionView | null,
   now: number,
-  from?: PaidFrom | null,
+  fromState?: PaidFromState,
+  store = false,
 ): StatusCard {
+  const from = fromState === SOURCE_PENDING ? null : fromState;
   const hours = windowHoursOf(q);
   const within = hours === null ? 'No reply in time' : `No reply in ${windowWords(hours)}`;
   const hold = wallet?.payment?.hold ?? null;
@@ -276,7 +285,9 @@ export function refundedCard(
   if (wallet && (wallet.status === 'refunding' || (hold !== null && !hold.settledAt))) {
     return { tone: 'refunded', title: `${within}, so your money is on its way back`, body: `It is on its way to ${dest}.` };
   }
-  return { tone: 'refunded', title: `${within}, so this question was refunded`, body: `Your money went back to ${dest}.` };
+  // No record that says which account: a question bought in a store gave a credit back; any other says only that it was refunded.
+  if (store && fromState !== SOURCE_PENDING) return { tone: 'refunded', title: `${within}, so your question credit came back`, body: creditBack };
+  return { tone: 'refunded', title: `${within}, so this question was refunded`, body: 'Your money is back with you.' };
 }
 
 /** One thing in the thread, oldest first, for the list to draw. */

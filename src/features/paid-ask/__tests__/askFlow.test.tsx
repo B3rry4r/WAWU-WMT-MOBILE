@@ -214,6 +214,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   }
   if (path === `/dm/send/wallet/${NEW_Q}` && method === 'GET') return ok(questionView('asked', hub.drafts.at(-1)?.text ?? ''));
   if (path === `/dm/send/wallet/${OLD_Q}` && method === 'GET') {
+    if (hub.gate.record) await hub.gate.record;
     if (!hub.oldQuestion) return json(404, { statusCode: 404, message: 'We could not find that question.', data: null });
     return ok(hub.oldQuestion);
   }
@@ -443,6 +444,16 @@ describe('F1 · the offer to ask again on a phone with a store (R-101 point 10)'
     hub.thread = threadOf([refundedQ()]);
     await boot();
     await rtl.screen.findByRole('button', { name: 'Try again · ₦1,800' });
+  });
+
+  it('UPLOAD-REST r2: a refunded question bought in a store says its question credit came back, never a wallet or naira', async () => {
+    storeRung = 1800;
+    hub.thread = threadOf([refundedQ()]);
+    await boot();
+    const card = await rtl.screen.findByTestId(`paid-card-${OLD_Q}`);
+    await rtl.waitFor(() => expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-title`).props.children).toBe('No reply in 24 hours, so your question credit came back'));
+    expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-body`).props.children).toBe('Use it to ask anyone at this price or less.');
+    expect(rtl.within(card).queryByText(/wallet|Naira|₦/)).toBeNull();
   });
 
   it('G-STORE-BUY-APP-8 and F7: a waiting question\u2019s stamp says only "Paid", and its card says a missed reply is a question credit, not money back', async () => {
@@ -892,6 +903,20 @@ describe('PAY-FX (R-91): a paid question from a dollar account', () => {
     await rtl.waitFor(() => expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-title`).props.children).toBe('No reply in 24 hours, so you got $0.23 back'));
     expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-body`).props.children).toMatch(/^It went back to your USD account /);
     expect(rtl.screen.queryByText(/₦1,500 paid/)).toBeNull();
+  });
+
+  it('UPLOAD-REST r2: while the payment record is read, a refunded dollar question names no account (never the Naira wallet), then the USD account', async () => {
+    hub.oldQuestion = dmRecord(OLD_Q, 'refunded', { id: 'h1', status: 'refunded', amountKobo: PRICE, refundedKobo: PRICE + FEE, settledAt: iso(-23 * HOUR), heldAt: iso(-48 * HOUR) });
+    hub.paymentSource = USD_BACK;
+    const open = hold('record');
+    await boot();
+    const card = await rtl.screen.findByTestId(`paid-card-${OLD_Q}`);
+    expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-title`).props.children).toBe('No reply in 24 hours, so this question was refunded');
+    expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-body`).props.children).toBe('Your money is back with you.');
+    expect(rtl.within(card).queryByText(/wallet|Naira|₦/)).toBeNull();
+    open();
+    await rtl.waitFor(() => expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-title`).props.children).toBe('No reply in 24 hours, so you got $0.23 back'));
+    expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-body`).props.children).toMatch(/^It went back to your USD account /);
   });
 
   it('a naira refund reads as it always did: the Naira wallet, in naira', async () => {
