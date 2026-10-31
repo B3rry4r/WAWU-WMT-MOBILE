@@ -4653,6 +4653,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["UgcReportController_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/creators/{wawuId}/evg": {
         parameters: {
             query?: never;
@@ -10034,22 +10050,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/hub/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["UgcReportController_report"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -10491,14 +10491,17 @@ export interface components {
              * Format: uri
              * @description The public preview file, as `POST /uploads/presign` answered. PREVIEW-AUTO: optional now. A FREE piece may leave it out (its whole
              *     file is open to everyone, so the preview is the file itself); a PAID audio or video piece may leave it out and send
-             *     `previewFromFile: true` to have the Hub cut it from `fullAsset`. Any other paid piece still sends one (400 otherwise). A request
-             *     that carries one is read exactly as it always was.
+             *     `previewFromFile: true` to have the Hub make it from `fullAsset` (R-118: a PDF too; a course from its first lesson, a template or
+             *     a course whose first lesson is not a video from `coverAsset`). A picture sends its own smaller copy. A request that carries one is
+             *     read exactly as it always was.
              */
             previewAsset?: string;
             /**
-             * @description PREVIEW-AUTO: "make my preview from the full file". Only for a PAID audio or video piece that sends no `previewAsset`: the Hub
-             *     cuts the first 30 seconds (the first third of a file under 45 seconds) after the full file is stored, and stores the cut as the
-             *     piece's preview. Ignored when a `previewAsset` is sent, and for a free piece.
+             * @description PREVIEW-AUTO: "make my preview from the full file". For a PAID audio, video, PDF, course, or template that sends no
+             *     `previewAsset`: the Hub cuts the first 30 seconds of a recording (a third of a file under 45 seconds), the first 3 pages of a PDF
+             *     (the first page of a file under 6 pages), the first lesson of a course the same way, or copies the cover (a template, or a course
+             *     whose first lesson is not a video), after the full file is stored, and stores the result as the piece's preview. Ignored when a
+             *     `previewAsset` is sent, and for a free piece.
              */
             previewFromFile?: boolean;
             /** Format: uri */
@@ -11549,6 +11552,34 @@ export interface components {
         };
         CreateDataExportRequestDto: Record<string, never>;
         CreateDmReportDto: Record<string, never>;
+        CreateUgcReportDto: {
+            /**
+             * @description What is being reported.
+             * @enum {string}
+             */
+            kind: "piece" | "comment" | "profile" | "community_message" | "chat_message" | "direct_message";
+            /**
+             * Format: uuid
+             * @description The id of that thing (a piece, comment, community message, chat message or paid question), or the person's wawuId for a profile.
+             */
+            targetId: string;
+            /**
+             * @description Why, from the short fixed list.
+             * @enum {string}
+             */
+            reason: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
+            /** @description Anything the reporter wants a moderator to know. Optional. */
+            note?: string;
+        };
+        ResolveUgcReportDto: {
+            /**
+             * @description `dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community message or chat message is deleted).
+             * @enum {string}
+             */
+            action: "dismiss" | "take_down";
+            /** @description Why. Required for a take-down (it is the only record of why it came down); optional for a dismissal. */
+            note?: string;
+        };
         UpsertLearnGuideDto: {
             title?: string;
             subtitle?: string;
@@ -16936,6 +16967,59 @@ export interface components {
             dmResponseHours: number;
             slotsTotal: number;
         };
+        AdminUgcPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+        };
+        AdminUgcReportView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            kindLabel: string;
+            targetId: string;
+            count: number;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            reasonLabel: string;
+            note: string | null;
+            /** Format: date-time */
+            reportedAt: string;
+            /** Format: date-time */
+            lastReportedAt: string;
+            reporter: components["schemas"]["AdminUgcPerson"];
+            subject: components["schemas"]["AdminUgcPerson"];
+            item: {
+                exists: boolean;
+                title: string | null;
+                excerpt: string | null;
+                status: string | null;
+            };
+            emailed: boolean;
+            canTakeDown: boolean;
+        };
+        AdminUgcResolveView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            targetId: string;
+            /** @enum {string} */
+            status: "dismissed" | "actioned";
+            resolved: number;
+        };
+        UgcReportView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            targetId: string;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            /** @enum {string} */
+            status: "open" | "dismissed" | "actioned";
+            /** Format: date-time */
+            createdAt: string;
+            alreadyReported: boolean;
+        };
         LearnGuideSection: {
             heading: string;
             body: string;
@@ -18142,7 +18226,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "community" | "content" | "transaction" | "profile" | "paid_question" | "ai_job";
+            kind: "community" | "content" | "profile" | "transaction" | "paid_question" | "ai_job";
             id: string;
             title: string | null;
             deadlineAt: string | null;
@@ -19866,87 +19950,6 @@ export interface components {
         AdCampaignDeletedView: {
             campaignId: string;
             audit: components["schemas"]["AdAuditEntryView"];
-        };
-        CreateUgcReportDto: {
-            /**
-             * @description What is being reported.
-             * @enum {string}
-             */
-            kind: "piece" | "comment" | "profile" | "community_message" | "chat_message" | "direct_message";
-            /**
-             * Format: uuid
-             * @description The id of that thing (a piece, comment, community message, chat message or paid question), or the person's wawuId for a profile.
-             */
-            targetId: string;
-            /**
-             * @description Why, from the short fixed list.
-             * @enum {string}
-             */
-            reason: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
-            /** @description Anything the reporter wants a moderator to know. Optional. */
-            note?: string;
-        };
-        UgcReportView: {
-            id: string;
-            /** @enum {string} */
-            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
-            targetId: string;
-            /** @enum {string} */
-            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
-            /** @enum {string} */
-            status: "open" | "dismissed" | "actioned";
-            /** Format: date-time */
-            createdAt: string;
-            alreadyReported: boolean;
-        };
-        AdminUgcPerson: {
-            wawuId: string;
-            name: string;
-            handle: string | null;
-        };
-        AdminUgcReportView: {
-            id: string;
-            /** @enum {string} */
-            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
-            kindLabel: string;
-            targetId: string;
-            count: number;
-            /** @enum {string} */
-            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
-            reasonLabel: string;
-            note: string | null;
-            /** Format: date-time */
-            reportedAt: string;
-            /** Format: date-time */
-            lastReportedAt: string;
-            reporter: components["schemas"]["AdminUgcPerson"];
-            subject: components["schemas"]["AdminUgcPerson"];
-            item: {
-                exists: boolean;
-                title: string | null;
-                excerpt: string | null;
-                status: string | null;
-            };
-            emailed: boolean;
-            canTakeDown: boolean;
-        };
-        AdminUgcResolveView: {
-            id: string;
-            /** @enum {string} */
-            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
-            targetId: string;
-            /** @enum {string} */
-            status: "dismissed" | "actioned";
-            resolved: number;
-        };
-        ResolveUgcReportDto: {
-            /**
-             * @description `dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community message or chat message is deleted).
-             * @enum {string}
-             */
-            action: "dismiss" | "take_down";
-            /** @description Why. Required for a take-down (it is the only record of why it came down); optional for a dismissal. */
-            note?: string;
         };
     };
     responses: never;
@@ -29969,6 +29972,29 @@ export interface operations {
             };
         };
     };
+    UgcReportController_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUgcReportDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UgcReportView"];
+                };
+            };
+        };
+    };
     EvgScoreController_getEvgScore: {
         parameters: {
             query?: never;
@@ -39412,29 +39438,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StorePurchaseView"];
-                };
-            };
-        };
-    };
-    UgcReportController_report: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateUgcReportDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UgcReportView"];
                 };
             };
         };
