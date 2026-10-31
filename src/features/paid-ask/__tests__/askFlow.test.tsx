@@ -327,7 +327,8 @@ describe('I4 · waiting for a reply', () => {
     await boot();
     const card = await rtl.screen.findByTestId('paid-card-w1');
     expect(rtl.within(card).getByTestId('paid-card-w1-title').props.children).toMatch(/^Chidi has 17h \d\dm left to reply$/);
-    expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/^Your money is held by Who Made This\? No reply by (today|tomorrow) \d\d:\d\d and it comes back to your wallet\.$/);
+    // The card is drawn with the thread; its money words wait for the question's record and payment (PAY-FX, R-91), so wait for the words.
+    await rtl.waitFor(() => expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/^Your money is held by Who Made This\? No reply by (today|tomorrow) \d\d:\d\d and it comes back to your wallet\.$/));
     expect(rtl.screen.getByText(/₦1,500 paid$/)).toBeTruthy();
     expect(rtl.screen.getByTestId('paid-thread-sub').props.children).toBe('Paid DM · replies within 24h');
     expect(rtl.screen.getByTestId('paid-composer-locked-field').props.placeholder).toBe('You can send once Chidi replies');
@@ -958,8 +959,9 @@ describe('PAY-FX (R-91): a paid question from a dollar account', () => {
     hub.waitingQuestion = { ...dmRecord('w1', 'asked', null), priceKobo: PRICE, deadlineAt: iso(17 * HOUR + 52 * 60_000) };
     await boot();
     const card = await rtl.screen.findByTestId('paid-card-w1');
-    await rtl.waitFor(() => expect(hub.paymentReads).toBe(1));
-    expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/and it comes back to your wallet\.$/);
+    // The payment's read being SENT is not the card being drawn: the words wait for the record to arrive, so wait for the words.
+    await rtl.waitFor(() => expect(rtl.within(card).getByTestId('paid-card-w1-body').props.children).toMatch(/and it comes back to your wallet\.$/));
+    expect(hub.paymentReads).toBe(1);
     expect(rtl.screen.getByText(/₦1,500 paid$/)).toBeTruthy();
   });
 
