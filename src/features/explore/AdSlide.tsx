@@ -6,7 +6,7 @@ import { Text } from '@/components/Text';
 import { adOpensSomething, type AdCard } from '@/features/ads/api';
 import { adInk, shadeAt } from '@/features/ads/look';
 import { exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
-import { canvasNormalLineHeight, font, radius, useWawu } from '@/theme';
+import { canvasNormalLineHeight, font, radius, type, useWawu } from '@/theme';
 
 /**
  * The advert card on Explore's slider and on Today (R-116, owner, 31 Oct 2026: "the ads on the app both explore and home should
@@ -29,7 +29,8 @@ export const adSlideMetrics = {
   chipRight: 6,
   chipHeight: 18,
   chipPadX: 6,
-  chipWords: 9,
+  /** The app's smallest type token (the walk's F3: 9 px was below the floor). */
+  chipWords: type.size.label,
   chipTracking: 0.06,
   /** The chip's ground: the page colour at this strength, so white words read on a light picture and on a dark one. */
   chipFill: 0.55,

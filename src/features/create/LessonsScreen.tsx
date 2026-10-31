@@ -13,7 +13,7 @@ import { CreateFrame } from './CreateFrame';
 import { addLesson, moveLesson, removeLesson, setLessonFile, setLessonText, useLessons } from './draft';
 import { LessonCard } from './LessonCard';
 import { isFreeLesson, lessonsReady } from './lessons';
-import { labelOf } from './model';
+import { labelOf, lessonsLine } from './model';
 import { Stepper } from './parts';
 import { SlotsFullNotice, slotsFull } from './UploadsMeter';
 
@@ -62,7 +62,9 @@ export function LessonsScreen({ onBack, onContinue, onOpenLibrary, onGetVerified
         <Text variant="h2" style={styles.title}>
           Add the lessons
         </Text>
-        <Text variant="muted">The first lesson is free. The rest unlock when someone buys the course.</Text>
+        <Text testID="lessons-line" variant="muted">
+          {lessonsLine(lessons[0]?.file ?? null)}
+        </Text>
       </View>
       {formats.isError && !rule ? (
         <ErrorState

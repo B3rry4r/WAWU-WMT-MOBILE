@@ -58,6 +58,18 @@ export function previewLine(id: FormatId, way: PreviewWay): string {
   }
 }
 
+/**
+ * The muted line under "Add the lessons" (a course's step 2): what a buyer sees of the course before buying. It says the same words
+ * as step 3 for the preview (R-118, the walk's F2), then what the Hub does with the lessons: with two or more, the first plays free
+ * for anyone and the rest unlock when someone buys the course; a course of one has none free (`freeLessonCount` in the Hub's
+ * `course-lessons.service.ts`). Until a first lesson's file is chosen it is taken to be a video, which is what a lesson is.
+ */
+export function lessonsLine(full: FullKind): string {
+  const way: PreviewWay = full ? previewWayOf('course', full) : 'cut';
+  const preview = way === 'cut' ? previewLine('course', 'cut') : 'Your first lesson is not a video, so your cover is the preview.';
+  return `${preview} With two or more lessons, the first plays free and the rest unlock when someone buys the course.`;
+}
+
 /** The cover is the only preview a `cover` piece has, so a paid one cannot go on without it. */
 export const coverRequired = (way: PreviewWay, free: boolean): boolean => way === 'cover' && !free;
 

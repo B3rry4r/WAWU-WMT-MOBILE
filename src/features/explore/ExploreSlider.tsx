@@ -2,21 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { openAd } from '@/features/ads/api';
-import { shadeAt } from '@/features/ads/look';
 import { useAdReports } from '@/features/ads/useAd';
 import { ExploreFeaturedEvent, exploreEventMetrics as ev } from '@/features/events/ExploreEvents';
-import { layout } from '@/theme';
+import { layout, space, useWawu } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
-import { AdSlide, adSlideHeight, adSlideMetrics } from './AdSlide';
+import { AdSlide, adSlideHeight } from './AdSlide';
 import type { Slide } from './slider';
 import { useSliderAutoplay } from './useSliderAutoplay';
 
 /**
  * The slider's pager dots (design/_gen/explore.js `sdots`): 6 high, 5 apart, the current one 16 wide and white, the others 6
  * wide and white at 45%. They sit 16 in from the right and 18 up on an event (the event slide's own dots, `hero`). On an advert
- * (R-116: the banner's shape, a picture that may be light) they sit 8 in from the right and 8 up, on a small pill of the page
- * colour at 55% so white dots read on any picture.
+ * (R-116, the walk's F1: the owner's banners paint their own call to action at the bottom right, so nothing of ours sits on the
+ * picture but the SPONSORED chip) they leave the picture: a row under the card, centred, in the page's colours (the current dot the
+ * accent, the rest the muted text colour). The slider is that row taller only while an advert is the slide on show.
  */
 export const sliderDotsMetrics = {
   dot: 6,
@@ -25,11 +25,8 @@ export const sliderDotsMetrics = {
   right: 16,
   bottomEvent: 18,
   dim: 0.45,
-  /** On an advert's banner: the pill's inset from the corner, its padding, and its ground. */
-  bannerRight: 8,
-  bannerBottom: 8,
-  bannerPadX: 7,
-  bannerPadY: 5,
+  /** Under an advert: the gap between the card and the dots. The row is this and a dot high. */
+  rowGap: space.sm,
   /** The gap between an event's words and the dots at their right. */
   dotsGap: 10,
 } as const;
@@ -47,10 +44,28 @@ export const dotsWidth = (count: number) => d.active + (count - 1) * (d.dot + d.
 export function sliderFrameHeight(slides: readonly Slide[], page: number, width: number): number {
   const heightOf = (slide: Slide | undefined) => (slide?.kind === 'ad' ? adSlideHeight(width) : ev.heroHeight);
   if (slides.length === 0) return ev.heroHeight;
+  return blendAlong(slides, page, heightOf);
+}
+
+/** A number per slide, blended by how far along the pager the swipe is: `page` is the scroll position in slides (0 is the first). */
+function blendAlong(slides: readonly Slide[], page: number, valueOf: (slide: Slide | undefined) => number): number {
   const at = Math.min(Math.max(page, 0), slides.length - 1);
   const from = Math.floor(at);
   const to = Math.min(from + 1, slides.length - 1);
-  return heightOf(slides[from]) + (heightOf(slides[to]) - heightOf(slides[from])) * (at - from);
+  return valueOf(slides[from]) + (valueOf(slides[to]) - valueOf(slides[from])) * (at - from);
+}
+
+/** The height of the dots' row under the card: an advert has one, an event has its dots on the card. */
+export const sliderDotsRowHeight = d.rowGap + d.dot;
+
+/**
+ * How tall the dots' row under the card is at a place along the pager (R-116, F1): the full row on an advert, none on an event,
+ * and between the two the blend by how far the swipe has gone, so the slider grows and shrinks with the finger and never jumps.
+ * A pager of one slide has no dots and so no row.
+ */
+export function sliderRowHeight(slides: readonly Slide[], page: number): number {
+  if (slides.length < 2) return 0;
+  return blendAlong(slides, page, (slide) => (slide?.kind === 'ad' ? sliderDotsRowHeight : 0));
 }
 
 export type ExploreSliderProps = {
@@ -95,6 +110,9 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
   // How far along the pager the finger has taken it, in slides: the frame's height follows it (a banner is shorter than an event).
   const [page, setPage] = useState(0);
   const frameHeight = sliderFrameHeight(slides, page, width);
+  // The dots' row under an advert's card, as tall as the swipe has made it (nothing on an event, the full row on an advert).
+  const rowHeight = sliderRowHeight(slides, page);
+  const banner = active?.kind === 'ad';
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const next = e.nativeEvent.layout.width;
@@ -109,7 +127,11 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
       setPlaceKey(slides[next]?.key ?? null);
       // Held only while it changes the frame's height, so a pager of one kind of slide does not draw again on every frame of a swipe.
       const along = e.nativeEvent.contentOffset.x / width;
-      setPage((was) => (sliderFrameHeight(slides, was, width) === sliderFrameHeight(slides, along, width) ? was : along));
+      setPage((was) =>
+        sliderFrameHeight(slides, was, width) === sliderFrameHeight(slides, along, width) && sliderRowHeight(slides, was) === sliderRowHeight(slides, along)
+          ? was
+          : along,
+      );
     },
     [width, slides, scrolledTo],
   );
@@ -121,62 +143,80 @@ export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderPro
 
   if (!active) return null;
   return (
-    <View testID="explore-hero" onLayout={onLayout} style={[styles.frame, { height: frameHeight }]}>
-      <ScrollView
-        ref={scroller}
-        testID="explore-slider"
-        horizontal
-        pagingEnabled
-        nestedScrollEnabled
-        scrollEnabled={paged}
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={onScroll}
-        {...auto.touch}
-        accessibilityLabel={paged ? `Slide ${current + 1} of ${count}` : undefined}
-      >
-        {slides.map((slide, i) => (
-          <View key={slide.key} testID={`explore-slide-${i}`} style={{ width }}>
-            {slide.kind === 'ad' ? (
-              <AdSlide
-                testID={`explore-ad-${slide.ad.id}`}
-                ad={slide.ad}
-                onOpen={() => {
-                  reports.tapOf(slide.ad);
-                  openAd(slide.ad, onOpenEvent);
-                }}
-              />
-            ) : (
-              <ExploreFeaturedEvent
-                testID={`explore-featured-event-${slide.event.id}`}
-                event={slide.event}
-                reserveRight={reserve}
-                onOpen={() => onOpenEvent(slide.event.id)}
-              />
-            )}
-          </View>
-        ))}
-      </ScrollView>
-      {paged ? <SliderDots count={count} active={current} banner={active.kind === 'ad'} /> : null}
+    <View testID="explore-slider-block">
+      <View testID="explore-hero" onLayout={onLayout} style={[styles.frame, { height: frameHeight }]}>
+        <ScrollView
+          ref={scroller}
+          testID="explore-slider"
+          horizontal
+          pagingEnabled
+          nestedScrollEnabled
+          scrollEnabled={paged}
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={onScroll}
+          {...auto.touch}
+          accessibilityLabel={paged ? `Slide ${current + 1} of ${count}` : undefined}
+        >
+          {slides.map((slide, i) => (
+            <View key={slide.key} testID={`explore-slide-${i}`} style={{ width }}>
+              {slide.kind === 'ad' ? (
+                <AdSlide
+                  testID={`explore-ad-${slide.ad.id}`}
+                  ad={slide.ad}
+                  onOpen={() => {
+                    reports.tapOf(slide.ad);
+                    openAd(slide.ad, onOpenEvent);
+                  }}
+                />
+              ) : (
+                <ExploreFeaturedEvent
+                  testID={`explore-featured-event-${slide.event.id}`}
+                  event={slide.event}
+                  reserveRight={reserve}
+                  onOpen={() => onOpenEvent(slide.event.id)}
+                />
+              )}
+            </View>
+          ))}
+        </ScrollView>
+        {paged && !banner ? <SliderDots count={count} active={current} place="card" /> : null}
+      </View>
+      {paged && rowHeight > 0 ? (
+        <View testID="explore-hero-dots-row" pointerEvents="none" style={[styles.row, { height: rowHeight, opacity: rowHeight / sliderDotsRowHeight }]}>
+          {banner ? <SliderDots count={count} active={current} place="row" /> : null}
+        </View>
+      ) : null}
     </View>
   );
 }
 
-/** One dot a slide, the current one long. Decorative: the slider says which slide it is on in its own label. */
-function SliderDots({ count, active, banner }: { count: number; active: number; banner: boolean }) {
+/**
+ * One dot a slide, the current one long. Decorative: the slider says which slide it is on in its own label. On an event they are
+ * white on the card, at its bottom right; on an advert they are in a row under the card, in the page's colours (R-116, F1).
+ */
+function SliderDots({ count, active, place }: { count: number; active: number; place: 'card' | 'row' }) {
+  const { colors } = useWawu();
+  const onCard = place === 'card';
   return (
     <View
       testID="explore-hero-dots"
       pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={[styles.dots, banner ? styles.dotsOnBanner : { right: d.right, bottom: d.bottomEvent }]}
+      style={[styles.dots, onCard ? { position: 'absolute', right: d.right, bottom: d.bottomEvent } : null]}
     >
       {Array.from({ length: count }, (_, i) => (
         <View
           key={i}
           testID={`explore-hero-dot-${i}`}
-          style={[styles.dot, { width: i === active ? d.active : d.dot, opacity: i === active ? 1 : d.dim }]}
+          style={[
+            styles.dot,
+            { width: i === active ? d.active : d.dot },
+            onCard
+              ? { backgroundColor: darkColors.textOnAccent, opacity: i === active ? 1 : d.dim }
+              : { backgroundColor: i === active ? colors.accent : colors.textMuted },
+          ]}
         />
       ))}
     </View>
@@ -186,14 +226,8 @@ function SliderDots({ count, active, banner }: { count: number; active: number; 
 const styles = StyleSheet.create({
   // The height is the slider's own, set from where the pager is (`sliderFrameHeight`).
   frame: { borderRadius: ev.heroCorner, overflow: 'hidden' },
-  dots: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: d.between },
-  dotsOnBanner: {
-    right: d.bannerRight,
-    bottom: d.bannerBottom,
-    paddingHorizontal: d.bannerPadX,
-    paddingVertical: d.bannerPadY,
-    borderRadius: d.dot + d.bannerPadY,
-    backgroundColor: shadeAt(adSlideMetrics.chipFill),
-  },
-  dot: { height: d.dot, borderRadius: d.dot / 2, backgroundColor: darkColors.textOnAccent },
+  dots: { flexDirection: 'row', alignItems: 'center', gap: d.between },
+  // Under the card: the dots sit at the foot of a row that is as tall as the swipe has made it, so they never move as it grows.
+  row: { alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
+  dot: { height: d.dot, borderRadius: d.dot / 2 },
 });

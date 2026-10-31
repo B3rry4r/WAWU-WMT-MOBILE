@@ -175,11 +175,17 @@ describe('the slides take turns (R-59)', () => {
     expect(rtl.screen.getByText('FEATURED EVENT')).toBeTruthy();
     const dots = [0, 1, 2].map((i) => flat(rtl.screen.getByTestId(`explore-hero-dot-${i}`, hidden)));
     expect(dots.map((d) => d.width)).toEqual([16, 6, 6]);
-    expect(dots.map((d) => d.opacity)).toEqual([1, 0.45, 0.45]);
     expect(dots.every((d) => d.height === 6 && d.borderRadius === 3)).toBe(true);
-    // Changed assertion: the dots were 16 in from the right and 14 up (level with the foot of an advert's words, which are no longer drawn);
-    // on the banner they sit 8 in and 8 up on a small pill, so white dots read on a light picture.
-    expect(flat(rtl.screen.getByTestId('explore-hero-dots', hidden))).toMatchObject({ right: 8, bottom: 8, gap: 5 });
+    // Changed assertions (WALK1031-FIX F1, R-116): on an advert the dots were white at 100% and 45% (opacity [1, 0.45, 0.45]) and sat 8 in and 8 up on a
+    // small pill ON the picture, on the banner's painted call to action. They now stand in a row under the card in the page's colours (the current dot
+    // the accent, the rest the muted text colour, no opacity), centred, not placed on a corner. The new file `sliderDots.test.tsx` pins the colours,
+    // the row and the heights on Android and on iOS.
+    expect(dots.map((d) => d.opacity)).toEqual([undefined, undefined, undefined]);
+    expect(dots[0].backgroundColor).not.toBe(dots[1].backgroundColor);
+    expect(flat(rtl.screen.getByTestId('explore-hero-dots', hidden))).toMatchObject({ gap: 5 });
+    expect(flat(rtl.screen.getByTestId('explore-hero-dots', hidden)).position).toBeUndefined();
+    expect(rtl.within(rtl.screen.getByTestId('explore-hero')).queryByTestId('explore-hero-dots', hidden)).toBeNull();
+    expect(rtl.within(rtl.screen.getByTestId('explore-hero-dots-row', hidden)).getByTestId('explore-hero-dots', hidden)).toBeTruthy();
     expect(rtl.screen.getByTestId('explore-ad-a1-artwork', hidden).props.source).toEqual([{ uri: 'https://img.example.test/a1.jpg' }]);
     expect(rtl.screen.getByTestId('explore-ad-a1-artwork', hidden).props.contentFit).toBe('contain');
   });
