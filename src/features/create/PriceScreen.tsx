@@ -23,7 +23,7 @@ import { allowanceKey, createContent, fetchSaleTerms, saleTermsKey, saveLessons,
 import { CreateFrame } from './CreateFrame';
 import { fullFileOf, getCover, resetDraft, setMade, useCover, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
 import { priceOf, priceReady, setDetails, setSent, useDetails, type AccessType } from './details';
-import { formatBytes, iconOf, labelOf, type FormatId } from './model';
+import { formatBytes, iconOf, labelOf, previewMadeByHub, type FormatId } from './model';
 import { Stepper } from './parts';
 import { listingStill } from './still';
 import { coverAssetFor } from './coverSend';
@@ -42,8 +42,8 @@ export const MODES = [
 const sizeOf = (file: UploadedFile): string => (file.pages ? `${file.pages} ${file.pages === 1 ? 'page' : 'pages'}` : formatBytes(file.bytes));
 
 /** "PDF · 84 pages · preview 12 pages": the format, then the full file and the preview, each as the person's own file says. */
-export function pieceMeta(format: FormatId, full: UploadedFile, preview: UploadedFile): string {
-  return `${labelOf(format)} · ${sizeOf(full)} · preview ${sizeOf(preview)}`;
+export function pieceMeta(format: FormatId, full: UploadedFile, preview: UploadedFile | null): string {
+  return preview ? `${labelOf(format)} · ${sizeOf(full)} · preview ${sizeOf(preview)}` : `${labelOf(format)} · ${sizeOf(full)}`;
 }
 
 /** The sentence under a refused send: the Hub's own words when it gave them, else one the person can act on. */
@@ -98,7 +98,7 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
 
   const send = async () => {
     const price = free ? 0 : priceOf(details.price);
-    if (sending.current || price === null || !full || !preview || details.category === null) return;
+    if (sending.current || price === null || !full || (!preview && !previewMadeByHub(format)) || details.category === null) return;
     sending.current = true;
     setBusy(true);
     setFailure(null);
@@ -114,7 +114,8 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
           category: details.category,
           accessType: details.accessType,
           price,
-          previewAsset: preview.fileUrl,
+          // Audio and video send no clip (R-118): a paid piece asks the Hub to make its preview from the full file, a free one has none.
+          ...(preview ? { previewAsset: preview.fileUrl } : free ? {} : { previewFromFile: true }),
           fullAsset: full.fileUrl,
           ...(coverAsset ? { coverAsset } : {}),
           ...(details.parentCourse ? { parentCourseId: details.parentCourse.id } : {}),
@@ -159,7 +160,9 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
   return (
     <CreateFrame testID="price-screen" title={`New ${labelOf(format)}`} subtitle="Step 5 of 5" onLeave={onBack} foot={foot}>
       <Stepper active={3} />
-      {full && preview ? <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview} /> : null}
+      {full && (preview || previewMadeByHub(format)) ? (
+        <PieceCard format={format} title={details.title.trim()} meta={pieceMeta(format, full, preview)} cover={preview ?? { contentType: format === 'audio' ? 'audio/mpeg' : 'video/mp4' }} />
+      ) : null}
       <SegmentedTabs
         testID="price-mode"
         label="Paid or free"
@@ -214,7 +217,7 @@ function NoteLine() {
 }
 
 /** The piece as a buyer will meet it: its cover (the preview, when that is a picture, or a frame of it when it is a video), its title, and what was uploaded. Paid or free: the card is the piece, not the price. */
-function PieceCard({ format, title, meta, cover }: { format: FormatId; title: string; meta: string; cover: UploadedFile }) {
+function PieceCard({ format, title, meta, cover }: { format: FormatId; title: string; meta: string; cover: Pick<UploadedFile, 'contentType' | 'previewUri' | 'frame'> }) {
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);
   const picture = listingStill(cover, useCover());

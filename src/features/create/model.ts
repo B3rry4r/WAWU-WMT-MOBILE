@@ -9,6 +9,14 @@ export type FileRule = { contentTypes: string[]; extensions: string[]; maxBytes:
 export type PreviewRule = FileRule & { kind: 'clip' | 'lesson' | 'extract' | 'cover'; seconds: { min: number; max: number } | null };
 export type FormatRule = { id: string; full: FileRule; preview: PreviewRule };
 
+/**
+ * R-118 (owner, 31 Oct 2026): the creator never uploads a preview clip for audio or video. The Hub makes it from the full file of a PAID piece
+ * (a FREE piece has none: the whole piece is open to everyone, R-8), so step 3 for these two is the cover step alone.
+ */
+export const previewMadeByHub = (id: FormatId): boolean => id === 'audio' || id === 'video';
+/** What the Hub's made preview takes, in seconds (its `PREVIEW_SECONDS`; a file under 45 seconds gets its first third). */
+export const MADE_PREVIEW_SECONDS = 30;
+
 /** The name and the picture of each format, as M20 draws them. The words after the dot on each row are `formatHint`. */
 export const FORMATS: readonly { id: FormatId; label: string; icon: IconName }[] = [
   { id: 'video', label: 'Video', icon: 'Play' },

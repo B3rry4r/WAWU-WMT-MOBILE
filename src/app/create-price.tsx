@@ -4,6 +4,7 @@ import { useSession } from '@/api/session';
 import { useCreatorGate } from '@/features/create/CreateEntry';
 import { detailsReady, useDetails, useSent } from '@/features/create/details';
 import { fullFileOf, useDraft, useLessons } from '@/features/create/draft';
+import { previewMadeByHub } from '@/features/create/model';
 import { PriceScreen } from '@/features/create/PriceScreen';
 
 /**
@@ -27,7 +28,7 @@ export default function CreatePriceRoute() {
   if (sent) return null;
   if (!format) return <Redirect href="/create-format" />;
   if (!full) return <Redirect href="/create-upload" />;
-  if (!preview) return <Redirect href="/create-preview" />;
+  if (!preview && !previewMadeByHub(format)) return <Redirect href="/create-preview" />;
   if (!detailsReady(details)) return <Redirect href="/create-details" />;
 
   return (

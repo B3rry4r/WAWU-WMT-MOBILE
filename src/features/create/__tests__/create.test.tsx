@@ -544,9 +544,14 @@ describe('M22 · Preview', () => {
     expect(await screen.findByText('1 KB \u00b7 public')).toBeTruthy();
   });
 
-  it('asks for the clip length the Hub sets on an audio piece', async () => {
-    await open('audio');
-    expect(await screen.findByText('Buyers see this before paying. Upload a 30–60 second clip.')).toBeTruthy();
+  it('R-118: an audio or video piece has no clip to add: it says the Hub makes the preview, and Continue is not held up', async () => {
+    const onContinue = jest.fn();
+    await open('audio', onContinue);
+    expect(await screen.findByText('Your preview is the first 30 seconds, made for you.')).toBeTruthy();
+    expect(screen.queryByTestId('preview-drop')).toBeNull();
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBeFalsy();
+    await fireEvent.press(screen.getByTestId('create-continue'));
+    expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
   it('draws no Continue until the details step exists, and then waits for the preview to land', async () => {

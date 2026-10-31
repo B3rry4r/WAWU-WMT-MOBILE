@@ -19,7 +19,7 @@ import { refusalFor, type ChosenFile } from './chosen';
 import { CreateFrame } from './CreateFrame';
 import { CoverChoice } from './CoverChoice';
 import { setPreview, useCover, useDraft, type UploadedFile } from './draft';
-import { formatBytes, iconOf, labelOf, previewHint, type FormatId, type PreviewRule } from './model';
+import { MADE_PREVIEW_SECONDS, formatBytes, iconOf, labelOf, previewHint, previewMadeByHub, type FormatId, type PreviewRule } from './model';
 import { frameFor } from './frames';
 import { FileRow, Stepper, useFirstTap } from './parts';
 import { pagesOf } from './pdfPages';
@@ -59,6 +59,8 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
   const [stage, setStage] = useState<Stage>({ state: 'idle' });
   const abort = useRef<AbortController | null>(null);
   const firstTap = useFirstTap();
+  // Audio and video: the Hub makes the preview, so this step is the cover step alone (R-118).
+  const made = previewMadeByHub(format);
 
   useEffect(() => () => abort.current?.abort(), []);
 
@@ -117,18 +119,23 @@ export function PreviewScreen({ format, onBack, onContinue }: PreviewScreenProps
     abort.current?.abort();
     onBack();
   };
-  const foot = onContinue ? <Button testID="create-continue" label="Continue" full disabled={!preview || stage.state === 'uploading'} onPress={onContinue} /> : undefined;
+  const foot = onContinue ? <Button testID="create-continue" label="Continue" full disabled={made ? false : !preview || stage.state === 'uploading'} onPress={onContinue} /> : undefined;
 
   return (
     <CreateFrame testID="preview-screen" title={`New ${labelOf(format)}`} subtitle="Step 3 of 5" onLeave={leave} foot={foot}>
       <Stepper active={1} />
       <View style={styles.heading}>
         <Text variant="h2" style={styles.title}>
-          Add a preview
+          {made ? 'Add a cover' : 'Add a preview'}
         </Text>
-        <Text variant="muted">{previewHint(rule)}</Text>
+        <Text variant="muted">{made ? `Your preview is the first ${MADE_PREVIEW_SECONDS} seconds, made for you.` : previewHint(rule)}</Text>
       </View>
-      {formats.isError && !rule ? (
+      {made ? (
+        <>
+          <HowItLooks format={format} file={{ contentType: format === 'audio' ? 'audio/mpeg' : 'video/mp4' }} />
+          <CoverChoice />
+        </>
+      ) : formats.isError && !rule ? (
         <ErrorState
           testID="preview-error"
           title="Couldn't load the upload rules"
@@ -197,7 +204,7 @@ function DropBox({ disabled, onPress }: { disabled: boolean; onPress: () => void
 }
 
 /** "How it will look": the preview twice, then once more behind a lock, as a buyer meets it before paying. */
-function HowItLooks({ format, file }: { format: FormatId; file: UploadedFile }) {
+function HowItLooks({ format, file }: { format: FormatId; file: Pick<UploadedFile, 'contentType' | 'previewUri' | 'frame'> }) {
   // The tiles draw what the listing will carry: the cover the person picked, else the preview's own frame or picture (R-114).
   const picture = listingStill(file, useCover());
   return (

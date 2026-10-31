@@ -17,7 +17,8 @@ import { UPLOAD_CANCELLED, uploadFile } from './upload';
 /** The picked cover's thumbnail is the shape the price card draws the same picture in on the next step: 52 by 66, corner 10 (PriceScreen). */
 const thumb = { width: 52, height: 66, corner: 10 } as const;
 
-export type CoverChoiceProps = { preview: UploadedFile };
+/** `preview` is the clip the person uploaded, when there is one: its frame is the default cover. Audio and video have no clip (R-118): the Hub makes their preview. */
+export type CoverChoiceProps = { preview?: UploadedFile | null };
 
 type Stage = { state: 'idle' } | { state: 'uploading' } | { state: 'failed'; message: string };
 
@@ -32,7 +33,7 @@ export function CoverChoice({ preview }: CoverChoiceProps) {
   const cover = useCover();
   const [stage, setStage] = useState<Stage>({ state: 'idle' });
   const picking = useRef(false);
-  const hasFrame = Boolean(preview.frame);
+  const hasFrame = Boolean(preview?.frame);
   // What the segment says: the frame, a picture the person picked, or none. Without a readable frame there is no default picture.
   const value = cover.mode === 'picture' ? 'picture' : cover.mode === 'none' || !hasFrame ? 'none' : 'frame';
   const items = [

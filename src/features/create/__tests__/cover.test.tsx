@@ -56,10 +56,11 @@ afterEach(() => {
 
 /** A video piece at the preview step with its preview up and its frame read (what CREATE-FRAMES leaves in the draft). */
 async function atPreview() {
-  draft.setFormat('video');
+  draft.setFormat('course');
   draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+  if (draft.getDraft().format === 'course') asLesson();
   draft.setPreview({ name: 'clip.mp4', bytes: 4 * MB, contentType: 'video/mp4', key: 'content/preview/u1/clip.mp4', fileUrl: 'https://storage.test/content/preview/u1/clip.mp4?read=1', frame: thumbnail as never });
-  return renderFrame(<PreviewScreen format="video" onBack={jest.fn()} onContinue={jest.fn()} />);
+  return renderFrame(<PreviewScreen format="course" onBack={jest.fn()} onContinue={jest.fn()} />);
 }
 
 /** The price step for the same piece, paid at ₦3,000, Send pressed. */
@@ -79,6 +80,12 @@ function pickerGives(file: ReturnType<typeof chosen>) {
 }
 const COVER_READ = { maxSide: 2048, jpeg: true, quality: 0.85 };
 const COVER_LINK = 'https://storage.test/content/cover/u1/cover.png?read=1';
+
+/** A course's full file is its first lesson's file (`fullFileOf`): puts the draft's full file on a lesson, as the lessons step leaves it. */
+function asLesson(): void {
+  draft.addLesson();
+  draft.setLessonFile(draft.getLessons()[0].key, draft.getDraft().full);
+}
 
 describe('M22 · the Cover choice (Android)', () => {
   it('a user with a video preview sees the frame as the default cover, with Picture and None beside it', async () => {
@@ -134,8 +141,9 @@ describe('M24 · what the create call sends as the cover (Android)', () => {
   it('by default a video piece sends the frame as its cover: written as a JPEG, sent to content/cover, named as coverAsset', async () => {
     mockFrameFile.mockResolvedValue(chosen('cover.jpg', 'image/jpeg', 3));
     hub.answers[`POST ${PRESIGN}`] = presigned('content/cover', 'cover.jpg');
-    draft.setFormat('video');
+    draft.setFormat('course');
     draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
     draft.setPreview({ name: 'clip.mp4', bytes: 4 * MB, contentType: 'video/mp4', key: 'content/preview/u1/clip.mp4', fileUrl: 'https://storage.test/content/preview/u1/clip.mp4?read=1', frame: thumbnail as never });
     details.setDetails({ title: 'Launch day', description: 'The whole day.', category: 'entertainment_creative', accessType: 'paid', price: '3000' });
     servePrices();
@@ -152,10 +160,40 @@ describe('M24 · what the create call sends as the cover (Android)', () => {
     expect(posts()[0]).toMatchObject({ coverAsset: 'https://storage.test/content/cover/u1/cover.jpg?read=1', previewAsset: 'https://storage.test/content/preview/u1/clip.mp4?read=1' });
   });
 
+  it('R-118: a paid audio piece sends no clip and asks the Hub to make its preview from the full file', async () => {
+    draft.setFormat('audio');
+    draft.setFull({ name: 'full.mp3', bytes: 9 * MB, contentType: 'audio/mpeg', key: 'content/full/u1/f.mp3', fileUrl: 'https://storage.test/content/full/u1/f.mp3?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
+    details.setDetails({ title: 'Beats', description: 'Stems.', category: 'entertainment_creative', accessType: 'paid', price: '3000' });
+    servePrices();
+    await renderFrame(<PriceScreen format="audio" onBack={jest.fn()} onSent={jest.fn()} />);
+    await waitFor(() => expect(screen.getByTestId('create-send').props.accessibilityState.disabled).toBe(false));
+    await fireEvent.press(screen.getByTestId('create-send'));
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(posts()[0]).toMatchObject({ previewFromFile: true, fullAsset: 'https://storage.test/content/full/u1/f.mp3?read=1' });
+    expect(posts()[0]).not.toHaveProperty('previewAsset');
+  });
+
+  it('R-118: a free audio piece sends no preview and no request for one', async () => {
+    draft.setFormat('audio');
+    draft.setFull({ name: 'full.mp3', bytes: 9 * MB, contentType: 'audio/mpeg', key: 'content/full/u1/f.mp3', fileUrl: 'https://storage.test/content/full/u1/f.mp3?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
+    details.setDetails({ title: 'Over the Horizon', description: 'Free.', category: 'entertainment_creative', accessType: 'free', price: '' });
+    servePrices();
+    await renderFrame(<PriceScreen format="audio" onBack={jest.fn()} onSent={jest.fn()} />);
+    await waitFor(() => expect(screen.getByTestId('create-send').props.accessibilityState.disabled).toBe(false));
+    await fireEvent.press(screen.getByTestId('create-send'));
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(posts()[0]).not.toHaveProperty('previewAsset');
+    expect(posts()[0]).not.toHaveProperty('previewFromFile');
+    expect(posts()[0]).toMatchObject({ accessType: 'free', price: 0 });
+  });
+
   it('a frame that cannot be written or sent leaves the piece without a cover and the piece still goes', async () => {
     mockFrameFile.mockResolvedValue(null);
-    draft.setFormat('video');
+    draft.setFormat('course');
     draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
     draft.setPreview({ name: 'clip.mp4', bytes: 4 * MB, contentType: 'video/mp4', key: 'content/preview/u1/clip.mp4', fileUrl: 'https://storage.test/content/preview/u1/clip.mp4?read=1', frame: thumbnail as never });
     const body = await sendPiece();
     expect(body).not.toHaveProperty('coverAsset');
@@ -165,6 +203,7 @@ describe('M24 · what the create call sends as the cover (Android)', () => {
   it('a picture the person picked is sent as coverAsset, and a piece with no frame and no pick sends none', async () => {
     draft.setFormat('audio');
     draft.setFull({ name: 'full.mp3', bytes: 9 * MB, contentType: 'audio/mpeg', key: 'content/full/u1/f.mp3', fileUrl: 'https://storage.test/content/full/u1/f.mp3?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
     draft.setPreview({ name: 'clip.mp3', bytes: 1 * MB, contentType: 'audio/mpeg', key: 'content/preview/u1/clip.mp3', fileUrl: 'https://storage.test/content/preview/u1/clip.mp3?read=1' });
     draft.setCover({ mode: 'picture', file: { name: 'cover.png', bytes: 3, contentType: 'image/png', key: 'content/cover/u1/cover.png', fileUrl: 'https://storage.test/content/cover/u1/cover.png?read=1', previewUri: 'file:///cache/cover.png' } });
     details.setDetails({ title: 'Beats', description: 'Stems.', category: 'entertainment_creative', accessType: 'paid', price: '3000' });
@@ -243,8 +282,9 @@ describe('M24 · a failed Send leaves one cover in storage, not two (Android)', 
     mockFrameFile.mockResolvedValue(chosen('cover.jpg', 'image/jpeg', 3));
     hub.answers[`POST ${PRESIGN}`] = presigned('content/cover', 'cover.jpg');
     hub.answers[`POST ${CREATE}`] = refusal(500, 'Something went wrong.');
-    draft.setFormat('video');
+    draft.setFormat('course');
     draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
     draft.setPreview({ name: 'clip.mp4', bytes: 4 * MB, contentType: 'video/mp4', key: 'content/preview/u1/clip.mp4', fileUrl: 'https://storage.test/content/preview/u1/clip.mp4?read=1', frame: thumbnail as never });
     details.setDetails({ title: 'Launch day', description: 'The whole day.', category: 'entertainment_creative', accessType: 'paid', price: '3000' });
     servePrices();
@@ -268,7 +308,7 @@ describe('M24 · a failed Send leaves one cover in storage, not two (Android)', 
 
   it('a frame cover that went up and is not used (the person leaves) is given back to the Hub', async () => {
     mockFrameFile.mockResolvedValue(chosen('cover.jpg', 'image/jpeg', 3));
-    draft.setFormat('video');
+    draft.setFormat('course');
     draft.setCover({ mode: 'default', file: { name: 'cover.jpg', bytes: 3, contentType: 'image/jpeg', key: 'content/cover/u1/cover.jpg', fileUrl: 'https://storage.test/content/cover/u1/cover.jpg?read=1' } });
     hub.answers['POST /api/hub/uploads/release'] = ok({ released: true });
     draft.abandonDraft();

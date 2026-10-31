@@ -91,13 +91,19 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-const open = (format: 'video' | 'image' | 'audio' = 'video', onBack = jest.fn()) => renderFrame(<PreviewScreen format={format} onBack={onBack} onContinue={jest.fn()} />);
+const open = (format: 'course' | 'image' | 'audio' = 'course', onBack = jest.fn()) => renderFrame(<PreviewScreen format={format} onBack={onBack} onContinue={jest.fn()} />);
 const land = async () => {
   await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
   await act(async () => {
     ScriptedXhr.last?.finish(200);
   });
 };
+
+/** A course's full file is its first lesson's file (`fullFileOf`): puts the draft's full file on a lesson, as the lessons step leaves it. */
+function asLesson(): void {
+  draft.addLesson();
+  draft.setLessonFile(draft.getLessons()[0].key, draft.getDraft().full);
+}
 
 describe('M22 · Preview, a video (Android, from the gallery)', () => {
   it('a user can pick a video from the gallery and see frames of it in How it will look: the preview twice, then the frosted locked one', async () => {
@@ -131,8 +137,9 @@ describe('M22 · Preview, a video (Android, from the gallery)', () => {
   });
 
   it('a user sees the same frame on the price step, as the piece card\'s cover', async () => {
-    draft.setFormat('video');
+    draft.setFormat('course');
     draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
     const first = await open();
     await fireEvent.press(await screen.findByTestId('preview-drop'));
     await land();
@@ -150,8 +157,9 @@ describe('M22 · Preview, a video (Android, from the gallery)', () => {
     mockReader.thumbnails = async () => {
       throw new Error('Failed to generate thumbnail');
     };
-    draft.setFormat('video');
+    draft.setFormat('course');
     draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
     const first = await open();
     await fireEvent.press(await screen.findByTestId('preview-drop'));
     await land();
@@ -186,7 +194,7 @@ describe('M22 · Preview, a video (Android, from the gallery)', () => {
     let finish: (value: unknown[]) => void = () => undefined;
     mockReader.thumbnails = () => new Promise<unknown[]>((resolve) => (finish = resolve));
     const onBack = jest.fn();
-    await open('video', onBack);
+    await open('course', onBack);
     await fireEvent.press(await screen.findByTestId('preview-drop'));
     await waitFor(() => expect(mockReader.events).toContain('frame'));
     await fireEvent.press(screen.getByLabelText('Back'));
@@ -203,7 +211,7 @@ describe('M22 · Preview, a video (Android, from the gallery)', () => {
     const pickFileModule = require('../pickFile') as typeof import('../pickFile');
     jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue({ ...chosen('launch-day.mp4', 'video/mp4', 4, { previewUri: GALLERY }), discard });
     const onBack = jest.fn();
-    await open('video', onBack);
+    await open('course', onBack);
     await fireEvent.press(await screen.findByTestId('preview-drop'));
     await waitFor(() => expect(mockReader.events).toContain('frame'));
     expect(discard).not.toHaveBeenCalled();
@@ -241,16 +249,12 @@ describe('M22 · Preview, an image or an audio clip looks exactly as before', ()
     expect(draft.getDraft().preview?.frame).toBeUndefined();
   });
 
-  it('an audio clip keeps the icon in the tiles and no video reader is opened', async () => {
-    const pickFileModule = require('../pickFile') as typeof import('../pickFile');
-    jest.spyOn(pickFileModule, 'pickFile').mockResolvedValue(chosen('clip.mp3', 'audio/mpeg', 5, { previewUri: 'file:///cache/clip.mp3' }));
-    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'clip.mp3');
+  it('R-118: an audio piece uploads no clip: the step is the cover step, the tiles keep the icon and no video reader is opened', async () => {
     await open('audio');
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await land();
-    await screen.findByTestId('preview-look');
-    expect(screen.queryByTestId('preview-tile-image')).toBeNull();
+    expect(await screen.findByText('Add a cover')).toBeTruthy();
+    expect(screen.queryByTestId('preview-drop')).toBeNull();
     expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
+    expect(screen.queryByTestId('preview-tile-image')).toBeNull();
     expect(mockReader.calls).toEqual([]);
   });
 });
@@ -277,14 +281,15 @@ describe('M22 and M24 · a course, and a Free piece (Android)', () => {
 
     details.setDetails({ title: 'VFX for Beginners', description: 'Twelve lessons.', category: 'entertainment_creative' });
     servePrices();
-    await renderFrame(<PriceScreen format="course" onBack={jest.fn()} onSent={jest.fn()} />);
+    await renderFrame(<PriceScreen format="video" onBack={jest.fn()} onSent={jest.fn()} />);
     expect(await screen.findByTestId('price-piece')).toBeTruthy();
     expect(screen.getByTestId('price-piece-image').props.source).toEqual([mockThumbnail]);
   });
 
   it('a user who picks Free on the price step still sees the piece card, with the frame of their video as its cover, above the Free card', async () => {
-    draft.setFormat('video');
+    draft.setFormat('course');
     draft.setFull({ name: 'full.mp4', bytes: 90 * MB, contentType: 'video/mp4', key: 'content/full/u1/f.mp4', fileUrl: 'https://storage.test/content/full/u1/f.mp4?read=1' });
+    if (draft.getDraft().format === 'course') asLesson();
     const first = await open();
     await fireEvent.press(await screen.findByTestId('preview-drop'));
     await land();

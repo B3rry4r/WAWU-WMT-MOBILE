@@ -9,11 +9,11 @@ import { uploadFile } from './upload';
  * still goes. The frame that went up is kept in the draft: a Send that fails and is tried again uses it rather than sending a second one, and
  * it is given back to the Hub if the person leaves (`draft.ts` gives back whatever the cover holds).
  */
-export async function coverAssetFor(preview: UploadedFile, cover: DraftCover): Promise<string | null> {
+export async function coverAssetFor(preview: UploadedFile | null, cover: DraftCover): Promise<string | null> {
   if (cover.mode === 'none') return null;
   if (cover.mode === 'picture') return cover.file?.fileUrl ?? null;
   if (cover.file) return cover.file.fileUrl;
-  if (!preview.frame) return null;
+  if (!preview?.frame) return null;
   try {
     const file = await frameFile(preview.frame);
     if (!file) return null;
