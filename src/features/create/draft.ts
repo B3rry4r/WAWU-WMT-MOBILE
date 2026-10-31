@@ -100,7 +100,7 @@ async function release(key: string): Promise<void> {
   }
 }
 
-function giveBack(file: UploadedFile | null): void {
+export function giveBack(file: Pick<UploadedFile, 'key'> | null): void {
   if (file) void release(file.key);
 }
 

@@ -22,7 +22,9 @@ jest.mock('expo-file-system', () => ({
     constructor(_dir: unknown, name: string) {
       this.uri = `file:///cache/${name}`;
     }
-    static downloadFileAsync = (...args: unknown[]) => mockDownload(...args);
+    static downloadFileAsync(...args: unknown[]): unknown {
+      return mockDownload(...args);
+    }
   },
 }));
 jest.mock('@/features/media/manipulatorCache', () => ({ forgetFile: (...args: unknown[]) => mockForget(...args) }));

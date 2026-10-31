@@ -119,23 +119,3 @@ export function formatHint(id: FormatId, rule: FormatRule | undefined): string {
 /** M21's heading for each format ("Upload the full PDF"). */
 export const uploadTitle = (id: FormatId): string =>
   ({ video: 'Upload the full video', course: 'Upload the course', audio: 'Upload the full audio', pdf: 'Upload the full PDF', image: 'Upload the full image', template: 'Upload the template' })[id];
-
-/**
- * The sentence under "Add a preview" on VF12 (Publish a draft product), the one place a creator still uploads a preview file. R-118 made step 3
- * of Create the cover step; the draft publish is the same ruling's left over (tasks/PREVIEW-AUTO.md, Not done).
- */
-export function previewHint(rule: PreviewRule | undefined): string {
-  const lead = 'Buyers see this before paying.';
-  switch (rule?.kind) {
-    case 'extract':
-      return `${lead} For a PDF, upload the extract you want to give away.`;
-    case 'clip':
-      return rule.seconds ? `${lead} Upload a ${secondsLine(rule.seconds)} second clip.` : `${lead} Upload the clip you want to give away.`;
-    case 'lesson':
-      return `${lead} Upload what you want them to see of the course.`;
-    case 'cover':
-      return `${lead} Upload the cover they should see.`;
-    default:
-      return lead;
-  }
-}
