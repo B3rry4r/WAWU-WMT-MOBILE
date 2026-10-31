@@ -45062,6 +45062,27 @@
           "AdminUgcReports"
         ]
       }
+    },
+    "/api/hub/me/suspension": {
+      "get": {
+        "operationId": "MeSuspensionController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MySuspensionView"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "MeSuspension"
+        ]
+      }
     }
   },
   "info": {
@@ -81922,6 +81943,31 @@
         },
         "required": [
           "action"
+        ]
+      },
+      "MySuspensionView": {
+        "type": "object",
+        "properties": {
+          "suspended": {
+            "type": "boolean"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          },
+          "supportEmail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "suspended",
+          "since",
+          "message",
+          "supportEmail"
         ]
       }
     }

@@ -3,6 +3,7 @@ import createClient, { type Middleware } from 'openapi-fetch';
 import { apiBaseUrl } from './env';
 import { ApiError, failureOf, networkError, NO_ANSWER_CODE, noAnswerError, toApiError } from './errors';
 import { carriesPaySource, paySourceCode } from './paySource';
+import { refusalOf, reportSuspendedRefusal } from './suspension';
 import { getAccessToken, isCurrentSessionToken, refreshAccessToken } from './session';
 import type { paths } from './schema.generated';
 
@@ -177,9 +178,28 @@ const appClient: Middleware = {
   },
 };
 
+/**
+ * USER-SUSPEND (R-121): a 403 the Hub sends a suspended person for a write is reported once (`./suspension`), whichever screen sent
+ * it, so the app can open its one calm screen. The answer itself goes on to the caller unchanged. Read from a copy; any other 403
+ * (and any answer that is not JSON) is left alone.
+ */
+const suspension: Middleware = {
+  async onResponse({ response }) {
+    if (response.status !== 403) return undefined;
+    try {
+      const refusal = refusalOf(await response.clone().json());
+      if (refusal) reportSuspendedRefusal(refusal);
+    } catch {
+      // Not JSON: not ours.
+    }
+    return undefined;
+  },
+};
+
 api.use(appClient);
 api.use(paySource);
 api.use(auth);
+api.use(suspension);
 
 type Result<T, E> = { data?: T; error?: E; response: Response };
 

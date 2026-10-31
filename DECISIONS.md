@@ -812,3 +812,11 @@ The plan in the owner's "Verify, Create, Earn" document of 5 Oct and its Develop
 ### R-115 · Audio a person presses play on keeps playing when the screen locks or the app is left
 *Lead ruling, 30 Oct 2026, from the owner's "check for everything" on the store build's native settings.* Audio a person presses play on keeps playing when the screen locks or the app is left (audio pieces, audiobooks, podcasts, Studio results), with the iPhone silent switch not muting it. Short voice clips and the WAWU theme stop as before.
 **Carried out by:** MIC-PERMS / NATIVE-FIX.
+
+### R-121 · A moderator can suspend a person and lift it; a suspended person is hidden from everyone and cannot write, but is never trapped
+*Lead default, 31 Oct 2026 (store review: Apple guideline 1.2, Google Play's user-generated content policy: act on a report within 24 hours by removing the content AND ejecting the person who posted it). The owner may override.*
+- A moderator (admin roles superadmin, reviewer, support) suspends a person with a reason from the report sheet's short list and a note, and lifts it. Every suspend and lift is in the admin ops audit with who and why.
+- While suspended: their profile, pieces, comments, community messages, rooms and listings are hidden from everyone else (lists, search, direct links answer as not found, a buyer's copy too); they cannot post, comment, message, sell, tip or buy (one refusal in words, "Your account is suspended. Contact support@wawuafrica.com."); they CAN still sign in, read their own data, export it, delete their account and withdraw money they already earned to a bank (R-5, R-11: earnings and money are never trapped). Nothing is deleted; lifting restores everything.
+- Resolving a report on a profile with take down suspends the person (it answered 409); a piece, comment or message also gets "Remove and suspend the person"; a paid question can be left as it is and its person suspended.
+- The app shows one calm screen on any refused write (the Hub's words, the support address as selectable text, a way back) and a banner on Me. No board draws either (R-29); both are built from existing parts.
+**Carried out by:** USER-SUSPEND (Hub, app; the admin dashboard's Reports queue and suspend dialog are the dashboard part of the same task).
