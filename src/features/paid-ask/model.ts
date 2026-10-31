@@ -237,7 +237,7 @@ export const TERMS_FAILED_LINE = "We couldn't check if you can ask a follow-up. 
  * `'failed'` says the terms could not be read.
  */
 export function answeredCard(name: string | null | undefined, followUp: FollowUp | 'pending' | 'failed' | null): StatusCard {
-  const lead = `${whoOf(name)} answered, so they've been paid`;
+  const lead = `${whoOf(name)} answered`;
   if (followUp === 'pending') return { tone: 'answered', title: lead, body: null };
   if (followUp === 'failed') return { tone: 'answered', title: lead, body: TERMS_FAILED_LINE };
   if (!followUp) return { tone: 'answered', title: lead, body: 'This question is closed.' };
@@ -267,16 +267,16 @@ export function refundedCard(
   if (wallet && typeof back === 'number' && back > 0) {
     const sum = from ? paidFromBackText(from) : formatNaira(back);
     if (wallet.status === 'refunding' || !hold?.settledAt) {
-      return { tone: 'refunded', title: `${within}, so ${sum} is coming back`, body: `It is on its way to ${dest}. ${whoOf(name)} earned nothing.` };
+      return { tone: 'refunded', title: `${within}, so ${sum} is coming back`, body: `It is on its way to ${dest}.` };
     }
-    return { tone: 'refunded', title: `${within}, so you got ${sum} back`, body: `It went back to ${dest} ${atWords(hold.settledAt, now)}. ${whoOf(name)} earned nothing.` };
+    return { tone: 'refunded', title: `${within}, so you got ${sum} back`, body: `It went back to ${dest} ${atWords(hold.settledAt, now)}.` };
   }
   // INBOX-10 N1: while the refund is still moving the hold has no figure yet (it is written when the refund settles), so there is
   // nothing to print; say the money is on its way instead of saying it was refunded.
   if (wallet && (wallet.status === 'refunding' || (hold !== null && !hold.settledAt))) {
-    return { tone: 'refunded', title: `${within}, so your money is on its way back`, body: `It is on its way to ${dest}. ${whoOf(name)} earned nothing.` };
+    return { tone: 'refunded', title: `${within}, so your money is on its way back`, body: `It is on its way to ${dest}.` };
   }
-  return { tone: 'refunded', title: `${within}, so this question was refunded`, body: `${whoOf(name)} earned nothing.` };
+  return { tone: 'refunded', title: `${within}, so this question was refunded`, body: `Your money went back to ${dest}.` };
 }
 
 /** One thing in the thread, oldest first, for the list to draw. */

@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,6 +30,12 @@ export type CreateFrameProps = {
   onNearEnd?: () => void;
   /** A pull-to-refresh on the body (M31's list reads the Hub again). */
   refreshControl?: ReactElement<RefreshControlProps>;
+  /**
+   * A refusal or a notice drawn at the END of the body (the price step's "Not sent"): when this turns from empty to something the body
+   * scrolls to its end, so the notice is read in full and nothing is covered by it (UPLOAD-REST: it used to sit in the foot and push
+   * the Listing fee card behind it).
+   */
+  endKey?: string | null;
   children: ReactNode;
   testID?: string;
 };
@@ -38,8 +44,12 @@ export type CreateFrameProps = {
 const MORE_WITHIN = 600;
 
 /** The Create screens' frame: safe areas, the bar (a round button, a title with a line under it), the scrolling body and a pinned foot. */
-export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, refreshControl, children, testID }: CreateFrameProps) {
+export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, refreshControl, endKey, children, testID }: CreateFrameProps) {
   const { colors } = useWawu();
+  const scroller = useRef<ScrollView>(null);
+  useEffect(() => {
+    if (endKey) scroller.current?.scrollToEnd?.({ animated: true });
+  }, [endKey]);
   const insets = useSafeAreaInsets();
   const onScroll = onNearEnd
     ? (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -66,6 +76,7 @@ export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, 
         <View style={styles.side}>{trailing}</View>
       </View>
       <ScrollView
+        ref={scroller}
         testID={testID ? `${testID}-scroll` : undefined}
         style={styles.scroll}
         keyboardShouldPersistTaps="handled"

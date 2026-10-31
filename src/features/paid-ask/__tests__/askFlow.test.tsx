@@ -353,7 +353,7 @@ describe('I4 · waiting for a reply', () => {
 });
 
 describe('I5 · replied', () => {
-  it('a user reads the creator\'s two bubbles, "Replied in 2h 14m", "answered, so they\'ve been paid" and the follow-up offer', async () => {
+  it('a user reads the creator\'s two bubbles, "Replied in 2h 14m", "answered" and the follow-up offer', async () => {
     await boot();
     expect(await rtl.screen.findByText('Honestly, I priced by outcome, not hours.')).toBeTruthy();
     expect(rtl.screen.getByText("Send me your current rate card and I'll tell you where it's soft.")).toBeTruthy();
@@ -361,7 +361,7 @@ describe('I5 · replied', () => {
     // The offer comes from the creator's terms, which are read after the thread: wait for them, then read the card.
     await rtl.screen.findByRole('button', { name: 'Ask a follow-up · ₦1,500' });
     const card = rtl.screen.getByTestId('paid-card-a1');
-    expect(rtl.within(card).getByTestId('paid-card-a1-title').props.children).toBe("Chidi answered, so they've been paid");
+    expect(rtl.within(card).getByTestId('paid-card-a1-title').props.children).toBe("Chidi answered");
     expect(rtl.within(card).getByTestId('paid-card-a1-body').props.children).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window.');
     expect(rtl.screen.getByRole('button', { name: 'Ask a follow-up · ₦1,500' })).toBeTruthy();
   });
@@ -371,7 +371,7 @@ describe('I5 · replied', () => {
     await boot();
     expect(await rtl.screen.findByText('Honestly, I priced by outcome, not hours.')).toBeTruthy();
     const card = rtl.screen.getByTestId('paid-card-a1');
-    expect(rtl.within(card).getByTestId('paid-card-a1-title').props.children).toBe("Chidi answered, so they've been paid");
+    expect(rtl.within(card).getByTestId('paid-card-a1-title').props.children).toBe("Chidi answered");
     expect(rtl.within(card).getByTestId('paid-card-a1-body-loading')).toBeTruthy();
     expect(rtl.within(card).queryByTestId('paid-card-a1-body')).toBeNull();
     expect(rtl.screen.queryByText('This question is closed.')).toBeNull();
@@ -597,7 +597,7 @@ describe('I7 · refunded', () => {
     await boot();
     const card = await rtl.screen.findByTestId(`paid-card-${OLD_Q}`);
     await rtl.waitFor(() => expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-title`).props.children).toBe('No reply in 24 hours, so you got ₦1,523.25 back'));
-    expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-body`).props.children).toMatch(/^It went back to your Naira wallet (today|yesterday|on [A-Za-z]+|[A-Za-z]+) at \d\d:\d\d\. Chidi earned nothing\.$/);
+    expect(rtl.within(card).getByTestId(`paid-card-${OLD_Q}-body`).props.children).toMatch(/^It went back to your Naira wallet (today|yesterday|on [A-Za-z]+|[A-Za-z]+) at \d\d:\d\d\.$/);
     expect(rtl.screen.getByTestId('paid-thread-sub').props.children).toBe('Paid DM · refunded');
     await rtl.fireEvent.press(await rtl.screen.findByRole('button', { name: 'Try again · ₦1,500' }));
     expect((await rtl.screen.findByTestId('ask-text')).props.value).toBe('Can I order a custom mix for my sister’s graduation?');

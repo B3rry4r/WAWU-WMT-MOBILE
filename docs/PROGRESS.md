@@ -3,12 +3,12 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 432.**
+**Launch tasks done: 176 of 433.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 34 | 0 | 0 | 0 |
-| building | 3 | 0 | 0 | 0 |
+| building | 4 | 0 | 0 | 0 |
 | verifying | 29 | 0 | 0 | 0 |
 | review | 243 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
@@ -293,6 +293,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Being built (or fixing verifier findings)
 
+- [UPLOAD-REST](../tasks/UPLOAD-REST.md) The rest of R-118 (Edit details free to paid, VF12 Publish) and R-120 (a buyer never sees what the creator gets) (You)
 - [TIER-COUNTS](../tasks/TIER-COUNTS.md) Products each tier allows are 4, 8 and 15, and a running tier gets the new count at once (R-112) (You)
 - [WELCOME-FULL](../tasks/WELCOME-FULL.md) The welcome video is the whole screen, with the words and buttons over it: no panel, no shade, no gradient (R-111) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
