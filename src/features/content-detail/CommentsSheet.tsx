@@ -15,6 +15,7 @@ import type { Comment } from './api';
 import { COMMENT_MAX, commenterName, mentionFor, threads } from './model';
 import { ThreadList } from './Parts';
 import { useReporting } from '@/features/report/useReporting';
+import { useCloseOnSuspended } from '@/features/suspension/useCloseOnSuspended';
 import type { Page } from './usePage';
 
 /** design/_gen/home.js line 76: the sheet opens 170 from the top; the box is 44 tall and the send button a 44 disc. */
@@ -51,6 +52,8 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   const sending = useRef(false);
   const items = useMemo(() => page.comments.data?.pages.flatMap((p) => p.items) ?? [], [page.comments.data]);
   const tree = useMemo(() => threads(items), [items]);
+  // A refused comment from a suspended person opens a screen beneath this Modal: put the sheet away so it shows (USER-SUSPEND).
+  useCloseOnSuspended(visible, onClose);
   const posting = page.post.isPending;
   const clean = text.trim();
   const ready = clean.length > 0 && clean.length <= COMMENT_MAX && !posting;

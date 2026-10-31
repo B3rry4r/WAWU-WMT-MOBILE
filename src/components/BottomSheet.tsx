@@ -2,6 +2,7 @@ import { useContext, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
+import { useCloseOnSuspended } from '@/features/suspension/useCloseOnSuspended';
 import { layout, radius, space, useWawu } from '@/theme';
 
 import { useFocusRing } from './focusRing';
@@ -89,6 +90,8 @@ export function BottomSheet({
   const close = () => {
     if (dismissible) onClose();
   };
+  // A refused write of a suspended person opens a screen beneath every Modal: put the sheet away so it shows (USER-SUSPEND).
+  useCloseOnSuspended(visible, onClose);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent>
       <View style={styles.root}>
