@@ -46,6 +46,8 @@ const PIECES = [
   piece('tplpic', 'template', 'https://cdn.test/previews/cover.png?sig=1'),
   piece('tplpdf', 'template', 'https://cdn.test/previews/cover.pdf?sig=1'),
   piece('nothing', 'video', ''),
+  piece('covvideo', 'video', 'https://cdn.test/previews/clip2.mp4?sig=1', { coverUrl: 'https://cdn.test/covers/video.jpg?sig=1' }),
+  piece('covtpl', 'template', 'https://cdn.test/previews/cover2.png?sig=1', { coverUrl: 'https://cdn.test/covers/tpl.webp?sig=1' }),
 ];
 
 function wrap() {
@@ -134,5 +136,31 @@ describe('X7 · the Content tab', () => {
     const locked = StyleSheet.flatten(row('tplpic').getByTestId('search-thumb-lock').props.style) as { left?: number; right?: number };
     expect(locked.left).toBe(0);
     expect(locked.right).toBe(0);
+  });
+});
+
+describe('X7 · covers (R-114, Android)', () => {
+  it('a user sees the creator\'s cover on a video row, where the clip had only a mark, and on a template the cover before its own preview', async () => {
+    await searchContent();
+    expect(row('covvideo').getByTestId('search-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/video.jpg?sig=1' }]);
+    expect(row('covvideo').queryByTestId('search-thumb-mark')).toBeNull();
+    expect(row('covtpl').getByTestId('search-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/tpl.webp?sig=1' }]);
+  });
+
+  it('a cover that will not load gives way to the preview\'s own picture, then to the kind mark', async () => {
+    await searchContent();
+    await rtl.act(async () => {
+      rtl.fireEvent(row('covtpl').getByTestId('search-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    });
+    expect(row('covtpl').getByTestId('search-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/previews/cover2.png?sig=1' }]);
+    await rtl.act(async () => {
+      rtl.fireEvent(row('covtpl').getByTestId('search-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    });
+    expect(row('covtpl').queryByTestId('search-thumb-image')).toBeNull();
+    expect(row('covtpl').getByTestId('search-thumb-mark')).toBeTruthy();
+    await rtl.act(async () => {
+      rtl.fireEvent(row('covvideo').getByTestId('search-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
+    });
+    expect(row('covvideo').getByTestId('search-thumb-mark')).toBeTruthy();
   });
 });

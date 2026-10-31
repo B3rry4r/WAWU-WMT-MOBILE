@@ -10,7 +10,7 @@ import { PaySheet, paidFromRows, sourceApproval } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { PRICE_CHANGED_LINE } from '@/features/events/buyModel';
-import { isPicture } from '@/features/feed/model';
+import { pictureCandidates } from '@/features/feed/model';
 import { StatusSheet } from '@/features/feedpay/StatusSheet';
 import { Text } from '@/components/Text';
 import { useOpenSupport } from '@/features/support/useOpenSupport';
@@ -136,14 +136,14 @@ export function UnlockSheets({
     <>
       <PaySheet
         visible={!flow.pinOpen}
-        // H14's thumbnail is the piece's own still: the Hub's preview when that is a picture (a template, a photo, a cover). A video's preview
-        // is a clip, not a still, and the Hub serves no poster for one, so the head is the words alone there, with no empty square (R2-SOCIAL).
+        // H14's thumbnail is the piece's own still: the creator's cover when it has one (R-114, on the quote), else the Hub's preview when that is a
+        // picture (a template, a photo). A video's preview is a clip, not a still, so without a cover the head is the words alone, with no empty square (R2-SOCIAL).
         item={{
           title: quote.title,
           by: payee,
           verified: tickOf(quote.creator.tick),
           subtitle: sheetSubtitle(item),
-          image: isPicture(item.previewAssetUrl) ? item.previewAssetUrl : undefined,
+          image: pictureCandidates({ contentType: item.contentType, coverUrl: quote.coverUrl ?? item.coverUrl }, item.previewAssetUrl)[0],
         }}
         amountKobo={quote.payment.priceKobo}
         fees={fees}

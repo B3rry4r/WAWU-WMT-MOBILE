@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text as NativeText, View } from 'react-native';
 
 import { nairaToKobo } from '@/api/kobo';
@@ -15,7 +15,8 @@ import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, space, useWawu } from '@/theme';
-import { compactCount, isPicture, UNNAMED_CREATOR } from '@/features/feed/model';
+import { compactCount, pictureCandidates, UNNAMED_CREATOR } from '@/features/feed/model';
+import { usePicture } from '@/features/feed/usePicture';
 
 import type { Comment, PieceDetail } from './api';
 import { ago, commenterName, lessonLength, plural, type Thread } from './model';
@@ -122,7 +123,8 @@ const courseRow = { pad: 14, picture: 44, corner: 14, title: 14.5, line: 12.5, a
 export function ParentCourseRow({ course, onPress }: { course: NonNullable<PieceDetail['parentCourse']>; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const [broken, setBroken] = useState(false);
+  // The course's cover first (R-114), then its preview when that is a picture; the course mark when neither loads.
+  const { uri: coursePicture, onError: coursePictureFailed } = usePicture(pictureCandidates({ contentType: 'course', coverUrl: course.coverUrl }, course.previewAssetUrl));
   // R-101 point 10: on a phone with a store the course shows the store's price, and none where no rung sells it.
   const shown = useShownPrice();
   const shownKobo = course.price > 0 ? shown.forKobo(nairaToKobo(course.price)) : null;
@@ -140,9 +142,9 @@ export function ParentCourseRow({ course, onPress }: { course: NonNullable<Piece
     >
       <Card padded style={styles.courseCard}>
         <View style={styles.courseRow}>
-          {course.previewAssetUrl && isPicture(course.previewAssetUrl) && !broken ? (
+          {coursePicture ? (
             <View style={[styles.coursePicture, { backgroundColor: colors.surfaceSunken }]}>
-              <Image source={{ uri: course.previewAssetUrl }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+              <Image testID="detail-parent-course-image" source={{ uri: coursePicture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={coursePictureFailed} />
             </View>
           ) : (
             <IconTile icon="GraduationCap" tone="accent" size={courseRow.picture} />

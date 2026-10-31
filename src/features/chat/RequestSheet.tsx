@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { formatMoney } from '@/components/Money';
@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { koboOfText } from '@/components/amount-entry';
+import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { newClientMessageId, type ChatMessage } from './api';
 import { createMoneyRequest } from './requestApi';
 
@@ -61,6 +62,7 @@ export function RequestSheet({ chatId, name, visible, onClose, onSent, onOpenWal
   // One id per request: a retry of the same amount and words sends the same one, a change makes a new one.
   const id = useRef<{ sig: string; value: string } | null>(null);
   const amountField = useRef<TextInput>(null);
+  const lift = useKeyboardLift();
   // I16 draws the amount field focused: the cursor is in it as the sheet opens, as `autoFocus` alone does not manage on the web.
   useEffect(() => {
     if (!visible) return undefined;
@@ -110,7 +112,7 @@ export function RequestSheet({ chatId, name, visible, onClose, onSent, onOpenWal
 
   return (
     <BottomSheet visible={visible} onClose={close} label={`Request from ${name}`} gap={SHEET_GAP} dismissible={!sending} testID="request-sheet">
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.body}>
+      <View style={styles.body}>
         <Text variant="sheetTitleSm">{`Request from ${name}`}</Text>
         <TextField
           testID="request-amount"
@@ -139,7 +141,9 @@ export function RequestSheet({ chatId, name, visible, onClose, onSent, onOpenWal
             onPress={() => void send()}
           />
         </View>
-      </KeyboardAvoidingView>
+        {/* R-117 part B: the sheet is a modal the keyboard covers (Android draws edge to edge), so it adds the keyboard's height under its last row. A KeyboardAvoidingView cannot do this inside a sheet: it measures from its parent, not from the window. */}
+        {lift > 0 ? <View testID="request-keyboard-lift" style={{ height: lift }} /> : null}
+      </View>
     </BottomSheet>
   );
 }

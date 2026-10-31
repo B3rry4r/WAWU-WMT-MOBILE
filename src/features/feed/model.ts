@@ -12,6 +12,11 @@ import type { CardWork, ContentDetail, CreatorCardData, FeedCreator, FeedEntry, 
  * made up when a field is missing (the element around it stays, the figure is left out).
  */
 
+/** R-117 · said where a player's file will not load (the sentence the voice player uses). */
+export const PLAYER_FAILED = "Couldn't play this. Tap to try again.";
+/** The first half of it, where there is room for only that (a pill with a clock). */
+export const PLAYER_FAILED_SHORT = "Couldn't play this";
+
 /** The post layouts: H2 and H5 (video), H3, H4, H6, H7 (a course) and H8 (a template). */
 export type PostKind = 'video' | 'photos' | 'pdf' | 'audio' | 'course' | 'template';
 
@@ -108,6 +113,19 @@ export function isPdfFile(url: string | null | undefined): boolean {
 export function rowPicture(contentType: string | null | undefined, url: string | null | undefined): string | null {
   if (!url) return null;
   return contentType === 'image' || isPicture(url) ? url : null;
+}
+
+/**
+ * The pictures a piece can draw, best first (R-114): its cover, the picture the creator uploaded for the listing (`coverUrl`, only on a
+ * request that carries `X-Wawu-Client: app`), then what `rowPicture` gives for the preview file (a photo, a file that is a picture).
+ * A screen draws the first one that loads (`usePicture`) and the kind's mark when none does.
+ */
+export function pictureCandidates(piece: { contentType?: string | null; coverUrl?: string | null }, previewUrl: string | null | undefined): string[] {
+  const out: string[] = [];
+  if (piece.coverUrl) out.push(piece.coverUrl);
+  const preview = rowPicture(piece.contentType, previewUrl);
+  if (preview && preview !== piece.coverUrl) out.push(preview);
+  return out;
 }
 
 /** Paid and not yet bought (or not the viewer's own): the full file is held back. */

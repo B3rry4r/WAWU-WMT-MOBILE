@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { Text } from '@/components/Text';
 import { font, layout, space, useWawu } from '@/theme';
 
@@ -35,6 +36,7 @@ export type ProFrameProps = {
 export function ProFrame({ title, onBack, gap, foot, centered, top, children, testID }: ProFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(Math.max(insets.bottom, frameMetrics.footBottom));
   const showBar = Boolean(title || onBack);
   return (
     <KeyboardAvoidingView testID={testID} behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
@@ -47,10 +49,9 @@ export function ProFrame({ title, onBack, gap, foot, centered, top, children, te
           <View style={styles.side} />
         </View>
       ) : null}
-      <ScrollView
+      <FieldScroll
         style={styles.scroll}
         testID="pro-scroll"
-        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.content,
           centered && styles.centered,
@@ -58,9 +59,9 @@ export function ProFrame({ title, onBack, gap, foot, centered, top, children, te
         ]}
       >
         {children}
-      </ScrollView>
+      </FieldScroll>
       {foot ? (
-        <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, frameMetrics.footBottom), paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>{foot}</View>
+        <View style={[styles.foot, { paddingBottom: footBottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>{foot}</View>
       ) : null}
     </KeyboardAvoidingView>
   );

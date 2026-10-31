@@ -296,7 +296,7 @@ export function PaidThreadScreen({ wawuId, focusQuestion, onBack, onOpenChat, on
 
   const ready = thread.isSuccess;
   return (
-    <KeyboardAvoidingView testID="paid-thread-screen" behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="paid-thread-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={[styles.bar, { borderBottomColor: colors.borderHairline }]} testID="paid-thread-header">
         <IconButton icon="ChevronLeft" label="Back" onPress={onBack} size={headMetrics.back} testID="paid-thread-back" />
         {person ? (

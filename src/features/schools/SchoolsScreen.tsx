@@ -1,6 +1,6 @@
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -128,7 +128,7 @@ export function SchoolsScreen({ onBack, onOpen }: SchoolsScreenProps) {
   const centred = state !== null && !loading;
 
   return (
-    <View testID="schools-directory" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="schools-directory" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="Schools" onBack={onBack} backTestID="schools-back" />
       <View style={styles.head}>
         <View style={styles.gutter}>
@@ -168,7 +168,7 @@ export function SchoolsScreen({ onBack, onOpen }: SchoolsScreenProps) {
         style={styles.list}
         contentContainerStyle={[styles.content, { paddingBottom: empty ? schoolsMetrics.emptyBottom : insets.bottom + schoolsMetrics.bottom }, centred && styles.centred]}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

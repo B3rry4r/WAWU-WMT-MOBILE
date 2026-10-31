@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/query';
@@ -9,8 +9,10 @@ import { Icon } from '@/components/icon';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { PLAYER_FAILED } from '@/features/feed/model';
 import { VideoSurface } from '@/features/feed/player';
-import { font, layout, space } from '@/theme';
+import { usePlayerLoad } from '@/features/feed/player/useLoad';
+import { font, layout, radius, space } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
 
 import { detailKey, fetchDetail } from './api';
@@ -37,6 +39,9 @@ export function TrailerScreen({ movieId, onClose, onOpenTerms, onOpenPrivacy, no
   const movie = detail.data;
   const trailer = movie?.trailer ?? null;
   const [playing, setPlaying] = useState(true);
+  // R-117: the trailer is still coming in (the button shows the spinner in place of pause); or it will not load (the words stand over the picture, and Play asks again).
+  const stop = useCallback(() => setPlaying(false), []);
+  const load = usePlayerLoad(playing, stop);
   const [time, setTime] = useState({ at: 0, length: 0 });
   const [sheet, setSheet] = useState(false);
   const left = useRef(false);
@@ -71,6 +76,7 @@ export function TrailerScreen({ movieId, onClose, onOpenTerms, onOpenPrivacy, no
         <View style={styles.middle}>
           <View style={styles.video}>
             <VideoSurface
+              key={load.attempt}
               testID="trailer-video"
               uri={trailer.url}
               playing={playing}
@@ -78,10 +84,18 @@ export function TrailerScreen({ movieId, onClose, onOpenTerms, onOpenPrivacy, no
               frosted={false}
               onTime={(at, length) => setTime({ at, length })}
               onEnded={() => setPlaying(false)}
+              onLoad={load.onLoad}
             />
+            {load.failed ? (
+              <View pointerEvents="none" style={styles.failedLayer}>
+                <Text variant="errorLine" accessibilityRole="alert" testID="trailer-failed" style={[styles.failed, { backgroundColor: darkColors.surfaceScrim, color: ink }]}>
+                  {PLAYER_FAILED}
+                </Text>
+              </View>
+            ) : null}
             <View style={styles.controls}>
-              <Pressable testID="trailer-toggle" accessibilityRole="button" accessibilityLabel={playing ? 'Pause' : 'Play'} hitSlop={space.md} onPress={() => setPlaying((p) => !p)}>
-                <Icon name={playing ? 'Pause' : 'Play'} size={t.icon} color={ink} fill={ink} strokeWidth={2.4} />
+              <Pressable testID="trailer-toggle" accessibilityRole="button" accessibilityLabel={load.failed ? PLAYER_FAILED : playing ? (load.waiting ? 'Loading, tap to pause' : 'Pause') : 'Play'} accessibilityState={load.waiting ? { busy: true } : undefined} hitSlop={space.md} onPress={() => setPlaying((p) => !p)}>
+                {load.waiting ? <ActivityIndicator testID="trailer-spinner" size="small" color={ink} /> : <Icon name={playing ? 'Pause' : 'Play'} size={t.icon} color={ink} fill={ink} strokeWidth={2.4} />}
               </Pressable>
               <View style={[styles.track, { backgroundColor: darkColors.mediaWhite25 }]}>
                 <View testID="trailer-progress" style={[styles.fill, { width: `${Math.round(share * 100)}%`, backgroundColor: ink }]} />
@@ -124,6 +138,8 @@ const styles = StyleSheet.create({
   bar: { paddingHorizontal: layout.gutter, flexDirection: 'row' },
   middle: { flex: 1, justifyContent: 'center', gap: t.between },
   video: { height: t.height, overflow: 'hidden' },
+  failedLayer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
+  failed: { textAlign: 'center', paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: radius.chip, overflow: 'hidden' },
   controls: { position: 'absolute', left: t.controlsInset, right: t.controlsInset, bottom: t.controlsBottom, flexDirection: 'row', alignItems: 'center', gap: t.controlsGap },
   track: { flex: 1, height: t.scrub, borderRadius: t.scrub / 2, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: t.scrub / 2 },

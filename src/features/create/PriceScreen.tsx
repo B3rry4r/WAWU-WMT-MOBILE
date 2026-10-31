@@ -21,11 +21,12 @@ import { font, space, useWawu } from '@/theme';
 
 import { allowanceKey, createContent, fetchSaleTerms, saleTermsKey, saveLessons, type LessonInput, type SaleTerms } from './api';
 import { CreateFrame } from './CreateFrame';
-import { fullFileOf, resetDraft, setMade, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
+import { fullFileOf, getCover, resetDraft, setMade, useCover, useDraft, useLessons, useMade, type DraftLesson, type UploadedFile } from './draft';
 import { priceOf, priceReady, setDetails, setSent, useDetails, type AccessType } from './details';
 import { formatBytes, iconOf, labelOf, type FormatId } from './model';
 import { Stepper } from './parts';
-import { stillOf } from './still';
+import { listingStill } from './still';
+import { coverAssetFor } from './coverSend';
 
 /** The cover 52 by 66 with 10 corners; the summary card 12 by 14 (the picker's own measures are in `PricePicker`). */
 const priceMetrics = { coverW: 52, coverH: 66, coverCorner: 10, title: 14.5, meta: 12.5, metaGap: 3, padV: space.md, padH: 14, note: 12.5 } as const;
@@ -104,6 +105,8 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
     try {
       let taken = made;
       if (!taken) {
+        // The cover (R-114): the picture the person picked, none, or by default the frame of a video preview, sent to `content/cover` now.
+        const coverAsset = await coverAssetFor(preview, getCover());
         const sent = await createContent({
           contentType: format,
           title: details.title.trim(),
@@ -113,6 +116,7 @@ export function PriceScreen({ format, onBack, onSent }: PriceScreenProps) {
           price,
           previewAsset: preview.fileUrl,
           fullAsset: full.fileUrl,
+          ...(coverAsset ? { coverAsset } : {}),
           ...(details.parentCourse ? { parentCourseId: details.parentCourse.id } : {}),
         });
         // A course is made first and its lessons follow. The Hub's answer carries the piece's id; without one the piece is in review
@@ -213,7 +217,7 @@ function NoteLine() {
 function PieceCard({ format, title, meta, cover }: { format: FormatId; title: string; meta: string; cover: UploadedFile }) {
   const { colors } = useWawu();
   const [broken, setBroken] = useState(false);
-  const picture = stillOf(cover);
+  const picture = listingStill(cover, useCover());
   const still = picture && !broken ? picture : null;
   return (
     <Card padded testID="price-piece" style={styles.piece}>

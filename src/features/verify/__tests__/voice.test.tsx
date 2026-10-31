@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Keyboard, Platform, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 jest.mock('expo-secure-store', () => ({
@@ -107,7 +108,37 @@ async function bootName(over: Record<string, Answer | Answer[]> = {}) {
   return { onWriteIntro };
 }
 
+
+/** R-117 part B: the phone's keyboard as Android says it (`keyboardDidShow`, 336 high on an 844 screen); `show` lays the named view out full height and raises it. */
+const KEYBOARD_UP = 336;
+function androidKeyboard() {
+  const handlers: ((e: unknown) => void)[] = [];
+  const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, fn: (e: unknown) => void) => {
+    if (event === 'keyboardDidShow') handlers.push(fn);
+    return { remove: jest.fn() };
+  }) as never);
+  return {
+    show: async (id: string) => {
+      await act(async () => screen.getByTestId(id).props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 844 } }, persist: () => undefined }));
+      await act(async () => handlers.forEach((h) => h({ endCoordinates: { screenY: 844 - KEYBOARD_UP, height: KEYBOARD_UP }, duration: 0 })));
+      await act(async () => new Promise((r) => setTimeout(r, 0)));
+    },
+    restore: () => spy.mockRestore(),
+  };
+}
+
 describe('VF3 · Hear your name', () => {
+  it('R-117 part B (Android): the name box rides above the keyboard, because Android draws edge to edge and does not resize the window', async () => {
+    const os = jest.replaceProperty(Platform, 'OS', 'android');
+    const up = androidKeyboard();
+    await bootName();
+    expect(await screen.findByText('Lennox Emmanuel')).toBeTruthy();
+    await up.show('hear-name-keyboard');
+    expect(StyleSheet.flatten(screen.getByTestId('hear-name-keyboard').props.style).paddingBottom).toBe(KEYBOARD_UP);
+    up.restore();
+    os.restore();
+  });
+
   it('says the profile name in the studio voice as it opens: the preview is asked for that name alone, and plays', async () => {
     await bootName();
     expect(await screen.findByText('Lennox Emmanuel')).toBeTruthy();
@@ -116,6 +147,22 @@ describe('VF3 · Hear your name', () => {
     expect(screen.getByText('Said in a studio voice. Free.')).toBeTruthy();
     expect(screen.getByTestId('hear-name-wave')).toBeTruthy();
     expect(screen.getByLabelText('Pause')).toBeTruthy();
+  });
+
+  it('R-117 part C: the name disc shows its spinner while the clip is still coming in, and the failure line (with a press that asks the Hub again) when it will not load', async () => {
+    await bootName();
+    expect(await screen.findByText('Lennox Emmanuel')).toBeTruthy();
+    await waitFor(() => expect(lastAudio()).toEqual(expect.objectContaining({ playing: true })));
+    const load = (state: 'waiting' | 'ready' | 'failed') => act(async () => (lastAudio() as unknown as { onLoad: (s: string) => void }).onLoad(state));
+    await load('waiting');
+    expect(screen.getByLabelText('Getting your name ready')).toBeTruthy();
+    await load('ready');
+    expect(screen.getByLabelText('Pause')).toBeTruthy();
+    await load('failed');
+    expect(await screen.findByTestId('hear-name-failure')).toBeTruthy();
+    expect(screen.getByText("Couldn't play this. Tap to try again.")).toBeTruthy();
+    expect(lastAudio()).toEqual(expect.objectContaining({ playing: false }));
+    expect(screen.getByLabelText('Try again')).toBeTruthy();
   });
 
   it('says the name the way the person kept it: the saved spelling goes with the preview', async () => {
@@ -224,6 +271,17 @@ async function bootIntro(over: Record<string, Answer | Answer[]> = {}, onHear: (
 }
 
 describe('VF4 · Write your Voice Intro', () => {
+  it('R-117 part B (Android): the Voice Intro box rides above the keyboard', async () => {
+    const os = jest.replaceProperty(Platform, 'OS', 'android');
+    const up = androidKeyboard();
+    await bootIntro();
+    await screen.findByTestId('voice-intro-text');
+    await up.show('voice-intro-keyboard');
+    expect(StyleSheet.flatten(screen.getByTestId('voice-intro-keyboard').props.style).paddingBottom).toBe(KEYBOARD_UP);
+    up.restore();
+    os.restore();
+  });
+
   it('VF4a: empty, the button is off, the count and its limit are the Hub\'s, the placeholder uses the first name', async () => {
     await bootIntro();
     const box = await screen.findByTestId('voice-intro-text');

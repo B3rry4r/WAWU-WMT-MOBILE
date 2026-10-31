@@ -1,7 +1,7 @@
 import { getDocumentAsync } from 'expo-document-picker';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 
-import { readPicked } from '@/features/profile-edit/readPicked';
+import { readPicked, type ReadOptions } from '@/features/profile-edit/readPicked';
 
 import type { ChosenFile } from './chosen';
 import { contentTypeFor, extensionOfName } from './fileTypes';
@@ -16,12 +16,12 @@ const allOf = (types: readonly string[], prefix: string) => types.length > 0 && 
  * the step (`GET /uploads/formats`). A photo is written again without where it was taken (`readPicked`, the lead's 8 Oct
  * ruling); a video and any other file go as chosen. Rejects when the picker fails or the file cannot be read.
  */
-export async function pickFile(types: readonly string[]): Promise<ChosenFile | null> {
+export async function pickFile(types: readonly string[], options: ReadOptions = {}): Promise<ChosenFile | null> {
   if (allOf(types, 'image/') || allOf(types, 'video/')) {
     const result = await launchImageLibraryAsync({ mediaTypes: allOf(types, 'image/') ? 'images' : 'videos' });
     const asset = result.canceled ? undefined : result.assets?.[0];
     if (!asset) return null;
-    const picked = await readPicked(asset);
+    const picked = await readPicked(asset, options);
     const name = asset.fileName ?? `${allOf(types, 'image/') ? 'photo' : 'video'}.${picked.extension}`;
     return { blob: picked.blob, name, contentType: picked.contentType, extension: picked.extension, previewUri: picked.previewUri, discard: picked.discard };
   }

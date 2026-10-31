@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
@@ -27,6 +27,7 @@ import { refetchIfNotOnList } from '@/features/prices/api';
 import { radius, space } from '@/theme';
 
 import { fetchPiece, libraryKey, pieceKey, updatePiece, type LibraryPiece, type UpdateBody } from './api';
+import { EditCover, type CoverEdit } from './EditCover';
 
 const categoryOf = (id: string): ContentCategoryId | null => CONTENT_CATEGORIES.find((c) => c.id === id)?.id ?? null;
 
@@ -45,7 +46,7 @@ export function startingDetails(piece: LibraryPiece): Details {
  * The fields that differ from the piece, as `PATCH /content/{id}` takes them, or null when nothing differs or what is typed is not
  * one the Hub takes (an empty title or description, a paid piece with no price). Free sends the price 0 with it, as the Hub asks.
  */
-export function changesOf(piece: LibraryPiece, now: Details): UpdateBody | null {
+export function changesOf(piece: LibraryPiece, now: Details, cover: CoverEdit = { kind: 'keep' }): UpdateBody | null {
   const title = now.title.trim();
   const description = now.description.trim();
   if (!title || !description) return null;
@@ -59,6 +60,9 @@ export function changesOf(piece: LibraryPiece, now: Details): UpdateBody | null 
     body.accessType = now.accessType;
     body.price = price;
   }
+  // The cover (R-114): a new picture's key replaces it, null takes it off, and left out it stays.
+  if (cover.kind === 'set') body.coverAsset = cover.file.fileUrl;
+  if (cover.kind === 'remove') body.coverAsset = null;
   return Object.keys(body).length > 0 ? body : null;
 }
 
@@ -99,7 +103,10 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
   const [details, setDetails] = useState<Details>(() => startingDetails(piece));
   const [picking, setPicking] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const changes = changesOf(piece, details);
+  const [coverEdit, setCoverEdit] = useState<CoverEdit>({ kind: 'keep' });
+  // Set when Save has taken the new cover: leaving the screen then must not give that picture back.
+  const coverSaved = useRef(false);
+  const changes = changesOf(piece, details, coverEdit);
   const set = (patch: Partial<Details>) => {
     setFailure(null);
     setDetails((d) => ({ ...d, ...patch }));
@@ -107,6 +114,7 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
   const save = useMutation({
     mutationFn: (body: UpdateBody) => updatePiece(piece.id, body),
     onSuccess: (saved) => {
+      coverSaved.current = true;
       client.setQueryData(pieceKey(piece.id), saved);
       void client.invalidateQueries({ queryKey: libraryKey });
       onSaved();
@@ -146,6 +154,7 @@ function EditForm({ piece, onBack, onSaved }: { piece: LibraryPiece; onBack: () 
         trailingIcon="ChevronDown"
         onPress={() => setPicking(true)}
       />
+      <EditCover piece={piece} edit={coverEdit} saved={coverSaved} onEdit={(next) => (setFailure(null), setCoverEdit(next))} />
       <SegmentedTabs testID="edit-mode" label="Paid or free" items={MODES} value={details.accessType} onChange={(accessType: AccessType) => set({ accessType })} />
       {free ? (
         <>
