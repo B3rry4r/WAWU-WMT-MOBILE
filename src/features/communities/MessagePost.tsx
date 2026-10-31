@@ -32,12 +32,12 @@ export type PostProps = {
 };
 
 /** One message in the room: who wrote it, a Host tag when the room's host did, when, and what they said. */
-export function MessagePost({ message, sender, isHost, onLongPress }: PostProps & { onLongPress?: () => void }) {
+export function MessagePost({ message, sender, isHost, onLongPress, holdLabel }: PostProps & { onLongPress?: () => void; holdLabel?: string }) {
   const who = message.sender ?? sender ?? null;
   const name = who?.name || who?.handle || 'Member';
   return (
     <LongPressable onLongPress={onLongPress}>
-    <View style={styles.row} testID={`post-${message.id}`} accessible accessibilityLabel={`${name}${isHost ? ', host' : ''}, ${clockTime(message.sentAt)}, ${message.text ?? attachmentWords(message).toLowerCase()}`} {...reportAction(onLongPress)}>
+    <View style={styles.row} testID={`post-${message.id}`} accessible accessibilityLabel={`${name}${isHost ? ', host' : ''}, ${clockTime(message.sentAt)}, ${message.text ?? attachmentWords(message).toLowerCase()}`} {...reportAction(onLongPress, holdLabel)}>
       <Avatar name={name} hue={hueFor(message.senderWawuId)} size={postMetrics.avatar} source={who?.avatarUrl ?? undefined} decorative />
       <View style={styles.words}>
         <View style={styles.head}>

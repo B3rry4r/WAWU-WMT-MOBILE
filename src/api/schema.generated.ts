@@ -6542,6 +6542,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/communities/{id}/moderation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommunityRoomModerationController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CommunityRoomModerationController_deleteMessage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/mutes/{userWawuId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CommunityRoomModerationController_mute"];
+        post?: never;
+        delete: operations["CommunityRoomModerationController_unmute"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/payments/hosted-link": {
         parameters: {
             query?: never;
@@ -17865,6 +17913,10 @@ export interface components {
             voiceUrl: string | null;
             costInCredits: number;
             sender?: components["schemas"]["CommunityMessageSender"];
+        };
+        RoomModerationView: {
+            muted: boolean;
+            mutedMembers: string[];
         };
         EventView: {
             id: string;
@@ -33485,6 +33537,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommunityMessage"];
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomModerationView"];
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_deleteMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        removed: boolean;
+                    };
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_mute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userWawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        muted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_unmute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userWawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        muted: boolean;
+                    };
                 };
             };
         };

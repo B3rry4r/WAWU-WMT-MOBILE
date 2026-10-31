@@ -14,6 +14,8 @@ import {
   fetchMessages,
   markRoomRead,
   messagesKey,
+  moderationKey,
+  MUTED_IN_ROOM,
   newMessageKey,
   roomKey,
   sendMessage,
@@ -273,7 +275,12 @@ export function useRoomMessages(id: string, looking: boolean) {
           ),
         );
         if (outOfCredits) void queryClient.invalidateQueries({ queryKey: creditsKey });
-        if (refused?.status === NOT_A_MEMBER) void queryClient.invalidateQueries({ queryKey: roomKey(id) });
+        if (refused?.code === MUTED_IN_ROOM) {
+          // MOD-ROOMS (R-122). The host muted this person: nothing was stored or spent. The room now draws its one calm line in place
+          // of the composer, so the refused words are not left behind as a "Not sent" bubble with nothing to do about it.
+          void queryClient.invalidateQueries({ queryKey: moderationKey(id) });
+          setOutgoing((held) => held.filter((candidate) => candidate.localId !== entry.localId));
+        } else if (refused?.status === NOT_A_MEMBER) void queryClient.invalidateQueries({ queryKey: roomKey(id) });
       } finally {
         sending.current = false;
       }
@@ -315,6 +322,22 @@ export function useRoomMessages(id: string, looking: boolean) {
     setOutgoing((held) => held.filter((entry) => entry.localId !== localId));
   }, []);
 
+  /**
+   * MOD-ROOMS (R-122). A message the host deleted is gone from this screen at once: out of the live arrivals and out of every page
+   * held. (Other people's open screens lose it the next time they read the room.)
+   */
+  const remove = useCallback(
+    (messageId: string) => {
+      setArrived((held) => held.filter((message) => message.id !== messageId));
+      queryClient.setQueryData(messagesKey(id), (data: typeof query.data) =>
+        data ? { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((message) => message.id !== messageId) })) } : data,
+      );
+    },
+    // `query.data` is only the cache's type here; the current pages are read inside the updater.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [id],
+  );
+
   return {
     ...query,
     items,
@@ -322,6 +345,7 @@ export function useRoomMessages(id: string, looking: boolean) {
     send,
     retry,
     discard,
+    remove,
     /** A send is on its way: the Send button waits. */
     busy: pending.some((entry) => entry.status === 'sending'),
     me: meSender,

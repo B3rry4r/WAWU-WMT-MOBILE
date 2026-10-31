@@ -25165,6 +25165,172 @@
     ]
    }
   },
+  "/api/hub/communities/{id}/moderation": {
+   "get": {
+    "operationId": "CommunityRoomModerationController_view",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoomModerationView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
+    ]
+   }
+  },
+  "/api/hub/communities/{id}/messages/{messageId}": {
+   "delete": {
+    "operationId": "CommunityRoomModerationController_deleteMessage",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "messageId",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "removed": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "removed"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
+    ]
+   }
+  },
+  "/api/hub/communities/{id}/mutes/{userWawuId}": {
+   "put": {
+    "operationId": "CommunityRoomModerationController_mute",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "userWawuId",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "muted": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "muted"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
+    ]
+   },
+   "delete": {
+    "operationId": "CommunityRoomModerationController_unmute",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "userWawuId",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "muted": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "muted"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
+    ]
+   }
+  },
   "/api/hub/payments/hosted-link": {
    "post": {
     "operationId": "PaymentLinkController_create",
@@ -63739,6 +63905,24 @@
      "videoUrl",
      "voiceUrl",
      "costInCredits"
+    ]
+   },
+   "RoomModerationView": {
+    "type": "object",
+    "properties": {
+     "muted": {
+      "type": "boolean"
+     },
+     "mutedMembers": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "muted",
+     "mutedMembers"
     ]
    },
    "EventView": {

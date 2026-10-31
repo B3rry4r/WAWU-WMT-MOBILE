@@ -19,6 +19,8 @@ import type { PickedImage } from '@/features/profile-edit/pickImage';
  * - `POST /communities/:id/join`;
  * - `GET` and `POST /communities/:id/messages`: history, newest first, a page at a time, and a send;
  * - `POST /communities/:id/read`: the room's read mark;
+ * - `GET /communities/:id/moderation`, `DELETE /communities/:id/messages/:messageId` and `PUT` and `DELETE /communities/:id/mutes/:userWawuId`:
+ *   the host's tools in their own room, and whether the host has muted the person (MOD-ROOMS, R-122);
  * - `GET /communities/links/:slug`: what a link `wawu/c/<slug>` names;
  * - `GET /credits`: the WAWU Credits count.
  *
@@ -67,6 +69,7 @@ export const messageCostKey = ['communities', 'message-cost'] as const;
 export const roomKey = (id: string) => ['community', id] as const;
 export const messagesKey = (id: string) => ['community', id, 'messages'] as const;
 export const creditsKey = ['credits'] as const;
+export const moderationKey = (id: string) => ['community', id, 'moderation'] as const;
 
 export async function fetchMyCommunities(page: number): Promise<Paged<MyCommunity>> {
   return pageOf(
@@ -204,4 +207,33 @@ export async function fetchCredits(): Promise<CreditsState> {
   const credits = dataOf<CreditsState>(await unwrap(api.GET('/api/hub/credits')), 'credits balance');
   if (typeof credits.creditBalance !== 'number') throw unreadable('credits balance');
   return credits;
+}
+
+/**
+ * MOD-ROOMS (R-122). Where the person stands with the room's host: `muted` is true when the host has muted THEM (they read, the
+ * composer is replaced by one line), and `mutedMembers` is the list the HOST sees (everyone else gets it empty) so the press-and-hold
+ * menu can say Unmute.
+ */
+export type RoomModeration = { muted: boolean; mutedMembers: string[] };
+
+/** The code of the Hub's refusal of a send by a muted member (`reason.code`), so the room knows without reading the words. */
+export const MUTED_IN_ROOM = 'muted_in_room';
+
+export async function fetchRoomModeration(id: string): Promise<RoomModeration> {
+  const view = dataOf<RoomModeration>(await unwrap(api.GET('/api/hub/communities/{id}/moderation', { params: { path: { id } } })), 'room settings');
+  return { muted: view.muted === true, mutedMembers: Array.isArray(view.mutedMembers) ? view.mutedMembers : [] };
+}
+
+/** The host deletes a message in their own room; it is gone for everyone. */
+export async function deleteRoomMessage(id: string, messageId: string): Promise<void> {
+  await unwrap(api.DELETE('/api/hub/communities/{id}/messages/{messageId}', { params: { path: { id, messageId } } }));
+}
+
+/** The host mutes a member of their room: they still read, they cannot send. Money is not touched. */
+export async function muteRoomMember(id: string, userWawuId: string): Promise<void> {
+  await unwrap(api.PUT('/api/hub/communities/{id}/mutes/{userWawuId}', { params: { path: { id, userWawuId } } }));
+}
+
+export async function unmuteRoomMember(id: string, userWawuId: string): Promise<void> {
+  await unwrap(api.DELETE('/api/hub/communities/{id}/mutes/{userWawuId}', { params: { path: { id, userWawuId } } }));
 }

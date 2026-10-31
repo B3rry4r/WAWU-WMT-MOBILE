@@ -30,11 +30,24 @@ import { OutOfCreditsPanel } from '@/features/credits/OutOfCreditsPanel';
 import { sendableRoomLink } from '@/lib/appLinks';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
-import { fetchRoom, roomKey, type CommunityMessage, type RoomView } from './api';
+import {
+  deleteRoomMessage,
+  fetchRoom,
+  fetchRoomModeration,
+  moderationKey,
+  muteRoomMember,
+  myCommunitiesKey,
+  roomKey,
+  unmuteRoomMember,
+  type CommunityMessage,
+  type RoomModeration,
+  type RoomView,
+} from './api';
 import { Composer, type ComposerAttach, type ComposerDraft } from './Composer';
 import { CoverHeader, CoverShare } from './CoverHeader';
 import { dayKey, dayLabel, membersFull, outOfCreditsLine, priceLine } from './format';
 import { GroupTile, tileMetrics } from './GroupTile';
+import { HostMessageMenu, type HostMenuTarget } from './HostMessageMenu';
 import { MessagePost, OutgoingPost } from './MessagePost';
 import { CreditPill, RoomHeader } from './RoomHeader';
 import { useReporting } from '@/features/report/useReporting';
@@ -127,6 +140,10 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const credits = useCredits();
   const prices = useMessageCost();
   const messages = useRoomMessages(id, focused);
+  // MOD-ROOMS (R-122): where the person stands with the host (muted, or, for the host, who is muted). Only a host or a member has a state.
+  const inside = room.data?.role === 'host' || room.data?.role === 'member';
+  const moderation = useQuery({ queryKey: moderationKey(id), queryFn: () => fetchRoomModeration(id), enabled: inside, retry: false }, queryClient);
+  const muted = moderation.data?.muted === true;
   const [buying, setBuying] = useState(false);
   const [draft, setDraft] = useState<ComposerDraft | undefined>(undefined);
   const edit = (localId: string) => {
@@ -223,7 +240,7 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
       </View>
     );
   } else {
-    body = <Thread room={room.data} messages={messages} onEdit={edit} onBuy={() => setBuying(true)} />;
+    body = <Thread id={id} room={room.data} moderation={moderation.data} messages={messages} onEdit={edit} onBuy={() => setBuying(true)} />;
   }
 
   const showComposer = !hidden && !notMember && !room.isPending && !(room.isError && !room.data) && !messages.isPending && !(messages.isError && !messages.data);
@@ -233,7 +250,7 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
   const hostSends = room.data?.role === 'host';
   const photoCost = costs === undefined ? undefined : hostSends ? 0 : costs.photo;
   // I27: no credits left while the Hub prices photos, video or voice notes. Text and emoji stay free, so the composer stays; Buy credits opens I28.
-  const outOfCredits = showComposer && !hostSends && credits.data?.creditBalance === 0 && costs !== undefined && outOfCreditsLine(costs) !== null;
+  const outOfCredits = showComposer && !muted && !hostSends && credits.data?.creditBalance === 0 && costs !== undefined && outOfCreditsLine(costs) !== null;
   // I38: the "+" is drawn once the Hub's prices are known. With no credits and a priced photo it opens Buy credits instead of the library.
   const attach: ComposerAttach | undefined =
     costs === undefined || photoCost === undefined
@@ -255,13 +272,38 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
       {hostsPrivate && (waitingOnHost.data ?? 0) > 0 ? <JoinRequestsEntry id={id} count={waitingOnHost.data ?? 0} /> : null}
       <View style={styles.body}>{body}</View>
       {outOfCredits && costs ? <OutOfCreditsPanel onBuy={() => setBuying(true)} line={outOfCreditsLine(costs) ?? undefined} /> : null}
-      {showComposer ? <Composer onSend={messages.send} busy={messages.busy} draft={draft} attach={attach} /> : <View style={{ height: Math.max(insets.bottom, space.lg) }} />}
+      {showComposer && muted ? (
+        <MutedLine />
+      ) : showComposer ? (
+        <Composer onSend={messages.send} busy={messages.busy} draft={draft} attach={attach} />
+      ) : (
+        <View style={{ height: Math.max(insets.bottom, space.lg) }} />
+      )}
       {buying ? <BuyCreditsEntry visible onClose={() => setBuying(false)} doneLabel="Back to chat" onAdded={() => void credits.refetch()} /> : null}
     </KeyboardAvoidingView>
   );
 }
 
 const roomBarBack = 40;
+
+/** MOD-ROOMS (R-122): what a member the host muted sees where the composer was. They still read the room. */
+export const MUTED_LINE = 'The host has muted you in this room. You can still read it.';
+function MutedLine() {
+  const { colors } = useWawu();
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      testID="room-muted"
+      accessibilityRole="alert"
+      style={[styles.muted, { backgroundColor: colors.surfaceChrome, borderTopColor: colors.borderHairline, paddingBottom: Math.max(insets.bottom, space.lg) }]}
+    >
+      <Icon name="VolumeX" size={roomMetrics.dayFont + space.xs} color={colors.textMuted} />
+      <Text variant="secondary" tone="textMuted" style={styles.mutedText}>
+        {MUTED_LINE}
+      </Text>
+    </View>
+  );
+}
 
 /** The host's way into I34 (`/community/requests/<id>`): one row under the cover, drawn only while someone is waiting on them. */
 function JoinRequestsEntry({ id, count }: { id: string; count: number }) {
@@ -280,7 +322,7 @@ function JoinRequestsEntry({ id, count }: { id: string; count: number }) {
   );
 }
 
-function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void; onBuy: () => void }) {
+function Thread({ id, room, moderation, messages, onEdit, onBuy }: { id: string; room: RoomView | undefined; moderation: RoomModeration | undefined; messages: ReturnType<typeof useRoomMessages>; onEdit: (localId: string) => void; onBuy: () => void }) {
   const { colors } = useWawu();
   const list = useRef<FlatList<Item>>(null);
   const [atBottom, setAtBottom] = useState(true);
@@ -288,6 +330,11 @@ function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined;
   const newest = messages.items[0];
   // REPORT-UGC: press and hold another member's message to report it; the Hub leaves it out of this person's room.
   const reporting = useReporting(() => void messages.refetch());
+  // MOD-ROOMS (R-122): the host's press and hold opens a menu (Report, Delete message, Mute); a member's still goes straight to the report sheet.
+  const viewerIsHost = room !== undefined && messages.me?.wawuId === room.hostWawuId;
+  const [hostTarget, setHostTarget] = useState<HostMenuTarget | null>(null);
+  const mutedMembers = moderation?.mutedMembers;
+  const refreshModeration = () => queryClient.invalidateQueries({ queryKey: moderationKey(id) });
   const newestId = useRef(newest?.id);
   useEffect(() => {
     newestId.current = newest?.id;
@@ -347,11 +394,24 @@ function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined;
           message={item.message}
           sender={null}
           isHost={room !== undefined && item.message.senderWawuId === room.hostWawuId}
-          onLongPress={item.message.senderWawuId === messages.me?.wawuId ? undefined : () => reporting.ask('community_message', item.message.id)}
+          holdLabel={viewerIsHost ? 'Message options' : undefined}
+          onLongPress={
+            viewerIsHost
+              ? () =>
+                  setHostTarget({
+                    messageId: item.message.id,
+                    senderWawuId: item.message.senderWawuId,
+                    senderName: item.message.sender?.name || item.message.sender?.handle || 'this member',
+                    own: item.message.senderWawuId === messages.me?.wawuId,
+                  })
+              : item.message.senderWawuId === messages.me?.wawuId
+                ? undefined
+                : () => reporting.ask('community_message', item.message.id)
+          }
         />
       );
     },
-    [room, messages, onEdit, onBuy, reporting],
+    [room, messages, onEdit, onBuy, reporting, viewerIsHost],
   );
 
   if (messages.items.length === 0 && messages.outgoing.length === 0 && !hasNextPage) {
@@ -365,6 +425,28 @@ function Thread({ room, messages, onEdit, onBuy }: { room: RoomView | undefined;
   return (
     <View style={styles.thread}>
       {reporting.element}
+      <HostMessageMenu
+        target={hostTarget}
+        muted={hostTarget !== null && (mutedMembers?.includes(hostTarget.senderWawuId) ?? false)}
+        onClose={() => setHostTarget(null)}
+        onReport={hostTarget && !hostTarget.own ? () => reporting.ask('community_message', hostTarget.messageId) : undefined}
+        onDelete={async () => {
+          if (!hostTarget) return;
+          await deleteRoomMessage(id, hostTarget.messageId);
+          messages.remove(hostTarget.messageId);
+          void queryClient.invalidateQueries({ queryKey: myCommunitiesKey });
+        }}
+        onMute={async () => {
+          if (!hostTarget) return;
+          await muteRoomMember(id, hostTarget.senderWawuId);
+          await refreshModeration();
+        }}
+        onUnmute={async () => {
+          if (!hostTarget) return;
+          await unmuteRoomMember(id, hostTarget.senderWawuId);
+          await refreshModeration();
+        }}
+      />
       <FlatList
         ref={list}
         testID="room-messages"
@@ -493,6 +575,8 @@ function RoomSkeleton() {
 }
 
 const styles = StyleSheet.create({
+  muted: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.md, paddingHorizontal: space.lg, borderTopWidth: StyleSheet.hairlineWidth },
+  mutedText: { flex: 1 },
   root: { flex: 1 },
   body: { flex: 1 },
   plainBar: { minHeight: roomBarBack + space.lg * 2, paddingHorizontal: space.md, flexDirection: 'row', alignItems: 'center' },
