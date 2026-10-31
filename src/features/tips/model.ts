@@ -37,6 +37,3 @@ export const storeSentHeading = (price: string | null, name: string | null | und
 export const noteEcho = (note: string | null | undefined): string | null => (note?.trim() ? note.trim() : null);
 
 export const NOTICE_NO_AMOUNT = 'Choose an amount to tip.';
-
-/** The line under a tile's price: "Chidi gets", or "They get" when the creator has no name to show. */
-export const getsWords = (name: string | null | undefined): string => (firstName(name) ? `${firstName(name)} gets` : 'They get');
