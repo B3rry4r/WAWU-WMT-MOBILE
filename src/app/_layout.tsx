@@ -88,6 +88,7 @@ function useStoredTheme(): boolean {
  * notifications, search, saved, TGIF and the rest. A route file is listed in a signed-in group, or it is on the short public
  * list kept in `src/__tests__/route-guard.test.tsx`: the signed-out set above, About, Terms and Privacy policy, the app links
  * (`/r`, `/selfie`, `/activate`, `/receipt`, `/u`, `/c`, `/content`, which each send a signed-out visitor on themselves),
+ * `/reset-password` (the emailed reset link; it is open to everyone, signed in or out: the token in the link is the proof, RESET-APP, R-123),
  * `/claim-code` (sends a signed-out visitor to sign-in and brings the sign-in back) and the development-only screens. That test
  * fails when a route file is neither.
  * The Voice Intro's writing and recording screens (`/voice-intro`, `/voice-consent`) sit with the creator's setup checklist, so VF7's
@@ -344,6 +345,7 @@ export default function RootLayout() {
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="forgot-password" />
         </Stack.Protected>
+        <Stack.Screen name="reset-password" />
         <Stack.Screen name="about" />
         <Stack.Screen name="terms" />
         <Stack.Screen name="privacy-policy" />

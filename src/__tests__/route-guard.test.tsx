@@ -18,7 +18,7 @@ import Wallet from '@/app/(tabs)/wallet';
 import Me from '@/app/(tabs)/me';
 import { resetSessionForTests } from '@/api/session';
 import { ACCESS_KEY, REFRESH_KEY } from '@/api/tokenStore';
-import { ACTIVATE_PATH, INVITE_PATH_PREFIX, PROFILE_PATH_PREFIX, RECEIPT_PATH_PREFIX, ROOM_PATH_PREFIX, SELFIE_PATH } from '@/lib/appLinks';
+import { ACTIVATE_PATH, INVITE_PATH_PREFIX, PROFILE_PATH_PREFIX, RECEIPT_PATH_PREFIX, RESET_PASSWORD_PATH, ROOM_PATH_PREFIX, SELFIE_PATH } from '@/lib/appLinks';
 
 const mockVault = new Map<string, string>();
 
@@ -89,6 +89,7 @@ const PUBLIC: Record<string, string> = {
   'r/[code]': 'app link (LINKS-01): the invite, kept until sign-up, signed out goes to the welcome screen',
   selfie: 'app link (LINKS-01): the hosted selfie page, signed out goes to the welcome screen',
   activate: 'app link (LINKS-01): the activation email, signed out goes to sign-in',
+  'reset-password': 'app link (RESET-APP, R-123): the Forgot password email; open to everyone, signed in or out, because the token in the link is the proof',
   'receipt/[code]': 'app link (LINKS-01): a receipt address, signed out goes to the welcome screen',
   'u/[handle]': 'app link (LINKS-01): a profile, signed out goes to the welcome screen',
   'c/[slug]': 'app link (LINKS-01): a room, signed out draws "Sign in to open this community"',
@@ -159,7 +160,7 @@ describe('FIX-63: every route file is guarded or on the public list', () => {
   });
 
   it('the app links (src/lib/appLinks.ts) each have a route on the public list', () => {
-    const prefixes = [INVITE_PATH_PREFIX, SELFIE_PATH, ACTIVATE_PATH, RECEIPT_PATH_PREFIX, PROFILE_PATH_PREFIX, ROOM_PATH_PREFIX];
+    const prefixes = [INVITE_PATH_PREFIX, SELFIE_PATH, ACTIVATE_PATH, RESET_PASSWORD_PATH, RECEIPT_PATH_PREFIX, PROFILE_PATH_PREFIX, ROOM_PATH_PREFIX];
     for (const path of prefixes) {
       const first = path.replace(/^\/|\/$/g, '');
       expect(Object.keys(PUBLIC).some((name) => name === first || name.startsWith(`${first}/`))).toBe(true);

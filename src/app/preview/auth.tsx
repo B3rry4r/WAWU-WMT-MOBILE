@@ -7,6 +7,7 @@ import { CodeScreen } from '@/features/auth/CodeScreen';
 import { emailOutcome, PHONE_NOT_SAVED, phoneOutcome } from '@/features/auth/signupFailure';
 import { SignUpScreen } from '@/features/auth/SignUpScreen';
 import { ForgotPasswordScreen } from '@/features/auth/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '@/features/auth/ResetPasswordScreen';
 import { SignInScreen } from '@/features/auth/SignInScreen';
 import { WelcomeScreen } from '@/features/auth/WelcomeScreen';
 import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
@@ -48,6 +49,11 @@ import { LeaveDevRoute } from '@/features/shell/LeaveDevRoute';
  *   channel=sms                           A4 and A15 as the text version
  *                                         (screen=sign-up: channel=phone | email | none picks A3's line; email when left out)
  *   notsaved=1                            A4 (mailed): the note that the number typed was not added (another account holds it)
+ *
+ * RESET-APP (R-123): screen=reset is New password, the screen the emailed reset link opens.
+ *   state=done | invalid | nolink          "Password changed", "This link no longer works", or the same for an address with no token
+ *   password=<text> confirm=<text>         what the two fields hold
+ *   answer=wrong | offline | busy | server | hold | ok     what Save answers (wrong is the server's 401: a spent link)
  */
 
 type Params = {
@@ -66,6 +72,8 @@ type Params = {
   lockfor?: string;
   channel?: string;
   notsaved?: string;
+  state?: string;
+  confirm?: string;
 };
 
 const never = <T,>() => new Promise<T>(() => undefined);
@@ -155,6 +163,22 @@ export default function AuthPreviewRoute() {
         onRestart={() => router.back()}
         later={code ? undefined : { label: 'Later', onPress: answer }}
         onBack={() => router.back()}
+      />
+    );
+  }
+  if (p.screen === 'reset') {
+    return (
+      <ResetPasswordScreen
+        email={email || 'lennox@wawu.africa'}
+        linkUsable={p.state !== 'nolink'}
+        initialOutcome={p.state === 'done' || p.state === 'invalid' ? p.state : undefined}
+        initialPassword={p.password ?? ''}
+        initialConfirm={p.confirm ?? ''}
+        onSave={answer}
+        onBack={() => router.back()}
+        onSignIn={() => router.push({ pathname: '/preview/auth', params: { screen: 'sign-in', email: email || 'lennox@wawu.africa' } })}
+        onAskForNewLink={() => router.push({ pathname: '/preview/auth', params: { screen: 'forgot', email } })}
+        askLabel="Back to Forgot password"
       />
     );
   }
