@@ -34,7 +34,8 @@ for (const hit of boards.matchAll(/['"]([A-Z][A-Za-z0-9]*)['"]/g)) if (canvasIco
 //   Fingerprint: the PIN sheet's biometric key on a phone with a fingerprint
 //   reader (owner, 2 Oct 2026, task MONEY-02; the canvas only draws ScanFace).
 //   Maximize: the full-screen button on a video (owner, 31 Oct 2026, R-117; no board draws it).
-const EXTRA = ['Fingerprint', 'Maximize'];
+//   VolumeX: the host's Mute row on a room message (owner, 31 Oct 2026, R-122; no board draws it).
+const EXTRA = ['Fingerprint', 'Maximize', 'VolumeX'];
 for (const n of EXTRA) names.add(n);
 const sorted = [...names].sort();
 const have = sorted.filter((n) => exported.has(n));

@@ -317,7 +317,11 @@ export class LiveClient {
     const type = (frame as { type?: unknown }).type;
     if (type === 'ready') {
       void this.onReady(socket, generation, (frame as { cursor?: unknown }).cursor);
-    } else if (type === 'chat.message' || type === 'chat.read' || type === 'community.message') {
+    } else if (type === 'chat.message' || type === 'chat.read' || type === 'community.message' || type === 'community.message.removed' || type === 'community.mute.changed') {
+      // `community.message.removed` (MOD-ROOMS r1, R-122): the host deleted a room message. It has a cursor like a message and
+      // is in the catch-up, so a phone that was away drops it too; it names an id and carries no words, and applying it twice
+      // changes nothing, so it needs no seen-key. `community.mute.changed` (MOD-ROOMS r2, R-122, M3) is the same kind of event: the
+      // host muted or unmuted this person, it is in the catch-up in the order the host did them, and the last one applied is the state.
       const event = frame as LiveEvent;
       if (this.catchingUp) this.pendingCursor = event.cursor;
       else this.cursor = event.cursor;

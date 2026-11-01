@@ -14,6 +14,8 @@ import {
   fetchMessages,
   markRoomRead,
   messagesKey,
+  moderationKey,
+  MUTED_IN_ROOM,
   newMessageKey,
   roomKey,
   sendMessage,
@@ -106,6 +108,7 @@ export function useRoomMessages(id: string, looking: boolean) {
     queryClient,
   );
   const [arrived, setArrived] = useState<CommunityMessage[]>([]);
+  const [gone, setGone] = useState<ReadonlySet<string>>(() => new Set());
   const [outgoing, setOutgoing] = useState<OutgoingMessage[]>([]);
   const outgoingRef = useRef(outgoing);
   useEffect(() => {
@@ -120,9 +123,30 @@ export function useRoomMessages(id: string, looking: boolean) {
     });
   }, []);
 
+  /**
+   * MOD-ROOMS (R-122). A message the host deleted is gone from this screen: out of the live arrivals and out of every page held.
+   * The host's own screen calls it when its request is answered; every other member's open room calls it when the Hub's
+   * `community.message.removed` arrives on the live socket (or in the catch-up after the phone was away), so it disappears
+   * for everyone at once. Removing a message that is not held changes nothing.
+   */
+  const remove = useCallback(
+    (messageId: string) => {
+      // Remembered, so a page that was already on its way when the host deleted cannot bring the message back.
+      setGone((held) => (held.has(messageId) ? held : new Set(held).add(messageId)));
+      setArrived((held) => (held.some((message) => message.id === messageId) ? held.filter((message) => message.id !== messageId) : held));
+      queryClient.setQueryData(messagesKey(id), (data: typeof query.data) =>
+        data ? { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.filter((message) => message.id !== messageId) })) } : data,
+      );
+    },
+    // `query.data` is only the cache's type here; the current pages are read inside the updater.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [id],
+  );
+
   useEffect(() => {
     const offEvent = onLiveEvent((event) => {
       if (event.type === 'community.message' && event.communityId === id) take([event.message]);
+      else if (event.type === 'community.message.removed' && event.communityId === id) remove(event.messageId);
     });
     // The socket is up and caught up: read the newest page, in case an event was lost while it was down.
     const offSynced = onLiveSynced(() => {
@@ -145,13 +169,13 @@ export function useRoomMessages(id: string, looking: boolean) {
     };
     // The cache's current pages are read inside the cleanup only to shorten them; they are not a reason to resubscribe.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, take]);
+  }, [id, take, remove]);
 
   const items = useMemo(() => {
     const paged = query.data?.pages.flatMap((page) => page.items) ?? [];
-    const merged = firstSeen([...arrived, ...paged]);
+    const merged = firstSeen([...arrived, ...paged]).filter((message) => !gone.has(message.id));
     return merged.sort((a, b) => Date.parse(b.sentAt) - Date.parse(a.sentAt));
-  }, [query.data, arrived]);
+  }, [query.data, arrived, gone]);
 
   const itemsRef = useRef(items);
   useEffect(() => {
@@ -273,7 +297,12 @@ export function useRoomMessages(id: string, looking: boolean) {
           ),
         );
         if (outOfCredits) void queryClient.invalidateQueries({ queryKey: creditsKey });
-        if (refused?.status === NOT_A_MEMBER) void queryClient.invalidateQueries({ queryKey: roomKey(id) });
+        if (refused?.code === MUTED_IN_ROOM) {
+          // MOD-ROOMS (R-122). The host muted this person: nothing was stored or spent. The room now draws its one calm line in place
+          // of the composer, so the refused words are not left behind as a "Not sent" bubble with nothing to do about it.
+          void queryClient.invalidateQueries({ queryKey: moderationKey(id) });
+          setOutgoing((held) => held.filter((candidate) => candidate.localId !== entry.localId));
+        } else if (refused?.status === NOT_A_MEMBER) void queryClient.invalidateQueries({ queryKey: roomKey(id) });
       } finally {
         sending.current = false;
       }
@@ -322,6 +351,7 @@ export function useRoomMessages(id: string, looking: boolean) {
     send,
     retry,
     discard,
+    remove,
     /** A send is on its way: the Send button waits. */
     busy: pending.some((entry) => entry.status === 'sending'),
     me: meSender,
