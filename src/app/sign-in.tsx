@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { isApiError } from '@/api/errors';
 import { useSession } from '@/api/session';
@@ -14,13 +14,16 @@ const UNCONFIRMED_CODES = ['PHONE_NOT_CONFIRMED', 'EMAIL_NOT_VERIFIED'];
  * A22 and A25. Only reachable signed out (the root layout's guard). A sign-in that succeeds forgets any A2 pick.
  * A sign-in refused as "not confirmed" while this phone still holds a sign-up waiting for its code opens
  * that code screen instead (SHARED-CHANGES AUTH-05 F1). A sign-in that was asked for by the access code screen goes
- * back to it (SHARED-CHANGES JOIN-03 #10).
+ * back to it (SHARED-CHANGES JOIN-03 #10). An `email` in the address fills the Email field (after "Password changed", RESET-APP).
  */
 export default function SignInRoute() {
   const router = useRouter();
   const { signIn } = useSession();
+  // RESET-APP (R-123): after a reset the New password screen opens sign-in with the account's email already in the field.
+  const { email } = useLocalSearchParams<{ email?: string }>();
   return (
     <SignInScreen
+      initialEmail={typeof email === 'string' && email.includes('@') ? email : ''}
       onSignIn={async (identifier, password) => {
         try {
           await signIn(identifier, password);

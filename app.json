@@ -86,6 +86,11 @@
             {
               "scheme": "https",
               "host": "wawuafrica.com",
+              "path": "/reset-password"
+            },
+            {
+              "scheme": "https",
+              "host": "wawuafrica.com",
               "pathPrefix": "/receipt/"
             },
             {

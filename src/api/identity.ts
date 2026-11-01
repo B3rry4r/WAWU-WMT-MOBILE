@@ -94,8 +94,8 @@ export type ResetLinkAnswer = { expiresInSeconds: number | null };
 /**
  * Asks WAWU ID to email a reset link (`method: 'email'`; without it the server
  * sends a WhatsApp code instead). It answers the same whether or not an account
- * exists. The link opens WAWU ID's own web reset page: the app has no New
- * password screen. `expiresInSeconds` is the link's real lifetime; a server that
+ * exists. The link opens the app's own New password screen when
+ * the app is installed (RESET-APP, R-123) and the website's reset page when it is not. `expiresInSeconds` is the link's real lifetime; a server that
  * does not send it (BACKEND_GAPS.md G-26) gives null and the screen leaves the
  * figure out.
  */
@@ -105,6 +105,17 @@ export async function forgotPasswordRequest(identifier: string): Promise<ResetLi
   return { expiresInSeconds: typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0 ? seconds : null };
 }
 
+/**
+ * POST /auth/reset-password, the email-link path (RESET-APP, R-123): the link WAWU ID mails
+ * (`https://wawuafrica.com/reset-password?token=...&email=...`) opens the app's "New password" screen, which sends the token and
+ * the email from that link with the new password. WAWU ID answers a message only on this path (no session), ends every session
+ * of the account, and refuses a wrong, expired or already-used token with one 401. WAWU ID's published contract does not list
+ * this route yet (BACKEND_GAPS G-RESET-APP-1), so the body is written here to match its `ResetPasswordDto` (`token`, `email`,
+ * `password`, 8 to 128 characters) instead of being generated.
+ */
+export async function resetPasswordRequest(token: string, email: string, password: string): Promise<void> {
+  await call<{ data: { message: string } }>('POST', '/auth/reset-password', { token, email, password });
+}
 
 /* ---- Sign-up (AUTH-04, over AUTH-03 and AUTH-05's routes) ---- */
 

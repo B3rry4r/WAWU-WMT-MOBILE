@@ -3,7 +3,7 @@
  * website and the phone's link settings cannot drift apart.
  *
  * An app link is an https address on wawuafrica.com that this app opens when it is
- * installed. Seven exist, and only these seven (the website lists exactly the same
+ * installed. Eight exist, and only these eight (the website lists exactly the same
  * paths in `/.well-known/apple-app-site-association`; `app.json` registers them
  * as the `associatedDomains` entry and the Android `intentFilters`, and a spec
  * checks that it does):
@@ -11,6 +11,7 @@
  *   /r/<code>        an invite, as a person shares it (REF-03 claims the code)
  *   /selfie          where Nuvion's hosted selfie page sends a person back to
  *   /activate        the "Set My Password" button in the activation email (opens sign-in; the query is not read)
+ *   /reset-password  the link in the "Forgot password" email (`?token=...&email=...`): opens the New password screen (RESET-APP, R-123)
  *   /receipt/<code>  a receipt's check address, its own path (never `/r/`, the invite path)
  *   /u/<handle>      a profile, as Share on Me sends it
  *   /c/<slug>        a community room, as the Hub issues its link
@@ -32,6 +33,9 @@ export const SELFIE_PATH = '/selfie';
 
 /** The activation email's button lands here (`FRONTEND_URL/activate?token&email`, written by wawu-id). */
 export const ACTIVATE_PATH = '/activate';
+
+/** The Forgot password email's link lands here (`FRONTEND_URL/reset-password?token&email`, written by wawu-id); the app reads both. */
+export const RESET_PASSWORD_PATH = '/reset-password';
 
 /** A receipt's check address, `/receipt/<code>`, with its closing slash. Never `/r/`: that is the invite path. */
 export const RECEIPT_PATH_PREFIX = '/receipt/';
