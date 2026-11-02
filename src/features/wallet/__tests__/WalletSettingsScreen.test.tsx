@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as rtl from '@testing-library/react-native';
-import { Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockVault = new Map<string, string>();
@@ -19,6 +19,7 @@ jest.mock('expo-secure-store', () => ({
 jest.mock('expo-router', () => ({
   ...jest.requireActual<typeof import('expo-router')>('expo-router'),
   router: { push: (...args: unknown[]) => mockPush(...args) },
+  useRouter: () => ({ push: (...args: unknown[]) => mockPush(...args), back: jest.fn(), replace: jest.fn(), canGoBack: () => true }),
 }));
 jest.mock('@/features/open-wallet/copy', () => ({
   copyText: jest.fn(async (value: string) => {
@@ -352,5 +353,57 @@ describe('W35 · Wallet settings', () => {
     fallback['GET /money/wallet'] = view();
     await rtl.fireEvent.press(rtl.screen.getByRole('button', { name: 'Check again' }));
     expect(await rtl.screen.findByTestId('wallet-settings-pin')).toBeTruthy();
+  });
+});
+
+/*
+ * CARD-BACK fix round 1 (R-124): the REAL Wallet settings route (`src/app/wallet-settings.tsx`) draws the Cards row from `GET /money/cards` and opens
+ * /cards. Removing `cards=` from the route fails here.
+ */
+describe.each(['android', 'ios'] as const)('R-124 · the Cards row on the real Wallet settings route, on %s', (os) => {
+  const card = (status: string) => ({ id: 'card-1', kind: 'virtual', status, name: 'Who Made This card', currency: 'USD', last4: '1234', statusMessage: null, frozenBySupport: false, createdAt: '2026-11-02T09:00:00.000Z' });
+  async function route() {
+    const Route = require('@/app/wallet-settings').default as () => React.ReactElement;
+    await rtl.render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+        <Route />
+      </SafeAreaProvider>,
+    );
+  }
+  beforeEach(() => {
+    jest.replaceProperty(Platform, 'OS', os);
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it('with cards on and none made, the Cards row says Get your card and opens /cards', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: true, cards: [] });
+    await route();
+    const row = await rtl.screen.findByTestId('wallet-settings-cards');
+    expect(rtl.screen.getByText('Get your card')).toBeTruthy();
+    rtl.fireEvent.press(row);
+    expect(mockPush).toHaveBeenCalledWith('/cards');
+  });
+
+  it('with one active card, the Cards row says which card and opens /cards', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: true, cards: [card('active')] });
+    await route();
+    const row = await rtl.screen.findByTestId('wallet-settings-cards');
+    expect(rtl.screen.getByText(/••1234/)).toBeTruthy();
+    rtl.fireEvent.press(row);
+    expect(mockPush).toHaveBeenCalledWith('/cards');
+  });
+
+  it('with cards off and no live card there is no Cards row', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: false, cards: [] });
+    await route();
+    await rtl.screen.findByText('Beneficiaries');
+    await rtl.waitFor(() => expect(sent.some((s) => s.path === '/api/hub/money/cards')).toBe(true));
+    expect(rtl.screen.queryByTestId('wallet-settings-cards')).toBeNull();
+  });
+
+  it('with cards off, a person who holds a live card keeps the Cards row, so they can freeze or block it', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: false, cards: [card('active')] });
+    await route();
+    expect(await rtl.screen.findByTestId('wallet-settings-cards')).toBeTruthy();
   });
 });
