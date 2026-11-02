@@ -24,7 +24,7 @@ Owner, 2 Nov 2026: "test again and put back on the app". Nuvion's answer of 27 O
 
 | # | Before (`ce303c99`) | After |
 |---|---------------------|-------|
-| 1 | W1 drew no card row (`CardRow.tsx` deleted by WALLET-BLANK) | `CardRow.tsx` is back as at `88d0b779`; W1 draws it under the actions, while the Hub says cards are on (`enabled` on `GET /money/cards`) |
+| 1 | W1 drew no card row (`CardRow.tsx` deleted by WALLET-BLANK) | `CardRow.tsx` is back as at `88d0b779`; W1 draws it under the actions while the Hub says cards are on (`enabled` on `GET /money/cards`). With cards off, nothing is drawn for a person with no live card (active, frozen or being made) and `/cards` says it is not available; a person who holds a live card keeps the row, the Cards row and the list so they can freeze or block it (money safety, round 1 L5; lead ruling, 2 Nov) |
 | 2 | Wallet settings drew no Cards row | the Cards row is back (`wallet-settings-cards`), its second line from `GET /money/cards`, drawn only while cards are on |
 | 3 | `/cards`, `/cards/new`, `/cards/<id>` redirected to `/wallet` | the three route files are the live screens again (get a card, list, card detail and frozen); a signed-out visit still goes to `/welcome` |
 | 4 | Add money | unchanged: it draws only the ways the Hub says are available; `money.add_money_card_on` stays 0, so no card option |
@@ -46,13 +46,22 @@ Done before any app change; details in `docs/nuvion/DEV-RESULTS.md`. Issuing is 
 - The Cards row: `wallet-settings-cards` in `WalletSettingsScreen.tsx` line 251, fed by `useCardsSummary()` in `src/app/wallet-settings.tsx`.
 - Add money has no card entry of its own: `OtherWays.tsx` draws `waysToDraw(options.rails)`, the Hub's `available` ways; no code in the app names `money.add_money_card_on`. The test "Add money draws no card option" in `cardsFlow.test.tsx` pins it with the Hub listing the card way as not available.
 
+## Fix round 1 (the verifier said FIX)
+
+| # | Finding | Done |
+|---|---------|------|
+| 1 | Removing `<CardRow />` from `WalletScreen.tsx`, or `cards=` from `src/app/wallet-settings.tsx`, left every test green | Tests on the REAL Wallet tab (`WalletScreen.test.tsx`) and the REAL Wallet settings route (`WalletSettingsScreen.test.tsx`), Android and iOS: cards on with none made and with one active card (the row and the Cards row are drawn and open `/cards`), cards off with no live card (nothing drawn), cards off with a live card (kept). The stale `wallet-card-row` is out of `NOT_BUILT_IDS`. Mutations proved: without `<CardRow />` 8 of the 8 new W1 tests fail; without `cards=` 6 of the 8 new route tests fail (the 2 that expect nothing pass, as they should); both restored |
+| 2 | The record said nothing is drawn with cards off, but a holder keeps the entries | Lead ruling: keep the behaviour. R-124 and this file now say it (see row 1 above) |
+| 3 | The theme button (390 x 844: x 321 to 365, y 687 to 731) sits over the card row's chevron on W1 | W1's scroll content already ends `floatingRoom` (83) above the bar, the same room Home and Me use, so the last rows scroll 16 clear above the button; a test pins `paddingBottom >= floatingRoom` and `src/__tests__/floatingRoom.test.tsx` pins the geometry. At rest (not scrolled) any tab's content passes under the floating buttons, as on Home and Me: that is R-110 point 3 as built. Home and Me are untouched (no change to their files) |
+| 4 | No test for the 30 s auto-hide and hide-on-leave | `cardsFlow.test.tsx`: the reveal timer is 30,000 ms and, run, hides the number and CVV; leaving the screen clears the timer and a fresh screen shows dots only; Freeze hides the details at once |
+
 ## Tests (a user can ...; Android and iOS, real handlers)
 
-`src/features/cards/__tests__/cardsFlow.test.tsx` (33 tests: 16 on Android, 16 on iOS, and the Add money one): the card row leads to `/cards` (none yet), says active and frozen, is not drawn when cards are off or the read failed; the Cards row summary; `/cards`, `/cards/<id>` and `/cards/new` draw their screens, not a redirect; Details asks the PIN (sent as `X-Transaction-Pin`), shows the number and CVV, Hide details takes them off; a wrong PIN shows nothing; Freeze needs no PIN and shows Card frozen; offline: the card says it could not load, with Try again, and Details with no connection shows no number; on Android the phone's back button leaves the card screen (to the list when nothing is behind it); on iOS the round back button does; Add money draws no card option. There is no Copy control on the card screens (none was built, so none is drawn, R-47).
+`src/features/cards/__tests__/cardsFlow.test.tsx` (39 tests: 19 on Android, 19 on iOS, and the Add money one): the card row leads to `/cards` (none yet), says active and frozen, is not drawn when cards are off or the read failed; the Cards row summary; `/cards`, `/cards/<id>` and `/cards/new` draw their screens, not a redirect; Details asks the PIN (sent as `X-Transaction-Pin`), shows the number and CVV, Hide details takes them off; a wrong PIN shows nothing; Freeze needs no PIN and shows Card frozen; offline: the card says it could not load, with Try again, and Details with no connection shows no number; on Android the phone's back button leaves the card screen (to the list when nothing is behind it); on iOS the round back button does; Add money draws no card option. There is no Copy control on the card screens (none was built, so none is drawn, R-47).
 
 ## Pictures
 
-Boards rendered (`render_design.py W1 W29 W31 W32`) into `scratchpad/card-back-b/shots/`. The built screens at 390 px dark and light (W1 with the card row, Wallet settings with Cards, the cards list with none, one active and one frozen, get a card and its PIN step, the card screen hidden and revealed with the number masked, Add money with no card option): **NOT RUN** (no signed-in web export against a Hub stand-in was possible inside this task's budget; the verifier's picture pass runs them). Nothing of this is claimed as seen.
+Boards (`render_design.py W1 W29 W31 W32 W35`) and the fix round's W1 shots are in `scratchpad/card-back-b/shots/`: W1 with one active card at 390 x 844, dark and light, at rest and scrolled to the end (`W1-active-end-dark.png`, `W1-active-end-light.png`). They come from a web export of this branch against canned Hub answers (the real screen, the real tab layout and the floating theme button). Scrolled to the end, the last transaction row ends at y 671 and the theme button (x 321 to 365, y 687 to 731) stands 16 below it: nothing sits under it, and the card row's chevron is clear. At rest the button overlays whatever scrolls beneath it, as on every tab (R-110 point 3 keeps only the END clear). The verifier's pictures of every other scene (W29, W31, W32, the list, the PIN step, Add money, cards off) are in `scratchpad/card-back-v/shots`.
 
 ## PHONE CHECK (only a real phone can prove)
 
@@ -61,11 +70,12 @@ Boards rendered (`render_design.py W1 W29 W31 W32`) into `scratchpad/card-back-b
 - Details: the PIN or fingerprint, the number and CVV show for 30 seconds then hide by themselves; leaving the screen hides them; the phone's screenshot or recents view while they show (not blocked by design).
 - Freeze and Unfreeze; the Android back button from the card screen returns to the list.
 - Airplane mode on the card screen: the load error and Try again.
+- The busy state while a card is made: Nuvion dev took 17.9 s to make one and the app's write timeout is 30 s, so the button must stay busy (no second card, no double fee) for the whole wait, and a slow answer must still end in the card, not an error.
 
 ## Capability checks
 
 - [x] A user sees the card row on the Wallet and the Cards row in Wallet settings while the Hub says cards are on, and neither while it says off (`cardsFlow.test.tsx`).
 - [x] A user can open /cards, get a card, open a card, reveal and hide its details, freeze it (`cardsFlow.test.tsx`; the get-a-card flow itself is unchanged since WALLET-22).
 - [x] A user sees no card option in Add money (`cardsFlow.test.tsx`, `otherWays.test.tsx`).
-- [ ] Pictures of the built screens: NOT RUN (see above).
+- [x] Pictures of the built screens: W1 with one active card at 390 x 844, dark and light, at rest and scrolled to the end, taken in a web export against canned Hub answers (`scratchpad/card-back-b/shots/W1-active-end-dark.png` and light; the verifier took the rest of the scenes). The rest were taken by the verifier (`scratchpad/card-back-v/shots`).
 - [ ] On a phone: NOT RUN (no device in this session).

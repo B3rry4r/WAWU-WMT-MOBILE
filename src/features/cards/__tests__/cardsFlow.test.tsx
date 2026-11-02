@@ -249,6 +249,70 @@ describe.each(['android', 'ios'] as const)('the virtual card is back, on %s', (o
       expect(rtl.screen.getByTestId('card-details')).toBeTruthy();
     });
 
+    /**
+     * Reveals the card with the PIN and returns the timer the screen set for the reveal (its callback and its id), caught as it is made. A plain
+     * wrapper, not a jest spy: the testing library takes a mocked setTimeout for fake timers and stops waiting properly.
+     */
+    const realTimers = { set: global.setTimeout, clear: global.clearTimeout };
+    afterEach(() => {
+      global.setTimeout = realTimers.set;
+      global.clearTimeout = realTimers.clear;
+    });
+    const cleared: unknown[] = [];
+    async function reveal() {
+      const made: { fn: () => void; ms: number; id: ReturnType<typeof setTimeout> }[] = [];
+      cleared.length = 0;
+      global.setTimeout = ((...args: [() => void, number?, ...unknown[]]) => {
+        const id = (realTimers.set as unknown as (...a: unknown[]) => ReturnType<typeof setTimeout>).apply(global, args);
+        if (args[1] === REVEAL_MS_NOW) made.push({ fn: args[0], ms: args[1], id });
+        return id;
+      }) as typeof setTimeout;
+      global.clearTimeout = ((id?: Parameters<typeof clearTimeout>[0]) => {
+        cleared.push(id);
+        return (realTimers.clear as (i?: unknown) => void).call(global, id);
+      }) as typeof clearTimeout;
+      hub.cards = [card()];
+      await show(<Detail />);
+      rtl.fireEvent.press(await rtl.screen.findByTestId('card-details'));
+      await enterPin('4829');
+      expect(await rtl.screen.findByText('4111 1111 1111 1111')).toBeTruthy();
+      return made;
+    }
+    const REVEAL_MS_NOW = (require('../model') as typeof import('../model')).REVEAL_MS;
+
+    it('the revealed details go by themselves after 30 seconds', async () => {
+      expect(REVEAL_MS_NOW).toBe(30_000);
+      const made = await reveal();
+      // The last 30 second timer made is the screen's own (the app's write timeout is 30 seconds too, and is made first).
+      const timer = made[made.length - 1];
+      expect(rtl.screen.getByTestId('card-art-secrets')).toBeTruthy();
+      await rtl.act(async () => timer.fn());
+      expect(rtl.screen.queryByText('4111 1111 1111 1111')).toBeNull();
+      expect(rtl.screen.queryByTestId('card-art-secrets')).toBeNull();
+      expect(rtl.screen.getByTestId('card-details')).toBeTruthy();
+    });
+
+    it('leaving the screen hides them: the timer is cleared and a fresh screen for the same card shows only dots', async () => {
+      const made = await reveal();
+      const timer = made[made.length - 1];
+      cleared.length = 0;
+      await rtl.cleanup();
+      expect(cleared).toContain(timer.id);
+      require('@/api/query').queryClient.clear();
+      await show(<Detail />);
+      await rtl.screen.findByTestId('card-art');
+      expect(rtl.screen.queryByText('4111 1111 1111 1111')).toBeNull();
+      expect(rtl.screen.queryByTestId('card-art-secrets')).toBeNull();
+    });
+
+    it('freezing the card hides the details at once', async () => {
+      await reveal();
+      rtl.fireEvent.press(await rtl.screen.findByTestId('card-freeze'));
+      expect(await rtl.screen.findByTestId('card-frozen')).toBeTruthy();
+      expect(rtl.screen.queryByText('4111 1111 1111 1111')).toBeNull();
+      expect(rtl.screen.queryByTestId('card-art-secrets')).toBeNull();
+    });
+
     it('a wrong PIN shows nothing of the card', async () => {
       hub.cards = [card()];
       hub.revealRefused = true;
