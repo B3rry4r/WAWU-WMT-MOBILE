@@ -28,7 +28,7 @@ As of 3 Nov 2026, built by a Sonnet builder (T2), Hub `wmt/WEB-HOLD` from `origi
 | Places, tier | unchanged: `POST /uploads/presign` and `POST /content` answer 402 `tier_required` / `product_limit_reached` exactly as for the app; places come from `GET /creator/state` `slotsTotal` |
 | The piece | stored `uploadedVia = 'site'`, status `pending` |
 | Approval | admin approve: with an open wallet (row in the wallet table, as `WalletGate.requireOpen`) it is `live`; without, `status` stays `pending` and `heldForWalletAt` is set |
-| Release | the wallet row being written (Nuvion `accounts.ts` recorder, and the legacy `WalletOpeningService.record`) sets every held piece of that person `live` in the same transaction; an advisory lock per creator serialises it against an approval |
+| Release | the wallet row being written by the Nuvion `accounts.ts` recorder (production runs WALLET_PROVIDER=nuvion). Under WALLET_PROVIDER=fintava held pieces are NOT released automatically; accepted, because Fintava is not used. The legacy `WalletOpeningService.record` is untouched sets every held piece of that person `live` in the same transaction; an advisory lock per creator serialises it against an approval |
 | Owner reads | `GET /content/mine/library` and `/mine/library/:id`: `waitingFor: "wallet"` or `null`. `GET /content/mine`: the key `waitingFor` appears only on a held piece |
 | Admin | queue leaves held pieces out; `GET /admin/content/queue?held=only` lists them |
 
