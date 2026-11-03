@@ -17,7 +17,7 @@ artboards: []
 
 ## Current state
 
-Hub half built on branch `wmt/JOIN-TIERS` (JOIN-TIERS-HUB). Website half (JOIN-TIERS-WEB) not started.
+Hub half built on branch `wmt/JOIN-TIERS` (JOIN-TIERS-HUB). Website half (JOIN-TIERS-WEB) built on web branch `wmt/JOIN-TIERS-WEB` (3ff9978, on `wmt/BRAND-SITE` c1e171a), proved against the local Hub bf7b95e: each tier registered at its price (N2,999 / N5,999 / N9,999), LOGOART on Verify N1,200, on Plus full price with the Hub's sentence, a capped code at the standard price, the success screen (no code typed), and `GET /me/tier` shows the tier after a proven-contact sign-in. Deploy the Hub before the web (the page needs `/waitlist/tiers`).
 
 Done in the Hub:
 - `GET /waitlist/tiers` (public), tier on registration, tier-aware code check, per-tier admin ceiling.
