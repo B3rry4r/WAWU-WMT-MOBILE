@@ -39,6 +39,10 @@ As of 3 Nov 2026, built by a Sonnet builder (T2), Hub `wmt/WEB-HOLD` from `origi
 - Read the library with `GET /content/mine/library` (it carries `coverUrl`, `rejectionReason` and `waitingFor`). Say, for `waitingFor === "wallet"`: "Approved: goes live when you open your wallet in the app". `status === "pending"` with `waitingFor === null` is "In review".
 - Courses: the lesson route (`PUT /content/:id/lessons`) does not look at the client, but the web has not proven a course end to end; the web offers no course kind until it does.
 
+### Web side: WEB-UPLOAD (3 Nov 2026)
+
+Web `wmt/WEB-UPLOAD` f5eee9a (from `wmt/BRAND-SITE` c1e171a), not deployed. Join-only mode now also opens `/sign-in`, `/sign-up`, `/forgot-password`, `/create/new`, `/create/library`, each served by a trimmed page (`src/app/upload-site/`). Every content and upload write sends `X-Wawu-Client: site`. Walked on a local stack (Hub with WEB-HOLD and JOIN-TIERS merged): paid /join email, web sign-up, tier Verify with 4 places, upload with cover at a list price, In review, admin approve, "Approved. It goes live when you open your wallet in the WAWU app", wallet opened with the stand-in, Live.
+
 ### Not changed (proof)
 
 The protected route suite (`src/protected-routes`, 253 tests) passes: no response widened. The two new columns are never served as they are (public piece shapes, search, feeds). `src/search-response/tests/search-app-links.contract.spec.ts` computes "the stored row" and now leaves out the two new columns as it leaves out `coverKey` (one helper, `asBefore`).
