@@ -130,7 +130,7 @@ describe('VF13 · Add 5 more products in the store sheet', () => {
     await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
     expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
     expect(rtl.screen.queryByTestId('full-add')).toBeNull();
-    expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.'));
   });
 });
 
@@ -188,7 +188,7 @@ describe('VF13 · the pack is offered only where the Hub would sell it (F1)', ()
     expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 9 of 3');
     await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
     expect(rtl.screen.queryByTestId('full-offer')).toBeNull();
-    expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.'));
   });
 });
 
@@ -211,6 +211,43 @@ describe('VF13 · the pack is offered only where the Hub would sell it (R-100, P
     expect(rtl.screen.queryByTestId('full-offer-loading')).toBeNull();
     expect(rtl.screen.queryByText(/\$4\.99|Add 5/)).toBeNull();
     expect(fakeStore.requests).toEqual([]);
+  });
+
+  // VF13-RACE (2 Nov): the line under the title used to be drawn from the Hub's tier alone ("Move up a tier, or take something down.") and
+  // switched when the store and then the Hub's quote answered. A person saw a line taken back, and a test that read it first failed under load.
+  // The line is now drawn only once the pack is known, so these hold the store and then the quote and look at every moment in between.
+  it('draws no line under the title until the store and the Hub’s quote have answered, then only the final words (a line is never drawn and taken back)', async () => {
+    serve();
+    refuse('pack_not_allowed', TIER_SENTENCE);
+    let releaseStore: () => void = () => undefined;
+    hub.hold = new Promise<void>((r) => (releaseStore = r));
+    // The Hub's quote is held by wrapping the one function that asks for it (the api client keeps the first `fetch` it was made with).
+    let releaseQuote: () => void = () => undefined;
+    const quoteHeld = new Promise<void>((r) => (releaseQuote = r));
+    const purchaseApi = require('../purchaseApi') as typeof import('../purchaseApi');
+    const ask = purchaseApi.askPackOffered;
+    const asked = jest.spyOn(purchaseApi, 'askPackOffered').mockImplementation(async () => {
+      await quoteHeld;
+      return ask();
+    });
+    const guessed = /take something down|Move up a tier|Add more products|most products/;
+    await sheet();
+    // The Hub's count is known, the store is not: the title is there and the line is a placeholder, not a guess.
+    expect(await rtl.screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
+    expect(await rtl.screen.findByTestId('full-line-loading')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('full-line')).toBeNull();
+    expect(rtl.screen.queryByText(guessed)).toBeNull();
+    // The store has answered and sells the pack, but the Hub has not said whether it would sell it: still no line.
+    await rtl.act(async () => releaseStore());
+    await rtl.waitFor(() => expect(asked).toHaveBeenCalled());
+    expect(rtl.screen.getByTestId('full-line-loading')).toBeTruthy();
+    expect(rtl.screen.queryByTestId('full-line')).toBeNull();
+    expect(rtl.screen.queryByText(guessed)).toBeNull();
+    // The Hub refuses the pack: the one line, the final one.
+    await rtl.act(async () => releaseQuote());
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('full-line')).toHaveTextContent('Move up a tier to publish another.'));
+    expect(rtl.screen.queryByTestId('full-line-loading')).toBeNull();
+    expect(rtl.screen.queryByText('Move up a tier, or take something down.')).toBeNull();
   });
 
   it('Founding Maker at 20 of 20: the cap sentence, no pack and no buy button', async () => {

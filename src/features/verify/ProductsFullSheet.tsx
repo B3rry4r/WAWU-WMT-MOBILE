@@ -128,6 +128,9 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
     // The pack only where the Hub would sell it (its quote is not refused) AND this person has a running tier with room: the check is kept
     // beside the Hub's answer so the store sheet never opens for no tier or an ended one, even when the Hub is an old one (R-100, round 4).
     const offer = pack !== null && count > 0 && packOffered(mine.data, count) && verdict.kind === 'offered' && refusal === null ? pack : null;
+    // The line under the title says what the pack decides (offered, refused by rule, or not sold here), so it is drawn only once that is known:
+    // the store has answered and, when it sells the pack, so has the Hub's quote. Before then the old fallback line was drawn and taken back (VF13-RACE).
+    const packKnown = store.state.kind !== 'loading' && (pack === null || verdict.kind !== 'checking');
     const packRefusedByRule = refusal !== null || (verdict.kind === 'refused' && verdict.code === PACK_NOT_ALLOWED);
     const up = nextTiers(plans.data.tiers, mine.data.tier?.id ?? null, mine.data.extraProducts, used).length > 0;
     body = (
@@ -136,19 +139,23 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
           <Text variant="display" accessibilityRole="header" testID="full-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
             {`You have used ${used} of ${allowed}`}
           </Text>
-          <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
-            {offer
-              ? up
-                ? 'Add more products, or move up a tier.'
-                : 'Add more products, or take something down.'
-              : packRefusedByRule
+          {packKnown ? (
+            <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
+              {offer
                 ? up
-                  ? PACK_TIERS_LINE
-                  : PACK_CAP_LINE
-                : up
-                  ? 'Move up a tier, or take something down.'
-                  : PACK_TAKE_DOWN_LINE}
-          </Text>
+                  ? 'Add more products, or move up a tier.'
+                  : 'Add more products, or take something down.'
+                : packRefusedByRule
+                  ? up
+                    ? PACK_TIERS_LINE
+                    : PACK_CAP_LINE
+                  : up
+                    ? 'Move up a tier, or take something down.'
+                    : PACK_TAKE_DOWN_LINE}
+            </Text>
+          ) : (
+            <Skeleton testID="full-line-loading" height={20} width="80%" radius={radius.chip} style={styles.blurb} />
+          )}
           {refusal !== null && refusal !== (up ? PACK_TIERS_LINE : PACK_CAP_LINE) ? (
             <Text variant="meta" tone="danger" testID="full-refused" accessibilityLiveRegion="polite" style={styles.blurb}>
               {refusal}

@@ -552,7 +552,7 @@ describe('VF13 · all products used', () => {
     hub.used = 3;
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+    await waitFor(() => expect(screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.'));
     expect(screen.getByTestId('full-upgrade')).toHaveTextContent('Upgrade instead');
     expect(screen.getByTestId('full-library')).toHaveTextContent('Open library');
     expect(screen.queryByText(/Add 5|add 5|more products/)).toBeNull();
@@ -584,7 +584,7 @@ describe('VF13 · all products used', () => {
     hub.heldTier = 'founding';
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 10 of 10');
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.');
+    await waitFor(() => expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.'));
     expect(screen.queryByTestId('full-upgrade')).toBeNull();
     expect(screen.getByTestId('full-library')).toBeTruthy();
     expect(screen.queryByText(/Get verified|Add 5/)).toBeNull();
@@ -597,7 +597,7 @@ describe('VF13 · all products used', () => {
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 12 of 12');
     expect(screen.queryByTestId('full-upgrade')).toBeNull();
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.');
+    await waitFor(() => expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.'));
   });
 });
 
