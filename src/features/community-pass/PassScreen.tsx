@@ -138,7 +138,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
   const selected = onWeb ? webItem : ladder.itemFor(naira);
   const credit = onWeb ? null : ladder.creditFor('pass', naira);
   const buyPass = (payWith?: 'credit') => {
-    if (onWeb) return void web.begin({ kind: 'pass', communityId: id }, room.name, {});
+    if (onWeb) return void web.begin({ kind: 'pass', communityId: id }, room.name, {}, verb);
     return naira === null ? undefined : void ladder.buyer.buyLadder({ kind: 'pass', communityId: id, listPriceNaira: naira }, payWith);
   };
   // A room that sells a pass and a person who cannot buy it: the host removed them (a pending row in a pass room, G-INBOX-24-6; R-63 has no

@@ -24,6 +24,12 @@ export type KeypadKeys = {
 
 const live: symbol[] = [];
 
+/** A button the person reached inside the sheet (Tab, or a click): Enter and Space press it as a browser does. */
+function isButtonLike(target: EventTarget | null): boolean {
+  const el = target as { tagName?: string; getAttribute?: (name: string) => string | null } | null;
+  return el?.tagName?.toLowerCase() === 'button' || el?.getAttribute?.('role') === 'button';
+}
+
 function isField(target: EventTarget | null): boolean {
   const el = target as { tagName?: string; isContentEditable?: boolean } | null;
   const tag = el?.tagName?.toLowerCase();
@@ -65,6 +71,7 @@ export function useKeypadKeys(keys: KeypadKeys): void {
         take();
         if (!k.inactive) k.onDelete();
       } else if (key === 'Enter' || key === ' ') {
+        if (isButtonLike(event.target)) return;
         // Enter and Space never press a button left focused behind the keypad.
         take();
         if (key === 'Enter' && !k.inactive && !event.repeat) k.onEnter?.();

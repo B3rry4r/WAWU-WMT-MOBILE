@@ -24,7 +24,8 @@ jest.mock('expo-local-authentication', () => ({
   isEnrolledAsync: jest.fn(async () => false),
   supportedAuthenticationTypesAsync: jest.fn(async () => []),
 }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), navigate: mockNavigate, back: jest.fn(), canGoBack: () => false }), useIsFocused: () => true, router: { push: jest.fn() } }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ Redirect: () => null, useRouter: () => ({ push: mockPush, navigate: mockNavigate, back: jest.fn(), canGoBack: () => false }), useIsFocused: () => true, router: { push: jest.fn() } }));
 const mockNavigate = jest.fn();
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -176,6 +177,37 @@ describe('WEBAPP-06 · points from the wallet on the web', () => {
   });
 });
 
+describe('WEBAPP-06 fix 1 · F1 and F2', () => {
+  it('Add on the pay sheet goes to Add money with the shortfall, as every other pay screen does', async () => {
+    hub.balanceKobo = 40_000;
+    await openPay();
+    await rtl.waitFor(() => expect(rtl.screen.getByText('Add ₦600')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent.press(rtl.screen.getByText('Add ₦600'));
+    });
+    const { addMoneyHref } = require('@/features/addmoney/entry') as typeof import('@/features/addmoney/entry');
+    expect(mockPush).toHaveBeenCalledWith(addMoneyHref(60_000));
+  });
+
+  it('every file under src/app/bills goes home on the web, and none draws on the web', async () => {
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const root = path.join(process.cwd(), 'src/app/bills');
+    const files: string[] = [];
+    const walk = (d: string) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : /\.tsx$/.test(e.name) && files.push(path.join(d, e.name))));
+    walk(root);
+    expect(files.length).toBeGreaterThanOrEqual(9);
+    for (const f of files) {
+      expect(fs.readFileSync(f, 'utf8')).toContain('withBillsGuard(');
+    }
+    const { withBillsGuard } = require('@/features/bills/webGuard') as typeof import('@/features/bills/webGuard');
+    const { Text } = require('react-native') as typeof import('react-native');
+    const Guarded = withBillsGuard(() => <Text>bills page</Text>);
+    await rtl.render(<Guarded />);
+    expect(rtl.screen.queryByText('bills page')).toBeNull();
+  });
+});
+
 describe('WEBAPP-06 · bills on the web (R-47)', () => {
   it('the money card on Home draws no Bills action on the web, and does on a phone', async () => {
     const { MoneyCard } = require('@/features/home/MoneyCard') as typeof import('@/features/home/MoneyCard');
@@ -196,3 +228,4 @@ describe('WEBAPP-06 · bills on the web (R-47)', () => {
     expect(billsOffered()).toBe(true);
   });
 });
+

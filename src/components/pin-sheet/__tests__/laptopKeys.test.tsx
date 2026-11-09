@@ -149,6 +149,16 @@ describe('the PIN sheet on a laptop keyboard', () => {
   });
 });
 
+describe('keyboard access', () => {
+  it('Enter and Space press a keypad key or Close the person reached with Tab, and still never the stale button behind the sheet', async () => {
+    await render(<PinEntry approval={approval} onSubmit={answer({ code: 'approved' })} />);
+    const reached = { tagName: 'BUTTON' };
+    expect((await key('Enter', {}, reached)).defaultPrevented).toBe(false);
+    expect((await key(' ', {}, { tagName: 'DIV', getAttribute: () => 'button' })).defaultPrevented).toBe(false);
+    expect((await key('Enter')).defaultPrevented).toBe(true);
+  });
+});
+
 describe('the amount keypad on a laptop keyboard', () => {
   it('digits, the point, Backspace and Enter act as taps, and a focused note field keeps its own keys', async () => {
     const onKey = jest.fn();

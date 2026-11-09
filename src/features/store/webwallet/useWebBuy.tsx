@@ -8,6 +8,7 @@ import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
 import { feeLines, PRICE_CHANGED_LINE } from '@/features/events/buyModel';
 import { usePaymentFlow, type Engine } from '@/features/feedpay/usePaymentFlow';
+import { addMoneyHref } from '@/features/addmoney/entry';
 import { OPEN_WALLET_PIN_PATH, useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { WALLET_NAME, PRICE_MOVED_TITLE } from '@/features/unlock/model';
 
@@ -21,7 +22,7 @@ import { askWebQuote, readWebPurchase, scopeOf, sendWebPayment, webPurchaseKey, 
  * has taken and not finished is only ever read, never paid again. `begin` opens the pay sheet; when the Hub says paid, `granted` is set (the same
  * shape the store screens already read, built from what the item gives), so every screen's own "it worked" view draws.
  */
-type Target = { spec: WebBuySpec; title: string; grants: object | null };
+type Target = { spec: WebBuySpec; title: string; grants: object | null; verb: string };
 
 export type WebBuy = {
   /** The quote is being asked for, or a sheet is open: the buy button waits. */
@@ -29,7 +30,7 @@ export type WebBuy = {
   /** Why no sheet opened (a refused quote, in the Hub's own sentence). */
   said: Said | null;
   granted: StorePurchaseView | null;
-  begin: (spec: WebBuySpec, title: string, grants?: object | null) => void;
+  begin: (spec: WebBuySpec, title: string, grants?: object | null, verb?: string) => void;
   clear: () => void;
   sheets: ReactNode;
 };
@@ -52,13 +53,13 @@ export function useWebBuy(): WebBuy {
     onOpenWallet: entry.open,
     onSetPin: () => router.push(OPEN_WALLET_PIN_PATH),
     onForgotPin: () => router.push('/reset-pin'),
-    onAddMoney: () => router.navigate('/wallet'),
+    onAddMoney: (short) => router.push(addMoneyHref(short)),
   });
   const { open, finish } = flow;
 
   const begin = useCallback<WebBuy['begin']>(
-    (spec, title, grants) => {
-      const next = { spec, title, grants: grants ?? null };
+    (spec, title, grants, verb) => {
+      const next = { spec, title, grants: grants ?? null, verb: verb ?? 'Buy' };
       live.current = next;
       setTarget(next);
       void open();
@@ -85,14 +86,14 @@ export function useWebBuy(): WebBuy {
     granted,
     begin,
     clear,
-    sheets: <WebBuySheets flow={flow} title={target?.title ?? ''} onAddMoney={() => router.navigate('/wallet')} onOpenWallet={entry.open} onForgotPin={() => router.push('/reset-pin')} />,
+    sheets: <WebBuySheets flow={flow} title={target?.title ?? ''} verb={target?.verb ?? 'Buy'} onAddMoney={(short) => router.push(addMoneyHref(short))} onOpenWallet={entry.open} onForgotPin={() => router.push('/reset-pin')} />,
   };
 }
 
 type Flow = ReturnType<typeof usePaymentFlow<WebQuote, WebView>>;
 
 /** The pay sheet (the shared one: the item, the price, the bank's charge, the total, "Not enough" with the shortfall and Add) and the PIN sheet. */
-function WebBuySheets({ flow, title, onAddMoney, onOpenWallet, onForgotPin }: { flow: Flow; title: string; onAddMoney: () => void; onOpenWallet: () => void; onForgotPin: () => void }) {
+function WebBuySheets({ flow, title, verb, onAddMoney, onOpenWallet, onForgotPin }: { flow: Flow; title: string; verb: string; onAddMoney: (shortfallKobo: number) => void; onOpenWallet: () => void; onForgotPin: () => void }) {
   const quote = flow.quote;
   const balance = useQuery({ ...walletBalanceQuery, enabled: Boolean(flow.payOpen && quote && quote.payment.balanceKobo === null) });
   if (!quote || !flow.payOpen) return null;
@@ -115,7 +116,7 @@ function WebBuySheets({ flow, title, onAddMoney, onOpenWallet, onForgotPin }: { 
         fees={feeLines(quote.payment.fee)}
         wallet={balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo }}
         walletName={WALLET_NAME}
-        actionLabel="Buy"
+        actionLabel={verb}
         status={status}
         onPay={flow.pay}
         onAddMoney={onAddMoney}
