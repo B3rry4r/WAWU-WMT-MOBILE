@@ -7,7 +7,7 @@ order: 368
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-86, R-101, R-128]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,8 +19,8 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Found by the WEBAPP-05/06 verifier (V8, an upgrade after a renew reset the end date) and read in the Hub source by the WEBAPP-06 builder (`tasks/WEBAPP-06.md`, "Hub findings for the lead", item b).
-- **Next:** a builder starts from the brief below. The fix is built and verified on a branch; it merges (which deploys the live Hub) only on the owner's word.
+- **Status:** verifying. Built on Hub branch `wmt/TIER-UPGRADE-FIX` (`691acd1`, on main `7dd5b22`), pushed, not merged: a Hub merge deploys the live server and waits for the owner's word. No migration, no new route.
+- **Next:** a full T2 verifier (V8 attacks, V2 wrong-format input, V3, V9) on the branch. Then the owner's word to merge. After the merge, the mobile repo runs `npm run api` to pick up the quote's new `newActiveUntil` (SHARED-CHANGES row TIER-UPGRADE-FIX #1); no screen has to read it for the fix to work.
 - **History:** none yet. Reports go to tasks/history/TIER-UPGRADE-FIX.md.
 
 ## Read first
@@ -47,8 +47,8 @@ Today a person who renews a tier and then upgrades loses the days the renewal pa
 - [ ] A person who upgrades without a renewal gets the same end date as today.
 - [ ] The upgrade's quote and the grant agree on the end date.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/TIER-UPGRADE-FIX.md](history/TIER-UPGRADE-FIX.md).
 
 ## Owner sign-off
