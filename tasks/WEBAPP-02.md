@@ -24,7 +24,7 @@ As of 9 Nov 2026.
 - Frame: `src/lib/WebFrame.tsx` (root layout wraps the Stack; SHARED-CHANGES row WEBAPP-02 #1 applied, edit is the wrapper and its import), `FrameModal.tsx` (7 Modals), `useFrameWidth.ts` (hook used by 10 files that read window width; height-only readers need no change).
 - Column is 390 and only on web wider than 600; phone browsers and phones draw no wrapper.
 - **Open findings:** verifier FIX, see the Verifier report in tasks/history/WEBAPP-02.md (bundle findings 1 to 6). NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-02.md`.
-- **Next:** a 25-step patch brief for the medium and high findings, then a 15-step re-check. Status stays verifying until then.
+- **Next:** fix round 1 built (see history); the verifier re-checks the named ids.
 
 ## Read first
 

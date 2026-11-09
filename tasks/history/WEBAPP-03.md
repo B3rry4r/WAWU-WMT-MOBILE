@@ -26,3 +26,11 @@ Findings:
 3. low: Hub `src/hub-app-config.ts` line 47 fails prettier (eslint error); spec has 2 no-unsafe-argument warnings.
 4. low/unclear: where `navigator.share` exists (Chrome on Windows or ChromeOS) a desktop user gets the OS sheet, not copy, against the check's wording.
 5. low/unclear: copied links read wawuafrica.com/..., not usewmt.com.
+
+## Fix round 1 (builder)
+
+Findings closed: WEBAPP-02 medium 1 (share note now in the column) and low 3 (column hairlines removed); WEBAPP-03 low 3 (Hub CORS spec: prettier and eslint clean, no warnings); WEBAPP-04 high 6 (a stored voice is only AAC in MP4 or 22,050 Hz mono WAV; recorder asks for `audio/mp4;codecs=mp4a.40.2` only when MediaRecorder says yes to that exact string; WebM, Opus in MP4 and bare MP4 are converted).
+Voice consumer: the voice provider reads a stored sample once per run; the app never plays it (it plays the Hub's own Voice Intro). API-FACTS.md names no rate it needs, so 22,050 Hz mono 16-bit; a 30 s take is 1.32 MB (Hub reads up to 10 MB).
+Proof (Chromium fake mic, 30 s, bundled voiceWeb in the page): WebM take and Opus-in-MP4 take both came out as audio/wav, ffprobe pcm_s16le 22050 Hz mono, 29.9 to 30.0 s, 1.32 MB. AAC-in-MP4 pass-through: NOT RUN live (this Chromium says no to that string); unit-tested. Stored-file read-back through the Voice Intro screens NOT RUN (feature off on the stack).
+Pictures: /tmp/wmt-shots/webapp02/fix1/ share-note and home at 1440 and 390, light and dark (8); the note is 350 px wide inside the column at 1440 (x 545 to 895), no hairlines; beside H1 (rendered).
+Checks: voiceWeb 10, webFrame, webShare, verify folder 260 tests passed; mobile tsc 0, eslint 0; Hub eslint 0 and CORS spec 2 passed.
