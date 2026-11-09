@@ -4,7 +4,7 @@ import { readPlans } from '@/features/verify/purchaseApi';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
 import type { StoreProductView } from '../api';
-import type { StoreItem } from '../model';
+import { plain, type StoreItem } from '../model';
 import type { CreditPack, WebBuySpec } from './api';
 
 /**
@@ -32,7 +32,7 @@ export async function loadWebCatalog(): Promise<StoreItem[]> {
   const packs = Array.isArray(raw.packs) ? raw.packs : [];
   for (const row of packs) {
     const p = row as { id?: unknown; points?: unknown; priceMinor?: unknown };
-    if (filled(p.id) && whole(p.points) && whole(p.priceMinor) && p.priceMinor > 0) add(product(`web.points.${p.id}`, 'points', `${p.points} points`, { points: p.points } as StoreProductView['grants'], p.priceMinor), p.priceMinor);
+    if (filled(p.id) && whole(p.points) && whole(p.priceMinor) && p.priceMinor > 0) add(product(`web.points.${p.id}`, 'points', `${plain(p.points)} points`, { points: p.points } as StoreProductView['grants'], p.priceMinor), p.priceMinor);
   }
   const extra = raw.extraProducts;
   if (extra && whole(extra.count) && whole(extra.priceMinor) && extra.priceMinor > 0) {
@@ -42,7 +42,7 @@ export async function loadWebCatalog(): Promise<StoreItem[]> {
   const credits = Array.isArray(creditBody?.data?.packs) ? (creditBody.data.packs as unknown[]) : [];
   for (const row of credits) {
     const p = row as { pack?: unknown; credits?: unknown; priceKobo?: unknown };
-    if (filled(p.pack) && whole(p.credits) && whole(p.priceKobo) && p.priceKobo > 0) add(product(`web.credits.${p.pack}`, 'credits', `${p.credits} credits`, { credits: p.credits } as StoreProductView['grants'], p.priceKobo), p.priceKobo);
+    if (filled(p.pack) && whole(p.credits) && whole(p.priceKobo) && p.priceKobo > 0) add(product(`web.credits.${p.pack}`, 'credits', `${plain(p.credits)} credits`, { credits: p.credits } as StoreProductView['grants'], p.priceKobo), p.priceKobo);
   }
   return items;
 }

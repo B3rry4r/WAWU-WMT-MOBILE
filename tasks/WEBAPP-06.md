@@ -7,7 +7,7 @@ order: 366
 priority: after-launch
 repo: wawu-wmt-mobile
 type: money-path
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-127, R-128, R-44, R-86, R-101]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,9 +19,14 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-00 readiness check (`docs/analysis/WEB-APP-READINESS.md`).
-- **Next:** a builder starts from the brief below.
-- **History:** none yet. Reports go to tasks/history/WEBAPP-06.md.
+- **Status:** verifying. Built by the WEBAPP-05/06 bundle builder on branch `wmt/WEBAPP-05`.
+- **Done:** on the web build a tier (and renew, upgrade), a points pack, the upload pack, a WAWU Credits pack and a community pass are paid from the wallet through the Hub's existing wallet routes at the list price (PIN, `Idempotency-Key`, the signed quote; the shared pay sheet shows the shortfall and Add). The phone is unchanged (R-86).
+- **Bills:** the other path of the ticket. No bills entry is drawn on the web (Home card, Wallet tab; `/bills` goes home), because the payment window needs the provider's real sandbox and keys, which this task cannot reach (the stack has no bills provider, no key file was opened). `src/features/bills/offered.ts`, tested. `CheckoutModal.web.tsx` is not built.
+- **No Hub change:** every route existed (`plans/purchases`, `credits/purchase/wallet`, `communities/{id}/pass`).
+- **Defaults taken:** Restore purchases is not drawn on the web; a plan list in a currency other than naira draws nothing (R-16); the fees on the sheet are the Hub's quote; the web's unlock, tip, ask and ticket wallet paths are untouched.
+- **PHONE CHECK:** none new (the phone app is unchanged); a phone browser on usewmt.com paying a tier from the wallet is worth one run.
+- **NOT RUN:** a pass bought end to end on the stack (no community with a pass was seeded; the code path is typed and shares the flow, not exercised); the "confirming" and "failed" pay-sheet states in pictures (the stack stand-in settles at once); a real bill on the provider sandbox; the upload pack purchase (the Hub refused the quote for a person holding the Verify tier with `pack_not_allowed`, its own rule).
+- **Next:** the verifier runs the money attacks again on its own stack.
 
 ## Read first
 
@@ -47,6 +52,15 @@ A person on usewmt.com can buy a tier, a tick, points, WAWU Credits and a commun
 - [ ] A user on the web pays a bill end to end on the provider's sandbox, or sees no bills entry on the web.
 
 ## Builder report
+
+- Files: `src/features/store/webwallet/{api,catalog,useWebBuy}.ts(x)` (new), `useStore.ts` (web branch of `useStoreCatalog` and `useStoreBuyer`, plus `sheets`), `StoreParts.tsx` (no Restore on web), `CheckoutScreen`, `points/BuyScreen`, `credits/BuyCreditsSheet`, `verify/ProductsFullSheet`, `community-pass/PassScreen` (draw `buyer.sheets`), `bills/offered.ts`, `home/MoneyCard.tsx`, `wallet/home/WalletScreen.tsx`, `app/bills/index.tsx`. `iap.web.ts` is unchanged: the screens read the Hub's list prices through the same `useStoreCatalog`.
+- Flow: the feed's own `usePaymentFlow` (a fresh quote on every Pay, one key per attempt kept across the sheet closing, a taken payment is only read).
+- Tests: `src/features/store/__tests__/webWallet.test.tsx` (5: packs drawn at list price, no "Buy in the app", no Restore; a double tap on Buy asks one quote; Pay asks again; the PIN goes out once with `X-Transaction-Pin` and an `Idempotency-Key`, body `{kind, packId, method:'wallet', expectedTotalKobo, quoteToken}`; paid draws the Added view; short balance shows "Not enough", the top-up and sends nothing; no Bills on Home on web, yes on android).
+- Money proofs on the stack (Hub + Nuvion stand-in, drivers in `/tmp/wmt-shots/webapp05/money-proofs.txt`): tier Verify: debit 299,900 exactly once, two simultaneous taps under one key gave 201 paid and 409 idempotency_in_progress, a later replay of the same key answered 201 with `Idempotent-Replayed: true`, same purchase id, extra debit 0, grant read back `paid`; points pack: debit 100,000 once, replay extra debit 0, points balance 1,100 (1,000 plus the tier's 100 bonus); credits starter: debit 50,000 once, replay extra debit 0, credits 50; wallet 20,000,000 to 19,550,100 = 299,900 + 100,000 + 50,000. Short wallet (balance 100,000, tier 299,900): the quote says shortfall 199,900 and the payment is 402 insufficient_funds with the same figures, balance unchanged. Wrong PIN five times: locked (see WEBAPP-05).
+- Checks: as WEBAPP-05; `src/features/store` and the touched screens' specs all pass.
+- Gaps: none filed.
+
+- Pictures: 40 of 40 taken (10 states x dark and light x 390 and 1440) on the stack web export, into /tmp/wmt-shots/webapp05/ (no artboard exists for these states: the tasks list none, so there is no picture beside an artboard; the pay sheet is the shared one). Money proofs: /tmp/wmt-shots/webapp05/money-proofs.txt.
 
 ## Verifier report
 
