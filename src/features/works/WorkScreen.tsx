@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useFrameWidth } from '@/lib/useFrameWidth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -151,7 +152,7 @@ function Work({ work, onBack, onOpenCreator, onEdit, onRemoved }: WorkProps) {
   const share = async () => {
     setNotice(false);
     try {
-      await Share.share({ message: shareText(work) });
+      await shareOut({ message: shareText(work) });
     } catch {
       setNotice(true);
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');

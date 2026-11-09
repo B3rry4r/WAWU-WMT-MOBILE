@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
-import { ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -132,7 +133,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
   const enter = () => openRoom(router, id);
   const sub = [membersFull(room.memberCount), handle ? `hosted by @${handle}` : null].filter(Boolean).join(' · ');
   const share = () => {
-    void Share.share({ message: room.link }).catch(() => undefined);
+    void shareOut({ message: room.link }).catch(() => undefined);
   };
   const cover = <CoverHeader name={room.name} imageUrl={room.imageUrl} sub={sub} onBack={onBack} right={<CoverShare onPress={share} />} />;
 

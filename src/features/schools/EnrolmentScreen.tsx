@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
-import { AccessibilityInfo, Share, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -254,7 +255,7 @@ function Receipt({ enrolment, onMyCourses }: { enrolment: Enrolment; onMyCourses
   const share = async () => {
     setNotice(null);
     try {
-      await Share.share({ message: shareText(enrolment) });
+      await shareOut({ message: shareText(enrolment) });
     } catch {
       setNotice('Sharing isn’t available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');

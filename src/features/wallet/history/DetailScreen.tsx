@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, RefreshControl, Share, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -65,7 +66,7 @@ export function DetailScreen({ id, onBack }: DetailScreenProps) {
     setNotice(null);
     support.clearError();
     try {
-      await Share.share({ message: shareText(row) });
+      await shareOut({ message: shareText(row) });
     } catch {
       setNotice('Sharing isn’t available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');

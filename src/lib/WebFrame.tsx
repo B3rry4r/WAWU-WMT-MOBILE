@@ -3,10 +3,17 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { useWawu } from '@/theme';
 
+import { captureLandingPath, useReturnAfterSignIn } from './returnPath';
+import { ShareNote } from './shareNote';
 import { FRAME_WIDTH, useIsFramed } from './useFrameWidth';
+
+// The address the browser opened on is read before the router moves a signed-out visitor to the welcome screen (WEBAPP-03).
+captureLandingPath();
 
 type WebFrameProps = {
   children: ReactNode;
+  /** The app's own frame, drawn once by the root layout: it also carries the share note and the return to a link after sign-in. */
+  root?: boolean;
   /** Paint the area around the column. Off for a transparent overlay (a sheet over the app), where the app shows through. */
   fill?: boolean;
   testID?: string;
@@ -18,7 +25,7 @@ type WebFrameProps = {
  * its children as they were (no wrapper at all). Set in one place: the root layout, and `FrameModal` for what the browser
  * lifts out of the page (sheets and full-screen viewers).
  */
-export function WebFrame({ children, fill = true, testID = 'web-frame' }: WebFrameProps) {
+export function WebFrame({ children, root = false, fill = true, testID = 'web-frame' }: WebFrameProps) {
   const { colors } = useWawu();
   const framed = useIsFramed();
   useEffect(() => {
@@ -30,7 +37,14 @@ export function WebFrame({ children, fill = true, testID = 'web-frame' }: WebFra
       document.body.style.backgroundColor = previous;
     };
   }, [colors.surfacePage, fill]);
-  if (!framed) return <>{children}</>;
+  if (!framed) {
+    return (
+      <>
+        {children}
+        {root ? <RootExtras /> : null}
+      </>
+    );
+  }
   return (
     <View testID={testID} style={[styles.outer, fill ? { backgroundColor: colors.surfacePage } : null]} pointerEvents="box-none">
       <View
@@ -40,8 +54,15 @@ export function WebFrame({ children, fill = true, testID = 'web-frame' }: WebFra
       >
         {children}
       </View>
+      {root ? <RootExtras /> : null}
     </View>
   );
+}
+
+/** What only the app's own frame carries (not a modal's): the share note, and the return to a link opened while signed out. */
+function RootExtras() {
+  useReturnAfterSignIn();
+  return <ShareNote />;
 }
 
 const styles = StyleSheet.create({

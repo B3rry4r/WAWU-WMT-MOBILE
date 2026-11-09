@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState, type ReactNode } from 'react';
-import { ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
@@ -149,7 +150,7 @@ export function EventDetailScreen({ id, onBack, buy }: EventDetailScreenProps) {
 
   const share = () => {
     const message = [data.name, whenLine(data.startsAt, data), venueOf(data)].filter(Boolean).join('\n');
-    Share.share({ message }).catch(() => undefined);
+    shareOut({ message }).catch(() => undefined);
   };
 
   return (
