@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 42 | 0 | 0 | 0 |
+| todo | 40 | 0 | 0 | 0 |
 | building | 4 | 0 | 0 | 0 |
-| verifying | 38 | 0 | 0 | 0 |
+| verifying | 40 | 0 | 0 | 0 |
 | review | 244 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -300,6 +300,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [BILLS-08](../tasks/BILLS-08.md) Bills are back: the entries on the balance card and the Wallet tab, and every kind of bill is live (You)
 - [BILLS-09](../tasks/BILLS-09.md) A prepaid bill's token and units, where a bill stands, and the checkout gate (You)
 - [BILLS-10](../tasks/BILLS-10.md) Bills against the provider's real lists: airtime numbers checked on the phone, whole network names, bouquets and plans that always draw, labels on one line (You)
+- [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
+- [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -502,6 +504,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 9 Nov 2026 · WEBAPP (lead): WEBAPP-00 readiness check merged into the plan (201 routes at 390 and 1440 as six user types: none fail; breaks: bills window, store-only purchases, browser voice format, hosted selfie return; degrades: share, PIN keyboard, photo Exif, sign-in return). Phase 1 cut: WEBAPP-01 (T0, Vercel build and deploy notes), WEBAPP-02 to 04 (T1 bundle: centred laptop frame, seams, uploads), WEBAPP-05 and 06 (T2 bundle: PIN keyboard and selfie return; wallet purchases on the web and bills), WEBAPP-07 (the full walk); Phase 2 starts with WEBAPP-10 (desktop drawings). R-128 (lead default): on the web, what the phone sells through the stores is paid from the wallet. SHARED-CHANGES row WEBAPP-02 #1 approved for the frame.
 - 9 Nov 2026 · WEBAPP (lead): hosting is Vercel and deployment is the owner's (R-127 item 4 updated). The coding side adds `vercel.json` to the repo; no deploy Action.
 - 9 Nov 2026 · WEBAPP (lead): R-127, Who Made This on the web at https://usewmt.com, built from this repo's own web export. Phase 1 (due 11 Nov): every screen works in a browser, phone layout centred on a laptop. Phase 2: a drawn desktop layout, then built. WEBAPP-00, a read-only readiness check (every route at 390 and 1440 as each user type on a local Hub with stand-ins, every native seam, money on the web, the deploy facts), runs on `wmt/WEBAPP-00`; the build tasks are cut from it. Deploy items (CORS_ORIGIN on the Hub, WAWU ID origin, hosting, the address) are kept apart from coding.
 - 2 Nov 2026 · CARD-BACK (builder, Sonnet, T2): R-124, the virtual card is back (W1 row, Wallet settings Cards row, /cards routes live), add money by card stays off; dev issuing cycle re-run on Nuvion dev (docs/nuvion/DEV-RESULTS.md); `wmt/CARD-BACK` on `ce303c99`
@@ -516,4 +519,3 @@ From `docs/LOG.md`, newest first.
 - 31 Oct 2026 · VIEW-FIX · Built (Sonnet builder, T1; mobile `wmt/VIEW-FIX` on `origin/wmt/COVERS-APP` `10cdbf6b`; app only, no package, no native change, fingerprints unchanged android `e871fe1a`, ios `e8e7de85`; status verifying; R-117): the owner's four reports of 31 Oct. A video (piece page, feed) has a full-screen button that opens the phone's own full-screen video on the same player, and a picture (piece page, feed photo set) opens in one `PictureViewer` (pinch, drag, double tap, swipe, close, Android back); the comment sheet, paid thread, Hear your name and Voice Intro pad their foot by the keyboard on Android, the request sheet and `useKeyboardLift` lift on Android; every audio and video player reports `onLoad` (waiting, ready, failed) and the feed posts, piece page, Bio and Studio result players show the spinner in place of pause and the failure words; a titled piece is taken off the lock screen only by the player that is on it (the iPhone clears it for whoever asks). The Android cause of "my own content does not play on lock" is not reproduced in jest (path proved correct on both phones); PHONE CHECK in `tasks/VIEW-FIX.md`.
 - 31 Oct 2026 · UPLOAD-REST · Round 2 (Sonnet builder, T1; mobile `wmt/UPLOAD-REST` on `b4c798f7`; Hub `wmt/UPLOAD-REST` on `dd58a9f`; no package, no native change, fingerprints android `e871fe1a`, ios `e8e7de85`; status verifying): the verifier's two blockers and its medium answered. Hub `027ed8d`: `previewFromFile` confirms the caller's own pending upload the way storage does, so a paid piece sent within a quarter of an hour of its upload is cut (Create, Publish, Edit); someone else's pending row is refused. App: `create-details` no longer sends every kind back to the cover step (R-118), with a route-level walk on Android through the real router for a paid audio, a paid picture and a free piece; the refunded card names no account until the payment record says which, and a store-bought question says its credit came back (R-120). Pictures of the real Create flow in `scratchpad/upload-rest/shots-r2/`.
 - 31 Oct 2026 · PREVIEW-AUTO · Built (Sonnet builder, T1; mobile `wmt/PREVIEW-AUTO` on `origin/wmt/COVERS-APP` `10cdbf6b`; Hub `wmt/PREVIEW-AUTO` on `origin/main` `66f1e05`; no package, no native change, fingerprints unchanged; status verifying): R-118. The Hub makes a paid audio or video piece's preview from the full file (first 30 s, a file under 45 s the first third, plain JavaScript) when the create call sends `previewFromFile`; a free piece needs none; the app's step 3 is the cover step for audio and video, with no clip to upload, and the price step sends the flag. Specs and tests in tasks/PREVIEW-AUTO.md.
-- 31 Oct 2026 · COVERS-APP · Round 1 (Sonnet builder, T1; mobile `wmt/COVERS-APP`; app only, no package, no native change, fingerprints unchanged android `e871fe1a`, ios `e8e7de85`): the verifier's FIX answered. The picked cover is drawn from the uploaded link, not the phone's deleted copy (phone-only HIGH); a frame cover that went up for a Send that failed is kept in the draft and reused, or given back (no stray file in storage); a PDF with a cover draws it on its piece page and feed card, one without keeps the generated book; a picked cover is written at most 2048 px as a JPEG before it goes up; Edit no longer releases the cover it just saved; the thumbnail is the price card's shape; `ContentGrid` and `EditCover` use the shared `pictureCandidates`; tests for back from the picker.
