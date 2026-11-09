@@ -19,6 +19,7 @@ import { useTierOfferStep } from '@/features/tier-offer/offerStep';
 import { TierOfferBridge } from '@/features/tier-offer/TierOfferBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { useBonusStep } from '@/features/verify/bonusStep';
+import { WebFrame } from '@/lib/WebFrame';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -151,6 +152,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style={dark ? 'light' : 'dark'} />
+      <WebFrame>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfacePage } }}>
         <Stack.Protected guard={signedIn && gate.needsEmail}>
           <Stack.Screen name="email-code" />
@@ -355,6 +357,7 @@ export default function RootLayout() {
       <TierOfferBridge checkout={tierOffer.checkout} />
       <PushBridge live={inApp} />
       <PlaceBridge live={inApp} />
+      </WebFrame>
     </QueryClientProvider>
   );
 }

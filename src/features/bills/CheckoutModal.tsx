@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { FrameModal } from '@/lib/FrameModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
@@ -48,7 +49,7 @@ export function CheckoutModal({ visible, config, customer, labels, onEvent }: Ch
   };
 
   return (
-    <Modal visible={visible && html !== null} animationType="slide" onRequestClose={() => tell({ kind: 'closed' })} transparent={false}>
+    <FrameModal visible={visible && html !== null} animationType="slide" onRequestClose={() => tell({ kind: 'closed' })} transparent={false}>
       <View testID="checkout" style={[styles.page, { backgroundColor: colors.surfacePage, paddingTop: Math.max(insets.top, space.md) }]}>
         <View style={styles.head}>
           <Text variant="body" numberOfLines={1} style={styles.title}>
@@ -81,7 +82,7 @@ export function CheckoutModal({ visible, config, customer, labels, onEvent }: Ch
           </View>
         ) : null}
       </View>
-    </Modal>
+    </FrameModal>
   );
 }
 

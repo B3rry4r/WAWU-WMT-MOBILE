@@ -1,6 +1,7 @@
 import { useFocusEffect, usePathname } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { FrameModal } from '@/lib/FrameModal';
 
 import { isApiError } from '@/api/errors';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -190,11 +191,11 @@ export function CapReachedScreen({ quote, onBack }: { quote: Pick<JobQuote, 'tit
   const cap = quote.cap;
   if (!cap) return null;
   return (
-    <Modal visible animationType="fade" onRequestClose={onBack} statusBarTranslucent>
+    <FrameModal visible animationType="fade" onRequestClose={onBack} statusBarTranslucent>
       <PointsFrame title={quote.title || 'AI tools'} onBack={onBack} gap={space.md} centered testID="cap-screen">
         <EmptyState testID="cap-reached" icon="Timer" title={capTitle(cap)} message={capMessage(cap)} action={{ label: CAP_WORDS.back, onPress: onBack }} />
       </PointsFrame>
-    </Modal>
+    </FrameModal>
   );
 }
 

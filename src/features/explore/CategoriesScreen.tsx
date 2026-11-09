@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -54,7 +55,7 @@ export type CategoriesScreenProps = {
 
 /** One column of the two: the screen less its gutters and the gap, halved. */
 function useCellWidth(): number {
-  const { width } = useWindowDimensions();
+  const width = useFrameWidth();
   return Math.floor((width - 2 * layout.gutter - creatorCardMetrics.between) / 2);
 }
 

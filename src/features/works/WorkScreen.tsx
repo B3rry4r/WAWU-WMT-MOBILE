@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
@@ -102,7 +103,7 @@ type WorkProps = { work: WorkDetail; onBack: () => void; onOpenCreator?: (wawuId
 function Work({ work, onBack, onOpenCreator, onEdit, onRemoved }: WorkProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const width = useFrameWidth();
   const [shown, setShown] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [notice, setNotice] = useState(false);

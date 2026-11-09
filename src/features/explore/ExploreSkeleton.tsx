@@ -1,4 +1,5 @@
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 
 import { LoadingView, Skeleton } from '@/components/Skeleton';
 import { layout, radius, space } from '@/theme';
@@ -18,7 +19,8 @@ import { creatorCardMetrics } from './CreatorCard';
 export const exploreSkeletonMetrics = { tile: 80, tiles: 4, heading: 20, headingRadius: 8, cards: 3 } as const;
 
 export function ExploreSkeleton() {
-  const window = useWindowDimensions();
+  const screen = useWindowDimensions();
+  const window = { width: useFrameWidth(), height: screen.height };
   return (
     <LoadingView testID="explore-loading" label="Loading Explore">
       <View style={styles.stack}>
