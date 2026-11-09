@@ -12,3 +12,13 @@ Not proven: 390 before-and-after pixel equality (no before build); Safari and Fi
 
 ## Verifier report
 
+Lean verifier, 9 Nov 2026, mobile ef7bb9c. Verdict FIX.
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 | passed (mobile) | tsc EXIT 0, eslint on 60 changed files EXIT 0, 144 related suites: 143 pass, 4 tests fail in walletSettingsFlow, same 4 fail on main (fixture text "Changed 3 months ago", date-dependent; clock not changed to prove it). Gates and full check are the merge agent's. |
+| V5 | FAIL | 52 builder shots + my 28 (home, explore, inbox, wallet, me, settings, abroad-new, 1440 and 390, light and dark) + 28 baseline from WEBAPP-PLAN base 18f86cd, looked at all; /tmp/wmt-shots/v-webapp02/. 1440: every tab is a centred 390 column. 390 equals the base except the Alert sound row (removed on web, intended) and the tier offer (base shows it every load). |
+| V6 | partly | Share toast outside column (finding 1). Wallet tab with a wallet NOT RUN (no wallet on the stack; wallet-less users get the open-wallet step in every Wallet and abroad-new picture, as the builder's did). Resize without reload covered by jest only. Safari, Firefox NOT RUN. |
+Findings:
+1. medium defect: the "Link copied" note (`src/lib/shareNote.tsx`) sits in its own Modal, so at 1440 it is a bar across the whole window, over the sheet, outside the column (v6-piece-More.png, builder's share-note-*.png). The task says toasts stay in the column.
+2. low: BottomSheet scrim greys the whole window at 1440 (known default); sheet itself sits in the column.
+3. low: the column draws hairline side borders (no artboard draws them); harmless.

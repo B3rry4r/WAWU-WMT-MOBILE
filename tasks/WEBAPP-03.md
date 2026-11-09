@@ -22,8 +22,8 @@ As of 9 Nov 2026.
 - **Status:** verifying. Built on branch `wmt/WEBAPP-02` (bundle WEBAPP-02, 03, 04), mobile and Hub worktrees.
 - **Branches:** mobile `wmt/WEBAPP-02`; Hub `wmt/WEBAPP-02` (aae111a, CORS only; no merge, a Hub merge deploys).
 - Share: `src/lib/share.ts` (`shareOut`) replaces all 20 `Share.share` call sites; note `shareNote.tsx`. Return: `returnPath.ts`. Abroad new: failed or wallet-less read leads to Open your wallet or a Try again. Tier offer once per tab (sessionStorage). Alert sound row not drawn on web. Hub: `exposedHeaders: ['Retry-After']`.
-- **Open findings:** none known. NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-03.md`.
-- **Next:** the bundle's lean verifier.
+- **Open findings:** verifier FIX, see the Verifier report in tasks/history/WEBAPP-03.md (bundle findings 1 to 6). NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-03.md`.
+- **Next:** a 25-step patch brief for the medium and high findings, then a 15-step re-check. Status stays verifying until then.
 
 ## Read first
 

@@ -23,8 +23,8 @@ As of 9 Nov 2026.
 - **Branches:** mobile `wmt/WEBAPP-02`; Hub `wmt/WEBAPP-02` (aae111a, CORS only; no merge, a Hub merge deploys).
 - Photos: `src/features/media/redrawPhoto.ts` used by profile-edit, works, create and chat web pickers (same kinds as the phone: PNG stays PNG, WebP stays, GIF to PNG, else JPEG 0.9; unreadable throws PickFailed).
 - Voice: page converts. Recorder asks for MP4 audio where supported; the upload reads the blob's own type (the old code labelled every browser take audio/mp4 from a blob address); WebM or Ogg is decoded and written as 16-bit mono WAV, which the Hub already takes. Hub voice folder unchanged.
-- **Open findings:** none known. NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-04.md`.
-- **Next:** the bundle's lean verifier.
+- **Open findings:** verifier FIX, see the Verifier report in tasks/history/WEBAPP-04.md (bundle findings 1 to 6). NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-04.md`.
+- **Next:** a 25-step patch brief for the medium and high findings, then a 15-step re-check. Status stays verifying until then.
 
 ## Read first
 
