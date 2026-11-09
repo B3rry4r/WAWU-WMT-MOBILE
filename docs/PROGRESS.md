@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 43 | 0 | 0 | 0 |
-| building | 4 | 0 | 0 | 0 |
-| verifying | 38 | 0 | 0 | 0 |
+| building | 5 | 0 | 0 | 0 |
+| verifying | 40 | 0 | 0 | 0 |
 | review | 244 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -277,6 +277,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [REPORT-UGC](../tasks/REPORT-UGC.md) A person can report a piece, comment, profile, community message, chat message or paid question, and the Hub's moderators act on it (Apple 1.2, Google Play UGC) (You)
 - [USER-SUSPEND](../tasks/USER-SUSPEND.md) A moderator can suspend a person and lift it; a suspended person is hidden and cannot write, but is never trapped (Apple 1.2, Google Play UGC) (You)
 - [MOD-ROOMS](../tasks/MOD-ROOMS.md) The host of a room can delete a message and mute a member, and a block holds in rooms; there is no automatic word filter (Apple 1.2, Google Play UGC) (You)
+- [WEB-HOLD](../tasks/WEB-HOLD.md) Pieces from the new web upload flow wait for the creator's wallet before they go live (R-126) (You)
 - [POLISH-1](../tasks/POLISH-1.md) Owner's two screenshots of 30 Oct (the abroad promo row, the products meter, the music button over content) (You)
 - [WALK-FIX](../tasks/WALK-FIX.md) Full user walk of 29 Oct (grid opens a piece, region read, "No connection" only for the network, bills off, Done on Sent, paste a code, consent tap, popular banks, price strips, Legal once) (You)
 - [STORE-QUESTION](../tasks/STORE-QUESTION.md) A paid question bought in the store, earned when answered, a question credit when not (Hub) (You)
@@ -295,6 +296,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
+- [JOIN-TIERS](../tasks/JOIN-TIERS.md) /join sells the app's three tiers; a paid registration is claimed automatically (You)
 - [BILLS-02](../tasks/BILLS-02.md) Pay a bill: review, PIN, token, failures (You)
 - [BILLS-03](../tasks/BILLS-03.md) Airtime, data and cable TV (You)
 - [BILLS-08](../tasks/BILLS-08.md) Bills are back: the entries on the balance card and the Wallet tab, and every kind of bill is live (You)
@@ -306,10 +308,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WELCOME-LOGO](../tasks/WELCOME-LOGO.md) The welcome screen draws the app's mark centred in the room above the words, with one line and the two buttons, and no video (R-119) (You)
 - [TIER-COUNTS](../tasks/TIER-COUNTS.md) Products each tier allows are 4, 8 and 15, and a running tier gets the new count at once (R-112) (You)
 - [WELCOME-FULL](../tasks/WELCOME-FULL.md) The welcome video is the whole screen, with the words and buttons over it: no panel, no shade, no gradient (R-111) (You)
+- [DASH-B](../tasks/DASH-B.md) The dashboard shows the app's real money (wallets, merchant wallet, revenue) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 
 ## Done
 
+- [DESIGN-V2-CUT](../tasks/DESIGN-V2-CUT.md) Cut the 16 Oct 2026 designs and answers into rulings and tasks (You)
+- [GATES-02](../tasks/GATES-02.md) Record the five gate lines in the backend baseline (You)
 - [OPS-01](../tasks/OPS-01.md) Record the owner's rulings (You)
 - [SETUP-01](../tasks/SETUP-01.md) Verify the mobile repo setup (Developer)
 - [INBOX-06](../tasks/INBOX-06.md) Free chat between users (Developer 2)
@@ -480,8 +485,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [AUTH-07](../tasks/AUTH-07.md) Sign-up verifies by email code; no SMS (You)
 - [FIX-31](../tasks/FIX-31.md) The app's tests that fail only under load: make them deterministic (You)
 - [FIX-32](../tasks/FIX-32.md) The last tests that read an answer before it lands, and one that depends on the clock (You)
-- [DESIGN-V2-CUT](../tasks/DESIGN-V2-CUT.md) Cut the 16 Oct 2026 designs and answers into rulings and tasks (You)
-- [GATES-02](../tasks/GATES-02.md) Record the five gate lines in the backend baseline (You)
 - [HOME-16](../tasks/HOME-16.md) Daily TGIF notification (You)
 - [WALLET-39](../tasks/WALLET-39.md) A notice for all money in (You)
 - [TIER-06](../tasks/TIER-06.md) The new money figures as admin settings (You)

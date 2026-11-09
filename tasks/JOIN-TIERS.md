@@ -3,14 +3,14 @@ id: JOIN-TIERS
 title: /join sells the app's three tiers; a paid registration is claimed automatically
 owner: YOU
 area: WEB
-order: 290
+order: 253
 priority: launch
 repo: wawu-backend, wawuafrica
 type: money-path
-status: doing
-depends_on: [JOIN-03, STORE-SEED]
+status: verifying
+depends_on: [JOIN-03, STORE-BUY-HUB]
 decisions: [R-125, R-48, R-89]
-passes: [V1, V2, V3, V4]
+passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # JOIN-TIERS · /join sells Verify, Verify Plus and Founding Maker
@@ -44,3 +44,10 @@ Done in the Hub:
 ## PHONE CHECK (the owner, before the update)
 
 Sign in on a phone (build 9 or 7) with the email or phone used to pay on /join, with that contact confirmed in the app. The plan appears under Your tier with no code typed. Then pay for a second, different tier with another contact of the same account and check the bigger tier shows.
+
+## Capability checks
+
+- [ ] A visitor on /join can choose Verify, Verify Plus or Founding Maker and register and pay at that tier's price.
+- [ ] A visitor with a valid code sees it applied to Verify at the code's price, and sees Plus and Founding at full price with a line saying the code is for Verify.
+- [ ] A person who paid on /join and signs in with the same email or phone sees the plan they paid for, with no code typed, and only once.
+- [ ] A visitor who asks for a tier the Hub does not sell is refused with a plain message.
