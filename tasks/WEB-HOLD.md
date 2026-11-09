@@ -3,14 +3,14 @@ id: WEB-HOLD
 title: Pieces from the new web upload flow wait for the creator's wallet before they go live (R-126)
 owner: YOU
 area: CONTENT
-order: -1270
+order: -1280
 priority: launch
 repo: wawu-backend
 type: backend-endpoint
-status: built
+status: verifying
 depends_on: []
 decisions: [R-126, R-101, R-118, R-6, R-11, R-8]
-passes: [V1, V2, V3]
+passes: [V1, V2, V3, V4, V9]
 artboards: []
 tier: T2
 ---
@@ -51,3 +51,9 @@ The protected route suite (`src/protected-routes`, 253 tests) passes: no respons
 
 1. A person who uploaded on the site and was approved, with no wallet: in the app, the piece is not visible to anyone else.
 2. That person opens their wallet in the app (R-6): within a minute the piece shows in their profile and the feed.
+
+## Capability checks
+
+- [ ] A creator can upload a piece on the website and see it as In review.
+- [ ] A creator whose upload was approved, and who has no wallet, sees it as waiting for the wallet and nobody else can see it.
+- [ ] A creator who opens their wallet in the app sees every held piece go live within a minute.
