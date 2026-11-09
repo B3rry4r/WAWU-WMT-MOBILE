@@ -7,7 +7,7 @@ order: 364
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-127]
 passes: [V1, V4, V6, V7, V9]
@@ -19,9 +19,12 @@ tier: T1
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-00 readiness check (`docs/analysis/WEB-APP-READINESS.md`).
-- **Next:** a builder starts from the brief below.
-- **History:** none yet. Reports go to tasks/history/WEBAPP-04.md.
+- **Status:** verifying. Built on branch `wmt/WEBAPP-02` (bundle WEBAPP-02, 03, 04), mobile and Hub worktrees.
+- **Branches:** mobile `wmt/WEBAPP-02`; Hub `wmt/WEBAPP-02` (aae111a, CORS only; no merge, a Hub merge deploys).
+- Photos: `src/features/media/redrawPhoto.ts` used by profile-edit, works, create and chat web pickers (same kinds as the phone: PNG stays PNG, WebP stays, GIF to PNG, else JPEG 0.9; unreadable throws PickFailed).
+- Voice: page converts. Recorder asks for MP4 audio where supported; the upload reads the blob's own type (the old code labelled every browser take audio/mp4 from a blob address); WebM or Ogg is decoded and written as 16-bit mono WAV, which the Hub already takes. Hub voice folder unchanged.
+- **Open findings:** none known. NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-04.md`.
+- **Next:** the bundle's lean verifier.
 
 ## Read first
 
@@ -46,8 +49,8 @@ A photo uploaded from the web carries no location or camera data, and a voice re
 - [ ] A user uploads a phone photo with GPS from the web; the stored file has no Exif or GPS (read back from storage on the stack).
 - [ ] A user records a voice in Chrome, Firefox and Safari on the web; each plays in the app on iPhone and Android (format proved by reading the stored file; PHONE CHECK for the real playback).
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-04.md](history/WEBAPP-04.md).
 
 ## Owner sign-off

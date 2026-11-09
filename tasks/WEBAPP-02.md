@@ -7,7 +7,7 @@ order: 362
 priority: after-launch
 repo: wawu-wmt-mobile
 type: component
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-127]
 passes: [V1, V5, V6]
@@ -19,9 +19,12 @@ tier: T1
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-00 readiness check (`docs/analysis/WEB-APP-READINESS.md`).
-- **Next:** a builder starts from the brief below.
-- **History:** none yet. Reports go to tasks/history/WEBAPP-02.md.
+- **Status:** verifying. Built on branch `wmt/WEBAPP-02` (bundle WEBAPP-02, 03, 04), mobile and Hub worktrees.
+- **Branches:** mobile `wmt/WEBAPP-02`; Hub `wmt/WEBAPP-02` (aae111a, CORS only; no merge, a Hub merge deploys).
+- Frame: `src/lib/WebFrame.tsx` (root layout wraps the Stack; SHARED-CHANGES row WEBAPP-02 #1 applied, edit is the wrapper and its import), `FrameModal.tsx` (7 Modals), `useFrameWidth.ts` (hook used by 10 files that read window width; height-only readers need no change).
+- Column is 390 and only on web wider than 600; phone browsers and phones draw no wrapper.
+- **Open findings:** none known. NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-02.md`.
+- **Next:** the bundle's lean verifier.
 
 ## Read first
 
@@ -47,8 +50,8 @@ On a screen wider than a phone, the whole app (tabs, sheets, modals, toasts) sit
 - [ ] A user on a phone browser sees exactly what they saw before (390 pictures equal before and after).
 - [ ] A user who resizes the window sees the column follow without a reload.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-02.md](history/WEBAPP-02.md).
 
 ## Owner sign-off
