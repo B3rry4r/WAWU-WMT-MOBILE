@@ -18,8 +18,9 @@ const ascii = (b: Uint8Array, at: number, n: number) => String.fromCharCode(...b
 
 describe('what the browser recorded', () => {
   it('MP4 audio, AAC, MP3 and WAV go up as they are; WebM and Ogg do not', () => {
-    expect(takenKind('audio/mp4')).toEqual({ contentType: 'audio/mp4', extension: 'm4a' });
     expect(takenKind('audio/mp4;codecs=mp4a.40.2')).toEqual({ contentType: 'audio/mp4', extension: 'm4a' });
+    expect(takenKind('audio/mp4;codecs=opus')).toBeNull();
+    expect(takenKind('audio/mp4')).toBeNull();
     expect(takenKind('audio/x-wav')?.contentType).toBe('audio/wav');
     expect(takenKind('audio/webm;codecs=opus')).toBeNull();
     expect(takenKind('audio/ogg')).toBeNull();
@@ -29,7 +30,8 @@ describe('what the browser recorded', () => {
 
   it('the recorder asks for MP4 audio where the browser can write it, and for nothing otherwise (and never on a phone)', () => {
     web();
-    expect(recordingMimeType({ isTypeSupported: (t) => t === 'audio/mp4' })).toBe('audio/mp4');
+    expect(recordingMimeType({ isTypeSupported: (t) => t === 'audio/mp4;codecs=mp4a.40.2' })).toBe('audio/mp4;codecs=mp4a.40.2');
+    expect(recordingMimeType({ isTypeSupported: (t) => t === 'audio/mp4' })).toBeUndefined();
     expect(recordingMimeType({ isTypeSupported: (t) => t.startsWith('audio/webm') })).toBeUndefined();
     os?.restore();
     os = jest.replaceProperty(Platform, 'OS', 'android');
@@ -41,26 +43,24 @@ describe('WAV', () => {
   it('writes a 16-bit mono PCM file with the right header and the samples, mixing two channels down', async () => {
     const left = new Float32Array([0, 1, -1, 0.5]);
     const right = new Float32Array([0, 1, -1, -0.5]);
-    const b = await bytesOf(encodeWav([left, right], 44100));
+    const b = await bytesOf(encodeWav([left, right], 22050));
     expect(ascii(b, 0, 4)).toBe('RIFF');
     expect(ascii(b, 8, 4)).toBe('WAVE');
     expect(ascii(b, 12, 4)).toBe('fmt ');
     const v = new DataView(b.buffer);
     expect(v.getUint16(20, true)).toBe(1);
     expect(v.getUint16(22, true)).toBe(1);
-    expect(v.getUint32(24, true)).toBe(44100);
+    expect(v.getUint32(24, true)).toBe(22050);
     expect(v.getUint16(34, true)).toBe(16);
     expect(v.getUint32(40, true)).toBe(8);
     expect([0, 1, 2, 3].map((i) => v.getInt16(44 + i * 2, true))).toEqual([0, 32767, -32768, 0]);
     expect(b.length).toBe(44 + 8);
   });
 
-  it('a take longer than the Hub reads is written at a lower rate, under its size limit', async () => {
-    const long = new Float32Array(48000 * 200);
-    const wav = encodeWav([long], 48000);
-    expect(wav.size).toBeLessThan(10 * 1024 * 1024);
-    const v = new DataView(await wav.arrayBuffer());
-    expect(v.getUint32(24, true)).toBeLessThan(48000);
+  it('writes 22,050 Hz mono whatever the take was recorded at: 30 seconds is 1.32 MB', async () => {
+    const wav = encodeWav([new Float32Array(48000 * 30)], 48000);
+    expect(wav.size).toBe(44 + 22050 * 30 * 2);
+    expect(new DataView(await wav.arrayBuffer()).getUint32(24, true)).toBe(22050);
   });
 
   it('writes again what the browser decoded from its own recording', async () => {
@@ -79,10 +79,15 @@ describe('what goes up', () => {
     const blob = new Blob([new Uint8Array([1])], { type: '' });
     expect(await sampleToUpload(blob, declared)).toEqual({ blob, ...declared });
   });
-  it('in a browser that recorded MP4 audio is that file, named for what it is (not for the blob address)', async () => {
+  it('in a browser that recorded AAC in MP4 is that file, named for what it is (not for the blob address)', async () => {
     web();
-    const blob = new Blob([new Uint8Array([1])], { type: 'audio/mp4' });
+    const blob = new Blob([new Uint8Array([1])], { type: 'audio/mp4;codecs=mp4a.40.2' });
     expect(await sampleToUpload(blob, { contentType: 'audio/webm', extension: 'webm' })).toEqual({ blob, contentType: 'audio/mp4', extension: 'm4a' });
+  });
+  it('Opus in MP4 (recent Chrome) is not kept: it is converted, and with no decoder refused, never sent as it was', async () => {
+    web();
+    const blob = new Blob([new Uint8Array([1])], { type: 'audio/mp4;codecs=opus' });
+    await expect(sampleToUpload(blob, declared)).rejects.toBeDefined();
   });
   it('in a browser that recorded only WebM is converted, never sent labelled as MP4 (with no decoder to convert it, the take is refused instead)', async () => {
     web();

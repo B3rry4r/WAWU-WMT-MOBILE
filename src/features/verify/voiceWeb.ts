@@ -6,15 +6,13 @@ import { Platform } from 'react-native';
  * and recent Chrome write MP4 audio, Firefox and older Chrome only WebM or Ogg, which an iPhone cannot play. So:
  *   1. the recorder asks the browser for MP4 audio first (`recordingMimeType`);
  *   2. what was really recorded is read from the file's own type (the blob's, never the address, which a browser makes a bare
- *      `blob:` link with no extension); MP4, AAC, MP3 and WAV go up as they are;
+ *      `blob:` link with no extension); AAC in MP4, AAC, MP3 and WAV go up as they are (never Opus in any container);
  *   3. anything else (WebM, Ogg) is decoded in the page and written again as 16-bit mono WAV, which every phone and browser plays and
  *      the Hub already takes. The Hub is not changed.
  */
 
-/** The kinds the Hub takes for a voice sample, by what the file really is. */
+/** The kinds the Hub takes for a voice sample that are fine as they are, by what the file really is. A bare MP4 is not here: its codec is unknown (Chrome writes Opus into MP4). */
 const TAKEN: Record<string, { contentType: string; extension: string }> = {
-  'audio/mp4': { contentType: 'audio/mp4', extension: 'm4a' },
-  'audio/x-m4a': { contentType: 'audio/mp4', extension: 'm4a' },
   'audio/aac': { contentType: 'audio/aac', extension: 'aac' },
   'audio/mpeg': { contentType: 'audio/mpeg', extension: 'mp3' },
   'audio/wav': { contentType: 'audio/wav', extension: 'wav' },
@@ -25,30 +23,37 @@ const TAKEN: Record<string, { contentType: string; extension: string }> = {
 /** The kind of a blob's own type, ignoring codecs (`audio/webm;codecs=opus` is `audio/webm`). */
 export const bareType = (type: string): string => type.split(';')[0].trim().toLowerCase();
 
-/** The sample kind the Hub takes for this type, or null when it is one the page has to convert. */
+/** The one MP4 the page keeps as recorded: AAC in MP4, named in the type. */
+export const AAC_IN_MP4 = 'audio/mp4;codecs=mp4a.40.2';
+
+/** The sample kind the Hub takes for this type as it is (AAC in MP4, AAC, MP3, WAV), or null when the page has to convert it (WebM, Opus in MP4, anything unnamed). */
 export function takenKind(type: string): { contentType: string; extension: string } | null {
-  return TAKEN[bareType(type)] ?? null;
+  const lower = type.replace(/\s/g, '').toLowerCase();
+  if (bareType(lower) === 'audio/mp4') return /codecs=.*mp4a\.40/.test(lower) ? { contentType: 'audio/mp4', extension: 'm4a' } : null;
+  return TAKEN[bareType(lower)] ?? null;
 }
 
-const PREFERRED = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/aac'];
-
-/** The type to ask a browser's MediaRecorder for: MP4 audio where it can write it, else undefined (the recorder's own default, WebM). */
+/** The type to ask a browser's MediaRecorder for: AAC in MP4, only where it says yes to that exact string; else undefined (the recorder's own default, WebM, which is then written as WAV). */
 export function recordingMimeType(
   recorder: { isTypeSupported?: (type: string) => boolean } | undefined = typeof MediaRecorder === 'undefined' ? undefined : MediaRecorder,
 ): string | undefined {
   if (Platform.OS !== 'web' || !recorder?.isTypeSupported) return undefined;
-  return PREFERRED.find((type) => recorder.isTypeSupported?.(type));
+  return recorder.isTypeSupported(AAC_IN_MP4) ? AAC_IN_MP4 : undefined;
 }
 
-/** The most bytes the Hub reads for a sample (`RECORDING_MAX_BYTES`); a take that would be longer is written at a lower rate. */
-const WAV_BUDGET = 9 * 1024 * 1024;
+/**
+ * The rate a voice sample is written at. The only reader of a stored sample is the voice provider, once per run (the app never plays
+ * it: the Voice Intro it plays is the Hub's own). `docs/elevenlabs/API-FACTS.md` names no rate the provider needs, so the default is
+ * 22,050 Hz mono, 16-bit: a 30 second take is 1.32 MB (the Hub reads up to 10 MB).
+ */
+export const WAV_RATE = 22050;
 
-/** 16-bit mono PCM in a WAV file, from decoded channels (mixed down to one). Written at `rate`, or at a whole fraction of it when the take is long. */
+/** 16-bit mono PCM in a WAV file at `WAV_RATE` (or the take's own rate when it is lower), from decoded channels mixed down to one. */
 export function encodeWav(channels: Float32Array[], sampleRate: number): Blob {
   const frames = channels[0]?.length ?? 0;
-  const step = Math.max(1, Math.ceil((frames * 2) / WAV_BUDGET));
-  const count = Math.floor(frames / step);
-  const rate = Math.round(sampleRate / step);
+  const rate = Math.min(WAV_RATE, sampleRate);
+  const ratio = sampleRate / rate;
+  const count = Math.floor((frames * rate) / sampleRate);
   const buffer = new ArrayBuffer(44 + count * 2);
   const view = new DataView(buffer);
   const text = (at: number, value: string) => {
@@ -67,12 +72,18 @@ export function encodeWav(channels: Float32Array[], sampleRate: number): Blob {
   view.setUint16(34, 16, true);
   text(36, 'data');
   view.setUint32(40, count * 2, true);
+  const at = (c: number, i: number) => channels[c][i] ?? 0;
   for (let i = 0; i < count; i += 1) {
+    // Each output sample averages the source samples it covers (a box filter), then mixes the channels.
+    const from = Math.floor(i * ratio);
+    const to = Math.max(from + 1, Math.floor((i + 1) * ratio));
     let sum = 0;
     for (let c = 0; c < channels.length; c += 1) {
-      for (let s = 0; s < step; s += 1) sum += channels[c][i * step + s] ?? 0;
+      let part = 0;
+      for (let s = from; s < to; s += 1) part += at(c, s);
+      sum += part / (to - from);
     }
-    const mixed = Math.max(-1, Math.min(1, sum / (channels.length * step)));
+    const mixed = Math.max(-1, Math.min(1, sum / channels.length));
     view.setInt16(44 + i * 2, mixed < 0 ? mixed * 0x8000 : mixed * 0x7fff, true);
   }
   return new Blob([buffer], { type: 'audio/wav' });

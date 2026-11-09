@@ -3,6 +3,8 @@ import { Modal, Platform } from 'react-native';
 
 import { Toast } from '@/components/Toast';
 
+import { WebFrame } from './WebFrame';
+
 /** How long the "Link copied" note stays up. */
 export const SHARE_NOTE_MS = 2200;
 
@@ -43,7 +45,9 @@ export function ShareNote() {
   if (Platform.OS !== 'web' || !current) return null;
   return (
     <Modal visible transparent animationType="fade" onRequestClose={clearShareNote}>
-      <Toast message={current.text} tone="success" placement="bottom" testID="share-note" />
+      <WebFrame fill={false} testID="share-note-frame">
+        <Toast message={current.text} tone="success" placement="bottom" testID="share-note" />
+      </WebFrame>
     </Modal>
   );
 }

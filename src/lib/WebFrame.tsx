@@ -49,7 +49,7 @@ export function WebFrame({ children, root = false, fill = true, testID = 'web-fr
     <View testID={testID} style={[styles.outer, fill ? { backgroundColor: colors.surfacePage } : null]} pointerEvents="box-none">
       <View
         testID={`${testID}-column`}
-        style={[styles.column, { borderColor: colors.borderHairline }, fill ? { backgroundColor: colors.surfacePage } : null]}
+        style={[styles.column, fill ? { backgroundColor: colors.surfacePage } : null]}
         pointerEvents="box-none"
       >
         {children}
@@ -67,5 +67,5 @@ function RootExtras() {
 
 const styles = StyleSheet.create({
   outer: { flex: 1, alignItems: 'center' },
-  column: { flex: 1, width: '100%', maxWidth: FRAME_WIDTH, overflow: 'hidden', borderLeftWidth: StyleSheet.hairlineWidth, borderRightWidth: StyleSheet.hairlineWidth },
+  column: { flex: 1, width: '100%', maxWidth: FRAME_WIDTH, overflow: 'hidden' },
 });
