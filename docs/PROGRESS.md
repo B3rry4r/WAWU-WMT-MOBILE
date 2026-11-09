@@ -10,7 +10,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | todo | 36 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 44 | 0 | 0 | 0 |
-| review | 245 | 0 | 0 | 0 |
+| review | 246 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -259,6 +259,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
 - [OWNER-1019](../tasks/OWNER-1019.md) Record the owner's four answers of 19 Oct 2026 (Q-42 to Q-45) as rulings R-70 to R-73 (You)
+- [WEBAPP-07](../tasks/WEBAPP-07.md) The whole web app walked as every kind of user (You)
 - [TIER-UPGRADE-FIX](../tasks/TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for (You)
 
 ## Being verified

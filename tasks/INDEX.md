@@ -487,7 +487,8 @@ Builder and verifier are always different sessions.
 63. [WEBAPP-06](WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work
 64. [WEBAPP-07](WEBAPP-07.md) The whole web app walked as every kind of user
 65. [TIER-UPGRADE-FIX](TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for
-66. [WEBAPP-10](WEBAPP-10.md) Desktop screens drawn for the web app
+66. [WEBAPP-08](WEBAPP-08.md) The web walk's fixes (Phase 1 fix batch)
+67. [WEBAPP-10](WEBAPP-10.md) Desktop screens drawn for the web app
 
 ## Developer
 

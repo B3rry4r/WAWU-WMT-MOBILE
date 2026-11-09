@@ -7,7 +7,7 @@ order: 367
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: todo
+status: review
 depends_on: [WEBAPP-01, WEBAPP-02, WEBAPP-03, WEBAPP-04, WEBAPP-05, WEBAPP-06]
 decisions: [R-127]
 passes: [V1, V6, V7, V9]
@@ -19,9 +19,12 @@ tier: T1
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-00 readiness check (`docs/analysis/WEB-APP-READINESS.md`).
-- **Next:** a builder starts from the brief below.
-- **History:** none yet. Reports go to tasks/history/WEBAPP-07.md.
+- **Status:** review. Walked 9 Nov by three fresh Sonnet walkers on mobile ffdc271 and Hub main 7dd5b22 (brief `docs/release/WALK-WEB.md`): A arriving, B money, C making. All three FAIL.
+- **SERIOUS:** every web wallet purchase is a dead button (the export bundles the inert phone hook, `useWebBuy.ts` beside `useWebBuy.web.tsx`); the site's CSP blocks the live socket (`wss://api.wawuafrica.com` missing). Mediums and lows: WEBAPP-08.
+- **Passed:** sign-up through the real WAWU ID, sign-in return, invite links, the tier offer once per session, Settings, share, opening a wallet with the hosted selfie in the same tab, every V8 money attack on wallet sends (ledger equals the stand-in), photo and voice uploads read back clean, paid pieces, paid questions, event hosting, the 1440 column. The export built as Vercel does (fresh clone, `npm ci`, `npm run web:export`) has one React and draws every page.
+- **Gaps:** few pictures looked at one by one (A about 30 of 165, B about 20 of 211, C about 60 of 186); the walk after WEBAPP-08 looks at every picture.
+- **Next:** WEBAPP-08 (the fix batch), then this walk again on the new batch head.
+- **History:** tasks/history/WEBAPP-07.md (the three reports).
 
 ## Read first
 
