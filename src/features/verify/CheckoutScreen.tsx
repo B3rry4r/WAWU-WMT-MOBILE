@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -65,8 +65,9 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
     if (!item) return;
     // An upgrade replaces the tier held: Google Play needs that subscription's token to change it rather than add another.
     const tierIds = (store.catalog?.products ?? []).filter((p) => p.kind === 'tier').map((p) => p.storeProductId);
-    const replace = kind === 'upgrade' ? await heldSubscription(tierIds.filter((id) => id !== item.product.storeProductId)) : null;
-    await buyer.buy(item, { replace });
+    // The web pays from the wallet at the list price (R-128): no store subscription is held, and the Hub works out an upgrade's difference.
+    const replace = kind === 'upgrade' && Platform.OS !== 'web' ? await heldSubscription(tierIds.filter((id) => id !== item.product.storeProductId)) : null;
+    await buyer.buy(item, { replace, webKind: kind });
   };
 
   let body;
@@ -98,9 +99,12 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
   ) : undefined;
 
   return (
-    <PointsFrame title={TIER_WORDS.checkout} onBack={onBack} gap={BODY_GAP} foot={foot} testID="checkout-screen">
-      {body}
-    </PointsFrame>
+    <>
+      <PointsFrame title={TIER_WORDS.checkout} onBack={onBack} gap={BODY_GAP} foot={foot} testID="checkout-screen">
+        {body}
+      </PointsFrame>
+      {buyer.sheets}
+    </>
   );
 }
 
@@ -132,7 +136,13 @@ export function CheckoutReady({
         </View>
       </Card>
       <Text variant="meta" tone="textMuted" testID="checkout-renews" style={styles.centre}>
-        {kind === 'upgrade' ? 'The store works out what moving up costs, and renews this tier until you cancel there.' : 'The store renews this tier until you cancel there.'}
+        {Platform.OS === 'web'
+          ? kind === 'upgrade'
+            ? 'You pay the difference from your wallet.'
+            : 'You pay once from your wallet. Renew when it ends.'
+          : kind === 'upgrade'
+            ? 'The store works out what moving up costs, and renews this tier until you cancel there.'
+            : 'The store renews this tier until you cancel there.'}
       </Text>
       <SaidBanner said={said} testID="checkout-said" />
       <RestoreRow buyer={buyer} testID="checkout-restore" />

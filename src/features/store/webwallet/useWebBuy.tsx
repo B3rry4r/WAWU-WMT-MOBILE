@@ -21,7 +21,7 @@ import { askWebQuote, readWebPurchase, scopeOf, sendWebPayment, webPurchaseKey, 
  * has taken and not finished is only ever read, never paid again. `begin` opens the pay sheet; when the Hub says paid, `granted` is set (the same
  * shape the store screens already read, built from what the item gives), so every screen's own "it worked" view draws.
  */
-type Target = { spec: WebBuySpec; title: string; grants: StorePurchaseView['grant'] | null };
+type Target = { spec: WebBuySpec; title: string; grants: object | null };
 
 export type WebBuy = {
   /** The quote is being asked for, or a sheet is open: the buy button waits. */
@@ -29,7 +29,7 @@ export type WebBuy = {
   /** Why no sheet opened (a refused quote, in the Hub's own sentence). */
   said: Said | null;
   granted: StorePurchaseView | null;
-  begin: (spec: WebBuySpec, title: string, grants?: StorePurchaseView['grant'] | null) => void;
+  begin: (spec: WebBuySpec, title: string, grants?: object | null) => void;
   clear: () => void;
   sheets: ReactNode;
 };

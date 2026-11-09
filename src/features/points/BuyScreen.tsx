@@ -95,6 +95,7 @@ export function BuyScreen(props: BuyScreenProps) {
       <PointsFrame title="" onBack={props.onBack} gap={BODY_GAP} foot={foot} testID="buy-screen">
         {body}
       </PointsFrame>
+      {buyer.sheets}
       {buyer.granted ? <Added added={buyer.granted.grant.points ?? 0} balance={points.data?.balance ?? null} label={props.doneLabel ?? BUY_WORDS.done} onDone={props.onDone} /> : null}
     </>
   );
