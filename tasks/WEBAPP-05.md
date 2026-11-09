@@ -7,7 +7,7 @@ order: 365
 priority: after-launch
 repo: wawu-wmt-mobile
 type: money-path
-status: verifying
+status: building
 depends_on: []
 decisions: [R-127]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,13 +19,10 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** verifying. Built by the WEBAPP-05/06 bundle builder on branch `wmt/WEBAPP-05`.
-- **Done:** a laptop keyboard drives the PIN keypad and the amount keypad on the web (digits, Backspace, Enter, "." and ","); the hosted selfie opens in the same tab and returns to this web app's own `/selfie`.
-- **Not changed:** the phone (keys and the selfie open as before).
-- **Default taken:** tokens stay in `localStorage` on the web (lead default); the return address is read from `window.location.origin` in `src/features/open-wallet/api/hostedPage.ts`, because WEBAPP-01's `appLinks.ts` had not changed (it is untouched by this branch). When it lands, `selfieReturnAddress()` can read from it.
-- **PHONE CHECK (owner, before the update):** the hosted selfie out and back on a real phone browser (iOS Safari, Android Chrome): the page leaves this tab and returns to `/selfie` on usewmt.com and the opening continues. Needs `https://usewmt.com` in the Hub's `NUVION_LIVENESS_REDIRECT_ORIGINS`.
-- **NOT RUN:** the hosted selfie on the stack (the stack's hosted selfie is off, so jest only: same tab, no `Linking.openURL`, return address = page origin); a physical keyboard with an IME.
-- **Next:** the verifier runs the PIN attacks (wrong PIN five times, a held key, a key with a focused field).
+- **Status:** back to building for round 1 (verifier FIX). Keyboard, hosted selfie and PIN lock: see the keypad, selfie and PIN lines. WEBAPP-05 itself has no open defect of its own except what the selfie NOT RUN leaves (PHONE CHECK stays).
+- **Verifier:** see tasks/history/WEBAPP-05.md, last section. Fix list: F1 (Add on the pay sheet to /add-money), F2 (guard every bills route), F3 (remove the node_modules symlink).
+- **NOT RUN by the verifier:** hosted selfie on the stack, amount keypad in a browser, credits pack and /tiers pictures, expired quote.
+- **Next:** a patch brief for F1 to F3; the verifier re-checks those ids.
 
 ## Read first
 

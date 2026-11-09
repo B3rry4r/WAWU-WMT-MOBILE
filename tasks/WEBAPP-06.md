@@ -7,7 +7,7 @@ order: 366
 priority: after-launch
 repo: wawu-wmt-mobile
 type: money-path
-status: verifying
+status: building
 depends_on: []
 decisions: [R-127, R-128, R-44, R-86, R-101]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,14 +19,10 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** verifying. Built by the WEBAPP-05/06 bundle builder on branch `wmt/WEBAPP-05`.
-- **Done:** on the web build a tier (and renew, upgrade), a points pack, the upload pack, a WAWU Credits pack and a community pass are paid from the wallet through the Hub's existing wallet routes at the list price (PIN, `Idempotency-Key`, the signed quote; the shared pay sheet shows the shortfall and Add). The phone is unchanged (R-86).
-- **Bills:** the other path of the ticket. No bills entry is drawn on the web (Home card, Wallet tab; `/bills` goes home), because the payment window needs the provider's real sandbox and keys, which this task cannot reach (the stack has no bills provider, no key file was opened). `src/features/bills/offered.ts`, tested. `CheckoutModal.web.tsx` is not built.
-- **No Hub change:** every route existed (`plans/purchases`, `credits/purchase/wallet`, `communities/{id}/pass`).
-- **Defaults taken:** Restore purchases is not drawn on the web; a plan list in a currency other than naira draws nothing (R-16); the fees on the sheet are the Hub's quote; the web's unlock, tip, ask and ticket wallet paths are untouched.
-- **PHONE CHECK:** none new (the phone app is unchanged); a phone browser on usewmt.com paying a tier from the wallet is worth one run.
-- **NOT RUN:** a pass bought end to end on the stack (no community with a pass was seeded; the code path is typed and shares the flow, not exercised); the "confirming" and "failed" pay-sheet states in pictures (the stack stand-in settles at once); a real bill on the provider sandbox; the upload pack purchase (the Hub refused the quote for a person holding the Verify tier with `pack_not_allowed`, its own rule).
-- **Next:** the verifier runs the money attacks again on its own stack.
+- **Status:** back to building for round 1 (verifier FIX). Open defects: F1, F2 (and F3 for the bundle branch).
+- **Verifier:** see tasks/history/WEBAPP-06.md, last section. Fix list: F1 (Add on the pay sheet to /add-money), F2 (guard every bills route), F3 (remove the node_modules symlink).
+- **NOT RUN by the verifier:** hosted selfie on the stack, amount keypad in a browser, credits pack and /tiers pictures, expired quote.
+- **Next:** a patch brief for F1 to F3; the verifier re-checks those ids.
 
 ## Read first
 
