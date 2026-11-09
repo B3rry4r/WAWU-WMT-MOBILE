@@ -1,3 +1,4 @@
+import { withBillsGuard } from '@/features/bills/webGuard';
 import { Redirect, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
@@ -5,7 +6,7 @@ import { BillersScreen } from '@/features/bills/BillersScreen';
 import { useSystemBack } from '@/features/professionals/parts';
 
 /** S3 · Biller (`/bills/electricity`). Opened from S2; on its own, back goes to S2 (the on-screen back and Android's). */
-export default function ElectricityBillersRoute() {
+function ElectricityBillersRoute() {
   const router = useRouter();
   const { status } = useSession();
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/bills'));
@@ -15,3 +16,5 @@ export default function ElectricityBillersRoute() {
 
   return <BillersScreen kind="electricity" onBack={leave} onChangeCategory={leave} onPick={() => router.push('/bills/items')} />;
 }
+
+export default withBillsGuard(ElectricityBillersRoute);

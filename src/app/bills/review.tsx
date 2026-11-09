@@ -1,3 +1,4 @@
+import { withBillsGuard } from '@/features/bills/webGuard';
 import { Redirect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 
@@ -9,7 +10,7 @@ import { useSystemBack } from '@/features/professionals/parts';
  * S5 · Review (`/bills/review`) for every kind of bill. It reads the bill being put together, so a link cannot name an amount: with none
  * started it goes back to S2. Pay opens the payment window; a paid bill goes to its receipt, which replaces this screen.
  */
-export default function ReviewRoute() {
+function ReviewRoute() {
   const router = useRouter();
   const { status } = useSession();
   const leave = useCallback(() => (router.canGoBack() ? router.back() : router.replace('/bills')), [router]);
@@ -21,3 +22,5 @@ export default function ReviewRoute() {
 
   return <ReviewScreen onBack={leave} onMissing={toKinds} onSettled={settled} />;
 }
+
+export default withBillsGuard(ReviewRoute);

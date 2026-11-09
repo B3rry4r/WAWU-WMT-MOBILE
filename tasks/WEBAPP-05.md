@@ -7,7 +7,7 @@ order: 365
 priority: after-launch
 repo: wawu-wmt-mobile
 type: money-path
-status: todo
+status: building
 depends_on: []
 decisions: [R-127]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,9 +19,10 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-00 readiness check (`docs/analysis/WEB-APP-READINESS.md`).
-- **Next:** a builder starts from the brief below.
-- **History:** none yet. Reports go to tasks/history/WEBAPP-05.md.
+- **Status:** back to building for round 1 (verifier FIX). Keyboard, hosted selfie and PIN lock: see the keypad, selfie and PIN lines. WEBAPP-05 itself has no open defect of its own except what the selfie NOT RUN leaves (PHONE CHECK stays).
+- **Verifier:** see tasks/history/WEBAPP-05.md, last section. Fix list: F1 (Add on the pay sheet to /add-money), F2 (guard every bills route), F3 (remove the node_modules symlink).
+- **NOT RUN by the verifier:** hosted selfie on the stack, amount keypad in a browser, credits pack and /tiers pictures, expired quote.
+- **Next:** a patch brief for F1 to F3; the verifier re-checks those ids.
 
 ## Read first
 
@@ -46,8 +47,8 @@ A person on a laptop can type their PIN on the keyboard, and the hosted selfie s
 - [ ] A user on a laptop types their 4-digit PIN to send money and to unlock the card; a wrong PIN five times locks exactly as on the phone (V8).
 - [ ] A user opening a wallet on the web with the hosted selfie on goes out and comes back to `/selfie` on usewmt.com and continues (on the stack with the stand-in; PHONE CHECK on a real phone browser).
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-05.md](history/WEBAPP-05.md).
 
 ## Owner sign-off

@@ -1,7 +1,7 @@
 import { api } from '@/api/client';
 import { ApiError, failureOf, isApiError, toApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
-import { selfieReturnUrl } from '@/lib/appLinks';
+import { selfieReturnAddress } from './hostedPage';
 
 import { OPEN_WALLET_KEY } from './account';
 
@@ -67,7 +67,7 @@ export async function fetchLiveness(): Promise<Liveness> {
  */
 export async function startLiveness(): Promise<Liveness> {
   try {
-    return readView(await send(api.POST('/api/hub/money/identity/liveness', { body: { redirectUrl: selfieReturnUrl() } })));
+    return readView(await send(api.POST('/api/hub/money/identity/liveness', { body: { redirectUrl: selfieReturnAddress() } })));
   } catch (error) {
     if (livenessProblem(error) !== 'invalid') throw error;
     return readView(await send(api.POST('/api/hub/money/identity/liveness', { body: {} })));

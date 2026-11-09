@@ -226,6 +226,25 @@ describe('A6 · Selfie hand-off and A7 · Back from the secure page', () => {
     expect(app.onDropped).not.toHaveBeenCalled();
   });
 
+  it('WEBAPP-05: on the web the page opens in this same tab, no popup after the awaited call, and returns to this web app\'s own /selfie', async () => {
+    const rn = require('react-native') as typeof import('react-native');
+    jest.replaceProperty(rn.Platform, 'OS', 'web');
+    const assign = jest.fn();
+    (globalThis as Record<string, unknown>).window = Object.assign(Object.create(globalThis), { location: { origin: 'https://usewmt.com', assign } });
+    try {
+      routes['POST /money/identity/liveness'] = [liveness({ state: 'pending', url: SECURE_PAGE })];
+      const app = await hostedScreen();
+      await rtl.act(async () => {
+        rtl.fireEvent.press(await app.screen.findByTestId('open-wallet-selfie-continue'));
+      });
+      await rtl.waitFor(() => expect(assign).toHaveBeenCalledWith(SECURE_PAGE));
+      expect(opened).toEqual([]);
+      expect(JSON.parse(calls('POST', '/money/identity/liveness')[0].body)).toEqual({ redirectUrl: 'https://usewmt.com/selfie' });
+    } finally {
+      (globalThis as Record<string, unknown>).window = globalThis;
+    }
+  });
+
   it('LINKS-01: any other refusal is not started again', async () => {
     routes['POST /money/identity/liveness'] = [{ status: 503, body: { statusCode: 503, message: 'The bank is not answering.', reason: { code: 'provider_unreachable', message: 'The bank is not answering.' } } }];
     const app = await hostedScreen();

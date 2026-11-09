@@ -7,8 +7,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 39 | 0 | 0 | 0 |
-| building | 4 | 0 | 0 | 0 |
+| todo | 37 | 0 | 0 | 0 |
+| building | 6 | 0 | 0 | 0 |
 | verifying | 42 | 0 | 0 | 0 |
 | review | 244 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
@@ -311,6 +311,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-COUNTS](../tasks/TIER-COUNTS.md) Products each tier allows are 4, 8 and 15, and a running tier gets the new count at once (R-112) (You)
 - [WELCOME-FULL](../tasks/WELCOME-FULL.md) The welcome video is the whole screen, with the words and buttons over it: no panel, no shade, no gradient (R-111) (You)
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
+- [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
+- [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
 
 ## Done
 

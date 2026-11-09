@@ -1,3 +1,4 @@
+import { withBillsGuard } from '@/features/bills/webGuard';
 import { Redirect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 
@@ -6,7 +7,7 @@ import { PhoneBillScreen } from '@/features/bills/PhoneBillScreen';
 import { useSystemBack } from '@/features/professionals/parts';
 
 /** S8 · Data (`/bills/data`): the network, the phone number and what to buy; Buy goes to the review (S5). Opened from S2; on its own, back goes to S2. */
-export default function DataRoute() {
+function DataRoute() {
   const router = useRouter();
   const { status } = useSession();
   const leave = useCallback(() => (router.canGoBack() ? router.back() : router.replace('/bills')), [router]);
@@ -16,3 +17,5 @@ export default function DataRoute() {
 
   return <PhoneBillScreen kind="data" onBack={leave} onChangeCategory={leave} onContinue={() => router.push('/bills/review')} />;
 }
+
+export default withBillsGuard(DataRoute);

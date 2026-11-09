@@ -209,6 +209,15 @@ export function useTierOfferStep(asked: boolean): {
   };
 }
 
+/** Whether the tier offer is on screen now (the route graph holds every other screen back while it is), for a screen that must send a person where "/" does. */
+export function useTierOfferShowing(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => state.phase === 'visible',
+    () => state.phase === 'visible',
+  );
+}
+
 /** For the offer screen: whether this offer has the close X (true) or a "Not now" button (false). The Hub's answer to the one ask. */
 export function useTierOfferCloseButton(): boolean {
   return useSyncExternalStore(
