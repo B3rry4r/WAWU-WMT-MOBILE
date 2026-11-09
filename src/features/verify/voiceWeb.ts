@@ -103,13 +103,13 @@ export async function convertToWav(blob: Blob, make: () => DecodeContext = () =>
   }
 }
 
-export type SampleUpload = { blob: Blob; contentType: string; extension: string };
+export type VoiceTakeUpload = { blob: Blob; contentType: string; extension: string };
 
 /**
  * What goes up for a take: on a phone, the file as the phone wrote it; in a browser, the recording as MP4/AAC/MP3/WAV when it is one,
  * else written again as WAV. `declared` is what the screen worked out from the address (right on a phone, a guess in a browser).
  */
-export async function sampleToUpload(blob: Blob, declared: { contentType: string; extension: string }): Promise<SampleUpload> {
+export async function toVoiceUpload(blob: Blob, declared: { contentType: string; extension: string }): Promise<VoiceTakeUpload> {
   if (Platform.OS !== 'web') return { blob, ...declared };
   const kind = takenKind(blob.type);
   if (kind) return { blob, ...kind };

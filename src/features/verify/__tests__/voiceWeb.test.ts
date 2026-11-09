@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 import { isPhoto, redrawnType } from '@/features/media/redrawPhoto';
 
-import { bareType, convertToWav, encodeWav, recordingMimeType, sampleToUpload, takenKind } from '../voiceWeb';
+import { bareType, convertToWav, encodeWav, recordingMimeType, toVoiceUpload, takenKind } from '../voiceWeb';
 
 /** WEBAPP-04: a voice recorded in any browser goes up as something the Hub takes and every phone plays. */
 let os: jest.ReplaceProperty<typeof Platform.OS> | undefined;
@@ -77,22 +77,22 @@ describe('what goes up', () => {
   it('on a phone is the file as the phone wrote it', async () => {
     os = jest.replaceProperty(Platform, 'OS', 'android');
     const blob = new Blob([new Uint8Array([1])], { type: '' });
-    expect(await sampleToUpload(blob, declared)).toEqual({ blob, ...declared });
+    expect(await toVoiceUpload(blob, declared)).toEqual({ blob, ...declared });
   });
   it('in a browser that recorded AAC in MP4 is that file, named for what it is (not for the blob address)', async () => {
     web();
     const blob = new Blob([new Uint8Array([1])], { type: 'audio/mp4;codecs=mp4a.40.2' });
-    expect(await sampleToUpload(blob, { contentType: 'audio/webm', extension: 'webm' })).toEqual({ blob, contentType: 'audio/mp4', extension: 'm4a' });
+    expect(await toVoiceUpload(blob, { contentType: 'audio/webm', extension: 'webm' })).toEqual({ blob, contentType: 'audio/mp4', extension: 'm4a' });
   });
   it('Opus in MP4 (recent Chrome) is not kept: it is converted, and with no decoder refused, never sent as it was', async () => {
     web();
     const blob = new Blob([new Uint8Array([1])], { type: 'audio/mp4;codecs=opus' });
-    await expect(sampleToUpload(blob, declared)).rejects.toBeDefined();
+    await expect(toVoiceUpload(blob, declared)).rejects.toBeDefined();
   });
   it('in a browser that recorded only WebM is converted, never sent labelled as MP4 (with no decoder to convert it, the take is refused instead)', async () => {
     web();
     const blob = new Blob([new Uint8Array([1])], { type: 'audio/webm;codecs=opus' });
-    await expect(sampleToUpload(blob, declared)).rejects.toBeDefined();
+    await expect(toVoiceUpload(blob, declared)).rejects.toBeDefined();
   });
 });
 

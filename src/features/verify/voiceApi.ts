@@ -1,6 +1,6 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError, failureOf } from '@/api/errors';
-import { sampleToUpload, type SampleUpload } from './voiceWeb';
+import { toVoiceUpload, type VoiceTakeUpload } from './voiceWeb';
 import type { components } from '@/api/schema.generated';
 
 /**
@@ -157,9 +157,9 @@ export async function uploadVoiceSample(file: RecordingFile): Promise<string> {
     throw new ApiError('unknown', 0, 'We could not read your recording. Record it again.', RECORDING_UPLOAD_FAILED);
   }
   // In a browser the file's own type says what was recorded (WEBAPP-04): MP4 audio goes as it is, WebM or Ogg is written again as WAV.
-  let upload: SampleUpload;
+  let upload: VoiceTakeUpload;
   try {
-    upload = await sampleToUpload(blob, file);
+    upload = await toVoiceUpload(blob, file);
   } catch {
     throw new ApiError('unknown', 0, 'We could not read your recording. Record it again.', RECORDING_UPLOAD_FAILED);
   }
