@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { KEYPAD } from '@/components/pin-sheet/kit';
+import { useKeypadKeys } from '@/components/pin-sheet/useKeypadKeys';
 import { font, radius, useWawu } from '@/theme';
 
 const ROWS = [
@@ -18,6 +19,8 @@ export type AmountKeypadProps = {
   onDelete: () => void;
   /** Holding Delete clears everything typed. */
   onClear: () => void;
+  /** Enter on a laptop's keyboard (web only): the screen's Continue. */
+  onEnter?: () => void;
 };
 
 type KeyProps = { label: string; inactive: boolean; onPress: () => void; onLongPress?: () => void; testID?: string; children: React.ReactNode };
@@ -44,8 +47,9 @@ function Key({ label, inactive, onPress, onLongPress, testID, children }: KeyPro
  * biometric key. Shared so the send in chat (INBOX-19) types an amount the same way. It holds no text: the screen keeps
  * what was typed (`amount.ts`) and the keypad only reports keys.
  */
-export function AmountKeypad({ inactive = false, onKey, onDelete, onClear }: AmountKeypadProps) {
+export function AmountKeypad({ inactive = false, onKey, onDelete, onClear, onEnter }: AmountKeypadProps) {
   const { colors } = useWawu();
+  useKeypadKeys({ inactive, onDigit: onKey, onDelete, onEnter, onPoint: () => onKey('.'), yieldToFields: true });
   const ink = inactive ? colors.textDisabled : colors.textPrimary;
   const digit = (d: string) => (
     <Key key={d} testID={`amount-key-${d}`} label={d} inactive={inactive} onPress={() => onKey(d)}>

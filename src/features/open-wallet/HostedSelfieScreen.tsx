@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { Banner } from '@/components/Banner';
@@ -14,6 +14,7 @@ import { radius } from '@/theme';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 
 import { isSecurePage, livenessProblem, LIVENESS_KEY, fetchLiveness, startLiveness, type Liveness } from './api/liveness';
+import { openSecurePage } from './api/hostedPage';
 import { OpenWalletEnd } from './OpenWalletEnd';
 import { CameraPage, Words } from './CameraPage';
 import { forgetSelfieDrop, noteSelfieDropped } from './selfieDrop';
@@ -152,7 +153,7 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
     // The page is open already: a tap opens the same page again, and no new one is asked for.
     if (pageOpened && view?.state === 'pending' && isSecurePage(view.url)) {
       try {
-        await Linking.openURL(view.url);
+        await openSecurePage(view.url);
         // The page may have run out since: the Hub is asked, so the next tap starts a new one.
         void refetch();
       } catch {
@@ -174,7 +175,7 @@ export function HostedSelfieScreen({ onBack, onContinue, onDropped, onDetails }:
         return;
       }
       setPageOpened(true);
-      await Linking.openURL(started.url);
+      await openSecurePage(started.url);
     } catch (error) {
       if (!live.current) return;
       const why = livenessProblem(error);
