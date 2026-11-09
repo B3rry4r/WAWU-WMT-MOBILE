@@ -104,3 +104,16 @@ Round reports, verifier reports and lead notes, word for word, oldest first: [hi
 **Pictures**: 82 captures taken (390 L/D, 1440 L/D) of sign-up, tier offer (dollars), tiers (dollars, upgrade, highest), verification, checkout, pay-short, add-money, points (Cy, Verify, Founding), room, credits sheet, credits added, Me, wallet, Explore, beside boards A3, VF5a, VF5b, VF6a, VF14, I28, I29, PT4, M1, W1, X1. Looked at: the 390 pairs for VF6a L/D, I28 D, PT4 L, PT4 Founding D, A3 D, VF5a D, VF5a tiers L, VF5b D, VF14 L, I29 D, M1 D, wallet, Explore, the 1440 light contact sheet and Me 1440. Not individually looked at: the 390 dark and 1440 dark contact sheets (generated). Board differences seen are the web's wallet pay sheet (R-128) and the built sign-up fields, not this batch.
 
 NOT RUN: android jest preset; real Flixora trailer host; a real phone; Safari and Firefox. Setup note: for the credits-added picture the test user's credit count was zeroed in my own test database.
+
+
+### Round 2 (T2 verifier, 9 Nov 2026), head 79dcac1: verdict MERGE
+
+1. Diff 63bdcf3..79dcac1: only the five round 1 items (sign-up draft country, chat Enter, media-src, dollars /tiers, upgrade button amounts) with docs and tests. Two earlier assertions of the builder's own round 0 tests were edited because the shapes changed (signupDraft.test.ts draft shape; webCsp.test.ts media-src now an exact list); no pre-batch assertion changed.
+2. F5 PASS on the export: +234 number, Continue, Back, refresh: form shows +234 and Nigeria, POST countryCode NG; a +1 person stays US (POST US); draft holds phoneCountry and countryCode, never the password (sessionStorage and localStorage checked); a second tab opens /sign-up empty. Cosmetic low: the restored phone text shows "+234 803 ..." beside the +234 chip.
+3. F11 PASS: Enter sends and Shift+Enter makes a new line in a chat and in a room (export); ChatComposer change is gated to web, phone unchanged.
+4. F3 PASS: CSP equals base a9fe042 plus only `wss://api.wawuafrica.com` (img-src keeps amazonaws); guard asserts media-src exactly (connect-src is containment, low).
+5. F4 PASS: dollar person on /tiers sees "Make it official", the message and a Close; Close leads on to creator-setup (the offer X does the same). Pictures beside VF5a at 390 L/D and 1440.
+6. Upgrade buttons PASS: /tiers "Upgrade to Founding Maker N7,000" and checkout "Upgrade N7,000" (the quote's total); one upgrade bought through the button charged 700,000 once (Hub ledger and stand-in 4,450,100 to 3,750,100).
+7. Money regression PASS: tier -299,900, points -250,000, upgrade -700,000, credits -100,000, pass -100,000, each one POST and one grant, ledger equals stand-in (ada 3,550,100).
+8. Pictures: 24 at /tmp/wmt-shots/v-webapp08/r2 (sign-up restored, offer and tiers in dollars, tiers and checkout upgrade, chat composer; 390 L/D, 1440 L/D) all looked at via contact sheets, plus the VF5a pair; the round 1 dark and 1440 sheets of unchanged screens were not re-opened.
+9. `npm run check` EXIT 0 (518 suites, 7732 passed, 5 skipped; gates 0 fail, 17 warn, 1686 files).

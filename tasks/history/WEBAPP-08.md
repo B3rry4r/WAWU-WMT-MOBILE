@@ -75,3 +75,16 @@ Verifier branch fast-forwarded in (1f6df5e). Stack fix08 again, new export; walk
 - F4 MEDIUM: /tiers for a dollar-billed person on the web has the title "Make it official", the message and a Close button. Pictures: /tmp/wmt-shots/webapp-08/r1-tiers-dollars-* (390 light and dark, 1440), boards VF5a in boards/.
 - LOW: the web upgrade buttons (/tiers and /checkout) show the Hub quote's total (`useUpgradeCharge`): "Upgrade to Founding Maker · ₦7,000" and "Upgrade · ₦7,000" (no amount until the quote has come). Pictures r1-tiers-upgrade-*, r1-checkout-upgrade-*.
 - Phone-visible changes to list: F15 cold-open landing on My works (also on the phone), the Founding chip tone, the credits-added line waiting for the fresh count.
+
+
+### Round 2 (T2 verifier, 9 Nov 2026), head 79dcac1: verdict MERGE
+
+1. Diff 63bdcf3..79dcac1: only the five round 1 items (sign-up draft country, chat Enter, media-src, dollars /tiers, upgrade button amounts) with docs and tests. Two earlier assertions of the builder's own round 0 tests were edited because the shapes changed (signupDraft.test.ts draft shape; webCsp.test.ts media-src now an exact list); no pre-batch assertion changed.
+2. F5 PASS on the export: +234 number, Continue, Back, refresh: form shows +234 and Nigeria, POST countryCode NG; a +1 person stays US (POST US); draft holds phoneCountry and countryCode, never the password (sessionStorage and localStorage checked); a second tab opens /sign-up empty. Cosmetic low: the restored phone text shows "+234 803 ..." beside the +234 chip.
+3. F11 PASS: Enter sends and Shift+Enter makes a new line in a chat and in a room (export); ChatComposer change is gated to web, phone unchanged.
+4. F3 PASS: CSP equals base a9fe042 plus only `wss://api.wawuafrica.com` (img-src keeps amazonaws); guard asserts media-src exactly (connect-src is containment, low).
+5. F4 PASS: dollar person on /tiers sees "Make it official", the message and a Close; Close leads on to creator-setup (the offer X does the same). Pictures beside VF5a at 390 L/D and 1440.
+6. Upgrade buttons PASS: /tiers "Upgrade to Founding Maker N7,000" and checkout "Upgrade N7,000" (the quote's total); one upgrade bought through the button charged 700,000 once (Hub ledger and stand-in 4,450,100 to 3,750,100).
+7. Money regression PASS: tier -299,900, points -250,000, upgrade -700,000, credits -100,000, pass -100,000, each one POST and one grant, ledger equals stand-in (ada 3,550,100).
+8. Pictures: 24 at /tmp/wmt-shots/v-webapp08/r2 (sign-up restored, offer and tiers in dollars, tiers and checkout upgrade, chat composer; 390 L/D, 1440 L/D) all looked at via contact sheets, plus the VF5a pair; the round 1 dark and 1440 sheets of unchanged screens were not re-opened.
+9. `npm run check` EXIT 0 (518 suites, 7732 passed, 5 skipped; gates 0 fail, 17 warn, 1686 files).
