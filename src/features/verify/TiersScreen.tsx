@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -113,7 +113,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
             {held ? TIER_WORDS.upgradeTitle : TIER_WORDS.title}
           </Text>
           <Text variant="body" tone="textSecondary" testID="tiers-blurb" style={styles.blurb}>
-            {held ? `You're on ${heldName}${until ? ` until ${until}` : ''}. The store works out what moving up costs.` : TIER_WORDS.blurb}
+            {held ? `You're on ${heldName}${until ? ` until ${until}` : ''}. ${Platform.OS === 'web' ? 'You pay the difference from your wallet.' : 'The store works out what moving up costs.'}` : TIER_WORDS.blurb}
           </Text>
         </View>
         <View accessibilityRole="radiogroup" testID="tiers-list" style={styles.list}>

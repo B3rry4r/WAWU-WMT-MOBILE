@@ -60,6 +60,8 @@ type State = {
   phase: Phase;
   closeButton: boolean;
   checkout: { tierId: string; kind: 'tier' } | null;
+  /** WEBAPP-08 F4: the offer ended with "See the tiers" (a person billed in dollars on the web): the bridge opens the tiers sheet once the offer is gone. */
+  toTiers: boolean;
   /** The app has been let through (the step ended, or never applied) since the gate opened: a session that changes under it holds nothing. */
   live: boolean;
 };
@@ -69,6 +71,7 @@ const initial: State = {
   phase: 'idle',
   closeButton: true,
   checkout: null,
+  toTiers: false,
   live: false,
 };
 let state: State = initial;
@@ -145,6 +148,19 @@ export function finishTierOffer(checkout: State['checkout'] = null): void {
   publish({ ...state, phase: 'done', checkout });
 }
 
+/** The offer ended on "See the tiers" (web, a person billed in dollars): the tiers sheet is what the bridge opens next. */
+export function finishTierOfferToTiers(): void {
+  if (state.phase === 'visible') settleTierOffer();
+  publish({ ...state, phase: 'done', checkout: null, toTiers: true });
+}
+
+/** The tiers sheet "See the tiers" asked for, taken once by the bridge. */
+export function takeTierOfferToTiers(): boolean {
+  const next = state.toTiers;
+  if (next) state = { ...state, toTiers: false };
+  return next;
+}
+
 /** The checkout Subscribe asked for, taken once by the bridge. */
 export function takeTierOfferCheckout(): State['checkout'] {
   const next = state.checkout;
@@ -184,6 +200,7 @@ export function useTierOfferStep(asked: boolean): {
   holding: boolean;
   closeButton: boolean;
   checkout: State['checkout'];
+  toTiers: boolean;
 } {
   const current = useSyncExternalStore(
     subscribe,
@@ -206,6 +223,7 @@ export function useTierOfferStep(asked: boolean): {
     holding: open,
     closeButton: current.closeButton,
     checkout: current.checkout,
+    toTiers: current.toTiers,
   };
 }
 

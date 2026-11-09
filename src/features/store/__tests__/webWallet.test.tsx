@@ -10,7 +10,7 @@ import { renderSignedIn, resetApp } from '../testing/screen';
  * the Hub's list prices, Buy asks for a quote, Pay asks again and opens the PIN sheet, and the PIN goes out once, with an Idempotency-Key.
  * A phone with a store is unchanged: its tests are `store/__tests__/ladder*` and `buy.test.ts`.
  */
-// The web build loads the live hook (`useWebBuy.web.tsx`); jest resolves the phone file, so this test asks for the web one.
+// The web build loads the live hook (`useWebBuy.web.tsx`); jest resolves the phone file (useWebBuy.tsx), so this test asks for the web one.
 jest.mock('../webwallet/useWebBuy', () => jest.requireActual('../webwallet/useWebBuy.web'));
 jest.mock('expo-secure-store', () => {
   const vault = new Map<string, string>();
@@ -189,6 +189,17 @@ describe('WEBAPP-06 fix 1 · F1 and F2', () => {
     });
     const { addMoneyHref } = require('@/features/addmoney/entry') as typeof import('@/features/addmoney/entry');
     expect(mockPush).toHaveBeenCalledWith(addMoneyHref(60_000));
+  });
+
+  it('WEBAPP-08 F7: the pay sheet closes as Add sends the person to Add money (it never stays over the account number)', async () => {
+    hub.balanceKobo = 40_000;
+    await openPay();
+    await rtl.waitFor(() => expect(rtl.screen.getByText('Add ₦600')).toBeTruthy());
+    await rtl.act(async () => {
+      rtl.fireEvent.press(rtl.screen.getByText('Add ₦600'));
+    });
+    await rtl.waitFor(() => expect(rtl.screen.queryByText('Add ₦600')).toBeNull());
+    expect(rtl.screen.queryByText('Not enough in your Naira wallet')).toBeNull();
   });
 
   it('every file under src/app/bills goes home on the web, and none draws on the web', async () => {

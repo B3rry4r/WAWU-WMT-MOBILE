@@ -29,6 +29,8 @@ export function returnableTarget(path: string | null | undefined): string | null
 
 let landed: string | null = null;
 let armed = false;
+/** WEBAPP-08 F10: the address THIS page load opened on, for a signed-in cold start that the tier offer stands in front of (nothing else reads it). */
+let cold: string | null = null;
 
 const store = {
   read(): string | null {
@@ -55,7 +57,28 @@ export function captureLandingPath(location: Pick<Location, 'pathname' | 'search
   if (Platform.OS !== 'web' || !location) return;
   const target = returnableTarget(`${location.pathname}${location.search}`);
   // A later page load with no link of its own keeps what an earlier one found, so sign-in's own redirects do not wipe it.
-  if (target) store.write(target);
+  if (target) {
+    store.write(target);
+    cold = target;
+  }
+}
+
+/** The address this load opened on while the tier offer stood in front of it, taken once; null when there is none or it was reached. */
+export function takeColdPath(): string | null {
+  const target = cold;
+  cold = null;
+  if (target && store.read() === target) store.write(null);
+  return returnableTarget(target);
+}
+
+/** The address this load opened on, without taking it. */
+export function peekColdPath(): string | null {
+  return cold;
+}
+
+/** The cold address was reached, or is no longer wanted. */
+export function dropColdPath(): void {
+  cold = null;
 }
 
 /** What the visitor's session start decided: signed out keeps the path for after sign-in, signed in has no use for it. */
@@ -69,12 +92,14 @@ export function settleReturnPath(status: 'restoring' | 'signedIn' | 'signedOut')
 export function takeReturnPath(): string | null {
   const target = returnableTarget(store.read());
   store.write(null);
+  cold = null;
   return target;
 }
 
 export function resetReturnPathForTests(): void {
   landed = null;
   armed = false;
+  cold = null;
   store.write(null);
 }
 

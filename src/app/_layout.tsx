@@ -354,7 +354,7 @@ export default function RootLayout() {
         <Stack.Screen name="legal-documents/index" />
         <Stack.Screen name="legal-documents/[slug]" />
       </Stack>
-      <TierOfferBridge checkout={tierOffer.checkout} />
+      <TierOfferBridge checkout={tierOffer.checkout} toTiers={tierOffer.toTiers} />
       <PushBridge live={inApp} />
       <PlaceBridge live={inApp} />
       </WebFrame>

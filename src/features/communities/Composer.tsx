@@ -126,6 +126,14 @@ export function Composer({ onSend, busy, attach, placeholder = 'Message', draft,
     }
   };
 
+  // WEBAPP-08 F11: in a browser Enter sends and Shift+Enter makes a new line (a letter being composed with an input method is left alone).
+  const sendOnEnter = (e: { nativeEvent: { key?: string; shiftKey?: boolean; isComposing?: boolean }; preventDefault?: () => void }) => {
+    const key = e.nativeEvent;
+    if (key.key !== 'Enter' || key.shiftKey || key.isComposing) return;
+    e.preventDefault?.();
+    press();
+  };
+
   const choose = async () => {
     if (!attach || busy) return;
     if (attach.blocked) {
@@ -230,6 +238,7 @@ export function Composer({ onSend, busy, attach, placeholder = 'Message', draft,
           numberOfLines={IS_WEB ? 1 : undefined}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          onKeyPress={IS_WEB ? sendOnEnter : undefined}
           style={[
             styles.field,
             browserOutlineOff,

@@ -28,3 +28,19 @@ describe('WEBAPP-01: the web CSP allows no unlisted inline script', () => {
     }
   });
 });
+
+const directive = (name: string): string[] => (csp().split(';').map((d) => d.trim()).find((d) => d.startsWith(`${name} `)) ?? '').split(/\s+/).slice(1);
+
+/** WEBAPP-08 F2, F3: a host source with scheme https never covers wss:, and the live socket is a Hub call; media-src covers where video and audio come from. */
+describe('WEBAPP-08: the web CSP lets the live socket and the media through', () => {
+  it('connect-src names the Hub for https and for the live socket (wss)', () => {
+    expect(directive('connect-src')).toEqual(expect.arrayContaining(['https://api.wawuafrica.com', 'wss://api.wawuafrica.com']));
+  });
+  it('the live socket address the app builds is covered by connect-src', () => {
+    expect(directive('connect-src')).toContain('wss://api.wawuafrica.com');
+    expect('https://api.wawuafrica.com'.replace(/^http/i, 'ws')).toBe('wss://api.wawuafrica.com');
+  });
+  it('media-src names the own bucket (DigitalOcean Spaces), the partner trailers (S3) and the theme song host', () => {
+    expect(directive('media-src')).toEqual(expect.arrayContaining(['https://*.digitaloceanspaces.com', 'https://*.amazonaws.com', 'https://wawuafrica.com']));
+  });
+});

@@ -7,7 +7,7 @@ order: 369
 priority: after-launch
 repo: wawu-wmt-mobile
 type: money-path
-status: todo
+status: verifying
 depends_on: [WEBAPP-07]
 decisions: [R-127, R-128, R-47, R-86, R-94]
 passes: [V1, V2, V3, V4, V5, V6, V7, V8, V9]
@@ -19,9 +19,11 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-07 full walk (three walkers, all FAIL; reports in `tasks/history/WEBAPP-07.md`).
-- **Next:** a builder on `wmt/WEBAPP-08` from `wmt/BATCH-WEBAPP1`; then a T2 verifier; then the full walk again on the new batch head.
-- **History:** reports go to tasks/history/WEBAPP-08.md.
+- **Status:** built on `wmt/WEBAPP-08`, `npm run check` EXIT 0 (518 suites, 7732 tests passed, 5 skipped; gates 0 fail, 17 warn, 0 accepted). Waits for the T2 verifier.
+- **Done:** F1 to F5, F7 to F11, F13, F15. F6 is the lead's ruling (no change). F12 and F14 are ruled in the report (the built screen already matches the board; nothing the music button covers is unreachable). F16 is report only.
+- **Proof:** the web export (own TMPDIR, stack hosts baked in) holds the live purchase code ("nothing to buy", the sign-up draft, "See the tiers"); walked in Chromium behind `vercel.json`'s headers on stack fix08. See the report.
+- **Next:** the T2 verifier with the money attacks; then the full walk on the new batch head.
+- **History:** tasks/history/WEBAPP-08.md.
 
 ## Read first
 
@@ -68,8 +70,8 @@ Not in this batch (the lead carries them): the creator who cannot take a live pi
 - [ ] A person billed in dollars, a person who refreshes during sign-up, and a buyer short of money each get a way forward, never a dead end.
 - [ ] Every screen this batch touches has pictures at 390 light and dark beside its board, and at 1440.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-08.md](history/WEBAPP-08.md).
 
 ## Owner sign-off
