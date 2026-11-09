@@ -7,7 +7,7 @@ order: 368
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: verifying
+status: review
 depends_on: []
 decisions: [R-86, R-101, R-128]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,9 +19,10 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** verifying. Built on Hub branch `wmt/TIER-UPGRADE-FIX` (`691acd1`, on main `7dd5b22`), pushed, not merged: a Hub merge deploys the live server and waits for the owner's word. No migration, no new route.
-- **Next:** a full T2 verifier (V8 attacks, V2 wrong-format input, V3, V9) on the branch. Then the owner's word to merge. After the merge, the mobile repo runs `npm run api` to pick up the quote's new `newActiveUntil` (SHARED-CHANGES row TIER-UPGRADE-FIX #1); no screen has to read it for the fix to work.
-- **History:** none yet. Reports go to tasks/history/TIER-UPGRADE-FIX.md.
+- **Status:** review. Verifier (T2) found nothing medium or worse: verdict MERGE. Hub branch `wmt/TIER-UPGRADE-FIX` (`691acd1`, on main `7dd5b22`), not merged: a Hub merge deploys the live server and waits for the owner's word. No migration, no new route.
+- **Next:** the owner's word to merge the Hub branch. After the merge, the mobile repo runs `npm run api` (SHARED-CHANGES row TIER-UPGRADE-FIX #1). No screen reads `newActiveUntil` yet (the pay sheet does not); the fix works without it.
+- **Open lows (to SWEEP-MONEY, not a round):** V-L1 `docs/contract/PLANS.md` quote row does not name `newActiveUntil`; V-L2 an upgrade with no renewal quotes now-at-quote plus 365 days and the grant sets now-at-payment plus 365 days (seconds apart, measured 66 ms); V-L3 the builder's fresh-database V3 figure (236 of 244) did not reproduce, the verifier saw 244 of 244 on main and branch.
+- **History:** reports in tasks/history/TIER-UPGRADE-FIX.md.
 
 ## Read first
 
@@ -52,3 +53,4 @@ Today a person who renews a tier and then upgrades loses the days the renewal pa
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/TIER-UPGRADE-FIX.md](history/TIER-UPGRADE-FIX.md).
 
 ## Owner sign-off
+

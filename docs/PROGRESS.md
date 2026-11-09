@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 42 | 0 | 0 | 0 |
 | building | 4 | 0 | 0 | 0 |
-| verifying | 39 | 0 | 0 | 0 |
-| review | 244 | 0 | 0 | 0 |
+| verifying | 38 | 0 | 0 | 0 |
+| review | 245 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -259,6 +259,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-42](../tasks/FIX-42.md) Bills follow-ups, a skewed clock cannot settle a bill with the last bill's record, and the late-success look reaches every recent failure (You)
 - [FIX-43](../tasks/FIX-43.md) The legal assistant's answers are no longer cut off by the model's thinking (You)
 - [OWNER-1019](../tasks/OWNER-1019.md) Record the owner's four answers of 19 Oct 2026 (Q-42 to Q-45) as rulings R-70 to R-73 (You)
+- [TIER-UPGRADE-FIX](../tasks/TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for (You)
 
 ## Being verified
 
@@ -300,7 +301,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [BILLS-08](../tasks/BILLS-08.md) Bills are back: the entries on the balance card and the Wallet tab, and every kind of bill is live (You)
 - [BILLS-09](../tasks/BILLS-09.md) A prepaid bill's token and units, where a bill stands, and the checkout gate (You)
 - [BILLS-10](../tasks/BILLS-10.md) Bills against the provider's real lists: airtime numbers checked on the phone, whole network names, bouquets and plans that always draw, labels on one line (You)
-- [TIER-UPGRADE-FIX](../tasks/TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for (You)
 
 ## Being built (or fixing verifier findings)
 
