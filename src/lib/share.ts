@@ -13,9 +13,9 @@ type WebNavigator = { share?: (data: { text: string }) => Promise<void>; clipboa
 /**
  * The one way every screen shares (R-127, WEBAPP-03). On a phone it is `Share.share`, untouched. In a browser:
  * the browser's own share sheet where it has one (phone browsers, Safari, Edge); otherwise the text goes to the
- * clipboard and a plain "Link copied" (or "Copied" for text that is not a link) note shows. It always answers with an
- * `action` (the browser's share resolves with nothing, so nobody reads a missing result as a failure), and it rejects
- * only when nothing could be shared or copied, so the caller's own "could not share" line stays true.
+ * clipboard and a plain "Link copied" (or "Copied" for text that is not a link) note shows. Every path answers with an
+ * `action` (shared, or dismissed when the person closes the sheet), and it rejects only when nothing could be shared or
+ * copied, so the caller's own "could not share" line stays true.
  */
 export async function shareOut(content: ShareContent, options?: ShareOptions): Promise<ShareAction> {
   // The call is exactly the one the screens made before (no second argument unless they gave one).
