@@ -32,7 +32,9 @@ function isField(target: EventTarget | null): boolean {
 
 export function useKeypadKeys(keys: KeypadKeys): void {
   const latest = useRef(keys);
-  latest.current = keys;
+  useEffect(() => {
+    latest.current = keys;
+  });
 
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;

@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
+import { billsOffered } from '@/features/bills/offered';
 import { BillsScreen } from '@/features/bills/BillsScreen';
 import { kindInfo } from '@/features/bills/kinds';
 import { useSystemBack } from '@/features/professionals/parts';
@@ -16,6 +17,8 @@ export default function BillsRoute() {
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/'));
   useSystemBack(leave);
   if (status === 'restoring') return null;
+  // WEBAPP-06: the web has no bills entry (R-47); an old link or a typed address goes home.
+  if (!billsOffered()) return <Redirect href="/" />;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
   return <BillsScreen onBack={leave} onOpen={(kind) => router.push(kindInfo(kind).path)} onOpenBill={(id) => router.push({ pathname: '/bills/receipt/[id]', params: { id } })} />;
