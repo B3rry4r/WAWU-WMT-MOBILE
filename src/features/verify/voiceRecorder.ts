@@ -1,5 +1,7 @@
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+
+import { recordingMimeType } from './voiceWeb';
 
 /** A take the person made: where the phone wrote it and how long it ran, in seconds. */
 export type Take = { uri: string; seconds: number };
@@ -26,7 +28,12 @@ export type VoiceRecorder = {
  * an `.m4a` the Hub takes. Nothing is uploaded here: `stop` hands the file's address to the screen.
  */
 export function useVoiceRecorder(): VoiceRecorder {
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  // In a browser: MP4 audio where the browser can write it (an iPhone plays it), else the browser's own WebM, which the upload then writes again as WAV (`voiceWeb.ts`).
+  const options = useMemo(() => {
+    const mimeType = recordingMimeType();
+    return mimeType ? { ...RecordingPresets.HIGH_QUALITY, web: { mimeType, bitsPerSecond: 128000 } } : RecordingPresets.HIGH_QUALITY;
+  }, []);
+  const recorder = useAudioRecorder(options);
   const state = useAudioRecorderState(recorder, 200);
   const [refused, setRefused] = useState<MicRefusal | null>(null);
 
