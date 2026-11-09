@@ -21,9 +21,9 @@ describe('the sign-up draft', () => {
 
   it('on the web: saves the details, never the password, and clears', () => {
     os = jest.replaceProperty(Platform, 'OS', 'web');
-    saveSignupDraft({ firstName: 'Ada', lastName: 'Obi', username: 'ada', email: 'ada@example.com', phone: '+2348031234567', password: 'hunter2hunter2' } as never);
+    saveSignupDraft({ firstName: 'Ada', lastName: 'Obi', username: 'ada', email: 'ada@example.com', phone: '+2348031234567', phoneCountry: 'NG', countryCode: 'NG', password: 'hunter2hunter2' } as never);
     expect(store.get(SIGNUP_DRAFT_KEY)).not.toContain('hunter2');
-    expect(readSignupDraft()).toEqual({ firstName: 'Ada', lastName: 'Obi', username: 'ada', email: 'ada@example.com', phone: '+2348031234567' });
+    expect(readSignupDraft()).toEqual({ firstName: 'Ada', lastName: 'Obi', username: 'ada', email: 'ada@example.com', phone: '+2348031234567', phoneCountry: 'NG', residence: 'NG' });
     clearSignupDraft();
     expect(readSignupDraft()).toBeUndefined();
   });

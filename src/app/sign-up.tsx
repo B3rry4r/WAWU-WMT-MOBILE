@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { pickedAccountType } from '@/features/auth/accountType';
@@ -22,6 +22,7 @@ export default function SignUpRoute() {
   // The Hub's countries (GEO-03, R-85): the phone field's list and the country of residence. Public, so asked before anyone is signed in.
   const countries = useCountries();
   // WEBAPP-08 F5: after a refresh the module's memory is empty but the tab still holds the waiting sign-up (session storage): the link to its code comes back, and so does what was typed (never the password).
+  const phoneCountry = useRef<string | undefined>(undefined);
   const [draft] = useState(() => readSignupDraft());
 
   // Each time A3 comes into focus (a first visit, and a return from A4): the setting can change while the app is open,
@@ -52,8 +53,11 @@ export default function SignUpRoute() {
       onRetryCountries={() => void countries.refetch()}
       checkUsername={askUsername}
       initial={draft}
+      onPhoneCountry={(code) => {
+        phoneCountry.current = code;
+      }}
       onContinue={async (values) => {
-        saveSignupDraft(values);
+        saveSignupDraft({ ...values, phoneCountry: phoneCountry.current });
         try {
           await startSignup(values, pickedAccountType());
         } catch (error) {

@@ -40,7 +40,7 @@ describe('WEBAPP-08: the web CSP lets the live socket and the media through', ()
     expect(directive('connect-src')).toContain('wss://api.wawuafrica.com');
     expect('https://api.wawuafrica.com'.replace(/^http/i, 'ws')).toBe('wss://api.wawuafrica.com');
   });
-  it('media-src names the own bucket (DigitalOcean Spaces), the partner trailers (S3) and the theme song host', () => {
-    expect(directive('media-src')).toEqual(expect.arrayContaining(['https://*.digitaloceanspaces.com', 'https://*.amazonaws.com', 'https://wawuafrica.com']));
+  it('media-src is exactly the app, blobs, the own bucket (DigitalOcean Spaces) and the theme song host', () => {
+    expect(directive('media-src')).toEqual(["'self'", 'blob:', 'https://*.digitaloceanspaces.com', 'https://wawuafrica.com']);
   });
 });

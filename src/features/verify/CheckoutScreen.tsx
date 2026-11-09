@@ -15,6 +15,7 @@ import { PointsFrame } from '@/features/points/PointsFrame';
 import { heldSubscription } from '@/features/store/buy';
 import { RestoreRow, SaidBanner, StoreUnready } from '@/features/store/StoreParts';
 import { buyLabel } from '@/features/store/model';
+import { useUpgradeCharge } from '@/features/store/webwallet/useUpgradeCharge';
 import { useStoreBuyer, useStoreCatalog, type StoreBuyer } from '@/features/store/useStore';
 import type { Said } from '@/features/store/words';
 import { font, radius, space } from '@/theme';
@@ -93,9 +94,10 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
     body = <CheckoutReady tier={tier} price={item.price} kind={kind} said={buyer.said} buyer={buyer} />;
   }
 
+  const charge = useUpgradeCharge(tier?.id, kind === 'upgrade');
   const verb = kind === 'renew' ? 'Renew' : kind === 'upgrade' ? 'Upgrade' : 'Buy';
   const foot = item ? (
-    <Button testID="checkout-pay" label={buyer.busy ? 'Buying...' : buyLabel(item, verb)} full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buy()} />
+    <Button testID="checkout-pay" label={buyer.busy ? 'Buying...' : Platform.OS === 'web' && kind === 'upgrade' ? (charge ? `${verb} · ${charge}` : verb) : buyLabel(item, verb)} full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buy()} />
   ) : undefined;
 
   return (

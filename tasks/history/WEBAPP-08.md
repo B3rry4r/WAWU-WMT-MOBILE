@@ -66,3 +66,12 @@ See `tasks/history/WEBAPP-08.md` for the full report (rows, proof, pictures, NOT
 **Pictures**: 82 captures taken (390 L/D, 1440 L/D) of sign-up, tier offer (dollars), tiers (dollars, upgrade, highest), verification, checkout, pay-short, add-money, points (Cy, Verify, Founding), room, credits sheet, credits added, Me, wallet, Explore, beside boards A3, VF5a, VF5b, VF6a, VF14, I28, I29, PT4, M1, W1, X1. Looked at: the 390 pairs for VF6a L/D, I28 D, PT4 L, PT4 Founding D, A3 D, VF5a D, VF5a tiers L, VF5b D, VF14 L, I29 D, M1 D, wallet, Explore, the 1440 light contact sheet and Me 1440. Not individually looked at: the 390 dark and 1440 dark contact sheets (generated). Board differences seen are the web's wallet pay sheet (R-128) and the built sign-up fields, not this batch.
 
 NOT RUN: android jest preset; real Flixora trailer host; a real phone; Safari and Firefox. Setup note: for the credits-added picture the test user's credit count was zeroed in my own test database.
+
+## Builder fix round 1 (9 Nov 2026)
+Verifier branch fast-forwarded in (1f6df5e). Stack fix08 again, new export; walked in Chromium behind vercel.json's headers.
+- F5 HIGH: the draft keeps the phone's country and the residence country with the phone (never the password). Walked: +234 number, Continue, Back, refresh /sign-up, password, agree, Continue: the POST sends countryCode NG and +2348031230077.
+- F11 MEDIUM: `ChatComposer` also sends on Enter, Shift+Enter makes a new line (web only). Walked on /chat/<id>.
+- F3 MEDIUM: `*.amazonaws.com` taken out of media-src (img-src keeps it); the guard test asserts the exact list; WEB-DEPLOY updated.
+- F4 MEDIUM: /tiers for a dollar-billed person on the web has the title "Make it official", the message and a Close button. Pictures: /tmp/wmt-shots/webapp-08/r1-tiers-dollars-* (390 light and dark, 1440), boards VF5a in boards/.
+- LOW: the web upgrade buttons (/tiers and /checkout) show the Hub quote's total (`useUpgradeCharge`): "Upgrade to Founding Maker · ₦7,000" and "Upgrade · ₦7,000" (no amount until the quote has come). Pictures r1-tiers-upgrade-*, r1-checkout-upgrade-*.
+- Phone-visible changes to list: F15 cold-open landing on My works (also on the phone), the Founding chip tone, the credits-added line waiting for the fresh count.

@@ -7,7 +7,7 @@ order: 369
 priority: after-launch
 repo: wawu-wmt-mobile
 type: money-path
-status: building
+status: verifying
 depends_on: [WEBAPP-07]
 decisions: [R-127, R-128, R-47, R-86, R-94]
 passes: [V1, V2, V3, V4, V5, V6, V7, V8, V9]
