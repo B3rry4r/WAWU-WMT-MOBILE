@@ -953,3 +953,10 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 5. **Same workflow.** Tiers, bundles, a separate verifier, at most two fix rounds, the batch full check, then a full walk of the web app as every user type at 390 and 1440 on the exact code before it goes live (owner hard rules 5 and 6 hold for a web release as for a build).
 - wawuafrica.com is unchanged (R-48, R-126).
 **Carried out by:** WEBAPP-00 (readiness check), the WEBAPP tasks cut from it, the web walk, then the deploy items.
+
+### R-128 · On the web app, what the phone sells through the stores is paid from the wallet
+*Lead default (9 Nov 2026), from R-44, R-86 and R-101; the owner may override.* R-86 routes points, ticks, tiers, WAWU Credits packs and community passes to Apple and Google because of the stores' rules, and says the website keeps its own payments; R-101 says the website keeps the wallet. The stores' rules do not reach a web page, and usewmt.com cannot open a store sheet (WEBAPP-00 found every store screen saying "Buy in the app").
+1. On the web build (`Platform.OS === 'web'`), those purchases are paid from the person's wallet through the Hub's wallet routes, the same routes the website uses (R-44), at the list price with no store cut, with the PIN and `Idempotency-Key` like every wallet payment. The creator's 85% is worked out on the list price.
+2. The phone app is unchanged: the stores, as R-86 and R-101 say.
+3. A person without a wallet meets the open-wallet step first, as for any wallet payment (R-6).
+**Carried out by:** WEBAPP-06.
