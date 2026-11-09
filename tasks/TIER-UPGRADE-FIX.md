@@ -7,7 +7,7 @@ order: 368
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: review
 depends_on: []
 decisions: [R-86, R-101, R-128]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,9 +19,10 @@ tier: T2
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Found by the WEBAPP-05/06 verifier (V8, an upgrade after a renew reset the end date) and read in the Hub source by the WEBAPP-06 builder (`tasks/WEBAPP-06.md`, "Hub findings for the lead", item b).
-- **Next:** a builder starts from the brief below. The fix is built and verified on a branch; it merges (which deploys the live Hub) only on the owner's word.
-- **History:** none yet. Reports go to tasks/history/TIER-UPGRADE-FIX.md.
+- **Status:** review. Verifier (T2) found nothing medium or worse: verdict MERGE. Hub branch `wmt/TIER-UPGRADE-FIX` (`691acd1`, on main `7dd5b22`), not merged: a Hub merge deploys the live server and waits for the owner's word. No migration, no new route.
+- **Next:** the owner's word to merge the Hub branch. After the merge, the mobile repo runs `npm run api` (SHARED-CHANGES row TIER-UPGRADE-FIX #1). No screen reads `newActiveUntil` yet (the pay sheet does not); the fix works without it.
+- **Open lows (to SWEEP-MONEY, not a round):** V-L1 `docs/contract/PLANS.md` quote row does not name `newActiveUntil`; V-L2 an upgrade with no renewal quotes now-at-quote plus 365 days and the grant sets now-at-payment plus 365 days (seconds apart, measured 66 ms); V-L3 the builder's fresh-database V3 figure (236 of 244) did not reproduce, the verifier saw 244 of 244 on main and branch.
+- **History:** reports in tasks/history/TIER-UPGRADE-FIX.md.
 
 ## Read first
 
@@ -47,8 +48,9 @@ Today a person who renews a tier and then upgrades loses the days the renewal pa
 - [ ] A person who upgrades without a renewal gets the same end date as today.
 - [ ] The upgrade's quote and the grant agree on the end date.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/TIER-UPGRADE-FIX.md](history/TIER-UPGRADE-FIX.md).
 
 ## Owner sign-off
+
