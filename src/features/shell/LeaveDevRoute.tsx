@@ -2,7 +2,6 @@ import { Redirect } from 'expo-router';
 
 import { useSession } from '@/api/session';
 import { useSignupGate } from '@/features/auth/signupGate';
-import { useTierOfferShowing } from '@/features/tier-offer/offerStep';
 
 /**
  * What a development-only route (a preview or the component gallery) shows in a
@@ -14,9 +13,7 @@ import { useTierOfferShowing } from '@/features/tier-offer/offerStep';
 export function LeaveDevRoute() {
   const { status } = useSession();
   const gate = useSignupGate();
-  // While the tier offer is up, "/" is not in the route graph: the visitor goes to the offer, where "/" sends them (a redirect to "/" would never resolve).
-  const offer = useTierOfferShowing();
   if (status === 'restoring' || (status === 'signedIn' && gate.phase !== 'ready')) return null;
   // A signed-in user whose sign-up still has the email step goes there: the tabs are not in the route graph for them.
-  return <Redirect href={status === 'signedIn' ? (gate.needsEmail ? '/email-code' : offer ? '/tier-offer' : '/') : '/welcome'} />;
+  return <Redirect href={status === 'signedIn' ? (gate.needsEmail ? '/email-code' : '/') : '/welcome'} />;
 }

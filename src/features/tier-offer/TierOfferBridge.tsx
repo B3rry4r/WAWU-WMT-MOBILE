@@ -1,7 +1,8 @@
-import { useRootNavigationState, useRouter } from 'expo-router';
+import { usePathname, useRootNavigationState, useRouter } from 'expo-router';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
-import { takeTierOfferCheckout } from './offerStep';
+import { takeTierOfferCheckout, useTierOfferShowing } from './offerStep';
 
 /**
  * Opens what Subscribe asked for once the tier offer is gone (TIER-OFFER, R-94). The offer screen is dropped from the route graph the moment
@@ -11,6 +12,12 @@ import { takeTierOfferCheckout } from './offerStep';
 export function TierOfferBridge({ checkout }: { checkout: { tierId: string; kind: 'tier' } | null }) {
   const router = useRouter();
   const ready = Boolean(useRootNavigationState()?.key);
+  // WEBAPP-06: a bills address (cold or in-app) is outside the route graph while the offer is up and draws nothing; it goes where "/" goes, the offer.
+  const offerUp = useTierOfferShowing();
+  const path = usePathname();
+  useEffect(() => {
+    if (Platform.OS === 'web' && ready && offerUp && path.startsWith('/bills')) router.replace('/tier-offer');
+  }, [ready, offerUp, path, router]);
   useEffect(() => {
     if (!ready || !checkout) return undefined;
     const timer = setTimeout(() => {
