@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
 import { walletBalanceQuery } from '@/api/money';
 import { PaySheet } from '@/components/pay-sheet';
@@ -35,7 +36,18 @@ export type WebBuy = {
   sheets: ReactNode;
 };
 
+const INERT: WebBuy = { busy: false, said: null, granted: null, begin: () => undefined, clear: () => undefined, sheets: null };
+
+/**
+ * The web's wallet path exists only in the web build (R-86: the phone is unchanged). On a phone this calls no hook and returns the inert
+ * shape, so phone code runs exactly what it ran before WEBAPP-06; the platform never changes inside one build, so the hook order is fixed.
+ */
 export function useWebBuy(): WebBuy {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return Platform.OS === 'web' ? useLiveWebBuy() : INERT;
+}
+
+function useLiveWebBuy(): WebBuy {
   const router = useRouter();
   const entry = useOpenWalletEntry();
   const [target, setTarget] = useState<Target | null>(null);
