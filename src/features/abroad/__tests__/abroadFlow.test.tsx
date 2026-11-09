@@ -131,6 +131,8 @@ type Mode = 'ok' | 'expired' | 'short' | 'no_answer';
 const hub = {
   enabled: true,
   mode: 'ok' as Mode,
+  /** What the list of countries answers (WEBAPP-03): the country list, a wallet-less person's 409, or a failure. */
+  corridors: 'ok' as 'ok' | 'no_wallet' | 'fail',
   rate: 'ready' as 'ready' | 'unavailable',
   /** Accounts the Hub cannot get a rate from (FX-POLISH P3): a quote from one is refused `rate_unavailable`. */
   noRateFrom: [] as string[],
@@ -210,6 +212,8 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
       availableKobo: 48_525_075,
       asOf: '2026-10-24T09:00:00.000Z',
     });
+  if (path === '/money/abroad/corridors' && hub.corridors === 'no_wallet') return refuse(409, { code: 'wallet_not_open', message: 'Open your wallet first.' });
+  if (path === '/money/abroad/corridors' && hub.corridors === 'fail') return json(500, { statusCode: 500, message: 'down' });
   if (path === '/money/abroad/corridors')
     return ok({
       enabled: hub.enabled,
@@ -375,6 +379,7 @@ beforeEach(() => {
   Object.assign(hub, {
     enabled: true,
     mode: 'ok',
+    corridors: 'ok',
     rate: 'ready',
     noRateFrom: [],
     outOfRange: null,
@@ -648,6 +653,23 @@ describe('send abroad', () => {
  * accounts they hold, with its own balance; the quote is asked in the account's currency; WAWU's fee is the foreign account's, shown
  * in that currency and counted in the total; and no naira figure is drawn for them.
  */
+describe('a new recipient when the list of countries cannot be read (WEBAPP-03)', () => {
+  it('a signed-in person with no wallet who opens /send/abroad/new is led to Open your wallet, not left on a blank page', async () => {
+    hub.corridors = 'no_wallet';
+    await renderRouter(routes, { initialUrl: '/send/abroad/new' });
+    await screen.findByText('Open your wallet');
+  });
+
+  it('a failed read says so with Try again, and Try again draws the screen once the Hub answers', async () => {
+    hub.corridors = 'fail';
+    await renderRouter(routes, { initialUrl: '/send/abroad/new' });
+    await screen.findByTestId('abroad-corridors-error');
+    hub.corridors = 'ok';
+    await fireEvent.press(screen.getByRole('button', { name: /try again/i }));
+    await screen.findByTestId('abroad-country-screen');
+  });
+});
+
 describe('send abroad from a foreign account', () => {
   const GBP_ONLY = [
     {

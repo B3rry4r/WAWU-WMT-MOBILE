@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 42 | 0 | 0 | 0 |
+| todo | 39 | 0 | 0 | 0 |
 | building | 4 | 0 | 0 | 0 |
-| verifying | 39 | 0 | 0 | 0 |
+| verifying | 42 | 0 | 0 | 0 |
 | review | 244 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -301,6 +301,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [BILLS-09](../tasks/BILLS-09.md) A prepaid bill's token and units, where a bill stands, and the checkout gate (You)
 - [BILLS-10](../tasks/BILLS-10.md) Bills against the provider's real lists: airtime numbers checked on the phone, whole network names, bouquets and plans that always draw, labels on one line (You)
 - [WEBAPP-01](../tasks/WEBAPP-01.md) The web app builds and deploys from the repo (You)
+- [WEBAPP-02](../tasks/WEBAPP-02.md) On a laptop the app shows at phone width, centred (You)
+- [WEBAPP-03](../tasks/WEBAPP-03.md) The web app's small seams work in a browser (You)
+- [WEBAPP-04](../tasks/WEBAPP-04.md) Photos and voices uploaded from a browser are safe and play everywhere (You)
 
 ## Being built (or fixing verifier findings)
 

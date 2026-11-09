@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, Share, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
@@ -84,7 +85,7 @@ export function FxDetailsSheet({ visible, onClose, account, name }: FxDetailsShe
         label="Share details"
         icon="Share2"
         variant="secondary"
-        onPress={() => void Share.share({ message: shareText(account.currency, rows) })}
+        onPress={() => void shareOut({ message: shareText(account.currency, rows) })}
         testID="fx-details-share"
       />
       <PoweredByNuvion />

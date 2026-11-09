@@ -11,9 +11,9 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 import { deleteLastKey, minorOfText, pressAmountKey } from '@/features/wallet/fx/amount';
 
 import { banksQuery, corridorsQuery, rateProbeQuery, recipientsQuery, requestQuote, saveRecipient, sendAbroad, sendQuery, sourcesQuery, type Refusal } from './api';
-import { approvalPurpose, isSettled, KEYPAD_DECIMALS, type Quote, type Recipient, type Source } from './model';
+import { approvalPurpose, isSettled, KEYPAD_DECIMALS, type Corridors, type Quote, type Recipient, type Source } from './model';
 import { NewRecipientView, type BanksRead } from './NewRecipientView';
-import { AbroadAmountView, AbroadHomeView, AbroadReceiptView, AbroadReviewView, type QuoteRead, type Read } from './views';
+import { AbroadAmountView, AbroadHomeView, CorridorsFailedView, AbroadReceiptView, AbroadReviewView, type QuoteRead, type Read } from './views';
 
 /** Reads a query into the shape the views take; a wallet-less person is led to Open your wallet once. */
 function useRead<T>(query: { data: T | undefined; isPending: boolean; isError: boolean; error: unknown; refetch: () => unknown }): Read<T> {
@@ -43,6 +43,8 @@ export function AbroadHomeScreen(props: { onBack: () => void; onNew: () => void;
 export function NewRecipientScreen(props: { onBack: () => void; onSaved: (r: Recipient) => void }) {
   const owner = useSessionAccount(undefined);
   const corridors = useQuery(corridorsQuery(owner), queryClient);
+  // A person with no wallet is led to Open your wallet once; a failed read says so with Try again, never a blank page (WEBAPP-03).
+  const corridorsRead = useRead<Corridors>(corridors);
   const [saving, setSaving] = useState(false);
   const [refusal, setRefusal] = useState<Refusal | null>(null);
   const [unanswered, setUnanswered] = useState(false);
@@ -62,6 +64,8 @@ export function NewRecipientScreen(props: { onBack: () => void; onSaved: (r: Rec
     [owner],
   );
 
+  if (!corridors.data && corridorsRead.failed)
+    return <CorridorsFailedView onBack={props.onBack} onRetry={corridorsRead.retry} />;
   if (!corridors.data)
     return (
       <LoadingView testID="abroad-corridors-loading">

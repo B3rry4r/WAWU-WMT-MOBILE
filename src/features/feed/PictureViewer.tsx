@@ -1,6 +1,8 @@
 import { Image } from 'expo-image';
 import { useCallback, useState } from 'react';
-import { FlatList, Modal, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { FlatList, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
+import { FrameModal } from '@/lib/FrameModal';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -58,7 +60,8 @@ export function panLimit(box: number, zoom: number): number {
  * for every piece whose media is pictures (the piece page and the feed's photo sets); a locked piece hands it only the pictures it may show.
  */
 export function PictureViewer({ pictures, index, visible, onClose, testID = 'picture-viewer' }: PictureViewerProps) {
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
+  const width = useFrameWidth();
   const [current, setCurrent] = useState(index);
   const [zoomed, setZoomed] = useState(false);
 
@@ -82,7 +85,7 @@ export function PictureViewer({ pictures, index, visible, onClose, testID = 'pic
 
   const safe = clamp(index, 0, Math.max(0, pictures.length - 1));
   return (
-    <Modal visible={visible && pictures.length > 0} animationType="fade" transparent={false} statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>
+    <FrameModal visible={visible && pictures.length > 0} animationType="fade" transparent={false} statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>
       <GestureHandlerRootView style={styles.root}>
         <View testID={testID} style={styles.root}>
           <FlatList
@@ -102,7 +105,7 @@ export function PictureViewer({ pictures, index, visible, onClose, testID = 'pic
           <TopBar testID={testID} current={current} total={pictures.length} onClose={onClose} />
         </View>
       </GestureHandlerRootView>
-    </Modal>
+    </FrameModal>
   );
 }
 

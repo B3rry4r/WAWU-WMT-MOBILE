@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 
 import { openAd } from '@/features/ads/api';
 import { useAdReports } from '@/features/ads/useAd';
@@ -86,7 +87,8 @@ export type ExploreSliderProps = {
  * only while Explore is on show and the app is in front, never with the phone's reduce-motion setting on, and a touch pauses it.
  */
 export function ExploreSlider({ slides, showing, onOpenEvent }: ExploreSliderProps) {
-  const window = useWindowDimensions();
+  const screen = useWindowDimensions();
+  const window = { width: useFrameWidth(), height: screen.height };
   const [measured, setMeasured] = useState<number | null>(null);
   const [index, setIndex] = useState(0);
   // The slide the person is on, by its key: a refetch that inserts or reorders slides keeps them on the same one

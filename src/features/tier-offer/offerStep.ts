@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import { Platform } from 'react-native';
 
 import { getAccessToken, onSessionEnd } from '@/api/session';
 import { accountTypeWriteResult } from '@/features/auth/accountTypeWrite';
@@ -30,6 +31,28 @@ import { fetchTierOffer, markTierOfferSeen } from './api';
  *     drawn (the next start asks). Only a start, or a sign-in after a sign-out, holds the splash, and only for the bounded wait.
  */
 export const TIER_OFFER_WAIT_MS = 2500;
+
+/**
+ * On the web a "start" is a browser session (the tab), not a page load (R-127, WEBAPP-03): once the offer has been drawn for a person, a
+ * refresh in the same tab does not ask the Hub again. A new tab, or a tab opened another day, is a new start. A phone is unchanged.
+ */
+export const TIER_OFFER_SEEN_KEY = 'wmt.tierOfferSeen';
+function seenInThisTab(sub: string): boolean {
+  if (Platform.OS !== 'web') return false;
+  try {
+    return sessionStorage.getItem(TIER_OFFER_SEEN_KEY) === sub;
+  } catch {
+    return false;
+  }
+}
+function markSeenInThisTab(sub: string | null): void {
+  if (Platform.OS !== 'web' || !sub) return;
+  try {
+    sessionStorage.setItem(TIER_OFFER_SEEN_KEY, sub);
+  } catch {
+    // A browser that refuses storage asks again on a refresh, as before.
+  }
+}
 
 type Phase = 'idle' | 'asking' | 'visible' | 'done';
 type State = {
@@ -87,6 +110,10 @@ async function ask(): Promise<void> {
     publish({ ...state, phase: 'done' });
     return;
   }
+  if (seenInThisTab(sub)) {
+    publish({ ...state, sub, phase: 'done' });
+    return;
+  }
   publish({ ...state, sub, phase: 'asking' });
   let answer = await within(fetchTierOffer().catch(() => null), TIER_OFFER_WAIT_MS);
   if (!answer?.show && state.sub === sub && state.phase === 'asking') {
@@ -106,6 +133,7 @@ async function ask(): Promise<void> {
 export function settleTierOffer(): void {
   if (settled) return;
   settled = true;
+  markSeenInThisTab(state.sub);
   void markTierOfferSeen().catch(() => {
     // The Hub could not be told: nothing changes here; the next start asks the Hub again.
   });

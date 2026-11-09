@@ -1,6 +1,7 @@
 import { QueryClientContext, useInfiniteQuery, useQuery, type QueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useState } from 'react';
-import { AccessibilityInfo, Linking, ScrollView, Share, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { AccessibilityInfo, Linking, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/query';
@@ -173,7 +174,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
     if (!me.data) return;
     setNotice(null);
     try {
-      await Share.share({ message: profileShareText(nameOf(me.data), me.data.handle) });
+      await shareOut({ message: profileShareText(nameOf(me.data), me.data.handle) });
     } catch {
       setNotice('Sharing is not available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');

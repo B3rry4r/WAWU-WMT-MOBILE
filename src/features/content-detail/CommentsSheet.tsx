@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { FrameModal } from '@/lib/FrameModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, IconButton } from '@/components/Button';
@@ -121,7 +122,7 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <FrameModal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root} testID="comments-sheet" accessibilityViewIsModal>
         {reporting.element}
         <Pressable testID="comments-backdrop" accessible={false} onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: colors.surfaceScrim }]} tabIndex={-1} />
@@ -187,7 +188,7 @@ export function CommentsSheet({ visible, onClose, count, page }: CommentsSheetPr
           </View>
         </KeyboardAvoidingView>
       </View>
-    </Modal>
+    </FrameModal>
   );
 }
 

@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -104,7 +105,7 @@ export function SchoolScreen({ id, onBack, onOpenCourse }: SchoolScreenProps) {
 
   const data = school.data;
   const share = () => {
-    Share.share({ message: [data.name, data.location].join('\n') }).catch(() => undefined);
+    shareOut({ message: [data.name, data.location].join('\n') }).catch(() => undefined);
   };
 
   return (

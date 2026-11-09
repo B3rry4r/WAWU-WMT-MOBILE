@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type DimensionValue, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
@@ -157,7 +158,8 @@ type CardsProps = {
 
 function Cards({ date, day, ad, marked, onClose, onOpenEvent }: CardsProps) {
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
+  const width = useFrameWidth();
   const [at, setAt] = useState(0);
   // The sponsored card joins the steps only while its place is still ahead: a card that arrives once the person is on the
   // takeaway is not put in front of them, and one that goes is not taken from under them.

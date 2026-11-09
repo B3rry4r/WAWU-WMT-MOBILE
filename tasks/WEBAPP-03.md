@@ -7,7 +7,7 @@ order: 363
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-127, R-47]
 passes: [V1, V6, V7, V9]
@@ -19,9 +19,11 @@ tier: T1
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-00 readiness check (`docs/analysis/WEB-APP-READINESS.md`).
-- **Next:** a builder starts from the brief below.
-- **History:** none yet. Reports go to tasks/history/WEBAPP-03.md.
+- **Status:** verifying. Built on branch `wmt/WEBAPP-02` (bundle WEBAPP-02, 03, 04), mobile and Hub worktrees.
+- **Branches:** mobile `wmt/WEBAPP-02`; Hub `wmt/WEBAPP-02` (aae111a, CORS only; no merge, a Hub merge deploys).
+- Share: `src/lib/share.ts` (`shareOut`) replaces all 20 `Share.share` call sites; note `shareNote.tsx`. Return: `returnPath.ts`. Abroad new: failed or wallet-less read leads to Open your wallet or a Try again. Tier offer once per tab (sessionStorage). Alert sound row not drawn on web. Hub: `exposedHeaders: ['Retry-After']`.
+- **Open findings:** verifier FIX, see the Verifier report in tasks/history/WEBAPP-03.md (bundle findings 1 to 6). NOT RUN and PHONE CHECK items are in the report in `tasks/history/WEBAPP-03.md`.
+- **Next:** fix round 1 built (see history); the verifier re-checks the named ids.
 
 ## Read first
 
@@ -52,8 +54,8 @@ The everyday paths behave in a browser the way they do on a phone: share works e
 - [ ] A tierless user sees the tier offer once per browser session, not on every refresh.
 - [ ] A user sees no control on the web that does nothing.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-03.md](history/WEBAPP-03.md).
 
 ## Owner sign-off

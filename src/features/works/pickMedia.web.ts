@@ -1,3 +1,5 @@
+import { isPhoto, redrawPhoto } from '@/features/media/redrawPhoto';
+
 import type { PickedFile } from './form';
 
 export type { PickedFile } from './form';
@@ -14,23 +16,22 @@ const extensionOf = (type: string, name: string): string => {
   return name.split('.').pop() ?? 'jpg';
 };
 
-/** Resolves with the chosen files (none when the person closes the chooser without choosing). */
+/** Resolves with the chosen files, each photo written again with no Exif or GPS (`PickFailed` when one cannot be read), none when the person closes the chooser without choosing. */
 export function pickMedia(): Promise<PickedFile[]> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = ACCEPT;
     input.multiple = true;
     input.onchange = () => {
       const files = Array.from(input.files ?? []);
-      resolve(
-        files.map((file) => ({
-          blob: file,
-          contentType: file.type || 'image/jpeg',
-          extension: extensionOf(file.type, file.name),
-          previewUri: URL.createObjectURL(file),
-        })),
-      );
+      Promise.all(
+        files.map(async (file): Promise<PickedFile> => {
+          if (!isPhoto(file.type)) return { blob: file, contentType: file.type || 'image/jpeg', extension: extensionOf(file.type, file.name), previewUri: URL.createObjectURL(file) };
+          const out = await redrawPhoto(file);
+          return { blob: out.blob, contentType: out.contentType, extension: out.extension, previewUri: URL.createObjectURL(out.blob) };
+        }),
+      ).then(resolve, reject);
     };
     input.oncancel = () => resolve([]);
     input.click();

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Share, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -71,7 +72,7 @@ export function WithdrawReceiptScreen({ id, onDone, onFailed }: WithdrawReceiptS
     if (!transfer) return;
     setNotice(null);
     try {
-      await Share.share({ message: withdrawShareText(transfer) });
+      await shareOut({ message: withdrawShareText(transfer) });
     } catch {
       setNotice('Sharing isn’t available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');

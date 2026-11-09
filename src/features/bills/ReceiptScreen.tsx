@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { AccessibilityInfo, Share, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { ApiError, isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -148,7 +149,7 @@ export function ReceiptScreen({ id, onDone, onTryAgain }: ReceiptScreenProps) {
     if (!bill) return;
     setNotice(null);
     try {
-      await Share.share({ message: shareText(bill) });
+      await shareOut({ message: shareText(bill) });
     } catch {
       setNotice('Sharing isn’t available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');

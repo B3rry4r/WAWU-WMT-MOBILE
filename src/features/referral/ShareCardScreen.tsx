@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
@@ -78,7 +79,7 @@ export function ShareCardScreen({ onClose }: ShareCardScreenProps) {
           ? (await queryClient.fetchQuery({ queryKey: PHONE_CAN_SHARE, queryFn: canShareCard, staleTime: Infinity }).catch(() => false)) === true
           : asPicture;
         if (picture) await shareCardFile(await pictureOfCard(cardRef), 'Share your invite');
-        else await Share.share({ message: `${CARD_LINE} ${link ?? ''}`.trim() });
+        else await shareOut({ message: `${CARD_LINE} ${link ?? ''}`.trim() });
       } catch {
         setProblem(COULD_NOT_SHARE);
       }

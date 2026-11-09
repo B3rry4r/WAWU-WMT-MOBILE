@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { ApiError } from '@/api/errors';
 import { isApiError } from '@/api/client';
@@ -305,7 +306,7 @@ export function PublishScreen(props: PublishScreenProps) {
 
   const share = () => {
     const link = published ? productLink(published) : null;
-    if (link) void Share.share({ message: link }, { dialogTitle: 'Share your product' }).catch(() => undefined);
+    if (link) void shareOut({ message: link }, { dialogTitle: 'Share your product' }).catch(() => undefined);
   };
 
   const failed = (draft.isError && !draft.data) || (tier.isError && !tier.data) || (formats.isError && !formats.data) || (progress.isError && !progress.data);

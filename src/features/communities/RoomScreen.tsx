@@ -1,16 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Pressable,
-  Share,
-  StyleSheet,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from 'react-native';
+import { FlatList, KeyboardAvoidingView, Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -195,7 +187,7 @@ function SignedInRoom({ id, onBack }: RoomScreenProps) {
           credits.data?.creditBalance !== undefined ? (
             <CreditPill credits={credits.data.creditBalance} />
           ) : (
-            <CoverShare onPress={() => void Share.share({ message: sendableRoomLink(room.data?.link ?? '') }).catch(() => undefined)} />
+            <CoverShare onPress={() => void shareOut({ message: sendableRoomLink(room.data?.link ?? '') }).catch(() => undefined)} />
           )
         }
         testID="room-cover"

@@ -11,6 +11,7 @@ import {
   type AccessibilityActionEvent,
   type LayoutChangeEvent,
 } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -130,7 +131,8 @@ type WheelTarget = {
  */
 export function PhotoPositionScreen({ kind, link, onSave, onCancel }: PhotoPositionScreenProps) {
   const insets = useSafeAreaInsets();
-  const window = useWindowDimensions();
+  const screen = useWindowDimensions();
+  const window = { width: useFrameWidth(), height: screen.height };
   const copy = COPY[kind];
   const { uri, position: held } = useMemo(() => splitPhotoLink(link), [link]);
 
