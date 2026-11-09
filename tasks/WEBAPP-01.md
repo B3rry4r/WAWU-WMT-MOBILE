@@ -7,7 +7,7 @@ order: 361
 priority: after-launch
 repo: wawu-wmt-mobile
 type: setup
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-127]
 passes: [V1]
@@ -19,9 +19,12 @@ tier: T0
 ## Current state
 
 As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-00 readiness check (`docs/analysis/WEB-APP-READINESS.md`).
-- **Next:** a builder starts from the brief below.
-- **History:** none yet. Reports go to tasks/history/WEBAPP-01.md.
+- **Status:** verifying. Built on `wmt/WEBAPP-01` (mobile repo only; no backend change).
+- **Done:** `web:export` script; `vercel.json` (build, output, rewrite, cache, security headers, CSP); `linkOrigin()` in `src/lib/appLinks.ts` (web uses the page's origin, phone keeps `LINK_ORIGIN`) with `receiptLink` and `contentShareLink`, `contentLink` now uses it; `docs/WEB-DEPLOY.md`.
+- **Follow-up (lead diff read):** `unsafe-inline` removed from script-src (tokens are in localStorage on the web; the export has no inline script, only one style); `src/__tests__/webCsp.test.ts` fails on any inline script whose sha256 is not in script-src; ADD_MONEY_RETURN_URL note corrected.
+- **Open findings:** none known.
+- **Next:** lead reads the diff (T0, no verifier agent), then merge in the next batch.
+- **History:** reports in tasks/history/WEBAPP-01.md.
 
 ## Read first
 
@@ -48,8 +51,8 @@ The owner connects this repo to Vercel and usewmt.com serves the app: one comman
 - [ ] A user who shares a link from the web app sends a usewmt.com link; the phone app still sends wawuafrica.com links (unit test on both platforms).
 - [ ] The owner can follow `docs/WEB-DEPLOY.md` from an empty Vercel account to a live usewmt.com without asking anything.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-01.md](history/WEBAPP-01.md).
 
 ## Owner sign-off

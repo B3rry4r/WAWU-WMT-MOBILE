@@ -2,7 +2,7 @@ import type { IconName } from '@/components/icon';
 import { nairaToKobo } from '@/api/kobo';
 import type { FeedCreator, FeedItem } from '@/features/feed/api';
 import { clock, compactCount, durationSeconds, durationText } from '@/features/feed/model';
-import { LINK_ORIGIN, readableLink } from '@/lib/appLinks';
+import { contentShareLink, readableLink } from '@/lib/appLinks';
 
 import type { Comment, Engagement, Maker, Piece, PieceDetail } from './api';
 
@@ -188,7 +188,7 @@ export const priceKobo = (piece: Pick<Piece, 'price'>): number => nairaToKobo(pi
 /** Where a piece lives when it is shared: `https://wawuafrica.com/content/<id>`. The page's own path, so a link the Hub's website gains opens here (G-HOME-03-2). */
 export const CONTENT_PATH_PREFIX = '/content/';
 
-export const contentLink = (id: string): string => `${LINK_ORIGIN}${CONTENT_PATH_PREFIX}${encodeURIComponent(id)}`;
+export const contentLink = (id: string): string => contentShareLink(id);
 
 /** What goes out with a share: the title, who made it, and the link. */
 export function shareText(title: string, by: string | null, link: string): string {
