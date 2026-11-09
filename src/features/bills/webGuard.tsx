@@ -1,6 +1,8 @@
 import { Redirect } from 'expo-router';
 import type { ComponentType } from 'react';
 
+import { useSession } from '@/api/session';
+
 import { billsOffered } from './offered';
 
 /**
@@ -9,7 +11,10 @@ import { billsOffered } from './offered';
  */
 export function withBillsGuard(Page: ComponentType): ComponentType {
   function Guarded() {
-    return billsOffered() ? <Page /> : <Redirect href="/" />;
+    const { status } = useSession();
+    if (billsOffered()) return <Page />;
+    // The route graph is ready once the session is read: a redirect before that draws nothing.
+    return status === 'restoring' ? null : <Redirect href="/" />;
   }
   return Guarded;
 }
