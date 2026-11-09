@@ -127,7 +127,7 @@ function PackRow({ item, on, chip, disabled, onPress }: { item: StoreItem; on: b
         <PointsFigure count={count} size="row" />
         {chip ? (
           <View style={styles.chip}>
-            <StatusPill label={chip} tone="accent" />
+            <StatusPill label={chip} tone="accentReadable" />
           </View>
         ) : null}
       </View>

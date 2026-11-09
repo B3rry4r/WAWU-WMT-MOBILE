@@ -28,7 +28,7 @@
         { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=(), payment=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.digitaloceanspaces.com https://*.amazonaws.com; media-src 'self' blob: https://*.digitaloceanspaces.com https://wawuafrica.com; font-src 'self' data:; connect-src 'self' data: blob: https://api.wawuafrica.com https://id.wawuafrica.com https://*.digitaloceanspaces.com https://fastly.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.digitaloceanspaces.com https://*.amazonaws.com; media-src 'self' blob: https://*.digitaloceanspaces.com https://wawuafrica.com; font-src 'self' data:; connect-src 'self' data: blob: https://api.wawuafrica.com wss://api.wawuafrica.com https://id.wawuafrica.com https://*.digitaloceanspaces.com https://fastly.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     }

@@ -1,3 +1,4 @@
+9 Nov 2026 · WEBAPP-08 · web walk fixes F1 to F15 built (live purchase hook in the export, wss in the CSP, dollars offer, sign-up draft, wallet words, Enter sends); checks EXIT 0
 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)
 9 Nov 2026 · WEBAPP-05, WEBAPP-06 · The PIN and amount keypads take a laptop keyboard, the hosted selfie opens in the same tab and returns to the web app, tiers, points, credits, the upload pack and community passes are paid from the wallet on the web, and the web draws no Bills entry (verifying)
 # Work log

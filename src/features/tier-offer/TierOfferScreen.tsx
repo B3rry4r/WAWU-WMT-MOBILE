@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -8,10 +8,10 @@ import { queryClient } from '@/api/query';
 import { IconButton } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Skeleton } from '@/components/Skeleton';
-import { ErrorState } from '@/components/StateViews';
+import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
-import { tierItemOf } from '@/features/store/model';
+import { NOT_OPEN_LINE, NOT_OPEN_TITLE, tierItemOf } from '@/features/store/model';
 import { StoreUnready } from '@/features/store/StoreParts';
 import { useStoreCatalog } from '@/features/store/useStore';
 import { TierCard } from '@/features/verify/TiersScreen';
@@ -32,6 +32,8 @@ export type TierOfferScreenProps = {
   onClose: () => void;
   /** A tier's Subscribe: the store checkout (VF6) with that tier, where Buy opens the store sheet (R-86). The same for everyone, whatever currency they are billed in. */
   onSubscribe: (tierId: string) => void;
+  /** WEBAPP-08 F4 (web only): a person billed in dollars has no tier on sale in naira; "See the tiers" ends the offer and opens the tiers sheet, which says what is open (R-94). */
+  onSeeTiers?: () => void;
 };
 
 /**
@@ -44,7 +46,7 @@ export type TierOfferScreenProps = {
  * switched the X off, a "Not now" button at the foot. The way out stays through loading, an error and a store that is not open, so no state of this
  * screen is a dead end.
  */
-export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOfferScreenProps) {
+export function TierOfferScreen({ closeButton, onClose, onSubscribe, onSeeTiers }: TierOfferScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const owner = useSessionAccount(undefined);
@@ -86,6 +88,9 @@ export function TierOfferScreen({ closeButton, onClose, onSubscribe }: TierOffer
     );
   } else if (store.state.kind !== 'ready') {
     body = <StoreUnready state={store.state} onRetry={store.refetch} testID="tier-offer" />;
+  } else if (offers.length === 0 && Platform.OS === 'web' && plans.data.currency === 'USD' && onSeeTiers) {
+    // The web sells in naira only (R-16): a person billed in dollars is led to the tiers sheet, which says what is open, not told to try again.
+    body = <EmptyState testID="tier-offer-dollars" icon="Clock" title={NOT_OPEN_TITLE} message={NOT_OPEN_LINE} action={{ label: 'See the tiers', onPress: onSeeTiers }} />;
   } else if (offers.length === 0) {
     body = (
       <ErrorState

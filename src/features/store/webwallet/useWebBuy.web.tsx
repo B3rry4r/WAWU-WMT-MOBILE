@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { walletBalanceQuery } from '@/api/money';
+import { queryClient } from '@/api/query';
 import { PaySheet } from '@/components/pay-sheet';
 import { PAYMENT_UNANSWERED_LINE } from '@/components/pin-sheet';
 import { PayPinSheet } from '@/features/device-approval';
@@ -67,6 +68,12 @@ export function useWebBuy(): WebBuy {
     ? ({ id: paid.id, platform: 'web', storeProductId: target.spec.kind, kind: target.spec.kind === 'pass' ? 'pass' : target.spec.kind === 'credits' ? 'credits' : target.spec.kind === 'points_pack' ? 'points' : target.spec.kind === 'extra_products' ? 'extra_products' : 'tier', status: 'granted', alreadyGranted: false, grant: target.grants ?? {}, purchasedAt: new Date().toISOString(), expiresAt: null, flag: null } as unknown as StorePurchaseView)
     : null;
 
+  // WEBAPP-08 F8: what a grant changes (the credits count, the tier, the points, the rooms) is read from the Hub again the moment the Hub says paid, as the phone's store path does.
+  const grantedId = granted?.id ?? null;
+  useEffect(() => {
+    if (grantedId) void queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'store' || q.queryKey[1] === 'credits' });
+  }, [grantedId]);
+
   const said: Said | null = flow.notice !== null && !flow.payOpen ? { tone: 'danger', line: flow.notice } : null;
   const busy = flow.asking || flow.payOpen || flow.pinOpen;
 
@@ -76,7 +83,11 @@ export function useWebBuy(): WebBuy {
     granted,
     begin,
     clear,
-    sheets: <WebBuySheets flow={flow} title={target?.title ?? ''} verb={target?.verb ?? 'Buy'} onAddMoney={(short) => router.push(addMoneyHref(short))} onOpenWallet={entry.open} onForgotPin={() => router.push('/reset-pin')} />,
+    sheets: <WebBuySheets flow={flow} title={target?.title ?? ''} verb={target?.verb ?? 'Buy'} onAddMoney={(short) => {
+      // WEBAPP-08 F7: the pay sheet closes as the person is sent to Add money, so it never sits over the account number.
+      flow.cancel();
+      router.push(addMoneyHref(short));
+    }} onOpenWallet={entry.open} onForgotPin={() => router.push('/reset-pin')} />,
   };
 }
 

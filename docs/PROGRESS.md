@@ -7,10 +7,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 38 | 0 | 0 | 0 |
+| todo | 37 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 44 | 0 | 0 | 0 |
-| review | 246 | 0 | 0 | 0 |
+| review | 247 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -261,6 +261,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OWNER-1019](../tasks/OWNER-1019.md) Record the owner's four answers of 19 Oct 2026 (Q-42 to Q-45) as rulings R-70 to R-73 (You)
 - [WEBAPP-07](../tasks/WEBAPP-07.md) The whole web app walked as every kind of user (You)
 - [TIER-UPGRADE-FIX](../tasks/TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for (You)
+- [WEBAPP-08](../tasks/WEBAPP-08.md) The web walk's fixes (Phase 1 fix batch) (You)
 
 ## Being verified
 

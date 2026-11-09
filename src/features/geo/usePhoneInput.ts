@@ -23,9 +23,9 @@ export type PhoneInput = {
  * own when the Hub's list holds it, else Nigeria; a number typed with its country code (`+233...`) moves the country to it,
  * and a country picked in the list changes how the number is grouped and read.
  */
-export function usePhoneInput(countries: readonly GeoCountry[] | undefined, region?: string | null, initialText = ''): PhoneInput {
+export function usePhoneInput(countries: readonly GeoCountry[] | undefined, region?: string | null, initialText = '', initialCountry: string | null = null): PhoneInput {
   const dialable = useMemo(() => (countries ?? []).filter((c) => c.dialCode), [countries]);
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(initialCountry);
   const [typed, setTyped] = useState(initialText);
   const country = picked ?? (dialable.length > 0 ? startingCountry(dialable, region) : FALLBACK_COUNTRY);
   const value = formatTyped(typed, country);

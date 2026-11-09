@@ -94,6 +94,13 @@ export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }:
     if (!canSend) return;
     if (onSend(value)) setValue('');
   };
+  // WEBAPP-08 F11: in a browser Enter sends and Shift+Enter makes a new line (not while an input method is composing).
+  const sendOnEnter = (e: { nativeEvent: { key?: string; shiftKey?: boolean; isComposing?: boolean }; preventDefault?: () => void }) => {
+    const k = e.nativeEvent;
+    if (k.key !== 'Enter' || k.shiftKey || k.isComposing) return;
+    e.preventDefault?.();
+    press();
+  };
   return (
     <View
       testID={testID}
@@ -112,6 +119,7 @@ export function ChatComposer({ onSend, busy, onPlus, testID = 'chat-composer' }:
         numberOfLines={Platform.OS === 'web' ? 1 : undefined}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
+        onKeyPress={Platform.OS === 'web' ? sendOnEnter : undefined}
         style={[
           styles.field,
           Platform.OS === 'web' ? browserOutlineOff : null,
