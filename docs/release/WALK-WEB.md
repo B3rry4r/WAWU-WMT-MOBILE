@@ -14,11 +14,14 @@ in `tasks/history/WEBAPP-0*.md` on the batch branch (do not re-report them unles
 stack", and `scripts/dev/nuvion-tool.cjs` (a funded wallet, webhooks).
 
 ## Your stack
-- A worktree of the batch: `git -C /home/user/wawu-wmt-mobile worktree add /home/user/wt/walk-<letter> ffdc271`; set
-  `STACK_NM_MOBILE=/home/user/wawu-wmt-mobile/node_modules` (hard links when the lockfile is the same). Never work in
+- A worktree of the batch: `git -C /home/user/wawu-wmt-mobile worktree add /home/user/wt/walk-<letter> ffdc271`, with
+  `node_modules` a symlink to `/home/user/wawu-wmt-mobile/node_modules` (same lockfile). Not `STACK_NM_MOBILE`: walker C
+  found an export from hard-linked modules bundles React twice and draws a blank page (to be explained; walker A builds the
+  export the way Vercel does to settle it). Never work in
   the lead's clones (`/home/user/wawu-wmt-mobile`, `/home/user/WAWU-Backend`, `/home/user/wawu-id`); read from them only.
-- Start it with the lock, so only one export builds at a time:
-  `flock /tmp/wmt-walk-stack.lock env STACK_PG_URL=postgresql://postgres@127.0.0.1:14001 STACK_SCRATCH=/tmp/wmt-walk/<letter> /home/user/WAWU-Backend/scripts/dev/stack.sh up --name walk<letter> --ports <a>-<b> --with id,mobile --id /home/user/wawu-id --mobile /home/user/wt/walk-<letter>`
+- Start it with the lock, so only one export builds at a time (`-o`: the stack's servers must not keep the lock; the
+  first version of this line without it held the lock for as long as a stack was up):
+  `flock -o /tmp/wmt-walk-stack2.lock env STACK_PG_URL=postgresql://postgres@127.0.0.1:14001 STACK_SCRATCH=/tmp/wmt-walk/<letter> /home/user/WAWU-Backend/scripts/dev/stack.sh up --name walk<letter> --ports <a>-<b> --with id,mobile --id /home/user/wawu-id --mobile /home/user/wt/walk-<letter>`
   plus the mail and storage stand-ins the README names, so a sign-up code can be read and an upload can be read back.
 - Ports: walker A 16020-16039, B 16040-16059, C 16060-16079. Databases: only the stack's own `walk<letter>_*`.
 - **The headers of the real site.** The stack's static server has the same fallback as `vercel.json` but not its headers.
