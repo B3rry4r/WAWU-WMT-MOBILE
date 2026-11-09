@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { Platform } from 'react-native';
 
 import { walletBalanceQuery } from '@/api/money';
 import { PaySheet } from '@/components/pay-sheet';
@@ -15,6 +14,7 @@ import { WALLET_NAME, PRICE_MOVED_TITLE } from '@/features/unlock/model';
 
 import type { StorePurchaseView } from '../api';
 import type { Said } from '../words';
+import type { WebBuy, WebTarget } from './webBuyTypes';
 import { askWebQuote, readWebPurchase, scopeOf, sendWebPayment, webPurchaseKey, type WebBuySpec, type WebQuote, type WebView } from './api';
 
 /**
@@ -23,31 +23,9 @@ import { askWebQuote, readWebPurchase, scopeOf, sendWebPayment, webPurchaseKey, 
  * has taken and not finished is only ever read, never paid again. `begin` opens the pay sheet; when the Hub says paid, `granted` is set (the same
  * shape the store screens already read, built from what the item gives), so every screen's own "it worked" view draws.
  */
-type Target = { spec: WebBuySpec; title: string; grants: object | null; verb: string };
+type Target = WebTarget;
 
-export type WebBuy = {
-  /** The quote is being asked for, or a sheet is open: the buy button waits. */
-  busy: boolean;
-  /** Why no sheet opened (a refused quote, in the Hub's own sentence). */
-  said: Said | null;
-  granted: StorePurchaseView | null;
-  begin: (spec: WebBuySpec, title: string, grants?: object | null, verb?: string) => void;
-  clear: () => void;
-  sheets: ReactNode;
-};
-
-const INERT: WebBuy = { busy: false, said: null, granted: null, begin: () => undefined, clear: () => undefined, sheets: null };
-
-/**
- * The web's wallet path exists only in the web build (R-86: the phone is unchanged). On a phone this calls no hook and returns the inert
- * shape, so phone code runs exactly what it ran before WEBAPP-06; the platform never changes inside one build, so the hook order is fixed.
- */
 export function useWebBuy(): WebBuy {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return Platform.OS === 'web' ? useLiveWebBuy() : INERT;
-}
-
-function useLiveWebBuy(): WebBuy {
   const router = useRouter();
   const entry = useOpenWalletEntry();
   const [target, setTarget] = useState<Target | null>(null);
