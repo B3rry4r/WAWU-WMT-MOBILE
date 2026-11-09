@@ -57,3 +57,20 @@ Pictures: 31 state pictures (dark and light where the state allows) taken on the
 - **F3 medium, defect.** The branch commits `node_modules` as a symlink (mode 120000, absolute path /home/user/wawu-wmt-mobile/node_modules; absent on main). Merging it puts a dangling link in the repo root. Remove it from the branch.
 - F4 low: on the pay sheet the pass button reads "Buy" while the page's reads "Join"/"Renew"; Enter and Space do nothing on a focused keypad key or Close (a keyboard-only person must click); no test pins that `begin` is never called on android.
 - F5 unclear (Hub, not this branch): on the stack 3 of 4 community pass payments show payeeSettledAt null (host paid 170,000 of 680,000 expected) 80 minutes later; the payer side is exact and the ledger equals the stand-in. Also: an upgrade after a renew resets the end date (the renewed year is lost), and a new key on the same quote buys again (credits, pass renew). Owner or lead to rule; none is changed by WEBAPP-05/06.
+
+## Verifier report, round 2 (head a3611f0)
+
+Verdict: **FIX** (F2 still open: a BLANK page for a fresh account). Own stack vwebapp05; pictures /tmp/wmt-shots/v-webapp05/ (add-money-after-add-{dark,light}.png, bills-N-bills-{dark,light}.png).
+
+| Id | Result | Evidence |
+|----|--------|----------|
+| F1 | fixed | short wallet, tap "Add 1,999" on the checkout pay sheet: lands on /add-money?short=199900 "Top up at least 1,999", dark and light, real Chrome 390 |
+| F2 | **NOT fixed, high (blank page)** | cold load and in-app (pushState) of /bills, /bills/airtime, /data, /cable, /electricity, /receipt/abc, /number, /items, /review. Tier holder: all go to Home. Signed-out: all go to /welcome. FRESH account (no tier, lands on /tier-offer): every one stays on its own URL with an EMPTY body (length 0, still empty after 8 s, no console message). Every other route for the same fresh account (/, /wallet, /me) lands on /tier-offer, so the cause is the guard's Redirect to "/" under the tier-offer gate, not the session. Blank for a person is a dead end. |
+| F3 | fixed | git ls-files shows no node_modules |
+| F4 | fixed (jest) | full affected jest passes except an unrelated suite; pass button text and keypad Enter/Space covered by the builder's specs, storePathStays included |
+
+Checks: tsc EXIT 0; eslint on changed files EXIT 0; gates EXIT 0 (1661 files, 0 fail); jest 148 suites: 147 pass, 1 fails: src/features/wallet/__tests__/walletSettingsFlow.test.tsx (4 tests expect "Changed 3 months ago", a fixed fixture date against today; not touched by this branch; fails alone). Not re-run on main (NOT RUN).
+
+Hub findings (a), (b), (c) in WEBAPP-06 hold against the source: (a) one earning move per payee per Lagos day (earning-settlement.service.ts dayKey, community-pass.service.ts lines 70-72); (b) upgrade() sets activeUntil = now + days, dropping renewed days (tier-grant.service.ts 336-358); (c) a new key is a new payment, renewal by design (pass service lines 74-85). Not reproduced here.
+
+Fix for F2: render the redirect so it resolves under the tier-offer gate (for example guard inside the screen with a Redirect to the tier-offer when the gate says so, or navigate in an effect), and prove it in a browser for a fresh account.
