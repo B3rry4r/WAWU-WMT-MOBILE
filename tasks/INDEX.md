@@ -489,6 +489,7 @@ Builder and verifier are always different sessions.
 65. [TIER-UPGRADE-FIX](TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for
 66. [WEBAPP-08](WEBAPP-08.md) The web walk's fixes (Phase 1 fix batch)
 67. [WEBAPP-10](WEBAPP-10.md) Desktop screens drawn for the web app
+68. [CREATOR-TAKEDOWN](CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down
 
 ## Developer
 
