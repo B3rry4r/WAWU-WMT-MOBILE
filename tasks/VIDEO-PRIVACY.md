@@ -10,7 +10,7 @@ type: flow
 status: todo
 depends_on: []
 decisions: [R-127]
-passes: [V1, V3, V4, V9]
+passes: [V1, V3, V4, V6, V7, V9]
 artboards: []
 tier: T1
 ---
