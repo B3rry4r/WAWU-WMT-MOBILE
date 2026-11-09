@@ -29,7 +29,7 @@ The browser calls the servers directly, so each one must list `https://usewmt.co
 | WAWU ID (id.wawuafrica.com) | allowed origins (`ALLOWED_ORIGINS` in the stack scripts; whoever runs WAWU ID confirms the name) | add `https://usewmt.com` |
 | The media bucket (Spaces, `wawu-media`) | CORS rules | allow origin `https://usewmt.com`, methods `GET`, `HEAD`, `PUT`, all headers (at least `Content-Type`), so a browser can upload a photo or video and see images and video |
 | The Hub | `NUVION_LIVENESS_REDIRECT_ORIGINS` | add `https://usewmt.com`, so the hosted selfie page can send a person back to the web app |
-| The Hub | `ADD_MONEY_RETURN_URL` | the return page opens `wawu://add-money/status` today, which a browser cannot open. Leave it for the phone app; the web app's add-money flow does not use it. Tell the lead if you want it to point at usewmt.com |
+| The Hub | `ADD_MONEY_RETURN_URL` | leave it exactly as it is. Card, Apple Pay and USSD add-money are off at launch (R-124) and bank transfer has no return step, so the web app never uses it |
 
 ## 4. Things to know
 

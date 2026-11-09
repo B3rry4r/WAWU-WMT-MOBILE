@@ -21,6 +21,7 @@ tier: T0
 As of 9 Nov 2026.
 - **Status:** verifying. Built on `wmt/WEBAPP-01` (mobile repo only; no backend change).
 - **Done:** `web:export` script; `vercel.json` (build, output, rewrite, cache, security headers, CSP); `linkOrigin()` in `src/lib/appLinks.ts` (web uses the page's origin, phone keeps `LINK_ORIGIN`) with `receiptLink` and `contentShareLink`, `contentLink` now uses it; `docs/WEB-DEPLOY.md`.
+- **Follow-up (lead diff read):** `unsafe-inline` removed from script-src (tokens are in localStorage on the web; the export has no inline script, only one style); `src/__tests__/webCsp.test.ts` fails on any inline script whose sha256 is not in script-src; ADD_MONEY_RETURN_URL note corrected.
 - **Open findings:** none known.
 - **Next:** lead reads the diff (T0, no verifier agent), then merge in the next batch.
 - **History:** reports in tasks/history/WEBAPP-01.md.
