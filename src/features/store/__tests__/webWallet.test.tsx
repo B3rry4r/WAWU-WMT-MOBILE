@@ -171,7 +171,7 @@ describe('WEBAPP-06 · points from the wallet on the web', () => {
     await rtl.waitFor(() => expect(rtl.screen.getByText(/Not enough/)).toBeTruthy());
     expect(rtl.screen.getAllByText(/₦600/).length).toBeGreaterThan(0);
     expect(rtl.screen.queryByText('Buy · ₦1,000')).toBeNull();
-    expect(rtl.screen.getByText('Add')).toBeTruthy();
+    expect(rtl.screen.getByText('Add ₦600')).toBeTruthy();
     expect(asked('POST', '/plans/purchases')).toHaveLength(0);
   });
 });
