@@ -7,7 +7,7 @@ order: 369
 priority: after-launch
 repo: wawu-wmt-mobile
 type: money-path
-status: verifying
+status: building
 depends_on: [WEBAPP-07]
 decisions: [R-127, R-128, R-47, R-86, R-94]
 passes: [V1, V2, V3, V4, V5, V6, V7, V8, V9]
@@ -75,3 +75,32 @@ Not in this batch (the lead carries them): the creator who cannot take a live pi
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-08.md](history/WEBAPP-08.md).
 
 ## Owner sign-off
+
+### T2 verifier report (9 Nov 2026), branch wmt/WEBAPP-08 head 63bdcf3, Hub main 7dd5b22, stack ver08 (ports 16040-16059)
+
+**Verdict: FIX.** 1 high, 3 medium, lows. `npm run check` EXIT 0 (518 suites, 7732 passed, 5 skipped; gates 0 fail, 17 warn, 1685 files).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 | passed | check.log EXIT 0 |
+| V5 | passed with findings | pictures /tmp/wmt-shots/v-webapp08 (boards beside built, 390 L/D, 1440 L/D) |
+| V8 | passed | below |
+| V9 | passed | real wawu-id sign-in, values from Hub |
+| V2/V3 | NOT RUN (CI) | |
+
+**Findings**
+1. HIGH (F5, defect): after Back from the code step and a refresh, the restored sign-up form shows the flag +1 / Country United States beside a restored +234 number, and submitting sends `countryCode:"US"` with `+2348031110006` (request captured). A Nigerian who refreshes silently gets a US country of residence (dollar billing, F4's state). Steps: fill sign-up with a +234 number, Continue, Back, refresh /sign-up, add password, agree, Continue. Fix: keep the country in the draft. Picture f5b-after.png.
+2. MEDIUM (F11): in a chat (/chat/<id>) Enter inserts a newline and does not send; only the room box was changed (ChatComposer is a separate component). The lead asked for room and chat; Shift+Enter works in both.
+3. MEDIUM (F3): `https://*.amazonaws.com` in media-src is unproven. Only Flixora posters are recorded on S3; no trailer host recorded; own bucket is DigitalOcean Spaces, already covered. The task said cover exactly what is found. CSP diff is otherwise only `wss://api.wawuafrica.com`.
+4. MEDIUM (F4 way out): a dollar person on /tiers sees only "Buying is not open yet" with no title, close or button; only a tap on the backdrop leaves (to creator-setup). Not a hard dead end, but weak.
+5. LOW (unclear): upgrade sheet and checkout button say "Upgrade to Founding Maker N9,999" while the pay sheet charges N7,000 (the difference); F9's new words ("You pay the difference") make it more visible.
+6. LOW: F15 and F10 changes are not platform-gated for add-work (phone cold open also lands on works); not in the builder's phone-change list. Harmless.
+7. LOW: the jest-expo/android preset cannot run here at all (SyntaxError in @react-native/jest-preset setup, same on base a9fe042), so "jest on android" is NOT RUN; phone proof is the full default jest (518 suites) plus diff read: phone changes are the Founding chip tone, credits line waiting for the fresh count, add-work no-history landing.
+
+**Rows** F1 PASS (details below); F2 PASS (ws://localhost:16040/api/hub/live opens, no CSP violation, room and chat message arrived without refresh; control served without wss: CSP violation, no socket, message only after reload); F3 see 3; F4 PASS with 4; F5 FAIL see 1 (password never in storage: PASS; refresh on code step resumes: PASS); F6 PASS (sessionStorage, localStorage, IndexedDB, caches empty of ID photos through the ID, address steps and after refresh; "Add your ID first" with Go back shown); F7 PASS (pay sheet closes, account number visible, tiers, points, credits); F8 PASS ("120 credits added, You have 120 credits", header 120); F9 PASS (/tiers and /verification); F10 PASS (/me, /wallet, / land on the page after closing the offer; with a pending setup checklist the checklist comes first, Later lands on /me); F11 room PASS, chat FAIL; F12 agree no change (grid edge to edge, 3 across, matches M1); F13 PASS (chip readable dark); F14 agree no change (rows clear the buttons at scroll end at 390 and 1440, left of a covered row opens /cards); F15 PASS (cold Save lands on /works/<id>); F16 report accepted (redrawPhoto is photo only).
+
+**F1 / V8 money (Hub ledger = Nuvion stand-in)**: through the app's buttons with the PIN, double tap on pay: tier Verify -299,900; upgrade to Founding -700,000 (difference); points pack -250,000 (+2,750 points); credits pack -100,000 (+120); community pass -100,000 (one pass row). Bo repeated tier, upgrade, credits (Ada's room), pass: one POST each. Replays of the captured request (same Idempotency-Key and body, and 5 in parallel): all 201, balance delta 0, for tier, upgrade, points, credits, pass. Tampered total: 409 (same key idempotency_key_reused, new key quote_changed). No PIN: 403. No key: 400. Same key other body: 409. Two tabs on one pack: 2 POSTs, one charge, second "Still confirming". Five wrong PINs: "4 tries left" to "PIN locked 29:58", 5 POSTs only, sixth typed digits sent nothing. Too little (N1,500): shortfall sheet "You have N1,500.00, top up N1,499" and Add closes the sheet (tier, points, credits); no POST. Reconciliation: ada 3,677,600, bo 3,585,100, cy 650,100, dee 4,750,000, ledger sums equal the stand-in balances. 85/15 seen (host +85,000 on a 100,000 pass). Guard test platformPairs fails when useWebBuy.ts is recreated, restored. Export holds "nothing to buy", "wmt.signupDraft", "See the tiers"; one React; hosts baked.
+
+**Pictures**: 82 captures taken (390 L/D, 1440 L/D) of sign-up, tier offer (dollars), tiers (dollars, upgrade, highest), verification, checkout, pay-short, add-money, points (Cy, Verify, Founding), room, credits sheet, credits added, Me, wallet, Explore, beside boards A3, VF5a, VF5b, VF6a, VF14, I28, I29, PT4, M1, W1, X1. Looked at: the 390 pairs for VF6a L/D, I28 D, PT4 L, PT4 Founding D, A3 D, VF5a D, VF5a tiers L, VF5b D, VF14 L, I29 D, M1 D, wallet, Explore, the 1440 light contact sheet and Me 1440. Not individually looked at: the 390 dark and 1440 dark contact sheets (generated). Board differences seen are the web's wallet pay sheet (R-128) and the built sign-up fields, not this batch.
+
+NOT RUN: android jest preset; real Flixora trailer host; a real phone; Safari and Firefox. Setup note: for the credits-added picture the test user's credit count was zeroed in my own test database.
