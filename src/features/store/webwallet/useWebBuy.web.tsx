@@ -14,6 +14,7 @@ import { WALLET_NAME, PRICE_MOVED_TITLE } from '@/features/unlock/model';
 
 import type { StorePurchaseView } from '../api';
 import type { Said } from '../words';
+import type { WebBuy, WebTarget } from './webBuyTypes';
 import { askWebQuote, readWebPurchase, scopeOf, sendWebPayment, webPurchaseKey, type WebBuySpec, type WebQuote, type WebView } from './api';
 
 /**
@@ -22,18 +23,7 @@ import { askWebQuote, readWebPurchase, scopeOf, sendWebPayment, webPurchaseKey, 
  * has taken and not finished is only ever read, never paid again. `begin` opens the pay sheet; when the Hub says paid, `granted` is set (the same
  * shape the store screens already read, built from what the item gives), so every screen's own "it worked" view draws.
  */
-type Target = { spec: WebBuySpec; title: string; grants: object | null; verb: string };
-
-export type WebBuy = {
-  /** The quote is being asked for, or a sheet is open: the buy button waits. */
-  busy: boolean;
-  /** Why no sheet opened (a refused quote, in the Hub's own sentence). */
-  said: Said | null;
-  granted: StorePurchaseView | null;
-  begin: (spec: WebBuySpec, title: string, grants?: object | null, verb?: string) => void;
-  clear: () => void;
-  sheets: ReactNode;
-};
+type Target = WebTarget;
 
 export function useWebBuy(): WebBuy {
   const router = useRouter();

@@ -10,6 +10,8 @@ import { renderSignedIn, resetApp } from '../testing/screen';
  * the Hub's list prices, Buy asks for a quote, Pay asks again and opens the PIN sheet, and the PIN goes out once, with an Idempotency-Key.
  * A phone with a store is unchanged: its tests are `store/__tests__/ladder*` and `buy.test.ts`.
  */
+// The web build loads the live hook (`useWebBuy.web.tsx`); jest resolves the phone file, so this test asks for the web one.
+jest.mock('../webwallet/useWebBuy', () => jest.requireActual('../webwallet/useWebBuy.web'));
 jest.mock('expo-secure-store', () => {
   const vault = new Map<string, string>();
   return {
