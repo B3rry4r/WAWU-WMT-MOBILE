@@ -73,3 +73,18 @@ second account) sees the creator's price and pieces the same way (V4).
 Ten lines: verdict PASS (no SERIOUS) or FAIL; every SERIOUS and MEDIUM with its steps; counts of paths walked and
 pictures looked at; anything NOT RUN and why. Clean up: `stack.sh down` with the same scratch, your worktree
 (`git worktree remove`), your servers and browsers. Kill only what you started.
+
+## The walk again, after WEBAPP-08 (lead, 9 Nov 2026)
+The same three walkers' paths on the new batch head the lead names (WEBAPP-08 merged). The first walk's reports are in
+`tasks/history/WEBAPP-07.md` and its fixes in `tasks/WEBAPP-08.md`: re-check every WEBAPP-08 row in your area, and do not
+re-report what is listed there as ruled or carried elsewhere (CREATOR-TAKEDOWN, VIDEO-PRIVACY, SWEEP-WEB).
+- **Every picture you take is looked at, and counted.** The first walk looked at about 20 to 60 of about 200 each.
+- **The export:** build it yourself as Vercel does (`npm run web:export` with your own TMPDIR so Metro's cache is fresh,
+  EXPO_PUBLIC_API_URL / EXPO_PUBLIC_ID_URL set to your stack); walker A from a fresh clone with `npm ci`, as Vercel does.
+  Not the stack's `--with mobile` export with `STACK_NM_MOBILE` (hard-linked modules gave two Reacts).
+- **The harness notes that worked in the first walk** (tasks/history/WEBAPP-07.md): serve the export over https with
+  vercel.json's headers (the CSP's two hosts swapped for your stack); restart only your own Hub with your page's origin
+  in CORS_ORIGIN and `https://<your origin>/selfie` in NUVION_LIVENESS_REDIRECT_ORIGINS, and say so; a small CORS
+  proxy for the storage stand-in; Chromium with LocalNetworkAccessChecks off when an https page calls localhost.
+- Walker B buys every wallet purchase through the app's own buttons (tier, upgrade, points, credits, pass) and repeats
+  every V8 attack, checked on the Hub ledger and the Nuvion stand-in.
