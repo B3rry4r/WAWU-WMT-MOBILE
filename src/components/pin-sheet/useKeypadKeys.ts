@@ -37,12 +37,12 @@ export function useKeypadKeys(keys: KeypadKeys): void {
   });
 
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
     const me = Symbol('keypad');
     live.push(me);
 
     // Focus stays in the sheet: a button left focused behind it (Pay, Continue) would take Enter or Space as a tap.
-    const focused = document.activeElement as HTMLElement | null;
+    const focused = typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null);
     if (focused && focused !== document.body && !isField(focused)) focused.blur();
 
     const onKeyDown = (event: KeyboardEvent) => {
