@@ -14,6 +14,7 @@ import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/au
 import { useAcceptanceRetry } from '@/features/about/acceptance';
 import { onSuspendedRefusal } from '@/api/suspension';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
+import { InstallAskScreen, useInstallAsk } from '@/features/install/InstallAsk';
 import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
 import { useTierOfferStep } from '@/features/tier-offer/offerStep';
@@ -143,6 +144,8 @@ export default function RootLayout() {
   // TIER-OFFER (R-94, R-105): the Hub is asked once the sign-up gate is open, for every account type; the splash waits for the answer (bounded), so Home is never drawn first.
   const tierOffer = useTierOfferStep(signedIn && gate.phase === 'ready');
   const themed = useStoredTheme();
+  // WEBAPP-11 (R-131): in a browser tab the install screen comes before the app; on the phone this is always false.
+  const asking = useInstallAsk();
   const ready = themed && status !== 'restoring' && (!signedIn || (gate.phase === 'ready' && !tierOffer.holding));
   const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && !bonus.visible;
 
@@ -165,6 +168,13 @@ export default function RootLayout() {
     if ((loaded || error) && ready) SplashScreen.hideAsync();
   }, [loaded, error, ready]);
 
+  if (asking && (loaded || error) && themed) {
+    return (
+      <WebFrame>
+        <InstallAskScreen />
+      </WebFrame>
+    );
+  }
   if ((!loaded && !error) || !ready) return null;
 
   return (

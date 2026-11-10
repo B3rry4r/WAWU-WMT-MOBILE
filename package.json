@@ -15,6 +15,7 @@
     "gates": "python3 scripts/gates/run.py && python3 scripts/gates/check_baseline.py && python3 -m unittest discover -s scripts/gates/tests",
     "tokens": "python3 scripts/design/gen_tokens.py",
     "icons": "node scripts/design/gen_icons.js",
+  "pwa": "node scripts/web/gen_pwa.js",
     "api": "python3 scripts/api/sync_contract.py",
     "tasks": "python3 scripts/tasks/check_tasks.py",
     "check": "npm run typecheck && npm run lint && npm test && npm run gates && npm run tasks"
