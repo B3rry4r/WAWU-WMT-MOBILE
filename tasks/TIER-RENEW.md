@@ -26,7 +26,7 @@ As of 10 Nov 2026.
 - **Tests changed because R-132 changes the expected value:** `publishAndTier.test.tsx` "a user sees the Hub's dates..." (active Verify used to expect Renew and open the checkout; now expects Upgrade and no Renew; the Renew press moved to new ending/ended cases); `productsFullStore.test.tsx` "a tier the store does not sell has no price on Renew" (held tier state `active` became `ended`, same assertions). Added R-132 cases: active Verify and active Founding Maker on ios and android, ending and ended on ios and android.
 - **PHONE CHECK:** none new (a button is drawn or not).
 - **NOT RUN:** a real phone; the checkout reached by a typed `/checkout?kind=renew` URL is not blocked (not an offer).
-- **Next:** verifier.
+- **Verifier (T1):** MERGE, no findings; report in history/TIER-RENEW.md.
 
 ## Read first
 
