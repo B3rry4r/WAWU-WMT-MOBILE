@@ -11,6 +11,7 @@ import { TextField } from '@/components/TextField';
 import { font, space } from '@/theme';
 
 import { refusalFor, type ChosenFile } from './chosen';
+import { frameFor } from './frames';
 import type { UploadedFile } from './draft';
 import { durationOk } from './lessons';
 import type { FileRule } from './model';
@@ -82,9 +83,15 @@ export function LessonCard({ id, index, title, duration, file, savedFile, free, 
     setStage({ state: 'uploading', file: chosen, share: 0 });
     onBusy?.(true);
     try {
+      // A video lesson's frame is read now, from the phone's own copy, which goes once the upload has settled: it is the default cover of the course (R-118).
+      const frame = await frameFor(chosen);
+      if (controller.signal.aborted) {
+        chosen.discard?.();
+        return;
+      }
       const uploaded = await uploadFile(chosen, { folder: 'content/full', format: 'course' }, (share) => setStage((s) => (s.state === 'uploading' ? { ...s, share } : s)), controller.signal);
       if (controller.signal.aborted) return;
-      onFile(uploaded);
+      onFile(frame ? { ...uploaded, frame } : uploaded);
       setStage({ state: 'idle' });
       onBusy?.(false);
     } catch (error) {

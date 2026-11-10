@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -51,6 +52,7 @@ export const SOLD_LINE = 'A ticket has sold, so ticket types cannot change.';
 export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: TicketTypesScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   const client = useQueryClient();
   const event = useQuery({ queryKey: detailKey(id), queryFn: () => fetchEvent(id), retry: false });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions });
@@ -129,7 +131,7 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
   const changed = ticketsChanged(rows, original);
 
   return (
-    <View testID="ticket-types-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="ticket-types-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title="Ticket types" subtitle={event.data?.name} onBack={onBack} backTestID="ticket-types-back" />
       {loading ? (
         <View style={styles.body} testID="ticket-types-loading">
@@ -150,7 +152,7 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
         />
       ) : (
         <>
-          <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <FieldScroll contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
             {sold ? (
               <Text variant="muted" testID="ticket-types-locked">
                 {SOLD_LINE}
@@ -165,8 +167,8 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
               remove={(key) => change(rows.filter((t) => t.key !== key))}
               locked={sold}
             />
-          </ScrollView>
-          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom }]}>
+          </FieldScroll>
+          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}>
             {failure ? (
               <Text variant="errorLine" tone="danger" accessibilityRole="alert" testID="ticket-types-failure">
                 {failure}
@@ -181,7 +183,7 @@ export function TicketTypesScreen({ id, onBack, onDone, onMine, onSeeTiers }: Ti
           <ReviewSheet visible={confirm} onClose={() => setConfirm(false)} onConfirm={() => void send()} busy={sending} />
         </>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

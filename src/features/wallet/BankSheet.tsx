@@ -9,6 +9,7 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
+import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { space, useWawu } from '@/theme';
 
 import { banksQuery, failureMessage, type Bank } from './api/payoutAccount';
@@ -17,6 +18,9 @@ import { filterBanks } from './payoutForm';
 
 /** The list takes at most this share of the window, so the sheet never covers the whole screen. */
 const LIST_SHARE = 0.5;
+/** R-117: what the sheet's bar, title and search field take above the list, and the phone's top edge: the list gives way to the keyboard inside what is left. */
+const CHROME = 260;
+const LIST_MIN = 120;
 /** kit.js `Check` beside a chosen row: 18 at stroke 2.6. */
 const pickedMetrics = { icon: 18, stroke: 2.6 } as const;
 
@@ -38,6 +42,9 @@ export type BankSheetProps = {
 export function BankSheet({ visible, onClose, selectedCode, onPick }: BankSheetProps) {
   const { colors } = useWawu();
   const { height } = useWindowDimensions();
+  // R-117 part B: the sheet is a modal the keyboard covers, so it adds the keyboard's height under its list; the list shortens to fit what is left.
+  const lift = useKeyboardLift();
+  const listHeight = lift > 0 ? Math.max(LIST_MIN, Math.min(height * LIST_SHARE, height - lift - CHROME)) : height * LIST_SHARE;
   const [search, setSearch] = useState('');
   const banks = useQuery({ ...banksQuery, enabled: visible });
   const shown = banks.data ? filterBanks(banks.data, search) : [];
@@ -89,7 +96,7 @@ export function BankSheet({ visible, onClose, selectedCode, onPick }: BankSheetP
         data={rows}
         keyExtractor={(row) => row.key}
         keyboardShouldPersistTaps="handled"
-        style={{ maxHeight: height * LIST_SHARE }}
+        style={{ maxHeight: listHeight }}
         renderItem={({ item }) =>
           item.kind === 'label' ? (
             <Text variant="label" testID={item.testID} accessibilityRole="header" style={styles.label}>
@@ -135,6 +142,7 @@ export function BankSheet({ visible, onClose, selectedCode, onPick }: BankSheetP
         testID="bank-sheet-search"
       />
       <View style={styles.body}>{body}</View>
+      {lift > 0 ? <View testID="bank-sheet-keyboard-lift" style={{ height: lift }} /> : null}
     </BottomSheet>
   );
 }

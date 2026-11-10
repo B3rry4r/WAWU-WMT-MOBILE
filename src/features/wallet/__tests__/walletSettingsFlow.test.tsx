@@ -161,7 +161,15 @@ beforeAll(async () => {
   await unmount();
 }, 60_000);
 
+// The label "Changed 3 months ago" is worked out against the clock, so the clock is fixed: 92 days after the PIN date below.
+// Only Date is faked; timers stay real so waitFor and the router run as they do on a phone.
+const FIXED_NOW = new Date('2026-10-10T09:00:00.000Z');
+
 beforeEach(() => {
+  jest.useFakeTimers({
+    now: FIXED_NOW,
+    doNotFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime', 'performance'],
+  });
   pinSetAt = '2026-07-10T09:00:00.000Z';
   walletState = 'open';
   walletKnowsPin = true;
@@ -172,6 +180,10 @@ beforeEach(() => {
   mockVault.set('wawu.session.access', tokenFor('00000000-0000-4000-8000-0000000000b1'));
   mockVault.set('wawu.session.refresh', 'refresh-1');
   (require('@/api/session') as typeof import('@/api/session')).resetSessionForTests();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 afterAll(async () => {

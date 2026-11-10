@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 
 import { IconButton } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
@@ -30,12 +31,16 @@ export type ShopFrameProps = {
   testID?: string;
 };
 
-/** The frame of VF2 and its form: safe areas, the bar (back, a centred title, an optional round button), the scrolling body and a pinned foot. */
+/**
+ * The frame of VF2 and its form: safe areas, the bar (back, a centred title, an optional round button), the scrolling body and a pinned foot.
+ * R-117 part B: padded by the keyboard on both phones, so the Save button sits on it, and the body brings the field being typed in into view.
+ */
 export function ShopFrame({ title, onBack, trailing, foot, children, testID }: ShopFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   return (
-    <View testID={testID} style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID={testID} behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.nav}>
         <View style={styles.side}>
           <IconButton icon="ChevronLeft" label="Back" onPress={onBack} testID="shop-back" />
@@ -45,19 +50,15 @@ export function ShopFrame({ title, onBack, trailing, foot, children, testID }: S
         </Text>
         <View style={styles.side}>{trailing ? <IconButton icon={trailing.icon} label={trailing.label} onPress={trailing.onPress} testID={trailing.testID} /> : null}</View>
       </View>
-      <ScrollView
-        style={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, { paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}
-      >
+      <FieldScroll style={styles.scroll} contentContainerStyle={[styles.content, { paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>
         {children}
-      </ScrollView>
+      </FieldScroll>
       {foot ? (
-        <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>
+        <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>
           {foot}
         </View>
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

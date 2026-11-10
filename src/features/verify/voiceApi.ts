@@ -1,5 +1,6 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError, failureOf } from '@/api/errors';
+import { toVoiceUpload, type VoiceTakeUpload } from './voiceWeb';
 import type { components } from '@/api/schema.generated';
 
 /**
@@ -155,8 +156,16 @@ export async function uploadVoiceSample(file: RecordingFile): Promise<string> {
   } catch {
     throw new ApiError('unknown', 0, 'We could not read your recording. Record it again.', RECORDING_UPLOAD_FAILED);
   }
+  // In a browser the file's own type says what was recorded (WEBAPP-04): MP4 audio goes as it is, WebM or Ogg is written again as WAV.
+  let upload: VoiceTakeUpload;
+  try {
+    upload = await toVoiceUpload(blob, file);
+  } catch {
+    throw new ApiError('unknown', 0, 'We could not read your recording. Record it again.', RECORDING_UPLOAD_FAILED);
+  }
+  blob = upload.blob;
   const signed = (await unwrap(
-    api.POST('/api/hub/uploads/presign', { body: { folder: 'voice/sample', contentType: file.contentType, extension: file.extension, contentLength: blob.size } }),
+    api.POST('/api/hub/uploads/presign', { body: { folder: 'voice/sample', contentType: upload.contentType, extension: upload.extension, contentLength: blob.size } }),
   )) as unknown as Envelope<{ uploadUrl?: unknown; fileUrl?: unknown }>;
   const target = signed?.data;
   if (!target || typeof target.uploadUrl !== 'string' || typeof target.fileUrl !== 'string') throw unreadable('upload');
@@ -164,7 +173,7 @@ export async function uploadVoiceSample(file: RecordingFile): Promise<string> {
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), UPLOAD_PUT_MS);
   try {
-    sent = await fetch(target.uploadUrl, { method: 'PUT', headers: { 'content-type': file.contentType }, body: blob, signal: stop.signal });
+    sent = await fetch(target.uploadUrl, { method: 'PUT', headers: { 'content-type': upload.contentType }, body: blob, signal: stop.signal });
   } catch (error) {
     if (stop.signal.aborted) throw new ApiError('network', 0, UPLOAD_SLOW, RECORDING_UPLOAD_FAILED);
     throw failureOf(error);

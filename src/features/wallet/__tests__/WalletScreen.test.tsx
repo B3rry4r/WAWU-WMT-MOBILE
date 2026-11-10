@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as rtl from '@testing-library/react-native';
-import { Dimensions, StyleSheet } from 'react-native';
+import { Dimensions, Platform, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { floatingRoom } from '@/components/floating';
 
 const mockVault = new Map<string, string>();
 const mockCopied: string[] = [];
@@ -180,7 +182,7 @@ const ACTION_KEYS = ['add-money', 'send', 'withdraw', 'buy-points', 'bills'];
 const POINTS_BUTTON = 'Points, 1,240 points, 400 end 12 Jan';
 /** The Passes card is always drawn beside Points (owner, 26 Oct 2026, R-97); this suite gives it no pass, so it is the empty card. */
 const PASSES_BUTTON = 'Passes, No pass yet, With Founding Maker';
-const NOT_BUILT_IDS = ['wallet-scan', 'wallet-tabs', 'wallet-send', 'wallet-add-money', 'wallet-swap', 'wallet-card-row'];
+const NOT_BUILT_IDS = ['wallet-scan', 'wallet-tabs', 'wallet-send', 'wallet-add-money', 'wallet-swap'];
 /**
  * Fails when anything the Wallet tab has no screen for is drawn: a button, a tab, a tile or a row of them. See all and a row's
  * detail are built since WALLET-04 (W26 and W27), so they are drawn with the heading, which stands only when there are rows
@@ -879,5 +881,62 @@ describe('R-95 · Powered by Nuvion on the Wallet', () => {
     expect(await failed.screen.findByTestId('wallet-balance-card')).toBeTruthy();
     await rtl.waitFor(() => expect(asked('/about')).toBe(2));
     expect(failed.screen.queryByText('Powered by Nuvion')).toBeNull();
+  });
+});
+
+/*
+ * CARD-BACK fix round 1 (R-124): the REAL Wallet tab draws the WAWU card row under the actions while the Hub says cards are on, opens /cards, and
+ * keeps it for a person who holds a live card while cards are off (so they can freeze or block it). Removing `<CardRow />` from WalletScreen fails here.
+ */
+describe.each(['android', 'ios'] as const)('R-124 · the WAWU card row on the real Wallet tab, on %s', (os) => {
+  const card = (status: string) => ({ id: 'card-1', kind: 'virtual', status, name: 'Who Made This card', currency: 'USD', last4: '1234', statusMessage: null, frozenBySupport: false, createdAt: '2026-11-02T09:00:00.000Z' });
+  beforeEach(() => {
+    jest.replaceProperty(Platform, 'OS', os);
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it('with cards on and none made, the row sits after the actions, says Get your card and opens /cards', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: true, cards: [] });
+    const app = await boot();
+    const row = await app.screen.findByTestId('wallet-card-row');
+    expect(app.screen.getByText('Get your card')).toBeTruthy();
+    const ids = idsInOrder(app);
+    expect(ids.indexOf('wallet-card-row')).toBeGreaterThan(ids.indexOf('wallet-actions'));
+    rtl.fireEvent.press(row);
+    expect(mockPushed).toEqual(['/cards']);
+  });
+
+  it('with one active card, the row says which card and how it is, and opens /cards', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: true, cards: [card('active')] });
+    const app = await boot();
+    const row = await app.screen.findByTestId('wallet-card-row');
+    expect(app.screen.getByText(/••1234/)).toBeTruthy();
+    expect(app.screen.getByText(/Active/)).toBeTruthy();
+    rtl.fireEvent.press(row);
+    expect(mockPushed).toEqual(['/cards']);
+  });
+
+  it('with cards off and no live card, no row is drawn', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: false, cards: [] });
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    await rtl.waitFor(() => expect(asked('/money/cards')).toBe(1));
+    expect(app.screen.queryByTestId('wallet-card-row')).toBeNull();
+  });
+
+  it('with cards off, a person who holds a live card keeps the row, so they can freeze or block it', async () => {
+    fallback['GET /money/cards'] = ok({ enabled: false, cards: [card('frozen')] });
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-card-row')).toBeTruthy();
+    expect(app.screen.getByText(/Frozen/)).toBeTruthy();
+  });
+});
+
+describe('R-110 · the Wallet tab keeps its last row clear of the floating theme button (CARD-BACK fix 3)', () => {
+  it('the scroll content ends at least floatingRoom above the bar, the same room Home and Me use', async () => {
+    const app = await boot();
+    expect(await app.screen.findByTestId('wallet-balance-card')).toBeTruthy();
+    const style = StyleSheet.flatten(app.screen.getByTestId('wallet-scroll').props.contentContainerStyle) as { paddingBottom: number };
+    expect(style.paddingBottom).toBeGreaterThanOrEqual(floatingRoom({ create: false, music: true }));
   });
 });

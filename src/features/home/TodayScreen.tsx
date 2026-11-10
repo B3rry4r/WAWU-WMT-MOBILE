@@ -30,7 +30,7 @@ import { fetchCreatorSuggestions, suggestionsKey } from './api';
 import { CreatorRail } from './CreatorRail';
 import { HomeTabs } from './HomeTabs';
 import { gutter, todayMetrics as m } from './look';
-import { discoverable, homeViews, moneyCard, todayPhase, type HomeView } from './model';
+import { homeViews, moneyCard, todayPhase, type HomeView } from './model';
 import { useTodayClient } from './client';
 import { useAddCurrency } from '@/features/wallet/fx/AddCurrency';
 import { otherBalances } from '@/features/wallet/fx/model';
@@ -143,7 +143,8 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
     void me.refetch();
   };
 
-  const people = creators.data ? discoverable(creators.data, me.data) : null;
+  // The viewer's own card stays (it opens their profile) and draws no Follow (HOME-SELF, as Explore).
+  const people = creators.data ?? null;
 
   if (phase === 'loading') {
     return <TodayLoading />;
@@ -199,7 +200,7 @@ function TodayBody({ masked, onToggleMask, onSeeAllCreators, onOpenCreator }: Pi
         onOpenLegal={() => router.push('/legal')}
         onOpenMonetize={isCreator ? () => router.push('/create') : undefined}
       />
-      <CreatorRail creators={people} onRetry={() => void creators.refetch()} retrying={creators.isFetching} onSeeAll={onSeeAllCreators} onOpenCreator={onOpenCreator} />
+      <CreatorRail creators={people} myId={me.data ?? null} onRetry={() => void creators.refetch()} retrying={creators.isFetching} onSeeAll={onSeeAllCreators} onOpenCreator={onOpenCreator} />
       <FlixRail client={client} testID="today-flix" onSeeAll={() => router.push(FLIX_PATH)} onOpenMovie={(id) => router.push(moviePath(id))} />
     </>
   );

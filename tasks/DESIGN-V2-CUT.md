@@ -3,7 +3,7 @@ id: DESIGN-V2-CUT
 title: Cut the 16 Oct 2026 designs and answers into rulings and tasks
 owner: YOU
 area: DESIGN
-order: 253
+order: -1285
 priority: launch
 repo: wawu-wmt-mobile
 type: ops

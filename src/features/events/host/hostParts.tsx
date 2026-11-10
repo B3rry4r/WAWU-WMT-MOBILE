@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
+import { useAnnounceFocus } from '@/components/FieldScroll';
 import { FilterChips } from '@/components/FilterChips';
 import { browserOutlineOff, useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
@@ -160,6 +161,8 @@ export type AreaFieldProps = {
 export function AreaField({ label, value, onChangeText, error, maxLength, testID }: AreaFieldProps) {
   const { colors } = useWawu();
   const [focused, setFocused] = useState(false);
+  // R-117: the scroll this field sits in brings it into view above the keyboard when it takes the focus.
+  const announceFocus = useAnnounceFocus();
   const border = error ? colors.danger : focused ? colors.accent : colors.borderHairline;
   return (
     <View style={styles.fieldRoot}>
@@ -179,7 +182,7 @@ export function AreaField({ label, value, onChangeText, error, maxLength, testID
           onChangeText={onChangeText}
           selectionColor={colors.accent}
           cursorColor={colors.accent}
-          onFocus={() => setFocused(true)}
+          onFocus={() => (setFocused(true), announceFocus())}
           onBlur={() => setFocused(false)}
           style={[styles.areaInput, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textPrimary }]}
         />

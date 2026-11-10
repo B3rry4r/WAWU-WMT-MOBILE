@@ -36,7 +36,6 @@ const terms = (priceKobo: number | null, over: Record<string, unknown> = {}) => 
 function haveFiles() {
   draft.setFormat('pdf');
   draft.setFull({ name: 'full.pdf', bytes: 5000, contentType: 'application/pdf', key: 'k1', fileUrl: 'https://storage.test/f.pdf', pages: 84 });
-  draft.setPreview({ name: 'p.pdf', bytes: 900, contentType: 'application/pdf', key: 'k2', fileUrl: 'https://storage.test/p.pdf', pages: 12 });
 }
 
 beforeEach(() => {

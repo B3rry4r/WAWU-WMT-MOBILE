@@ -41,6 +41,7 @@ const tick = (verified: boolean) => ({ verified, expiresAt: null });
 function piece(over: Partial<FeedItem> = {}): FeedItem {
   return {
     id: 'p1',
+    coverUrl: null,
     status: 'live',
     createdAt: '2026-10-01T00:00:00Z',
     title: 'A title',
@@ -194,7 +195,7 @@ describe('H9 and H10: the creator and professional cards', () => {
   });
 
   it('a piece in the strip shows its price behind a lock, or its views and length', () => {
-    const work = { id: 'w', contentType: 'course', accessType: 'paid', price: 5000, locked: true, title: 'VFX', thumbnailUrl: null, durationLabel: null, pageCount: null, frameCount: 0, views: 40 };
+    const work = { id: 'w', contentType: 'course', accessType: 'paid', price: 5000, locked: true, title: 'VFX', thumbnailUrl: null, coverUrl: null, durationLabel: null, pageCount: null, frameCount: 0, views: 40 };
     expect(workTile(work)).toMatchObject({ icon: 'GraduationCap', locked: true, left: '₦5,000', right: 'Course' });
     expect(workTile({ ...work, contentType: 'video', accessType: 'free', price: 0, locked: false, durationLabel: '4:12', views: 12000 })).toMatchObject({ icon: 'Play', locked: false, left: '12K views', right: '4:12' });
     expect(workTile({ ...work, contentType: 'image', accessType: 'free', locked: false, frameCount: 6, views: 2100 })).toMatchObject({ icon: 'Images', left: '2.1K views', right: '6' });

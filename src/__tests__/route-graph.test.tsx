@@ -125,7 +125,7 @@ beforeEach(() => {
 describe('signed-in screens outside the tabs (SHARED-CHANGES WALLET-11 #2, ME-06 #3, KYC-05 R1, KYC-03 R1, KYC-04 R1, SETTINGS-01 #3)', () => {
   it.each(signedInOnly)('a signed-out visitor to %s lands on the welcome screen', async (url, title) => {
     await renderRouter(routes, { initialUrl: url });
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByRole('header', { name: title })).toBeNull();
   });
 
@@ -140,7 +140,7 @@ describe('About, Terms and Privacy policy are public (SHARED-CHANGES SETTINGS-02
   it.each(publicRoutes)('a signed-out visitor to %s reads it', async (url, title) => {
     await renderRouter(routes, { initialUrl: url });
     await waitFor(() => expect(screen.getByRole('header', { name: title })).toBeTruthy());
-    expect(screen.queryByText('The creators and professionals ecosystem.')).toBeNull();
+    expect(screen.queryByText('Create. Sell. Get paid. Connect. Grow.')).toBeNull();
   });
 
   it.each(publicRoutes)('a signed-in visitor to %s reads it', async (url, title) => {
@@ -151,7 +151,7 @@ describe('About, Terms and Privacy policy are public (SHARED-CHANGES SETTINGS-02
 
   it('listing them does not change where the app opens: nobody signed in opens the welcome screen', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByRole('header', { name: 'About' })).toBeNull();
   });
 
@@ -166,7 +166,7 @@ describe('About, Terms and Privacy policy are public (SHARED-CHANGES SETTINGS-02
 describe('an address the app has no screen for (CHECK-1 F-1)', () => {
   it('a signed-out visitor lands on the welcome screen, not on Expo\'s "Unmatched Route" page', async () => {
     await renderRouter(routes, { initialUrl: '/no-such-place' });
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByText('Unmatched Route')).toBeNull();
   });
 

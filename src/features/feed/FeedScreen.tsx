@@ -238,7 +238,7 @@ export function FeedScreen({ initialScope = 'for_you', onToday, onSearch, pay: p
         windowSize={3}
         renderItem={({ item: row, index }) => {
           if (row.kind === 'creator') {
-            return <FeedCreatorCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenWork={onOpenPiece ? (id) => onOpenPiece({ id }) : undefined} onOpenProfile={onOpenCreator} />;
+            return <FeedCreatorCard card={row.card} width={size.width} height={size.height} chromeTop={chromeTop} onOpenWork={onOpenPiece ? (id) => onOpenPiece({ id }) : undefined} onOpenProfile={onOpenCreator} myId={me.data ?? null} />;
           }
           if (row.kind === 'professional') {
             return (

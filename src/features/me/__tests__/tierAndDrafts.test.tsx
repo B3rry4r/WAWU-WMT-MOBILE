@@ -153,6 +153,16 @@ describe('M1 · tier badge and products meter (DV2-03)', () => {
     expect(screen.queryByTestId('me-products-loading')).toBeNull();
   });
 
+  it('R-129: a creator with no tier whose tick bought before tiers gives 25 places sees the same places meter, from the Hub allowance', async () => {
+    answers = base({
+      [`GET ${TIER}`]: ok(tierView({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0 })),
+      'GET /api/hub/uploads/allowance': ok({ tickHeld: true, uploads: { used: 3, allowed: 25, remaining: 22 }, storage: { usedBytes: 0, limitBytes: 10, remainingBytes: 10 }, free: { uploads: 0, storageBytes: 1 }, withTick: { uploads: 25, storageBytes: 10 } }),
+    });
+    await boot();
+    expect(await screen.findByText('3 of 25 used')).toBeTruthy();
+    expect(screen.queryByTestId('me-products')).toBeNull();
+  });
+
   it('a 12-month tier bought today shows its year, so it never reads as ending today (FIX-78 F-3)', async () => {
     answers = base({ [`GET ${TIER}`]: ok(tierView({ tier: { id: 'founding_maker', name: 'Founding Maker', badge: null }, activeFrom: '2026-10-18T09:00:00.000Z', activeUntil: '2027-10-18T09:00:00.000Z' })) });
     await boot();

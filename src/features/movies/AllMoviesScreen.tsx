@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 
 import { queryClient } from '@/api/query';
 import { Button, IconButton } from '@/components/Button';
@@ -52,7 +53,7 @@ function SearchPill({ onPress }: { onPress: () => void }) {
  */
 export function AllMoviesScreen({ initial, onBack, onSearch, onOpenMovie }: AllMoviesScreenProps) {
   const { colors } = useWawu();
-  const { width } = useWindowDimensions();
+  const width = useFrameWidth();
   const [filter, setFilter] = useState<BrowseFilter>({ ...noFilter, ...initial });
   const [sheet, setSheet] = useState(false);
   const browse = useBrowse(filter, queryClient);

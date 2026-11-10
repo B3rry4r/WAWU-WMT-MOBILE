@@ -21,9 +21,7 @@ import { StatusSheet } from '@/features/feedpay/StatusSheet';
 import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { canvasNormalLineHeight, font, layout, radius, space, text, useWawu } from '@/theme';
 
-import { earnOf } from '@/features/prices/model';
-
-import { NOTE_MAX, getsWords, noteEcho, sentHeading, storeSentHeading, tipTitle, WALLET_NAME } from './model';
+import { NOTE_MAX, noteEcho, sentHeading, storeSentHeading, tipTitle, WALLET_NAME } from './model';
 import type { TipState } from './useTip';
 import { usePaySource } from '@/features/pay-source/usePaySource';
 import { StoreUnready } from '@/features/store/StoreParts';
@@ -33,9 +31,8 @@ import type { ShownPrice } from '@/features/store/ladder/usePrice';
 
 /** design/_gen/home.js `tipSheet`: the sheet's parts 14 apart, the chips 48 high with a 16 corner, the fields 50 high. */
 const SHEET_GAP = space.md + space.xs / 2;
-const TILE_H = 72;
+const TILE_H = 48;
 const TILE_AMOUNT = 19;
-const TILE_GETS = 11.5;
 const FIELD_H = 50;
 const FIELD_PAD = space.lg;
 const FIELD_TEXT = 15.5;
@@ -51,19 +48,21 @@ function Notice({ line }: { line: string }) {
 }
 
 /**
- * One tip tile (the approved design, PRICE-PICKER): the amount the fan pays and what the creator gets of it (85%, R-5, rounded down).
- * The chosen one is tinted with the accent and its "gets" line turns to the success colour. Payment is unchanged: what the fan pays
- * today is the tip itself, with the Hub's own fees added below in the breakdown.
+ * One tip tile (the approved design, PRICE-PICKER): the price the fan pays, and nothing else. A buyer never sees what the creator receives
+ * of it (R-120). The chosen one is tinted with the accent. Paid from the wallet the price is naira. Paid through a store (R-101) it is the
+ * STORE's own text for that tier, the same string the Tip button charges (`storeText`), so one sheet never shows two currencies; a tier whose
+ * store price is not known yet is a skeleton, never a different currency.
  */
-function Tile({ naira, shownKobo, name, selected, onPress }: { naira: number; shownKobo?: number; name: string | null | undefined; selected: boolean; onPress: () => void }) {
+function Tile({ naira, storeText, selected, onPress }: { naira: number; storeText?: string | null; selected: boolean; onPress: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
-  const gets = getsWords(name);
+  const store = storeText !== undefined;
+  const label = store ? (storeText ?? 'Loading price') : formatNaira(naira * 100);
   return (
     <Pressable
       testID={`tip-tile-${naira}`}
       accessibilityRole="button"
-      accessibilityLabel={`${formatNaira(shownKobo ?? naira * 100)}. ${gets} ${formatNaira(earnOf(naira) * 100)}`}
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
       onPress={onPress}
       {...ring.handlers}
@@ -73,13 +72,17 @@ function Tile({ naira, shownKobo, name, selected, onPress }: { naira: number; sh
         ring.style,
       ]}
     >
-      <Money minorUnits={shownKobo ?? naira * 100} size={TILE_AMOUNT} weight={700} decimals={false} />
-      <View style={styles.gets}>
-        <Text variant="caption" tone={selected ? 'success' : 'textMuted'} style={styles.getsText}>
-          {gets}
-        </Text>
-        <Money minorUnits={earnOf(naira) * 100} size={TILE_GETS} weight={500} decimals={false} tone={selected ? 'success' : 'textMuted'} />
-      </View>
+      {store ? (
+        storeText === null ? (
+          <Skeleton width="70%" height={TILE_AMOUNT} radius={radius.chip} />
+        ) : (
+          <Text testID={`tip-tile-${naira}-price`} numberOfLines={1} adjustsFontSizeToFit style={styles.tileText}>
+            {storeText}
+          </Text>
+        )
+      ) : (
+        <Money minorUnits={naira * 100} size={TILE_AMOUNT} weight={700} decimals={false} />
+      )}
     </Pressable>
   );
 }
@@ -94,7 +97,8 @@ function Tiles({ tip }: { tip: TipState }) {
       </View>
     );
   }
-  if (tip.tips.length === 0) {
+  // A phone with a store: until the store has priced its tiers, the tiles are the loading state (never the list price, never naira).
+  if (tip.tips.length === 0 || (tip.store && tip.store.ladder.state.kind === 'loading')) {
     return (
       <View testID="tip-tiles-loading" style={styles.tiles} accessibilityLabel="Loading tip amounts">
         {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -109,7 +113,12 @@ function Tiles({ tip }: { tip: TipState }) {
     <View testID="tip-tiles" style={styles.tiles}>
       {tip.tips.map((naira) => (
         <View key={naira} style={styles.tileCell}>
-          <Tile naira={naira} shownKobo={tip.store?.shown.kobo(naira) ?? undefined} name={tip.target?.name} selected={tip.amountKobo === naira * 100} onPress={() => tip.pick(naira * 100)} />
+          <Tile
+            naira={naira}
+            storeText={tip.store ? (tip.store.ladder.itemFor(naira)?.price ?? null) : undefined}
+            selected={tip.amountKobo === naira * 100}
+            onPress={() => tip.pick(naira * 100)}
+          />
         </View>
       ))}
     </View>
@@ -267,7 +276,7 @@ function SentSheet({ tip }: { tip: TipState }) {
 
 /**
  * H26 and H28 for a phone with a store (R-101): a tip is a store purchase on the price ladder. The tiles are the Hub's tip list at the
- * STORE's price with what the creator gets (85% of the list tip) beneath; there is no wallet, PIN, bank charge or note (the Hub's tip intent
+ * STORE's own price text (the string the button charges), nothing beneath them (R-120); there is no wallet, PIN, bank charge or note (the Hub's tip intent
  * carries no note). A credit that covers the tip is offered first. The tip ends on H28 with what was paid and where.
  */
 function StoreTipSheet({ tip, store }: { tip: TipState; store: { ladder: Ladder; shown: ShownPrice } }) {
@@ -311,7 +320,7 @@ function StoreTipSheet({ tip, store }: { tip: TipState; store: { ladder: Ladder;
       visible
       testID="tip-sheet"
       label="Tip"
-      head={{ title: tipTitle(target?.name), subtitle: naira === null ? undefined : `${getsWords(target?.name)} ${formatNaira(earnOf(naira) * 100)}` }}
+      head={{ title: tipTitle(target?.name) }}
       price={entry?.price ?? null}
       priceLabel="Tip"
       actionLabel="Tip"
@@ -324,7 +333,7 @@ function StoreTipSheet({ tip, store }: { tip: TipState; store: { ladder: Ladder;
       onUseCredit={() => (naira === null || !target ? undefined : void buyer.buyLadder({ kind: 'tip', creatorWawuId: target.wawuId, listPriceNaira: naira }, 'credit'))}
       onCancel={tip.close}
     >
-      <Tiles tip={tip} />
+      {unready ? null : <Tiles tip={tip} />}
     </StoreBuySheet>
   );
 }
@@ -400,9 +409,8 @@ const styles = StyleSheet.create({
   head: { gap: space.xs + space.xs / 2 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tileCell: { width: '31.5%', flexGrow: 1 },
-  tile: { minHeight: TILE_H, borderRadius: radius.input, borderWidth: 1, paddingVertical: space.md + 2, paddingHorizontal: space.xs + 2, alignItems: 'center', gap: space.xs - 1 },
-  gets: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', columnGap: space.xs - 1 },
-  getsText: { fontSize: TILE_GETS },
+  tile: { minHeight: TILE_H, borderRadius: radius.input, borderWidth: 1, paddingVertical: space.md, paddingHorizontal: space.xs + 2, alignItems: 'center', justifyContent: 'center' },
+  tileText: { ...font(700), fontSize: TILE_AMOUNT, lineHeight: TILE_AMOUNT + space.xs, fontVariant: ['tabular-nums', 'lining-nums'] },
   failed: { alignItems: 'center', gap: space.sm },
   box: {
     height: FIELD_H,

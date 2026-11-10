@@ -17442,6 +17442,58 @@
     ]
    }
   },
+  "/api/hub/reports": {
+   "post": {
+    "operationId": "UgcReportController_report",
+    "parameters": [],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CreateUgcReportDto"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UgcReportView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "UgcReport"
+    ]
+   }
+  },
+  "/api/hub/me/suspension": {
+   "get": {
+    "operationId": "MeSuspensionController_mine",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MySuspensionView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "MeSuspension"
+    ]
+   }
+  },
   "/api/hub/creators/{wawuId}/evg": {
    "get": {
     "operationId": "EvgScoreController_getEvgScore",
@@ -18325,8 +18377,8 @@
           "shop": {
            "type": "string",
            "enum": [
-            "basket",
-            "beauty"
+            "beauty",
+            "basket"
            ]
           }
          },
@@ -25110,6 +25162,172 @@
     },
     "tags": [
      "CommunityMessage"
+    ]
+   }
+  },
+  "/api/hub/communities/{id}/moderation": {
+   "get": {
+    "operationId": "CommunityRoomModerationController_view",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoomModerationView"
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
+    ]
+   }
+  },
+  "/api/hub/communities/{id}/messages/{messageId}": {
+   "delete": {
+    "operationId": "CommunityRoomModerationController_deleteMessage",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "messageId",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "removed": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "removed"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
+    ]
+   }
+  },
+  "/api/hub/communities/{id}/mutes/{userWawuId}": {
+   "put": {
+    "operationId": "CommunityRoomModerationController_mute",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "userWawuId",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "muted": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "muted"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
+    ]
+   },
+   "delete": {
+    "operationId": "CommunityRoomModerationController_unmute",
+    "parameters": [
+     {
+      "name": "id",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "userWawuId",
+      "required": true,
+      "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "muted": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "muted"
+         ]
+        }
+       }
+      }
+     }
+    },
+    "tags": [
+     "CommunityRoomModeration"
     ]
    }
   },
@@ -33344,6 +33562,28 @@
     ]
    }
   },
+  "/api/hub/waitlist/tiers": {
+   "get": {
+    "operationId": "WaitlistPublicController_tiers",
+    "parameters": [],
+    "responses": {
+     "200": {
+      "description": "",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WaitlistTiersView"
+        }
+       }
+      }
+     }
+    },
+    "summary": "The plans /join sells (R-125): Verify, Verify Plus and Founding Maker, each\nwith its price in kobo, days, products, bonus points, event pass, badge and\npack bonus, read live from the same plan settings the app's own plans read\nuses. `best` marks the one the page preselects. Public.",
+    "tags": [
+     "WaitlistPublic"
+    ]
+   }
+  },
   "/api/hub/waitlist/referral-codes/{code}": {
    "get": {
     "operationId": "WaitlistPublicController_referralCheck",
@@ -33352,6 +33592,14 @@
       "name": "code",
       "required": true,
       "in": "path",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "tier",
+      "required": false,
+      "in": "query",
       "schema": {
        "type": "string"
       }
@@ -33375,7 +33623,7 @@
       "description": "`reason.code` `referral_attempts_limited`: this address tried too many codes we do not have; wait a few minutes. (The plain rate limit has no `reason`.)"
      }
     },
-    "summary": "Before paying: does this referral code apply, and what would the person\npay. Never the limit, the count or the community. A code we do not have\nis a 404 `referral_unknown`. Advice only: the registration decides again.\nAn address that has tried too many codes we do not have is asked to wait\n(429 `referral_attempts_limited`).",
+    "summary": "Before paying: does this referral code apply, and what would the person\npay. Never the limit, the count or the community. A code we do not have\nis a 404 `referral_unknown`. Advice only: the registration decides again.\nAn address that has tried too many codes we do not have is asked to wait\n(429 `referral_attempts_limited`). With `?tier=verify|plus|founding`\n(R-125) the answer is for that tier: its price, and a code that prices\nanother tier answers `applies` false, `reason` `other_tier`, with a\nsentence in `message`. Without `?tier=` it answers exactly as before.",
     "tags": [
      "WaitlistPublic"
     ]
@@ -33407,7 +33655,7 @@
       }
      },
      "400": {
-      "description": "`reason.code` `phone_invalid`, `email_invalid`, `name_invalid` or `consent_required`; a malformed body has no `reason`."
+      "description": "`reason.code` `phone_invalid`, `email_invalid`, `name_invalid`, `consent_required` or `tier_invalid` (a tier the plans do not sell); a malformed body has no `reason`."
      },
      "404": {
       "description": "`reason.code` `no_open_offer` (no offer has this id) or `referral_unknown` (no such referral code)."
@@ -34861,6 +35109,7 @@
       "enum": [
        "content/preview",
        "content/full",
+       "content/cover",
        "kyc/id-document",
        "service-application/document",
        "professional/document",
@@ -35873,11 +36122,21 @@
      },
      "previewAsset": {
       "type": "string",
+      "description": "The public preview file, as `POST /uploads/presign` answered. PREVIEW-AUTO: optional now. A FREE piece may leave it out (its whole\nfile is open to everyone, so the preview is the file itself); a PAID audio or video piece may leave it out and send\n`previewFromFile: true` to have the Hub make it from `fullAsset` (R-118: a PDF too; a course from its first lesson, a template or\na course whose first lesson is not a video from `coverAsset`). A picture sends its own smaller copy. A request that carries one is\nread exactly as it always was.",
       "format": "uri"
+     },
+     "previewFromFile": {
+      "type": "boolean",
+      "description": "PREVIEW-AUTO: \"make my preview from the full file\". For a PAID audio, video, PDF, course, or template that sends no\n`previewAsset`: the Hub cuts the first 30 seconds of a recording (a third of a file under 45 seconds), the first 3 pages of a PDF\n(the first page of a file under 6 pages), the first lesson of a course the same way, or copies the cover (a template, or a course\nwhose first lesson is not a video), after the full file is stored, and stores the result as the piece's preview. Ignored when a\n`previewAsset` is sent, and for a free piece."
      },
      "fullAsset": {
       "type": "string",
       "format": "uri"
+     },
+     "coverAsset": {
+      "type": "string",
+      "description": "CONTENT-COVER (R-114): the piece's optional cover picture, as the `key` (or `fileUrl`) `POST /uploads/presign`\nanswered for the folder `content/cover` (png, jpeg or webp, at most 5 MB). Left out, the piece has no cover.\nIt must be the caller's own upload (400 otherwise).",
+      "maxLength": 2048
      },
      "parentCourseId": {
       "type": "string",
@@ -35892,7 +36151,6 @@
      "category",
      "accessType",
      "price",
-     "previewAsset",
      "fullAsset"
     ]
    },
@@ -35969,9 +36227,19 @@
       "type": "string",
       "format": "uri"
      },
+     "previewFromFile": {
+      "type": "boolean",
+      "description": "UPLOAD-REST (R-118): \"make my preview from the file I already have\". For a piece that this edit leaves PAID and that has no\npreview of its own yet (a free piece going to paid: its preview is its own file) and that sends no `previewAsset`, the Hub\nmakes the preview from the piece's stored full file exactly as `POST /content` does with the same flag: the first 30 seconds\nof audio or video (a third of a file under 45 seconds), the first 3 pages of a PDF (the first page of a file under 6 pages),\nthe same of a course's first lesson, or a copy of the cover for a template or a course whose first lesson is not a video. It is\nstored as the piece's preview, counted once in the creator's storage, and given back if the edit does not go through. A picture\nis refused in words (it sends its own smaller copy as `previewAsset`). Left out, the edit reads exactly as it always did; sent on\na piece that already has a preview of its own, or that stays free, it does nothing."
+     },
      "fullAsset": {
       "type": "string",
       "format": "uri"
+     },
+     "coverAsset": {
+      "type": "string",
+      "nullable": true,
+      "description": "CONTENT-COVER (R-114): the key (or `fileUrl`) of a cover uploaded to the folder `content/cover`, which replaces the\nold one (the old file is deleted); `null` takes the cover off. Left out, the cover stays as it is.",
+      "maxLength": 2048
      }
     }
    },
@@ -36275,15 +36543,24 @@
     "properties": {
      "previewAsset": {
       "type": "string",
+      "description": "Optional since PREVIEW-AUTO, exactly as on `POST /content`: a free piece may leave it out.",
       "format": "uri"
+     },
+     "previewFromFile": {
+      "type": "boolean",
+      "description": "PREVIEW-AUTO: \"make my preview from the full file\", as on `POST /content`."
      },
      "fullAsset": {
       "type": "string",
       "format": "uri"
+     },
+     "coverAsset": {
+      "type": "string",
+      "description": "CONTENT-COVER (R-114): the optional cover, as `POST /content` takes it.",
+      "maxLength": 2048
      }
     },
     "required": [
-     "previewAsset",
      "fullAsset"
     ]
    },
@@ -38001,6 +38278,565 @@
      "reason"
     ]
    },
+   "AdminMoneyBalanceView": {
+    "type": "object",
+    "properties": {
+     "availableKobo": {
+      "type": "integer"
+     },
+     "bookedKobo": {
+      "type": "integer"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "provider"
+      ]
+     },
+     "asOf": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "availableKobo",
+     "bookedKobo",
+     "source",
+     "asOf"
+    ]
+   },
+   "AdminMoneyWalletView": {
+    "type": "object",
+    "properties": {
+     "wawuId": {
+      "type": "string"
+     },
+     "handle": {
+      "type": "string",
+      "nullable": true
+     },
+     "displayName": {
+      "type": "string",
+      "nullable": true
+     },
+     "provider": {
+      "type": "string"
+     },
+     "openedAt": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "open"
+      ]
+     },
+     "accountLast4": {
+      "type": "string"
+     },
+     "balance": {
+      "allOf": [
+       {
+        "$ref": "#/components/schemas/AdminMoneyBalanceView"
+       }
+      ],
+      "nullable": true
+     },
+     "balanceUnavailable": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "wawuId",
+     "handle",
+     "displayName",
+     "provider",
+     "openedAt",
+     "status",
+     "accountLast4"
+    ]
+   },
+   "AdminMoneyWalletPage": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyWalletView"
+      }
+     },
+     "nextCursor": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "items",
+     "nextCursor"
+    ]
+   },
+   "AdminMoneyLedgerRowView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "direction": {
+      "type": "string",
+      "enum": [
+       "in",
+       "out"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "pending",
+       "completed",
+       "failed",
+       "reversed"
+      ]
+     },
+     "category": {
+      "type": "string"
+     },
+     "amountKobo": {
+      "type": "integer"
+     },
+     "feeKobo": {
+      "type": "integer"
+     },
+     "totalKobo": {
+      "type": "integer"
+     },
+     "counterpartyName": {
+      "type": "string",
+      "nullable": true
+     },
+     "linkKind": {
+      "type": "string",
+      "nullable": true
+     },
+     "linkTitle": {
+      "type": "string",
+      "nullable": true
+     },
+     "reference": {
+      "type": "string",
+      "nullable": true
+     },
+     "occurredAt": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "direction",
+     "status",
+     "category",
+     "amountKobo",
+     "feeKobo",
+     "totalKobo",
+     "counterpartyName",
+     "linkKind",
+     "linkTitle",
+     "reference",
+     "occurredAt"
+    ]
+   },
+   "AdminMoneyWalletDetailView": {
+    "type": "object",
+    "properties": {
+     "wallet": {
+      "$ref": "#/components/schemas/AdminMoneyWalletView"
+     },
+     "recordsNote": {
+      "type": "string"
+     },
+     "records": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyLedgerRowView"
+      }
+     },
+     "nextCursor": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "wallet",
+     "recordsNote",
+     "records",
+     "nextCursor"
+    ]
+   },
+   "AdminMoneyHeldByKindView": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string"
+     },
+     "count": {
+      "type": "number"
+     },
+     "heldKobo": {
+      "type": "integer"
+     },
+     "payeeShareKobo": {
+      "type": "integer"
+     },
+     "wawuShareKobo": {
+      "type": "integer"
+     }
+    },
+    "required": [
+     "kind",
+     "count",
+     "heldKobo",
+     "payeeShareKobo",
+     "wawuShareKobo"
+    ]
+   },
+   "AdminMoneyHeldView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     },
+     "payerWawuId": {
+      "type": "string",
+      "nullable": true
+     },
+     "payerHandle": {
+      "type": "string",
+      "nullable": true
+     },
+     "payeeWawuId": {
+      "type": "string",
+      "nullable": true
+     },
+     "payeeHandle": {
+      "type": "string",
+      "nullable": true
+     },
+     "amountKobo": {
+      "type": "integer"
+     },
+     "payeeShareKobo": {
+      "type": "integer"
+     },
+     "wawuShareKobo": {
+      "type": "integer"
+     },
+     "heldAt": {
+      "type": "string"
+     },
+     "waiting": {
+      "type": "string",
+      "nullable": true
+     },
+     "inReview": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "kind",
+     "title",
+     "payerWawuId",
+     "payerHandle",
+     "payeeWawuId",
+     "payeeHandle",
+     "amountKobo",
+     "payeeShareKobo",
+     "wawuShareKobo",
+     "heldAt",
+     "waiting",
+     "inReview"
+    ]
+   },
+   "AdminMoneyMerchantView": {
+    "type": "object",
+    "properties": {
+     "provider": {
+      "type": "string"
+     },
+     "account": {
+      "type": "object",
+      "properties": {
+       "accountLast4": {
+        "type": "string"
+       },
+       "accountName": {
+        "type": "string"
+       },
+       "balance": {
+        "$ref": "#/components/schemas/AdminMoneyBalanceView"
+       }
+      },
+      "required": [
+       "accountLast4",
+       "accountName",
+       "balance"
+      ],
+      "nullable": true
+     },
+     "balanceUnavailable": {
+      "type": "string",
+      "nullable": true
+     },
+     "recordsNote": {
+      "type": "string"
+     },
+     "heldByKind": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyHeldByKindView"
+      }
+     },
+     "holds": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyHeldView"
+      }
+     },
+     "nextCursor": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "provider",
+     "account",
+     "recordsNote",
+     "heldByKind",
+     "holds",
+     "nextCursor"
+    ]
+   },
+   "AdminMoneyBasisView": {
+    "type": "object",
+    "properties": {
+     "basis": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "count": {
+      "type": "number"
+     },
+     "grossKobo": {
+      "type": "integer"
+     }
+    },
+    "required": [
+     "basis",
+     "label",
+     "count",
+     "grossKobo"
+    ]
+   },
+   "AdminMoneyForeignChargeView": {
+    "type": "object",
+    "properties": {
+     "currency": {
+      "type": "string"
+     },
+     "count": {
+      "type": "number"
+     },
+     "amountMinor": {
+      "type": "integer"
+     }
+    },
+    "required": [
+     "currency",
+     "count",
+     "amountMinor"
+    ]
+   },
+   "AdminMoneyBreakdownView": {
+    "type": "object",
+    "properties": {
+     "key": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "count": {
+      "type": "number"
+     },
+     "grossKobo": {
+      "type": "integer"
+     },
+     "unpricedCount": {
+      "type": "number"
+     },
+     "bases": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyBasisView"
+      },
+      "nullable": true
+     }
+    },
+    "required": [
+     "key",
+     "label",
+     "count",
+     "grossKobo",
+     "unpricedCount"
+    ]
+   },
+   "AdminMoneyStreamView": {
+    "type": "object",
+    "properties": {
+     "key": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "rail": {
+      "type": "string"
+     },
+     "source": {
+      "type": "string"
+     },
+     "statuses": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "count": {
+      "type": "number"
+     },
+     "grossKobo": {
+      "type": "integer"
+     },
+     "unpricedCount": {
+      "type": "number"
+     },
+     "grossBasis": {
+      "type": "string"
+     },
+     "wawuKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "creatorsKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "refundedKobo": {
+      "type": "integer",
+      "nullable": true
+     },
+     "keptKobo": {
+      "type": "integer"
+     },
+     "bases": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyBasisView"
+      },
+      "nullable": true
+     },
+     "foreignCharges": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyForeignChargeView"
+      },
+      "nullable": true
+     },
+     "breakdown": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyBreakdownView"
+      },
+      "nullable": true
+     }
+    },
+    "required": [
+     "key",
+     "label",
+     "rail",
+     "source",
+     "statuses",
+     "count",
+     "grossKobo",
+     "unpricedCount",
+     "grossBasis",
+     "wawuKobo",
+     "creatorsKobo",
+     "refundedKobo",
+     "keptKobo"
+    ]
+   },
+   "AdminMoneyRevenueView": {
+    "type": "object",
+    "properties": {
+     "period": {
+      "type": "object",
+      "properties": {
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       },
+       "window": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "from",
+       "to",
+       "window"
+      ]
+     },
+     "split": {
+      "type": "object",
+      "properties": {
+       "creatorsPercent": {
+        "type": "number"
+       },
+       "wawuPercent": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "creatorsPercent",
+       "wawuPercent"
+      ]
+     },
+     "streams": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminMoneyStreamView"
+      }
+     },
+     "note": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "period",
+     "split",
+     "streams",
+     "note"
+    ]
+   },
    "OpenFxAccountDto": {
     "type": "object",
     "properties": {
@@ -38697,6 +39533,128 @@
    "CreateDmReportDto": {
     "type": "object",
     "properties": {}
+   },
+   "CreateUgcReportDto": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string",
+      "description": "What is being reported.",
+      "enum": [
+       "piece",
+       "comment",
+       "profile",
+       "community_message",
+       "chat_message",
+       "direct_message"
+      ]
+     },
+     "targetId": {
+      "type": "string",
+      "description": "The id of that thing (a piece, comment, community message, chat message or paid question), or the person's wawuId for a profile.",
+      "format": "uuid"
+     },
+     "reason": {
+      "type": "string",
+      "description": "Why, from the short fixed list.",
+      "enum": [
+       "spam",
+       "harassment",
+       "hate",
+       "sexual",
+       "illegal",
+       "impersonation",
+       "other"
+      ]
+     },
+     "note": {
+      "type": "string",
+      "description": "Anything the reporter wants a moderator to know. Optional.",
+      "maxLength": 500
+     }
+    },
+    "required": [
+     "kind",
+     "targetId",
+     "reason"
+    ]
+   },
+   "ResolveUgcReportDto": {
+    "type": "object",
+    "properties": {
+     "action": {
+      "type": "string",
+      "description": "`dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community\nmessage or chat message is deleted); on a reported PROFILE it suspends the person (USER-SUSPEND, R-121).\n`take_down_and_suspend`: the item comes down AND the person who made it is suspended. `suspend`: the person is\nsuspended and the item is left as it is (the way to act on a paid question, which carries money).",
+      "enum": [
+       "dismiss",
+       "take_down",
+       "take_down_and_suspend",
+       "suspend"
+      ]
+     },
+     "note": {
+      "type": "string",
+      "description": "Why. Required for a take-down or a suspension (it is the only record of why); optional for a dismissal.",
+      "maxLength": 1000
+     },
+     "suspendReason": {
+      "type": "string",
+      "description": "Why the person is suspended, from the same short list as a report. Defaults to the report's own reason.",
+      "enum": [
+       "spam",
+       "harassment",
+       "hate",
+       "sexual",
+       "illegal",
+       "impersonation",
+       "other"
+      ]
+     }
+    },
+    "required": [
+     "action"
+    ]
+   },
+   "SuspendUserDto": {
+    "type": "object",
+    "properties": {
+     "reason": {
+      "type": "string",
+      "description": "Why, from the short fixed list the report sheet uses.",
+      "enum": [
+       "spam",
+       "harassment",
+       "hate",
+       "sexual",
+       "illegal",
+       "impersonation",
+       "other"
+      ]
+     },
+     "note": {
+      "type": "string",
+      "description": "What the moderator saw. Kept with the suspension and in the audit trail; the person is never shown it.",
+      "maxLength": 1000
+     },
+     "reportId": {
+      "type": "string",
+      "description": "The report that led to it, when there was one.",
+      "format": "uuid"
+     }
+    },
+    "required": [
+     "reason"
+    ]
+   },
+   "LiftSuspensionDto": {
+    "type": "object",
+    "properties": {
+     "note": {
+      "type": "string",
+      "description": "Why it is lifted. Kept in the audit trail.",
+      "maxLength": 1000
+     }
+    }
    },
    "UpsertLearnGuideDto": {
     "type": "object",
@@ -42162,6 +43120,11 @@
       "type": "string",
       "description": "A referral code (optional): 3 to 20 letters and numbers, in any case.\nLeave it out, or empty, to pay the standard price. A code we do not have\nis refused (`referral_unknown`); one that is switched off or full is not\nrefused: the person registers at the standard price and the answer's\n`referral` says the code was not applied.",
       "maxLength": 60
+     },
+     "tier": {
+      "type": "string",
+      "description": "The tier the person is buying (optional, R-125): an id from\n`GET /waitlist/tiers` (verify, plus, founding). Leave it out, as an older\npage does, and the registration is exactly what it was before tiers: the\noffer's price and the offer's tier (Verify). An id the plans file does not\nsell is refused (`tier_invalid`).",
+      "maxLength": 40
      }
     },
     "required": [
@@ -42236,6 +43199,11 @@
      "active": {
       "type": "boolean",
       "description": "Whether the code works. Defaults to true."
+     },
+     "tier": {
+      "type": "string",
+      "description": "The one tier the code prices (R-125), for example `verify`. The price\nceiling is that tier's price. Leave out for the old rule (the offer's\ntier, Verify, at the offer's price).",
+      "maxLength": 40
      }
     },
     "required": [
@@ -42266,6 +43234,11 @@
      },
      "active": {
       "type": "boolean"
+     },
+     "tier": {
+      "type": "string",
+      "description": "The one tier the code prices; the price is checked against that tier's price.",
+      "maxLength": 40
      }
     }
    },
@@ -44566,6 +45539,10 @@
      "title": {
       "type": "string"
      },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "amountKobo": {
       "type": "integer"
      },
@@ -44652,6 +45629,10 @@
      },
      "title": {
       "type": "string"
+     },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
      },
      "earnedKobo": {
       "type": "integer"
@@ -51137,6 +52118,10 @@
      },
      "fullAssetLocked": {
       "type": "boolean"
+     },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
      }
     },
     "required": [
@@ -51266,6 +52251,10 @@
      "fullAssetLocked": {
       "type": "boolean"
      },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "salesCount": {
       "type": "number"
      },
@@ -51276,6 +52265,13 @@
      "rejectedAt": {
       "type": "string",
       "format": "date-time",
+      "nullable": true
+     },
+     "waitingFor": {
+      "type": "string",
+      "enum": [
+       "wallet"
+      ],
       "nullable": true
      }
     },
@@ -51303,9 +52299,11 @@
      "likes",
      "fullAssetUrl",
      "fullAssetLocked",
+     "coverUrl",
      "salesCount",
      "rejectionReason",
-     "rejectedAt"
+     "rejectedAt",
+     "waitingFor"
     ]
    },
    "MyContentCounts": {
@@ -51614,6 +52612,10 @@
      "fullAssetLocked": {
       "type": "boolean"
      },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "likedByMe": {
       "type": "boolean"
      },
@@ -51657,6 +52659,7 @@
      "likes",
      "fullAssetUrl",
      "fullAssetLocked",
+     "coverUrl",
      "likedByMe",
      "savedByMe",
      "followsCreator",
@@ -51735,6 +52738,10 @@
       "type": "string",
       "nullable": true
      },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "durationLabel": {
       "type": "string",
       "nullable": true
@@ -51758,6 +52765,7 @@
      "locked",
      "title",
      "thumbnailUrl",
+     "coverUrl",
      "durationLabel",
      "pageCount",
      "frameCount",
@@ -52027,6 +53035,10 @@
       "type": "number"
      },
      "previewAssetUrl": {
+      "type": "string",
+      "nullable": true
+     },
+     "coverUrl": {
       "type": "string",
       "nullable": true
      }
@@ -59899,6 +60911,389 @@
      "slotsTotal"
     ]
    },
+   "SuspensionEntryView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string",
+      "enum": [
+       "other",
+       "spam",
+       "harassment",
+       "hate",
+       "sexual",
+       "illegal",
+       "impersonation"
+      ]
+     },
+     "reasonLabel": {
+      "type": "string"
+     },
+     "note": {
+      "type": "string",
+      "nullable": true
+     },
+     "reportId": {
+      "type": "string",
+      "nullable": true
+     },
+     "suspendedAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "suspendedBy": {
+      "type": "object",
+      "properties": {
+       "email": {
+        "type": "string"
+       },
+       "role": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "email",
+       "role"
+      ]
+     },
+     "liftedAt": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "liftNote": {
+      "type": "string",
+      "nullable": true
+     },
+     "liftedBy": {
+      "type": "object",
+      "properties": {
+       "email": {
+        "type": "string"
+       },
+       "role": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "email",
+       "role"
+      ],
+      "nullable": true
+     }
+    },
+    "required": [
+     "id",
+     "reason",
+     "reasonLabel",
+     "note",
+     "reportId",
+     "suspendedAt",
+     "suspendedBy",
+     "liftedAt",
+     "liftNote",
+     "liftedBy"
+    ]
+   },
+   "AdminSuspensionView": {
+    "type": "object",
+    "properties": {
+     "wawuId": {
+      "type": "string"
+     },
+     "handle": {
+      "type": "string",
+      "nullable": true
+     },
+     "suspended": {
+      "type": "boolean"
+     },
+     "current": {
+      "$ref": "#/components/schemas/SuspensionEntryView",
+      "nullable": true
+     },
+     "history": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/SuspensionEntryView"
+      }
+     }
+    },
+    "required": [
+     "wawuId",
+     "handle",
+     "suspended",
+     "current",
+     "history"
+    ]
+   },
+   "MySuspensionView": {
+    "type": "object",
+    "properties": {
+     "suspended": {
+      "type": "boolean"
+     },
+     "since": {
+      "type": "string",
+      "format": "date-time",
+      "nullable": true
+     },
+     "message": {
+      "type": "string"
+     },
+     "supportEmail": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "suspended",
+     "since",
+     "message",
+     "supportEmail"
+    ]
+   },
+   "AdminUgcPerson": {
+    "type": "object",
+    "properties": {
+     "wawuId": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "handle": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "wawuId",
+     "name",
+     "handle"
+    ]
+   },
+   "AdminUgcReportView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "comment",
+       "piece",
+       "profile",
+       "community_message",
+       "chat_message",
+       "direct_message"
+      ]
+     },
+     "kindLabel": {
+      "type": "string"
+     },
+     "targetId": {
+      "type": "string"
+     },
+     "count": {
+      "type": "number"
+     },
+     "reason": {
+      "type": "string",
+      "enum": [
+       "other",
+       "spam",
+       "harassment",
+       "hate",
+       "sexual",
+       "illegal",
+       "impersonation"
+      ]
+     },
+     "reasonLabel": {
+      "type": "string"
+     },
+     "note": {
+      "type": "string",
+      "nullable": true
+     },
+     "reportedAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "lastReportedAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "reporter": {
+      "$ref": "#/components/schemas/AdminUgcPerson"
+     },
+     "subject": {
+      "$ref": "#/components/schemas/AdminUgcPerson"
+     },
+     "item": {
+      "type": "object",
+      "properties": {
+       "exists": {
+        "type": "boolean"
+       },
+       "title": {
+        "type": "string",
+        "nullable": true
+       },
+       "excerpt": {
+        "type": "string",
+        "nullable": true
+       },
+       "status": {
+        "type": "string",
+        "nullable": true
+       }
+      },
+      "required": [
+       "exists",
+       "title",
+       "excerpt",
+       "status"
+      ]
+     },
+     "emailed": {
+      "type": "boolean"
+     },
+     "canTakeDown": {
+      "type": "boolean"
+     },
+     "subjectSuspended": {
+      "type": "boolean"
+     },
+     "canSuspend": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "kind",
+     "kindLabel",
+     "targetId",
+     "count",
+     "reason",
+     "reasonLabel",
+     "note",
+     "reportedAt",
+     "lastReportedAt",
+     "reporter",
+     "subject",
+     "item",
+     "emailed",
+     "canTakeDown",
+     "subjectSuspended",
+     "canSuspend"
+    ]
+   },
+   "AdminUgcResolveView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "comment",
+       "piece",
+       "profile",
+       "community_message",
+       "chat_message",
+       "direct_message"
+      ]
+     },
+     "targetId": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "dismissed",
+       "actioned"
+      ]
+     },
+     "resolved": {
+      "type": "number"
+     },
+     "suspended": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "kind",
+     "targetId",
+     "status",
+     "resolved",
+     "suspended"
+    ]
+   },
+   "UgcReportView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "comment",
+       "piece",
+       "profile",
+       "community_message",
+       "chat_message",
+       "direct_message"
+      ]
+     },
+     "targetId": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string",
+      "enum": [
+       "other",
+       "spam",
+       "harassment",
+       "hate",
+       "sexual",
+       "illegal",
+       "impersonation"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "open",
+       "dismissed",
+       "actioned"
+      ]
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "alreadyReported": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "kind",
+     "targetId",
+     "reason",
+     "status",
+     "createdAt",
+     "alreadyReported"
+    ]
+   },
    "LearnGuideSection": {
     "type": "object",
     "properties": {
@@ -63124,6 +64519,24 @@
      "costInCredits"
     ]
    },
+   "RoomModerationView": {
+    "type": "object",
+    "properties": {
+     "muted": {
+      "type": "boolean"
+     },
+     "mutedMembers": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "muted",
+     "mutedMembers"
+    ]
+   },
    "EventView": {
     "type": "object",
     "properties": {
@@ -63904,6 +65317,58 @@
      "cursor"
     ]
    },
+   "LiveCommunityMessageRemovedEvent": {
+    "type": "object",
+    "properties": {
+     "type": {
+      "type": "string",
+      "enum": [
+       "community.message.removed"
+      ]
+     },
+     "communityId": {
+      "type": "string"
+     },
+     "messageId": {
+      "type": "string"
+     },
+     "cursor": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "type",
+     "communityId",
+     "messageId",
+     "cursor"
+    ]
+   },
+   "LiveCommunityMuteEvent": {
+    "type": "object",
+    "properties": {
+     "type": {
+      "type": "string",
+      "enum": [
+       "community.mute.changed"
+      ]
+     },
+     "communityId": {
+      "type": "string"
+     },
+     "muted": {
+      "type": "boolean"
+     },
+     "cursor": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "type",
+     "communityId",
+     "muted",
+     "cursor"
+    ]
+   },
    "LiveCatchUp": {
     "type": "object",
     "properties": {
@@ -63922,6 +65387,12 @@
         },
         {
          "$ref": "#/components/schemas/LiveCommunityMessageEvent"
+        },
+        {
+         "$ref": "#/components/schemas/LiveCommunityMessageRemovedEvent"
+        },
+        {
+         "$ref": "#/components/schemas/LiveCommunityMuteEvent"
         }
        ]
       }
@@ -64663,6 +66134,10 @@
       "type": "string",
       "nullable": true
      },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "bought": {
       "type": "boolean"
      },
@@ -64677,6 +66152,7 @@
      "accessType",
      "priceKobo",
      "thumbnailUrl",
+     "coverUrl",
      "bought",
      "creator"
     ]
@@ -64888,6 +66364,10 @@
       "type": "string",
       "nullable": true
      },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "creator": {
       "$ref": "#/components/schemas/FeedCreator"
      }
@@ -64897,6 +66377,7 @@
      "title",
      "contentType",
      "thumbnailUrl",
+     "coverUrl",
      "creator"
     ]
    },
@@ -65088,8 +66569,8 @@
       "enum": [
        "community",
        "content",
-       "transaction",
        "profile",
+       "transaction",
        "paid_question",
        "ai_job"
       ]
@@ -65377,6 +66858,10 @@
      "bumpPoints": {
       "type": "integer"
      },
+     "newActiveUntil": {
+      "type": "string",
+      "nullable": true
+     },
      "paymentKind": {
       "type": "string",
       "enum": [
@@ -65397,6 +66882,7 @@
      "planMinor",
      "bumpMinor",
      "bumpPoints",
+     "newActiveUntil",
      "paymentKind",
      "payment"
     ]
@@ -66719,6 +68205,10 @@
      "priceKobo": {
       "type": "integer"
      },
+     "coverUrl": {
+      "type": "string",
+      "nullable": true
+     },
      "payment": {
       "$ref": "#/components/schemas/PaymentQuoteView"
      }
@@ -66728,6 +68218,7 @@
      "title",
      "creator",
      "priceKobo",
+     "coverUrl",
      "payment"
     ]
    },
@@ -69557,6 +71048,14 @@
      "referralCommunity": {
       "type": "string",
       "nullable": true
+     },
+     "tier": {
+      "type": "string",
+      "nullable": true
+     },
+     "claimedVia": {
+      "type": "string",
+      "nullable": true
      }
     },
     "required": [
@@ -69582,7 +71081,9 @@
      "claimedAt",
      "createdAt",
      "referralCode",
-     "referralCommunity"
+     "referralCommunity",
+     "tier",
+     "claimedVia"
     ]
    },
    "AdminWaitlistSplitRowView": {
@@ -69608,6 +71109,30 @@
      "community",
      "people",
      "kobo"
+    ]
+   },
+   "AdminWaitlistTierRowView": {
+    "type": "object",
+    "properties": {
+     "tier": {
+      "type": "string",
+      "nullable": true
+     },
+     "people": {
+      "type": "number"
+     },
+     "kobo": {
+      "type": "number"
+     },
+     "claimed": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "tier",
+     "people",
+     "kobo",
+     "claimed"
     ]
    },
    "AdminWaitlistSummaryView": {
@@ -69656,6 +71181,12 @@
        "$ref": "#/components/schemas/AdminWaitlistSplitRowView"
       }
      },
+     "byTier": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AdminWaitlistTierRowView"
+      }
+     },
      "generatedAt": {
       "type": "string"
      }
@@ -69666,6 +71197,7 @@
      "failed",
      "unpaid",
      "split",
+     "byTier",
      "generatedAt"
     ]
    },
@@ -69763,6 +71295,10 @@
      "paidKobo": {
       "type": "integer"
      },
+     "tier": {
+      "type": "string",
+      "nullable": true
+     },
      "createdAt": {
       "type": "string"
      },
@@ -69780,6 +71316,7 @@
      "paidCount",
      "heldCount",
      "paidKobo",
+     "tier",
      "createdAt",
      "updatedAt"
     ]
@@ -69820,6 +71357,114 @@
      "closesAt"
     ]
    },
+   "WaitlistTierView": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "priceKobo": {
+      "type": "integer"
+     },
+     "days": {
+      "type": "number"
+     },
+     "products": {
+      "type": "number"
+     },
+     "bonusPoints": {
+      "type": "number"
+     },
+     "eventPass": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "name": {
+        "type": "string"
+       },
+       "benefits": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "nullable": true
+       }
+      },
+      "required": [
+       "id",
+       "name"
+      ]
+     },
+     "badge": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "numbered": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "id",
+       "numbered"
+      ]
+     },
+     "packBonusPercent": {
+      "type": "number"
+     },
+     "firstVoiceIntroIncluded": {
+      "type": "boolean"
+     },
+     "best": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "priceKobo",
+     "days",
+     "products",
+     "bonusPoints",
+     "eventPass",
+     "badge",
+     "packBonusPercent",
+     "firstVoiceIntroIncluded",
+     "best"
+    ]
+   },
+   "WaitlistTiersView": {
+    "type": "object",
+    "properties": {
+     "currency": {
+      "type": "string",
+      "enum": [
+       "NGN"
+      ]
+     },
+     "tiers": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/WaitlistTierView"
+      }
+     },
+     "bestTier": {
+      "type": "string",
+      "nullable": true
+     }
+    },
+    "required": [
+     "currency",
+     "tiers",
+     "bestTier"
+    ]
+   },
    "WaitlistReferralCheckView": {
     "type": "object",
     "properties": {
@@ -69833,12 +71478,25 @@
       "type": "string",
       "enum": [
        "full",
-       "inactive"
+       "inactive",
+       "other_tier"
       ],
       "nullable": true
      },
      "priceKobo": {
       "type": "integer"
+     },
+     "tier": {
+      "type": "string",
+      "nullable": true
+     },
+     "forTier": {
+      "type": "string",
+      "nullable": true
+     },
+     "message": {
+      "type": "string",
+      "nullable": true
      }
     },
     "required": [
@@ -69920,7 +71578,8 @@
       "type": "string",
       "enum": [
        "full",
-       "inactive"
+       "inactive",
+       "other_tier"
       ],
       "nullable": true
      }
@@ -69952,6 +71611,10 @@
      },
      "referral": {
       "$ref": "#/components/schemas/WaitlistReferralOutcomeView",
+      "nullable": true
+     },
+     "tier": {
+      "type": "string",
       "nullable": true
      }
     },

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -12,7 +12,9 @@ import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
 import { ListRow } from '@/components/ListRow';
 import { Text } from '@/components/Text';
+import { PLAYER_FAILED_SHORT } from '@/features/feed/model';
 import { AudioSource } from '@/features/feed/player';
+import { usePlayerLoad } from '@/features/feed/player/useLoad';
 import { draftsKey, fetchDrafts } from '@/features/me/api';
 import { updateDraft } from '@/features/verify/api';
 import { canvasNormalLineHeight, font, radius, space, useWawu } from '@/theme';
@@ -31,22 +33,35 @@ export function PreviewPlay({ sampleUrl, name }: { sampleUrl: string; name: stri
   const { colors } = useWawu();
   const ring = useFocusRing();
   const [playing, setPlaying] = useState(false);
+  // R-117: the sample is still coming in (the button shows the spinner in place of pause); or it will not load (the words stand under the button).
+  const stop = useCallback(() => setPlaying(false), []);
+  const load = usePlayerLoad(playing, stop);
   const onTime = useCallback(() => undefined, []);
   const onEnded = useCallback(() => setPlaying(false), []);
   return (
-    <View>
-      <AudioSource uri={sampleAddress(sampleUrl)} playing={playing} seek={null} onTime={onTime} onEnded={onEnded} />
+    <View style={styles.previewBox}>
+      <AudioSource key={load.attempt} uri={sampleAddress(sampleUrl)} playing={playing} seek={null} onTime={onTime} onEnded={onEnded} onLoad={load.onLoad} />
       <Pressable
         testID={`sample-play-${name}`}
         accessibilityRole="button"
-        accessibilityLabel={playing ? EXTRAS_WORDS.stopSample(name) : EXTRAS_WORDS.playSample(name)}
+        accessibilityLabel={load.failed ? `${PLAYER_FAILED_SHORT}. Tap to try again.` : playing ? (load.waiting ? `Loading the sample of ${name}, tap to stop` : EXTRAS_WORDS.stopSample(name)) : EXTRAS_WORDS.playSample(name)}
+        accessibilityState={load.waiting ? { busy: true } : undefined}
         onPress={() => setPlaying((on) => !on)}
         hitSlop={PLAY.slop}
         {...ring.handlers}
         style={[styles.play, { backgroundColor: colors.surfaceSunken }, ring.style]}
       >
-        <Icon name={playing ? 'Pause' : 'Play'} size={PLAY.icon} color={colors.textPrimary} fill={colors.textPrimary} strokeWidth={PLAY.stroke} />
+        {load.waiting ? (
+          <ActivityIndicator testID={`sample-spinner-${name}`} size="small" color={colors.textPrimary} />
+        ) : (
+          <Icon name={playing ? 'Pause' : 'Play'} size={PLAY.icon} color={colors.textPrimary} fill={colors.textPrimary} strokeWidth={PLAY.stroke} />
+        )}
       </Pressable>
+      {load.failed ? (
+        <Text variant="errorLine" accessibilityRole="alert" testID={`sample-failed-${name}`} style={styles.previewFailed}>
+          {PLAYER_FAILED_SHORT}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -176,6 +191,9 @@ export function DraftPicker({ jobId, onAttached, onCancel, onStartDraft }: { job
 }
 
 const styles = StyleSheet.create({
+  // R-117: the failure words are 2 short lines under the 32 button, in the row's own error type; the row grows by them only when a sample fails.
+  previewBox: { alignItems: 'center', maxWidth: 72 },
+  previewFailed: { fontSize: 11, lineHeight: 13, textAlign: 'center', marginTop: space.xs },
   play: { width: PLAY.size, height: PLAY.size, borderRadius: PLAY.size / 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   consent: { gap: space.md, padding: space.lg, borderRadius: radius.card, borderWidth: 1 },
   consentLabel: { fontSize: 11, letterSpacing: 0.88, textTransform: 'uppercase' },

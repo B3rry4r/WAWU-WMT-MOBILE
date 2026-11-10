@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, Share, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -178,7 +179,7 @@ function AccountCard({ account, waiting, transferIn, notice, onSent, onNotice }:
   const share = async () => {
     onNotice(null);
     try {
-      const result = await Share.share({ message: shareText(account) });
+      const result = await shareOut({ message: shareText(account) });
       if (result.action !== Share.dismissedAction) onSent();
     } catch {
       onNotice('Sharing isn’t available on this device.');

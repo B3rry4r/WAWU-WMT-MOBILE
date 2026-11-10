@@ -1,0 +1,60 @@
+# CREATOR-TAKEDOWN · round history
+
+Moved out of [tasks/CREATOR-TAKEDOWN.md](../CREATOR-TAKEDOWN.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+Heads: see the end of this report (filled at the push). Files, mobile: `src/features/library/takeDown.tsx` (new: `useTakeDown`, `TakeDownSheet`), `LibraryScreen.tsx` (Take down button, rows open the piece's page, new `onOpenPiece` prop), `src/app/library/index.tsx`, `src/features/content-detail/ContentDetailScreen.tsx` (owner's More menu), `src/features/create/ReviewScreen.tsx` (words), tests `library/__tests__/takeDown.test.tsx` (new, `Platform.OS = android`), `library.test.tsx`, `rowPictures.test.tsx` (the new prop only; the one assertion that listed which rows are buttons now lists the Take down buttons too, because the task adds them), `content-detail/__tests__/contentDetail.test.tsx` (DELETE answered, 3 new tests), `create/__tests__/details.test.tsx` (the sentence). Hub: `prisma/schema.prisma` + migration `20261231110000_content_owner_removed` (+ rollback), `deletion-hid.ts`, `content-piece.service.ts` (`delete` writes the mark; `toResponse` drops it), `content-engagement.service.ts`, `search-response.service.ts` (drops it), `account-purge.service.ts`, `src/common/types/content-piece.type.ts`, spec `content-piece/tests/creator-takedown.contract.spec.ts` (8 tests, real database) and one helper line in `search-app-links.contract.spec.ts` (the list of never-served columns, as WEB-HOLD did; no assertion changed).
+Capability checks (service level on a real database, plus jest): (1) all places used, take a live piece down from My uploads: jest `takeDown.test.tsx` (confirm first, one DELETE, count and list read again, "4 of 5 used", then Create is open); Hub: `delete` frees the place once. (2) piece in review from My uploads and from its page: jest (`takeDown.test.tsx`, `contentDetail.test.tsx`); Hub spec for a pending piece. (3) buyer keeps it: Hub spec `creator-takedown.contract.spec.ts` (buyer opens piece, detail, media, engagement, lesson play, My purchases, save; outsider, pending-buyer, tip, signed-out and the creator get 404; an admin-removed piece is still closed to its buyer).
+Checks: mobile typecheck EXIT 0 (after the rowPictures fix), eslint EXIT 0 on changed files, gates EXIT 0, task check EXIT 0; `npm run check` EXIT 1 once under heavy machine load (load 15): 518 of 522 suites passed, 4 timed out (CommunitiesView, fxStrip, chatSend, phoneCopy: none touch this task), the same 4 pass alone (EXIT 0, 95 tests); gates and the task check were run separately. Hub: affected specs (content-piece, me, comment, search-response/search-app-links) 384 tests passed, EXIT 0; the protected suites fail the same 52 tests before and after on this machine's database (they need the live seed; the failing names are identical); eslint EXIT 0 on changed files, tsc EXIT 0 (killed for memory twice under load, then run alone); `npm run contract:build` leaves `contract/` unchanged.
+Gaps and requests: SHARED-CHANGES CREATOR-TAKEDOWN #1 (schema, migration, type). No BACKEND_GAPS row.
+NOT RUN: the web-export walk of the three capability checks with a real buyer and creator, and every picture (390 light and dark beside the board, 1440): the machine was saturated by other agents (load 15, tsc killed for memory, the stack refuses under 5 GB free) and the step budget ran out. A verifier hands FIX until the pictures exist (owner hard rule 1).
+
+## Verifier report
+
+
+
+## Builder round 2 (10 Nov 2026)
+Hub `582b8dd`: admin removal of an owner-removed piece (clears the mark, no second place, buyers shut out); spec added; admin content-review, admin ops and protected suites 361 passed 0 failed with the mock WAWU ID on :4001 (the earlier 52 "protected failures" were that mock missing on this machine, not the code); eslint and tsc (NODE_OPTIONS=--max-old-space-size=3072) EXIT 0. Web-export walk and pictures: see Current state. Mobile check parts: see the end of this section.
+Mobile on head 84e8729 plus this task-file commit, run as parts: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (522 suites passed, 7769 tests passed, 6 skipped), gates EXIT 0, tasks EXIT 0.
+
+## Verifier report (T1, 10 Nov 2026)
+
+Verdict: FIX, for one reason only: the review screen's "You can take it down while it waits" was not pictured (owner hard rule 1). Everything else passes.
+Heads: mobile 710ffac, Hub 582b8dd on 7dd5b22. Stack ctv: Hub branch with the migration, real wawu-id, mobile export, stand-ins only.
+- Attack 1 (live, HTTP): after a take-down the buyer (completed content purchase) opens the piece, detail, media, engagement, comments, a course lesson's play, saves it, and has it in My purchases (all three purchase lists). Pending buyer, tipper, outsider, the creator and signed-out get 404/401 on every route and list (id, public id, search, feed, profile, creator's public list, saved). A control piece nobody bought is unchanged. Only a completed `content` purchase keeps it (tips, pending and failed do not; the Hub sells no bundle or community pass of a piece; a course is one purchase of the piece).
+- Attack 2: buy routes read `status !== 'live'` (legacy unlock 404 after take-down, wallet quote/deliver refuse and refund; owner-removed stays `removed`). The delete writes only status, ownerRemovedAt and the place counter; no Purchase or ledger row is touched. Not exercised with a funded wallet (NOT RUN; code and the existing unlock spec cover it).
+- Attack 3: admin removal and account purge by spec only (pass); not driven live.
+- Attack 4: 4 places, 3 take-downs (live from My uploads with a double click, in-review and sold from their pages) leave 1 used; double click freed once; repeat DELETE 404; the app treats 404 as done.
+- Attack 5: rollback.sql refuses with 3 marked pieces and drops the column once cleared; column nullable, no default; stamp 20261231110000 sorts after 20261231100000; `ownerRemovedAt` in no response checked (42 calls) and not in contract/openapi.json; `contract:build` leaves the tree unchanged.
+- Checks: mobile typecheck EXIT 0, lint EXIT 0, gates OK EXIT 0, tasks EXIT 0, jest -w 2 7734 passed (one suite killed by SIGKILL under load, rerun alone -w 1: 35 passed, EXIT 0). Hub tsc EXIT 0, eslint (changed files) EXIT 0, gates EXIT 0, contract:build EXIT 0. Hub contract specs (takedown, account-purge, admin content-review, admin ops, protected, search-response): 10 failures, all in protected-routes/protected-registry/search-people/popular-name (professionals, verification, courses, people names); the same tests fail on main 7dd5b22 on the same stack database, so equal; the takedown, account-purge and admin content-review suites pass.
+- Test edits: library.test (row buttons now include take-downs), rowPictures (new prop), details.test (new sentence) and the ruling's words: all follow the change, no assertion weakened or deleted.
+- Pictures (/tmp/wmt-shots/creator-takedown-verify/): My uploads, confirm sheets (live, in review), owner page, More menu, page confirm at 390 light, dark and 1440; buyer's My purchases and bought piece after take-down at the same three; outsider page; boards M28 and H20. NOT RUN: the review screen's line as a picture (the upload flow needs a file chooser, price and storage steps).
+- Findings: (Medium, blocks) review-screen picture missing. (Low) taking a piece down from its page opened by a direct link leaves the page showing (back has nowhere to go). (Low) the kept piece drops out of the buyer's Saved list, and the buyer cannot like it (404). (Low) SHARED-CHANGES row #1 says the rollback is a plain DROP COLUMN; the real rollback refuses while marks exist. (Info) M28 draws no trash button and the Uploads meter is not on the screen (R-47, pre-existing); the dev static server does not apply vercel.json headers.
+
+## Builder fix round 1 (10 Nov 2026)
+Items 1 to 4 of the verifier's FIX: see Current state, 'Fix round 1'. Review screen pictures, direct-link landing picture and the jest tests are the proof; check parts below.
+Check parts on the fix-round head: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (523 suites, 7772 passed, 6 skipped, none re-run), gates EXIT 0, `npm run tasks -- --write` EXIT 0.
+
+## Verifier report, round 1 re-check (T1, 10 Nov 2026, mobile f415ba1, Hub 582b8dd)
+
+Verdict: FIX. The landing, Like/Save and SHARED-CHANGES fixes hold; the Rate on a kept piece does not work.
+- Landing (web export, Hub branch, vercel.json headers applied by a small server with the CSP connect-src widened to this stack's two localhost origins, since the shipped CSP blocks localhost): from a direct link, an in-review piece and a live sold piece both land on /library with the count dropped (5, 4 in light; 2, 1 in dark); opened from My uploads it goes back to /library (3). Pictures r1-landing-* at 390 light and dark.
+- Buyer of a taken-down piece (390 light, dark, 1440): no Like, no Save, Comments and Rate drawn, no error on load; a live piece the buyer bought still shows Like and Save. BUT Rate fails: the app sends PUT /content/:id/rating, which the Hub answers 404 for a removed piece (`ContentDetailService.rate` needs status live), so submitting shows "Content not found" (r1-buyer-rate-submit-390-light.png). Comments work (POST 201 for the buyer). The Hub is unchanged at 582b8dd, so the fix is either the Hub rate route (let a buyer rate a kept piece, as `POST /content/:id/rate` already does) or not drawing Rate. Medium.
+- SHARED-CHANGES row #1 now describes the refusing rollback: pass.
+- Diff 84e8729..f415ba1: tests only added (takeDownLanding.test, a kept-piece case and a `kept` factory flag in contentDetail.test); no assertion changed or removed. Note the added kept-piece test asserts no like/save and comments, and nothing about Rate.
+- Checks on f415ba1: typecheck EXIT 0, lint EXIT 0, gates EXIT 0, tasks EXIT 0, jest -w 2 523 suites 7772 passed EXIT 0.
+- Still low: POST /content/:id/view 404s for the buyer of a kept piece (no UI effect).
+
+## Builder fix round 2 (10 Nov 2026)
+Medium from verify2: no Rate and no Report/More on a kept piece; see Current state 'Fix round 2'. Check parts below.
+Check parts on the round 2 head: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (523 suites, 7774 passed, 6 skipped), gates EXIT 0, `npm run tasks -- --write` EXIT 0.
+
+## Verifier report, round 2 re-check (T1, 10 Nov 2026, mobile c2a0d87, Hub 582b8dd)
+
+Verdict: MERGE.
+- Kept piece (buyer, web export behind vercel.json headers, connect-src widened to the stack only): drawn controls are Read now, Download, Tip, Comments, Share, Follow; no Like, Save, Rate or More. Read now, Download, Share and Comments raise no error and no refused call. Tip and Follow show the same answers as on a live piece (Tip: wallet-gate 409 because the test buyer has no wallet; Follow: 404 and "Couldn't update who you follow" because the SQL-made creator has no follow-able profile): identical on the live control, so not caused by the take-down (setup artefact, not proven fixed). Pictures r1-f3-kept-* at 390 light, dark and 1440.
+- Live pieces, no regression: the buyer of a live piece and a non-buyer both still see Like, Save, Rate and More with Report; Like and Save clicks return no error.
+- Diff f415ba1..c2a0d87: tests only added or extended (kept-piece assertions, live-bought piece, android case); nothing weakened.
+- Checks on c2a0d87: typecheck EXIT 0, lint EXIT 0, gates EXIT 0, tasks EXIT 0, jest -w 2 523 suites 7774 passed EXIT 0.
+- NOT RUN: Follow with a real creator profile; Tip with a funded wallet; 1440 dark.

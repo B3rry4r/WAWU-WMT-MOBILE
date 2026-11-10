@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -6,10 +7,11 @@ import { useFocusRing } from '@/components/focusRing';
 
 import { detailKey, fetchContentDetail } from './api';
 import { media, metrics, words } from './look';
-import { bookPlacement, creatorName, freePages, isLocked, playableUrl } from './model';
+import { bookPlacement, creatorName, freePages, isLocked, pictureCandidates, playableUrl } from './model';
 import { fromTop, PostFrame, type MiddleSpace, type PostProps } from './PostFrame';
 import { TrackBar } from './parts';
 import { PdfReader } from './reader';
+import { usePicture } from './usePicture';
 
 /**
  * H4: a PDF drawn as its book, with how many pages are free (the creator's declared
@@ -29,6 +31,8 @@ export function PdfPost(props: PostProps) {
   });
   const free = locked ? freePages(detail.data, pages) : null;
   const by = creatorName(item.creator);
+  // R-114: a PDF with a cover draws it as the front of its book; one with none keeps the generated cover (H4). Either way pressing it reads.
+  const cover = usePicture(pictureCandidates(item, null));
 
   return (
     <>
@@ -63,14 +67,20 @@ export function PdfPost(props: PostProps) {
               >
                 <View style={[styles.backPage, { backgroundColor: media.page }]} />
                 <View style={[styles.cover, { backgroundColor: media.cover, boxShadow: `0 30px 50px -10px ${media.coverShadow}` }]}>
-                  <View style={[styles.spine, { backgroundColor: media.spine }]} />
-                  <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
-                    {by ?? ''}
-                  </Text>
-                  <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
-                    {item.title}
-                  </Text>
-                  <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+                  {cover.uri ? (
+                    <Image testID={`book-cover-${item.id}`} source={{ uri: cover.uri }} contentFit="cover" accessibilityLabel={item.title} onError={cover.onError} style={StyleSheet.absoluteFill} />
+                  ) : (
+                    <>
+                      <View style={[styles.spine, { backgroundColor: media.spine }]} />
+                      <Text numberOfLines={1} style={[words.bookBy, { color: media.ink }]}>
+                        {by ?? ''}
+                      </Text>
+                      <Text numberOfLines={5} style={[words.bookTitle, { color: media.ink }]}>
+                        {item.title}
+                      </Text>
+                      <Text style={[words.bookPages, { color: media.ink }]}>{pages ? `${pages} pages` : ''}</Text>
+                    </>
+                  )}
                 </View>
               </Pressable>
             </View>

@@ -4,7 +4,7 @@ import { useVideoPlayer } from 'expo-video';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { processColor, StatusBar, StyleSheet } from 'react-native';
+import { BackHandler, Platform, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import RootLayout from '@/app/_layout';
@@ -56,7 +56,8 @@ const routes = {
   '(tabs)/me': Me,
 };
 
-const HEADLINE = 'The creators and professionals ecosystem.';
+/** The one line the welcome screen says (R-119); it was the headline 'The creators and professionals ecosystem.' with a second line before. */
+const WELCOME_WORDS = 'Create. Sell. Get paid. Connect. Grow.';
 const TITLE = 'What brings you to Who Made This?';
 let requests: string[] = [];
 /** When set, POST /auth/login answers with tokens; otherwise every request fails as if offline. */
@@ -89,10 +90,9 @@ beforeEach(() => {
 const press = (name: string, role: 'button' | 'link' = 'button') => fireEvent.press(screen.getByRole(role, { name }));
 
 describe('A1: welcome', () => {
-  it('a user who opens the app signed out sees the headline, the line under it and both buttons', async () => {
+  it('a user who opens the app signed out sees the mark, the one line under it and both buttons', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    expect(screen.getByText('Create. Sell. Get paid. Grow.')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
     expect(screen.getByRole('image', { name: 'Who Made This?' })).toBeTruthy();
@@ -100,154 +100,193 @@ describe('A1: welcome', () => {
   });
 
   /**
-   * R-98 replaces R-90 here. The two tests that followed ("a user sees the vertical mark with its glow in the middle of the dark
-   * page ..." and "a user sees the mark centred between the top safe area and the headline ...") pinned the mark picture, its glow,
-   * its spacers and its size, which are gone by the owner's ruling (27 Oct 2026); they are replaced by the tests below.
-   * Their lasting lines are kept: one image role named for the app, a layer that takes no touches, and no photo.
-   * Round 2 (owner, 27 Oct 2026, a new video and a bottom panel): the cases of round 1 that pinned the full-screen video under the
-   * words and the fade that started 180 above the headline (the whole-screen fill, `welcome-bottom`, the dark page colour behind it,
-   * the 15 s file's hash and size) are changed to the box above a panel, the panel, the new token and the 8 s file's hash and size.
-   * Round 3 (owner, 29 Oct 2026, WELCOME-TEXT): the owner's own 15 s file replaces the 8 s one; the file case pins its hash and size.
+   * R-119 (owner, 31 Oct 2026, WELCOME-LOGO) replaces R-98 and R-111 here: no video, the app's own mark, one line, the two buttons. The
+   * cases that pinned the video are replaced by the cases below; each one that changed, and why, is named in tasks/WELCOME-LOGO.md:
+   * the whole-screen video case (the root's layers, the base purple behind the video, the player's loop and mute setup), the file's
+   * hash and size, the play-and-pause-with-focus case, the "nothing between the video and the words" case, the lift cases (`welcomeLift`
+   * is gone with the video) and the Android video case are now the cases for the mark, its centring, its page colour, no player, the
+   * one line, and the phone's Back; the words-and-buttons case keeps its spacing and its buttons and drops the headline, the title's size
+   * and the line's 0.8 opacity.
    */
-  const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
-  const PLAYER = () => jest.mocked(useVideoPlayer).mock.results.at(-1)?.value as { play: jest.Mock; pause: jest.Mock; loop: boolean; muted: boolean };
+  const PLAYER_CALLS = () => jest.mocked(useVideoPlayer).mock.calls;
   const flat = (testID: string) => StyleSheet.flatten(native.getByTestId(testID, { includeHiddenElements: true }).props.style);
   const idsOf = (node: { children: unknown[] }) => node.children.map((child) => (typeof child === 'string' ? undefined : (child as { props: { testID?: string } }).props.testID));
 
-  it.each(['light', 'dark'] as const)('a user sees the approved video filling the screen above a bottom panel, with no logo drawn by the app, in the %s theme (R-98)', async (scheme) => {
+  it.each(['light', 'dark'] as const)('a person opening the app sees the app\'s own mark on the darkest page, one line under it and both buttons, with no video, no headline and no panel, in the %s theme (R-119)', async (scheme) => {
     mockScheme = scheme;
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     const root = native.getByTestId('welcome');
-    // The screen is the video's own base purple behind everything, so nothing flashes before the first frame and any seam is purple.
-    expect(darkColors.surfaceWelcomeVideoBase).toBe('#280C41');
-    expect(StyleSheet.flatten(root.props.style).backgroundColor).toBe(darkColors.surfaceWelcomeVideoBase);
-    // The source is the approved asset itself, looping and silent.
-    const [source, setup] = jest.mocked(useVideoPlayer).mock.calls[0] as [unknown, (p: { loop: boolean; muted: boolean }) => void];
-    expect(source).toEqual(require('../../assets/video/welcome-loop.mp4'));
-    const fake = { loop: false, muted: false };
-    setup(fake);
-    expect(fake).toMatchObject({ loop: true, muted: true });
-    // The video's box is the room above the panel from the top of the screen (under the status bar), plus the overlap behind the
-    // panel's top edge; cropped to fill that box, never stretched; no controls.
-    expect(idsOf(root)).toEqual(['welcome-stage', 'welcome-panel']);
-    expect(flat('welcome-stage')).toMatchObject({ flex: 1 });
-    expect(flat('welcome-panel').marginTop).toBeLessThan(0);
-    expect(flat('welcome-panel').marginTop).toBeGreaterThanOrEqual(-24);
-    expect(idsOf(native.getByTestId('welcome-stage'))).toEqual(['welcome-video']);
-    const view = native.getByTestId('welcome-video-view', { includeHiddenElements: true });
-    expect(view.props.contentFit).toBe('cover');
-    expect(view.props.nativeControls).toBe(false);
-    expect(view.props.pointerEvents).toBe('none');
-    expect(view.props.player).toBe(PLAYER());
-    expect(flat('welcome-video-view')).toEqual({ ...FILL, width: '100%', height: '100%' });
-    expect(flat('welcome-video')).toEqual(FILL);
-    // Named for the app, once, as an image; the layer takes no touches.
+    // The page is the app's darkest surface in both themes (the screen is always dark), nothing else colours it.
+    expect(darkColors.surfacePage).toBe('#0B0A0D');
+    expect(StyleSheet.flatten(root.props.style)).toMatchObject({ flex: 1, backgroundColor: darkColors.surfacePage });
+    // Two layers, the mark's room first and the words and buttons at the foot, with nothing else between or behind them.
+    expect(idsOf(root)).toEqual(['welcome-stage', 'welcome-content']);
+    // The mark is the app's own (BrandMark, the sticker cut for a dark page, the artwork the Explore header draws), named for the app once.
+    const art = native.getByTestId('welcome-mark-art', { includeHiddenElements: true });
+    expect([art.props.source].flat()[0]).toEqual(require('../../assets/brand/submark-sticker.png'));
+    expect(art.props.contentFit).toBe('contain');
     expect(screen.getAllByRole('image', { name: 'Who Made This?' })).toHaveLength(1);
-    expect(native.getByTestId('welcome-video').props.pointerEvents).toBe('none');
-    // R-90's mark, its spacers and its glow, and the photo before it, are not drawn; nor the whole-screen layer of round 1.
-    for (const gone of ['welcome-mark', 'welcome-mark-art', 'welcome-above', 'welcome-below', 'welcome-cover', 'welcome-bottom']) {
+    expect(native.getByTestId('welcome-mark').props.accessibilityLabel).toBe('Who Made This?');
+    // The layer that holds the mark takes no touches, so it never sits over a button.
+    expect(native.getByTestId('welcome-stage', { includeHiddenElements: true }).props.pointerEvents).toBe('none');
+    // One line, the owner's words, and no other title.
+    expect(screen.getAllByText(WELCOME_WORDS)).toHaveLength(1);
+    expect(screen.queryByText(/creators and professionals/i)).toBeNull();
+    expect(screen.queryByText('Create. Sell. Get paid. Grow.')).toBeNull();
+    // No video: no player was asked for, no video layer, panel, fade, shade, gradient or blur is drawn.
+    expect(PLAYER_CALLS()).toHaveLength(0);
+    for (const gone of ['welcome-video', 'welcome-video-view', 'welcome-panel', 'welcome-fade', 'welcome-blur', 'welcome-cover', 'welcome-bottom']) {
       expect(native.queryByTestId(gone, { includeHiddenElements: true })).toBeNull();
     }
+    const tree = JSON.stringify(native.toJSON());
+    expect(tree).not.toMatch(/blur|LinearGradient|VideoView|RCTVideo/i);
+    // Both buttons are in the foot layer, under the line.
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-words'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-create'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-sign-in'));
   });
 
-  it('plays the file the owner approved, byte for byte: 1080 x 1920, 15 s, no sound, never re-encoded (R-98, 29 Oct 2026)', () => {
+  it('the welcome video is no longer a bundled requirement of the screen: the screen module reads no video file and no player (R-119)', () => {
+    const source = readFileSync(join(__dirname, '../features/auth/WelcomeScreen.tsx'), 'utf8');
+    expect(source).not.toMatch(/welcome-loop|expo-video|useVideoPlayer|VideoView|welcomeLift|surfaceWelcomeVideoBase/);
+    // The owner's file stays in the repo, untouched (removing it is its own task): the same bytes as when it was approved.
     const file = readFileSync(join(__dirname, '../../assets/video/welcome-loop.mp4'));
     expect(file.length).toBe(4160801);
     expect(createHash('sha256').update(file).digest('hex')).toBe('fc533cb4ab104a9306e755c859c48c8b6817227980d4343e4eecebac79acd624');
   });
 
-  it('the video plays while the welcome screen is in front and pauses when another screen is on it, and plays again on Back (R-98)', async () => {
+  it('the mark is centred across, and centred down between the top safe area and the words: equal room above and below, at least 16 below on a short phone', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    await waitFor(() => expect(PLAYER().play).toHaveBeenCalledTimes(1));
-    expect(PLAYER().pause).not.toHaveBeenCalled();
-    await press('Create an account');
-    await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
-    await waitFor(() => expect(PLAYER().pause).toHaveBeenCalledTimes(1));
-    expect(PLAYER().play).toHaveBeenCalledTimes(1);
-    await press('Back');
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    await waitFor(() => expect(PLAYER().play).toHaveBeenCalledTimes(2));
-    expect(PLAYER().pause).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
+    // The stage is the room above the words (the layout gives it everything the words and buttons leave) and starts under the safe area;
+    // the mark sits between two spacers that share what the mark leaves, centred across.
+    const stage = native.getByTestId('welcome-stage', { includeHiddenElements: true });
+    expect(flat('welcome-stage')).toMatchObject({ flex: 1, alignItems: 'center' });
+    expect(typeof flat('welcome-stage').paddingTop).toBe('number');
+    expect(idsOf(stage)).toEqual(['welcome-above', 'welcome-mark', 'welcome-below']);
+    expect(flat('welcome-above').flex).toBe(1);
+    expect(flat('welcome-below').flex).toBe(flat('welcome-above').flex);
+    // The only difference between the spacers: a short phone keeps 16 below the mark, whatever the share, so the mark never touches the words.
+    expect(flat('welcome-below').minHeight).toBe(16);
+    expect(flat('welcome-above').minHeight).toBeUndefined();
+    // The mark is its own 120 wide (the owner's picture: a little under a third of the width), never squeezed and never lifted by a transform.
+    expect(flat('welcome-mark')).toMatchObject({ width: 120, flexShrink: 0 });
+    expect(flat('welcome-mark').transform).toBeUndefined();
+    expect(flat('welcome-mark').position).toBeUndefined();
+    // The stage is the first layer and the words the second, so the words' top edge bounds the room from below.
+    expect(idsOf(native.getByTestId('welcome'))).toEqual(['welcome-stage', 'welcome-content']);
+    expect(native.getByTestId('welcome-content').props.style).toBeUndefined();
   });
 
-  it('the words and buttons sit in a solid panel at the bottom in the video\'s base purple, with a short fade from clear to that colour above its top edge, and no blur (R-98)', async () => {
-    await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
-    const panel = native.getByTestId('welcome-panel');
-    // The fade is the lowest of the panel's three parts, so the words and the buttons are drawn over it; the panel is drawn over the video.
-    expect(idsOf(panel)).toEqual(['welcome-fade', 'welcome-words', undefined]);
-    expect(flat('welcome-panel')).toMatchObject({ backgroundColor: darkColors.surfaceWelcomeVideoBase });
-    const fade = native.getByTestId('welcome-fade', { includeHiddenElements: true });
-    // Clear at the top and the panel's colour at the foot (the same colour at strength 0, never the word "transparent": it blends through black).
-    expect(fade.props.colors[0]).toBe(processColor(`${darkColors.surfaceWelcomeVideoBase}00`));
-    expect(fade.props.colors.at(-1)).toBe(processColor(`${darkColors.surfaceWelcomeVideoBase}FF`));
-    expect(fade.props.locations[0]).toBe(0);
-    expect(fade.props.locations.at(-1)).toBe(1);
-    expect(fade.props.startPoint[1]).toBeCloseTo(0);
-    expect(fade.props.endPoint[1]).toBeCloseTo(1);
-    // It only ever darkens: each stop is at least as strong as the one above it.
-    const strengths = fade.props.colors.map((c: number) => (c >>> 24) & 0xff);
-    expect([...strengths].sort((x, y) => x - y)).toEqual(strengths);
-    // It is short, sits on the video and ends at the panel's top edge, and takes no touches.
-    const { top, height } = flat('welcome-fade');
-    expect(height).toBeGreaterThan(0);
-    expect(height).toBeLessThanOrEqual(24);
-    expect(top).toBe(-height);
-    expect(flat('welcome-fade')).toMatchObject({ position: 'absolute', left: 0, right: 0 });
-    expect(fade.props.pointerEvents).toBe('none');
-    // No blur anywhere on the screen.
-    expect(JSON.stringify(native.toJSON())).not.toMatch(/blur/i);
-    expect(native.queryByTestId('welcome-blur', { includeHiddenElements: true })).toBeNull();
+  describe('on Android (R-119, phone paths)', () => {
+    let android: { restore: () => void };
+    let handlers: (() => boolean | null | undefined)[];
+    let backSpy: jest.SpyInstance;
+    /** The phone's Back: the handlers registered last answer first, and the first that says it handled the press ends it, as Android does. */
+    const hardwareBack = async () => {
+      let handled = false;
+      await act(async () => {
+        for (const handler of [...handlers].reverse()) {
+          if (handler()) {
+            handled = true;
+            break;
+          }
+        }
+      });
+      return handled;
+    };
+    beforeEach(() => {
+      handlers = [];
+      backSpy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_event, handler) => {
+        handlers.push(handler as () => boolean);
+        return { remove: () => void handlers.splice(handlers.indexOf(handler as () => boolean), 1) };
+      });
+    });
+    afterEach(() => {
+      android?.restore();
+      backSpy.mockRestore();
+    });
+
+    it('the mark, the line and both buttons are drawn, the page is the dark surface, the bar is light, and no video player is asked for', async () => {
+      android = jest.replaceProperty(Platform, 'OS', 'android');
+      await renderRouter(routes);
+      await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
+      expect(flat('welcome')).toMatchObject({ flex: 1, backgroundColor: darkColors.surfacePage });
+      expect(native.getByTestId('welcome-mark-art', { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
+      expect(PLAYER_CALLS()).toHaveLength(0);
+      // The page is dark, so the status bar's icons are light, as they were over the video.
+      await waitFor(() => expect((StatusBar as unknown as { _currentValues: { barStyle: { value: string } } | null })._currentValues?.barStyle.value).toBe('light-content'));
+    });
+
+    it('the phone\'s Back on the welcome screen is not taken by the screen (it leaves the app, as before), and Back from Sign in returns to it', async () => {
+      android = jest.replaceProperty(Platform, 'OS', 'android');
+      await renderRouter(routes);
+      await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
+      // At the root of the signed-out stack nothing handles the press, so Android takes it and leaves the app.
+      expect(await hardwareBack()).toBe(false);
+      expect(screen.getByText(WELCOME_WORDS)).toBeTruthy();
+      await press('Sign in');
+      await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
+      // One step in, the same press goes back to the welcome screen.
+      expect(await hardwareBack()).toBe(true);
+      await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
+      expect(screen.queryByText('Welcome back')).toBeNull();
+      expect(await hardwareBack()).toBe(false);
+    });
   });
 
-  it('the words and buttons keep their copy, sizes and spacing, now inside the panel (R-98)', async () => {
+  it('the line and the buttons keep their size and spacing, with the line centred and in white (R-119)', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     expect(flat('welcome-words')).toMatchObject({ paddingHorizontal: 24, paddingBottom: 28 });
-    const title = StyleSheet.flatten(screen.getByText(HEADLINE).props.style);
-    expect(title).toMatchObject({ fontSize: 24, lineHeight: 24 * 1.05, letterSpacing: -0.04 * 24 });
-    expect(title.color).toBe(darkColors.textOnAccent);
-    const line = StyleSheet.flatten(screen.getByText('Create. Sell. Get paid. Grow.').props.style);
-    expect(line).toMatchObject({ opacity: 0.8, lineHeight: 15 * 1.45 });
+    const line = StyleSheet.flatten(screen.getByText(WELCOME_WORDS).props.style);
+    expect(line).toMatchObject({ fontSize: 15, lineHeight: 15 * 1.45, textAlign: 'center' });
+    expect(line.opacity).toBeUndefined();
     expect(line.color).toBe(darkColors.textOnAccent);
+    // The buttons are as they were: Create an account in the accent, Sign in in glass, both full width and 10 apart.
     expect(screen.getByRole('button', { name: 'Create an account' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
-    // The panel is the words and the two buttons (and the fade); both are in it, none beside it.
-    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-create'));
-    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-sign-in'));
-    expect(native.getByTestId('welcome-panel')).toContainElement(native.getByTestId('welcome-words'));
+    expect(StyleSheet.flatten(native.getByTestId('welcome-create').props.style).backgroundColor).toBe(darkColors.accent);
+    expect(StyleSheet.flatten(native.getByTestId('welcome-sign-in').props.style).backgroundColor).toBe(darkColors.surfaceGlass);
+    expect(flat('welcome-buttons')).toMatchObject({ gap: 10, paddingHorizontal: 20 });
+    // The words and the two buttons are in the one foot layer, none beside it.
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-create'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-sign-in'));
+    expect(native.getByTestId('welcome-content')).toContainElement(native.getByTestId('welcome-words'));
   });
+
 
   it('says nothing that no source backs: no bank claim', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     expect(screen.queryByText(/bank/i)).toBeNull();
     expect(screen.queryByText(/wawu/i)).toBeNull();
   });
 
   it('a user can tap Create an account and reach A2', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
-    expect(screen.queryByText(HEADLINE)).toBeNull();
+    expect(screen.queryByText(WELCOME_WORDS)).toBeNull();
   });
 
   it('a user can tap Sign in and reach A22, with a Back button that returns to the welcome screen', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Sign in');
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await press('Back');
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     expect(screen.queryByText('Welcome back')).toBeNull();
   });
 
   it('makes no request to any server', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
     expect(requests).toEqual([]);
@@ -258,7 +297,7 @@ describe('A1: welcome', () => {
     mockVault.set(REFRESH_KEY, 'stored-refresh');
     await renderRouter(routes, { initialUrl: url });
     await waitFor(() => expect(screen.getByRole('header', { name: 'Home' })).toBeTruthy());
-    expect(screen.queryByText(HEADLINE)).toBeNull();
+    expect(screen.queryByText(WELCOME_WORDS)).toBeNull();
     expect(screen.queryByText(TITLE)).toBeNull();
   });
 });
@@ -276,7 +315,7 @@ describe('A22 to A2', () => {
 
   it('A22 reached from the welcome screen has a Back button', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Sign in');
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
@@ -286,7 +325,7 @@ describe('A22 to A2', () => {
     await renderRouter(routes, { initialUrl: '/sign-in' });
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await press('Back');
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
   });
 });
 
@@ -332,12 +371,12 @@ describe('A2: why you are here', () => {
 
   it('a user who goes back from A2 to the welcome screen and returns finds the pick kept', async () => {
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
     await fireEvent.press(earn());
     await press('Back');
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
     expect(earn().props.accessibilityState.checked).toBe(true);
@@ -380,25 +419,25 @@ describe('the status bar follows the screen in front', () => {
   it.each(['light', 'dark'] as const)('in the %s theme, A1 has light icons, A2 has the theme default, Back to A1 is light again', async (scheme) => {
     mockScheme = scheme;
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await waitFor(() => expect(barStyle()).toBe('light-content'));
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
     await waitFor(() => expect(barStyle()).toBe(themeDefault(scheme)));
     await press('Back');
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await waitFor(() => expect(barStyle()).toBe('light-content'));
   });
 
   it.each(['light', 'dark'] as const)('in the %s theme, A22 reached from A1 has the theme default, Back to A1 is light again', async (scheme) => {
     mockScheme = scheme;
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Sign in');
     await waitFor(() => expect(screen.getByText('Welcome back')).toBeTruthy());
     await waitFor(() => expect(barStyle()).toBe(themeDefault(scheme)));
     await press('Back');
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await waitFor(() => expect(barStyle()).toBe('light-content'));
   });
 });
@@ -409,7 +448,7 @@ describe('the pick is never carried to the next person', () => {
   it('a sign-in that succeeds forgets the pick', async () => {
     loginWorks = true;
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
     await fireEvent.press(earn());
@@ -427,7 +466,7 @@ describe('the pick is never carried to the next person', () => {
   it('after a sign-out the next visitor finds nothing picked on A2', async () => {
     loginWorks = true;
     await renderRouter(routes);
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());
     await fireEvent.press(earn());
@@ -440,7 +479,7 @@ describe('the pick is never carried to the next person', () => {
     await act(async () => {
       await signOut();
     });
-    await waitFor(() => expect(screen.getByText(HEADLINE)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(WELCOME_WORDS)).toBeTruthy());
     expect(pickedAccountType()).toBeNull();
     await press('Create an account');
     await waitFor(() => expect(screen.getByText(TITLE)).toBeTruthy());

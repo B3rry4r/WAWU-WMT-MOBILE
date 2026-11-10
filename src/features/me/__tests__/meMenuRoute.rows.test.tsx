@@ -190,6 +190,8 @@ describe('ME-03: a user can open every screen the Me menu names, from the Me tab
 
   it('a fan sees seven rows: no Creator dashboard and no My content, and the Hub is not asked for earnings', async () => {
     hubAs('user');
+    // A fan holds no tier, so the Me page's meter (which reads the upload places once a tier runs, R-129) does not ask for them either.
+    answers['/api/hub/me/tier'] = { state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
     await raiseMenu();
     expect(await screen.findByText('1 enrolled')).toBeTruthy();
     expect(screen.queryByTestId('me-menu-dashboard')).toBeNull();

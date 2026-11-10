@@ -14,6 +14,7 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
+import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { setHubAccountType } from '@/features/after-signup/hubAccountType';
@@ -188,6 +189,8 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings, r
   const [docs, setDocs] = useState<Doc[]>([]);
   const [checked, setChecked] = useState(false);
   const [sheet, setSheet] = useState<'field' | 'service' | null>(null);
+  // R-117 part B: the add-a-service sheet is a modal the keyboard covers, so it adds the keyboard's height under its button.
+  const lift = useKeyboardLift();
   const [typed, setTyped] = useState('');
   const [typedProblem, setTypedProblem] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -456,6 +459,7 @@ function ApplyFlow({ fields, mine, initialField, onBack, onDone, onMyListings, r
           }}
           testID="pro-service-add"
         />
+        {lift > 0 ? <View testID="pro-service-keyboard-lift" style={{ height: lift }} /> : null}
       </BottomSheet>
     </ProFrame>
   );

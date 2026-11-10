@@ -4653,6 +4653,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["UgcReportController_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/me/suspension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MeSuspensionController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/creators/{wawuId}/evg": {
         parameters: {
             query?: never;
@@ -6505,6 +6537,54 @@ export interface paths {
         put?: never;
         post: operations["CommunityMessageController_create"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/moderation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommunityRoomModerationController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CommunityRoomModerationController_deleteMessage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hub/communities/{id}/mutes/{userWawuId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CommunityRoomModerationController_mute"];
+        post?: never;
+        delete: operations["CommunityRoomModerationController_unmute"];
         options?: never;
         head?: never;
         patch?: never;
@@ -9582,6 +9662,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/waitlist/tiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The plans /join sells (R-125): Verify, Verify Plus and Founding Maker, each
+         *     with its price in kobo, days, products, bonus points, event pass, badge and
+         *     pack bonus, read live from the same plan settings the app's own plans read
+         *     uses. `best` marks the one the page preselects. Public.
+         */
+        get: operations["WaitlistPublicController_tiers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/waitlist/referral-codes/{code}": {
         parameters: {
             query?: never;
@@ -9594,7 +9696,10 @@ export interface paths {
          *     pay. Never the limit, the count or the community. A code we do not have
          *     is a 404 `referral_unknown`. Advice only: the registration decides again.
          *     An address that has tried too many codes we do not have is asked to wait
-         *     (429 `referral_attempts_limited`).
+         *     (429 `referral_attempts_limited`). With `?tier=verify|plus|founding`
+         *     (R-125) the answer is for that tier: its price, and a code that prices
+         *     another tier answers `applies` false, `reason` `other_tier`, with a
+         *     sentence in `message`. Without `?tier=` it answers exactly as before.
          */
         get: operations["WaitlistPublicController_referralCheck"];
         put?: never;
@@ -10082,7 +10187,7 @@ export interface components {
         };
         PresignUploadDto: {
             /** @enum {string} */
-            folder: "content/preview" | "content/full" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample" | "ai/input-audio" | "ai/input-video" | "ai/input-image" | "ai/input-doc";
+            folder: "content/preview" | "content/full" | "content/cover" | "kyc/id-document" | "service-application/document" | "professional/document" | "legal/document" | "avatars" | "profile/cover" | "community/image" | "community/message" | "community/message-video" | "community/message-voice" | "event/speaker" | "event/banner" | "profile/work" | "voice/sample" | "ai/input-audio" | "ai/input-video" | "ai/input-image" | "ai/input-doc";
             /** @description e.g. "image/jpeg", "video/mp4", "application/pdf". */
             contentType: string;
             /** @description File extension without the dot. Sanitised again server-side. */
@@ -10471,10 +10576,31 @@ export interface components {
             /** @enum {string} */
             accessType: "free" | "paid";
             price: number;
-            /** Format: uri */
-            previewAsset: string;
+            /**
+             * Format: uri
+             * @description The public preview file, as `POST /uploads/presign` answered. PREVIEW-AUTO: optional now. A FREE piece may leave it out (its whole
+             *     file is open to everyone, so the preview is the file itself); a PAID audio or video piece may leave it out and send
+             *     `previewFromFile: true` to have the Hub make it from `fullAsset` (R-118: a PDF too; a course from its first lesson, a template or
+             *     a course whose first lesson is not a video from `coverAsset`). A picture sends its own smaller copy. A request that carries one is
+             *     read exactly as it always was.
+             */
+            previewAsset?: string;
+            /**
+             * @description PREVIEW-AUTO: "make my preview from the full file". For a PAID audio, video, PDF, course, or template that sends no
+             *     `previewAsset`: the Hub cuts the first 30 seconds of a recording (a third of a file under 45 seconds), the first 3 pages of a PDF
+             *     (the first page of a file under 6 pages), the first lesson of a course the same way, or copies the cover (a template, or a course
+             *     whose first lesson is not a video), after the full file is stored, and stores the result as the piece's preview. Ignored when a
+             *     `previewAsset` is sent, and for a free piece.
+             */
+            previewFromFile?: boolean;
             /** Format: uri */
             fullAsset: string;
+            /**
+             * @description CONTENT-COVER (R-114): the piece's optional cover picture, as the `key` (or `fileUrl`) `POST /uploads/presign`
+             *     answered for the folder `content/cover` (png, jpeg or webp, at most 5 MB). Left out, the piece has no cover.
+             *     It must be the caller's own upload (400 otherwise).
+             */
+            coverAsset?: string;
             /**
              * Format: uuid
              * @description FIX-111 (H24): the creator's own course this piece comes from ("From the course VFX for Beginners"). Optional, and only for a
@@ -10496,8 +10622,24 @@ export interface components {
             price?: number;
             /** Format: uri */
             previewAsset?: string;
+            /**
+             * @description UPLOAD-REST (R-118): "make my preview from the file I already have". For a piece that this edit leaves PAID and that has no
+             *     preview of its own yet (a free piece going to paid: its preview is its own file) and that sends no `previewAsset`, the Hub
+             *     makes the preview from the piece's stored full file exactly as `POST /content` does with the same flag: the first 30 seconds
+             *     of audio or video (a third of a file under 45 seconds), the first 3 pages of a PDF (the first page of a file under 6 pages),
+             *     the same of a course's first lesson, or a copy of the cover for a template or a course whose first lesson is not a video. It is
+             *     stored as the piece's preview, counted once in the creator's storage, and given back if the edit does not go through. A picture
+             *     is refused in words (it sends its own smaller copy as `previewAsset`). Left out, the edit reads exactly as it always did; sent on
+             *     a piece that already has a preview of its own, or that stays free, it does nothing.
+             */
+            previewFromFile?: boolean;
             /** Format: uri */
             fullAsset?: string;
+            /**
+             * @description CONTENT-COVER (R-114): the key (or `fileUrl`) of a cover uploaded to the folder `content/cover`, which replaces the
+             *     old one (the old file is deleted); `null` takes the cover off. Left out, the cover stays as it is.
+             */
+            coverAsset?: string | null;
         };
         VerifyUnlockDto: {
             transaction_id: string;
@@ -10584,10 +10726,17 @@ export interface components {
             mediaJobId?: string | null;
         };
         PublishProductDraftDto: {
-            /** Format: uri */
-            previewAsset: string;
+            /**
+             * Format: uri
+             * @description Optional since PREVIEW-AUTO, exactly as on `POST /content`: a free piece may leave it out.
+             */
+            previewAsset?: string;
+            /** @description PREVIEW-AUTO: "make my preview from the full file", as on `POST /content`. */
+            previewFromFile?: boolean;
             /** Format: uri */
             fullAsset: string;
+            /** @description CONTENT-COVER (R-114): the optional cover, as `POST /content` takes it. */
+            coverAsset?: string;
         };
         CreateCreditPurchaseDto: {
             /** @enum {string} */
@@ -11265,6 +11414,136 @@ export interface components {
             /** @description Why, in a few plain words; kept on the audit row. */
             reason: string;
         };
+        AdminMoneyBalanceView: {
+            availableKobo: number;
+            bookedKobo: number;
+            /** @enum {string} */
+            source: "provider";
+            asOf: string;
+        };
+        AdminMoneyWalletView: {
+            wawuId: string;
+            handle: string | null;
+            displayName: string | null;
+            provider: string;
+            openedAt: string;
+            /** @enum {string} */
+            status: "open";
+            accountLast4: string;
+            balance?: components["schemas"]["AdminMoneyBalanceView"] | null;
+            balanceUnavailable?: string | null;
+        };
+        AdminMoneyWalletPage: {
+            items: components["schemas"]["AdminMoneyWalletView"][];
+            nextCursor: string | null;
+        };
+        AdminMoneyLedgerRowView: {
+            id: string;
+            /** @enum {string} */
+            direction: "in" | "out";
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "reversed";
+            category: string;
+            amountKobo: number;
+            feeKobo: number;
+            totalKobo: number;
+            counterpartyName: string | null;
+            linkKind: string | null;
+            linkTitle: string | null;
+            reference: string | null;
+            occurredAt: string;
+        };
+        AdminMoneyWalletDetailView: {
+            wallet: components["schemas"]["AdminMoneyWalletView"];
+            recordsNote: string;
+            records: components["schemas"]["AdminMoneyLedgerRowView"][];
+            nextCursor: string | null;
+        };
+        AdminMoneyHeldByKindView: {
+            kind: string;
+            count: number;
+            heldKobo: number;
+            payeeShareKobo: number;
+            wawuShareKobo: number;
+        };
+        AdminMoneyHeldView: {
+            id: string;
+            kind: string;
+            title: string;
+            payerWawuId: string | null;
+            payerHandle: string | null;
+            payeeWawuId: string | null;
+            payeeHandle: string | null;
+            amountKobo: number;
+            payeeShareKobo: number;
+            wawuShareKobo: number;
+            heldAt: string;
+            waiting: string | null;
+            inReview: boolean;
+        };
+        AdminMoneyMerchantView: {
+            provider: string;
+            account: {
+                accountLast4: string;
+                accountName: string;
+                balance: components["schemas"]["AdminMoneyBalanceView"];
+            } | null;
+            balanceUnavailable?: string | null;
+            recordsNote: string;
+            heldByKind: components["schemas"]["AdminMoneyHeldByKindView"][];
+            holds: components["schemas"]["AdminMoneyHeldView"][];
+            nextCursor: string | null;
+        };
+        AdminMoneyBasisView: {
+            basis: string;
+            label: string;
+            count: number;
+            grossKobo: number;
+        };
+        AdminMoneyForeignChargeView: {
+            currency: string;
+            count: number;
+            amountMinor: number;
+        };
+        AdminMoneyBreakdownView: {
+            key: string;
+            label: string;
+            count: number;
+            grossKobo: number;
+            unpricedCount: number;
+            bases?: components["schemas"]["AdminMoneyBasisView"][] | null;
+        };
+        AdminMoneyStreamView: {
+            key: string;
+            label: string;
+            rail: string;
+            source: string;
+            statuses: string[];
+            count: number;
+            grossKobo: number;
+            unpricedCount: number;
+            grossBasis: string;
+            wawuKobo: number | null;
+            creatorsKobo: number | null;
+            refundedKobo: number | null;
+            keptKobo: number;
+            bases?: components["schemas"]["AdminMoneyBasisView"][] | null;
+            foreignCharges?: components["schemas"]["AdminMoneyForeignChargeView"][] | null;
+            breakdown?: components["schemas"]["AdminMoneyBreakdownView"][] | null;
+        };
+        AdminMoneyRevenueView: {
+            period: {
+                from: string;
+                to: string;
+                window: string;
+            };
+            split: {
+                creatorsPercent: number;
+                wawuPercent: number;
+            };
+            streams: components["schemas"]["AdminMoneyStreamView"][];
+            note: string;
+        };
         OpenFxAccountDto: {
             /** @enum {string} */
             currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
@@ -11503,6 +11782,60 @@ export interface components {
         };
         CreateDataExportRequestDto: Record<string, never>;
         CreateDmReportDto: Record<string, never>;
+        CreateUgcReportDto: {
+            /**
+             * @description What is being reported.
+             * @enum {string}
+             */
+            kind: "piece" | "comment" | "profile" | "community_message" | "chat_message" | "direct_message";
+            /**
+             * Format: uuid
+             * @description The id of that thing (a piece, comment, community message, chat message or paid question), or the person's wawuId for a profile.
+             */
+            targetId: string;
+            /**
+             * @description Why, from the short fixed list.
+             * @enum {string}
+             */
+            reason: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
+            /** @description Anything the reporter wants a moderator to know. Optional. */
+            note?: string;
+        };
+        ResolveUgcReportDto: {
+            /**
+             * @description `dismiss`: nothing wrong. `take_down`: the item comes down (a piece through content take-down; a comment, community
+             *     message or chat message is deleted); on a reported PROFILE it suspends the person (USER-SUSPEND, R-121).
+             *     `take_down_and_suspend`: the item comes down AND the person who made it is suspended. `suspend`: the person is
+             *     suspended and the item is left as it is (the way to act on a paid question, which carries money).
+             * @enum {string}
+             */
+            action: "dismiss" | "take_down" | "take_down_and_suspend" | "suspend";
+            /** @description Why. Required for a take-down or a suspension (it is the only record of why); optional for a dismissal. */
+            note?: string;
+            /**
+             * @description Why the person is suspended, from the same short list as a report. Defaults to the report's own reason.
+             * @enum {string}
+             */
+            suspendReason?: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
+        };
+        SuspendUserDto: {
+            /**
+             * @description Why, from the short fixed list the report sheet uses.
+             * @enum {string}
+             */
+            reason: "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation" | "other";
+            /** @description What the moderator saw. Kept with the suspension and in the audit trail; the person is never shown it. */
+            note?: string;
+            /**
+             * Format: uuid
+             * @description The report that led to it, when there was one.
+             */
+            reportId?: string;
+        };
+        LiftSuspensionDto: {
+            /** @description Why it is lifted. Kept in the audit trail. */
+            note?: string;
+        };
         UpsertLearnGuideDto: {
             title?: string;
             subtitle?: string;
@@ -12732,6 +13065,14 @@ export interface components {
              *     `referral` says the code was not applied.
              */
             referralCode?: string;
+            /**
+             * @description The tier the person is buying (optional, R-125): an id from
+             *     `GET /waitlist/tiers` (verify, plus, founding). Leave it out, as an older
+             *     page does, and the registration is exactly what it was before tiers: the
+             *     offer's price and the offer's tier (Verify). An id the plans file does not
+             *     sell is refused (`tier_invalid`).
+             */
+            tier?: string;
         };
         VerifyWaitlistRegistrationDto: {
             /** @description The reference POST /waitlist/registrations gave. */
@@ -12758,6 +13099,12 @@ export interface components {
             community: string;
             /** @description Whether the code works. Defaults to true. */
             active?: boolean;
+            /**
+             * @description The one tier the code prices (R-125), for example `verify`. The price
+             *     ceiling is that tier's price. Leave out for the old rule (the offer's
+             *     tier, Verify, at the offer's price).
+             */
+            tier?: string;
         };
         UpdateReferralCodeDto: {
             priceKobo?: number;
@@ -12765,6 +13112,8 @@ export interface components {
             limit?: number | null;
             community?: string;
             active?: boolean;
+            /** @description The one tier the code prices; the price is checked against that tier's price. */
+            tier?: string;
         };
         CapitalReserveDto: {
             /** @description Kobo to invest: the principal of a fixed return, or the spend on a share offering. */
@@ -13403,6 +13752,7 @@ export interface components {
             kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
+            coverUrl?: string | null;
             amountKobo: number;
             earnedAt: string;
             availableAt: string;
@@ -13421,6 +13771,7 @@ export interface components {
             kind: "bill" | "content_unlock" | "tip" | "credit_pack" | "verification" | "legal_fee" | "school_fee" | "paid_dm" | "event_ticket" | "tier" | "tier_bump" | "points_pack" | "extra_products" | "points_shortfall" | "points_cash_out" | "community_pass";
             targetId: string;
             title: string;
+            coverUrl?: string | null;
             earnedKobo: number;
             sales: number;
             lastAt: string;
@@ -14884,6 +15235,7 @@ export interface components {
             likes: number;
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
+            coverUrl?: string | null;
         };
         MyContentItem: {
             id: string;
@@ -14913,10 +15265,13 @@ export interface components {
             likes: number;
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
+            coverUrl: string | null;
             salesCount: number;
             rejectionReason: string | null;
             /** Format: date-time */
             rejectedAt: string | null;
+            /** @enum {string|null} */
+            waitingFor: "wallet" | null;
         };
         MyContentCounts: {
             all: number;
@@ -14997,6 +15352,7 @@ export interface components {
             likes: number;
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
+            coverUrl: string | null;
             likedByMe: boolean;
             savedByMe: boolean;
             followsCreator: boolean;
@@ -15023,6 +15379,7 @@ export interface components {
             locked: boolean;
             title: string;
             thumbnailUrl: string | null;
+            coverUrl: string | null;
             durationLabel: string | null;
             pageCount: number | null;
             frameCount: number;
@@ -15088,6 +15445,7 @@ export interface components {
             lessonCount: number;
             price: number;
             previewAssetUrl: string | null;
+            coverUrl?: string | null;
         };
         RatingState: {
             average: number | null;
@@ -16883,6 +17241,97 @@ export interface components {
             dmResponseHours: number;
             slotsTotal: number;
         };
+        SuspensionEntryView: {
+            id: string;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            reasonLabel: string;
+            note: string | null;
+            reportId: string | null;
+            /** Format: date-time */
+            suspendedAt: string;
+            suspendedBy: {
+                email: string;
+                role: string;
+            };
+            /** Format: date-time */
+            liftedAt: string | null;
+            liftNote: string | null;
+            liftedBy: {
+                email: string;
+                role: string;
+            } | null;
+        };
+        AdminSuspensionView: {
+            wawuId: string;
+            handle: string | null;
+            suspended: boolean;
+            current: components["schemas"]["SuspensionEntryView"];
+            history: components["schemas"]["SuspensionEntryView"][];
+        };
+        MySuspensionView: {
+            suspended: boolean;
+            /** Format: date-time */
+            since: string | null;
+            message: string;
+            supportEmail: string;
+        };
+        AdminUgcPerson: {
+            wawuId: string;
+            name: string;
+            handle: string | null;
+        };
+        AdminUgcReportView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            kindLabel: string;
+            targetId: string;
+            count: number;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            reasonLabel: string;
+            note: string | null;
+            /** Format: date-time */
+            reportedAt: string;
+            /** Format: date-time */
+            lastReportedAt: string;
+            reporter: components["schemas"]["AdminUgcPerson"];
+            subject: components["schemas"]["AdminUgcPerson"];
+            item: {
+                exists: boolean;
+                title: string | null;
+                excerpt: string | null;
+                status: string | null;
+            };
+            emailed: boolean;
+            canTakeDown: boolean;
+            subjectSuspended: boolean;
+            canSuspend: boolean;
+        };
+        AdminUgcResolveView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            targetId: string;
+            /** @enum {string} */
+            status: "dismissed" | "actioned";
+            resolved: number;
+            suspended: boolean;
+        };
+        UgcReportView: {
+            id: string;
+            /** @enum {string} */
+            kind: "comment" | "piece" | "profile" | "community_message" | "chat_message" | "direct_message";
+            targetId: string;
+            /** @enum {string} */
+            reason: "other" | "spam" | "harassment" | "hate" | "sexual" | "illegal" | "impersonation";
+            /** @enum {string} */
+            status: "open" | "dismissed" | "actioned";
+            /** Format: date-time */
+            createdAt: string;
+            alreadyReported: boolean;
+        };
         LearnGuideSection: {
             heading: string;
             body: string;
@@ -17638,6 +18087,10 @@ export interface components {
             costInCredits: number;
             sender?: components["schemas"]["CommunityMessageSender"];
         };
+        RoomModerationView: {
+            muted: boolean;
+            mutedMembers: string[];
+        };
         EventView: {
             id: string;
             hostWawuId: string;
@@ -17823,8 +18276,22 @@ export interface components {
             message: components["schemas"]["CommunityMessage"];
             cursor: string;
         };
+        LiveCommunityMessageRemovedEvent: {
+            /** @enum {string} */
+            type: "community.message.removed";
+            communityId: string;
+            messageId: string;
+            cursor: string;
+        };
+        LiveCommunityMuteEvent: {
+            /** @enum {string} */
+            type: "community.mute.changed";
+            communityId: string;
+            muted: boolean;
+            cursor: string;
+        };
         LiveCatchUp: {
-            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveMoneyRequestEvent"] | components["schemas"]["LiveCommunityMessageEvent"])[];
+            events: (components["schemas"]["LiveChatMessageEvent"] | components["schemas"]["LiveChatReadEvent"] | components["schemas"]["LiveMoneyRequestEvent"] | components["schemas"]["LiveCommunityMessageEvent"] | components["schemas"]["LiveCommunityMessageRemovedEvent"] | components["schemas"]["LiveCommunityMuteEvent"])[];
             cursor: string;
             hasMore: boolean;
         };
@@ -17995,6 +18462,7 @@ export interface components {
             accessType: "free" | "paid";
             priceKobo: number | null;
             thumbnailUrl: string | null;
+            coverUrl: string | null;
             bought: boolean;
             creator: components["schemas"]["FeedCreator"];
         };
@@ -18044,6 +18512,7 @@ export interface components {
             /** @enum {string} */
             contentType: "video" | "course" | "audio" | "pdf" | "image" | "template";
             thumbnailUrl: string | null;
+            coverUrl: string | null;
             creator: components["schemas"]["FeedCreator"];
         };
         LessonProgressView: {
@@ -18087,7 +18556,7 @@ export interface components {
         };
         NotificationTargetView: {
             /** @enum {string} */
-            kind: "community" | "content" | "transaction" | "profile" | "paid_question" | "ai_job";
+            kind: "community" | "content" | "profile" | "transaction" | "paid_question" | "ai_job";
             id: string;
             title: string | null;
             deadlineAt: string | null;
@@ -18153,6 +18622,7 @@ export interface components {
             planMinor: number;
             bumpMinor: number;
             bumpPoints: number;
+            newActiveUntil: string | null;
             /** @enum {string} */
             paymentKind: "tier" | "tier_bump";
             payment: components["schemas"]["PaymentQuoteView"];
@@ -18456,6 +18926,7 @@ export interface components {
             title: string;
             creator: components["schemas"]["MoneyPartyView"];
             priceKobo: number;
+            coverUrl: string | null;
             payment: components["schemas"]["PaymentQuoteView"];
         };
         UnlockWalletView: {
@@ -19112,12 +19583,20 @@ export interface components {
             createdAt: string;
             referralCode: string | null;
             referralCommunity: string | null;
+            tier: string | null;
+            claimedVia: string | null;
         };
         AdminWaitlistSplitRowView: {
             code: string | null;
             community: string | null;
             people: number;
             kobo: number;
+        };
+        AdminWaitlistTierRowView: {
+            tier: string | null;
+            people: number;
+            kobo: number;
+            claimed: number;
         };
         AdminWaitlistSummaryView: {
             offerId: string | null;
@@ -19131,6 +19610,7 @@ export interface components {
             };
             unpaid: number;
             split: components["schemas"]["AdminWaitlistSplitRowView"][];
+            byTier: components["schemas"]["AdminWaitlistTierRowView"][];
             generatedAt: string;
         };
         AdminWaitlistExportView: {
@@ -19159,6 +19639,7 @@ export interface components {
             paidCount: number;
             heldCount: number;
             paidKobo: number;
+            tier: string | null;
             createdAt: string;
             updatedAt: string;
         };
@@ -19171,12 +19652,41 @@ export interface components {
             days: number;
             closesAt: string | null;
         };
+        WaitlistTierView: {
+            id: string;
+            name: string;
+            priceKobo: number;
+            days: number;
+            products: number;
+            bonusPoints: number;
+            eventPass: {
+                id: string;
+                name: string;
+                benefits?: string[] | null;
+            };
+            badge: {
+                id: string;
+                numbered: boolean;
+            };
+            packBonusPercent: number;
+            firstVoiceIntroIncluded: boolean;
+            best: boolean;
+        };
+        WaitlistTiersView: {
+            /** @enum {string} */
+            currency: "NGN";
+            tiers: components["schemas"]["WaitlistTierView"][];
+            bestTier: string | null;
+        };
         WaitlistReferralCheckView: {
             code: string;
             applies: boolean;
             /** @enum {string|null} */
-            reason?: "full" | "inactive" | null;
+            reason?: "full" | "inactive" | "other_tier" | null;
             priceKobo: number;
+            tier?: string | null;
+            forTier?: string | null;
+            message?: string | null;
         };
         WaitlistCheckoutView: {
             publicKey: string;
@@ -19198,7 +19708,7 @@ export interface components {
             code: string;
             applied: boolean;
             /** @enum {string|null} */
-            reason?: "full" | "inactive" | null;
+            reason?: "full" | "inactive" | "other_tier" | null;
         };
         WaitlistRegistrationStartView: {
             reference: string;
@@ -19207,6 +19717,7 @@ export interface components {
             flutterwaveConfig?: components["schemas"]["WaitlistCheckoutView"];
             completed?: components["schemas"]["WaitlistRegistrationCompletedView"];
             referral?: components["schemas"]["WaitlistReferralOutcomeView"];
+            tier?: string | null;
         };
         WaitlistRegistrationStatusView: {
             reference: string;
@@ -29832,6 +30343,48 @@ export interface operations {
             };
         };
     };
+    UgcReportController_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUgcReportDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UgcReportView"];
+                };
+            };
+        };
+    };
+    MeSuspensionController_mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySuspensionView"];
+                };
+            };
+        };
+    };
     EvgScoreController_getEvgScore: {
         parameters: {
             query?: never;
@@ -30086,7 +30639,7 @@ export interface operations {
                         savedAt: string;
                         productId: string;
                         /** @enum {string} */
-                        shop: "basket" | "beauty";
+                        shop: "beauty" | "basket";
                     };
                 };
             };
@@ -33212,6 +33765,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommunityMessage"];
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomModerationView"];
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_deleteMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        removed: boolean;
+                    };
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_mute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userWawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        muted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    CommunityRoomModerationController_unmute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userWawuId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        muted: boolean;
+                    };
                 };
             };
         };
@@ -38314,9 +38960,30 @@ export interface operations {
             };
         };
     };
-    WaitlistPublicController_referralCheck: {
+    WaitlistPublicController_tiers: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistTiersView"];
+                };
+            };
+        };
+    };
+    WaitlistPublicController_referralCheck: {
+        parameters: {
+            query?: {
+                tier?: string;
+            };
             header?: never;
             path: {
                 code: string;
@@ -38371,7 +39038,7 @@ export interface operations {
                     "application/json": components["schemas"]["WaitlistRegistrationStartView"];
                 };
             };
-            /** @description `reason.code` `phone_invalid`, `email_invalid`, `name_invalid` or `consent_required`; a malformed body has no `reason`. */
+            /** @description `reason.code` `phone_invalid`, `email_invalid`, `name_invalid`, `consent_required` or `tier_invalid` (a tier the plans do not sell); a malformed body has no `reason`. */
             400: {
                 headers: {
                     [name: string]: unknown;

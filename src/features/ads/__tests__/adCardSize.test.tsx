@@ -7,8 +7,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { localDay } from '@/features/tgif/model';
 
 /**
- * FIX-P5 (CHECK-3 fifth pass, L3, R-92: "the home today's strip should be increased to the explore card size") · the ad card on Today and
- * the advert slide on Explore are one card (`AdSlide`) and the same size at 360 and at 390: the same 196 high, the same corner, and the same
+ * FIX-P5 (CHECK-3 fifth pass, L3, R-92: "the home today's strip should be increased to the explore card size"; R-116 then made both the banner shape) · the ad card on Today and
+ * the advert slide on Explore are one card (`AdSlide`) and the same size at 360 and at 390: the same banner shape (R-116, 27 by 8), the same corner, and the same
  * width, which is the window less the screen's two gutters. What made them differ was a scrollbar: Explore's body showed a vertical scrollbar on
  * the web build (15 px of the slide's width gone, 335 against Today's 350) while Today's body hides it. Neither body draws one now.
  * Jest has no layout engine, so the width is what each screen's own styles give: the body's padding, no scrollbar, no width of the card's own.
@@ -104,7 +104,7 @@ function room(scroll: { props: Record<string, unknown> }) {
 }
 
 describe.each([360, 390])('the ad card on Today and the advert slide on Explore at %i wide', (width) => {
-  it('are the same width and the same height', async () => {
+  it('are the same width and the same shape', async () => {
     mockWidth = width;
 
     const explore = await rtl.render(wrap(<ExploreScreen onOpenCategory={jest.fn()} onOpenEvent={jest.fn()} onSeeAllEvents={jest.fn()} onFindProfessional={jest.fn()} onFindSchool={jest.fn()} onListServices={jest.fn()} onOpenTgif={jest.fn()} />));
@@ -133,8 +133,12 @@ describe.each([360, 390])('the ad card on Today and the advert slide on Explore 
       expect(style.marginLeft).toBeUndefined();
       expect(style.marginRight).toBeUndefined();
     }
-    expect(todayCard.height).toBe(196);
-    expect(todayCard.height).toBe(exploreCard.height);
+    // Changed assertions (R-116): the card was 196 high (`height` 196) at both places; it is now the owner's banner shape, 27 by 8, whose height is
+    // the width over 3.375 (a layout engine does that sum, jest has none), so what is pinned is the shape and that neither place sets a height.
+    expect(todayCard.aspectRatio).toBe(27 / 8);
+    expect(todayCard.aspectRatio).toBe(exploreCard.aspectRatio);
+    expect(todayCard.height).toBeUndefined();
+    expect(exploreCard.height).toBeUndefined();
     expect(todayCard.borderRadius).toBe(exploreCard.borderRadius);
   }, 120_000);
 });

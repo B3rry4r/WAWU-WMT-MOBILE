@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
@@ -78,7 +78,7 @@ export function VoiceIntroScreen({ onBack, onHearInMyVoice }: VoiceIntroScreenPr
   ) : undefined;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { backgroundColor: colors.surfacePage }]}>
+    <KeyboardAvoidingView testID="voice-intro-keyboard" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <ShopFrame testID="voice-intro-screen" title="Your Voice Intro" onBack={onBack} foot={foot}>
         {intro.isError && !intro.data ? (
           <ErrorState

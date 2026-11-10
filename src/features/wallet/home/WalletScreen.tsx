@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { billsOffered } from '@/features/bills/offered';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { onSessionEnd } from '@/api/session';
@@ -19,6 +20,7 @@ import { layout, radius, useWawu } from '@/theme';
 
 import { availabilityQuery } from '@/features/capital/api';
 import { CapitalWalletRow } from '@/features/capital/WalletRow';
+import { CardRow } from '@/features/cards/CardRow';
 import { myPointsQuery, type MyPoints } from '@/features/points/api';
 
 import { homeBalanceQuery, recentTransactionsQuery, walletHomeQuery } from '../api/home';
@@ -56,7 +58,7 @@ const INFO_SKELETON = 86;
  * back, R-102, and the Wallet draws no row of bill tiles, R-103), then Transactions.
  *
  * The screen shows what is built (R-47). The canvas draws more, and each of these is added by the task that builds where it leads, as
- * drawn: the scan icon (WALLET-20). The WAWU card row is not drawn: cards are off until Nuvion says they are back (R-104). The tabs under the title (WALLET-21, R-83, R-84, R-106) are Naira, one for each
+ * drawn: the scan icon (WALLET-20). The WAWU card row is built (WALLET-22, R-84, back by R-124): drawn while the Hub says cards are on. The tabs under the title (WALLET-21, R-83, R-84, R-106) are Naira, one for each
  * currency account the person has added (or is opening), and Crypto when they hold a coin, then "+ Add", which opens the add-a-currency choice; a
  * currency they have not added is never a tab, and a person whose wallet is not open yet sees none of them (the Open your wallet path above). Add money and Withdraw (WALLET-05), Send (WALLET-02), Buy points (POINTS-06) and Bills (BILLS-08, R-103) are built. The Passes card (WALLET-38)
  * is always drawn beside the Points card (wallet.js line 47, 10 apart): the Hub's event pass from `GET /me/tier` when there is one, else its
@@ -326,6 +328,7 @@ function Body({ owner, adding, view, hidden, onToggleHidden, onOpenWallet, actio
           </View>
           {capital ? <CapitalWalletRow onPress={onOpenCapital} /> : null}
           <WalletActions actions={actions} />
+          <CardRow />
           <RecentTransactions {...recent} accountNumber={view.account.accountNumber} now={new Date()} />
         </>
       );
@@ -350,7 +353,7 @@ function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
     { key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') },
     { key: 'withdraw', icon: 'Landmark', label: 'Withdraw', onPress: () => router.push('/withdraw') },
     { key: 'buy-points', icon: 'Sparkles', label: 'Buy points', onPress: () => router.push('/points-buy') },
-    { key: 'bills', icon: 'Receipt', label: 'Bills', onPress: () => router.push('/bills') },
+    ...(billsOffered() ? [{ key: 'bills' as const, icon: 'Receipt' as const, label: 'Bills', onPress: () => router.push('/bills') }] : []),
   ];
 }
 

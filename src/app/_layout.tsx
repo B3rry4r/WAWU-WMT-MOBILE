@@ -1,16 +1,18 @@
 import { useDefaultPaySource } from '@/features/pay-source/usePaySource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, router as appRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
 import { ErrorScreen } from '@/components/ErrorScreen';
 import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/auth/signupGate';
 import { useAcceptanceRetry } from '@/features/about/acceptance';
+import { onSuspendedRefusal } from '@/api/suspension';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
 import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
@@ -18,6 +20,8 @@ import { useTierOfferStep } from '@/features/tier-offer/offerStep';
 import { TierOfferBridge } from '@/features/tier-offer/TierOfferBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { useBonusStep } from '@/features/verify/bonusStep';
+import { StartHrefProvider, startHref } from '@/features/shell/startHref';
+import { WebFrame } from '@/lib/WebFrame';
 import { fontFiles, useWawu } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -27,6 +31,12 @@ SplashScreen.preventAutoHideAsync();
  * never a blank screen (WALLET-BLANK, SHARED-CHANGES WALLET-BLANK #1). Inside the tabs the tabs' own boundary catches first and keeps the tab bar.
  */
 export const ErrorBoundary = ErrorScreen;
+
+/**
+ * The tiers sheet (`/tiers`, VF5) on the web is drawn over the screen it was opened from, as the boards draw it, so that screen stays in view
+ * behind the scrim (WEBAPP-09 W2). A stack screen on the web hides the one below it; a transparent modal does not. The phone keeps its own.
+ */
+const TIERS_SHEET = Platform.OS === 'web' ? ({ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } } as const) : undefined;
 
 /** The longest the saved Theme is waited for before the first screen is drawn (SHARED-05 L1). */
 export const THEME_READ_LIMIT_MS = 3000;
@@ -87,6 +97,7 @@ function useStoredTheme(): boolean {
  * notifications, search, saved, TGIF and the rest. A route file is listed in a signed-in group, or it is on the short public
  * list kept in `src/__tests__/route-guard.test.tsx`: the signed-out set above, About, Terms and Privacy policy, the app links
  * (`/r`, `/selfie`, `/activate`, `/receipt`, `/u`, `/c`, `/content`, which each send a signed-out visitor on themselves),
+ * `/reset-password` (the emailed reset link; it is open to everyone, signed in or out: the token in the link is the proof, RESET-APP, R-123),
  * `/claim-code` (sends a signed-out visitor to sign-in and brings the sign-in back) and the development-only screens. That test
  * fails when a route file is neither.
  * The Voice Intro's writing and recording screens (`/voice-intro`, `/voice-consent`) sit with the creator's setup checklist, so VF7's
@@ -111,6 +122,21 @@ export default function RootLayout() {
   const offer = useClaimOfferStep(signedIn);
   // LEGAL-DOCS: a sign-up whose agreement could not reach the Hub sends it again once the person is signed in.
   useAcceptanceRetry(signedIn);
+  // USER-SUSPEND (R-121): a write the Hub refuses because the person is suspended opens the one calm screen, once while it is open.
+  const pathname = usePathname();
+  const here = useRef(pathname);
+  useEffect(() => {
+    here.current = pathname;
+  }, [pathname]);
+  useEffect(
+    () =>
+      signedIn
+        ? onSuspendedRefusal(() => {
+            if (here.current !== '/suspended') appRouter.push('/suspended');
+          })
+        : undefined,
+    [signedIn],
+  );
   // PAY-FX (R-91): where a wallet payment starts from (naira, or the main currency of a person with no naira wallet).
   useDefaultPaySource(signedIn);
   const bonus = useBonusStep(signedIn, gate.progress?.accountType);
@@ -119,6 +145,16 @@ export default function RootLayout() {
   const themed = useStoredTheme();
   const ready = themed && status !== 'restoring' && (!signedIn || (gate.phase === 'ready' && !tierOffer.holding));
   const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && !bonus.visible;
+
+  // WEBAPP-09 W1: where a link that leads "home" goes for a person who has not finished signing up.
+  const start = startHref({
+    needsEmail: gate.needsEmail,
+    needsIdentity: gate.needsIdentity,
+    claimOffer: offer.visible,
+    tierOffer: tierOffer.visible,
+    bonus: bonus.visible,
+    setupStep: gate.setupStep,
+  });
 
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
@@ -134,6 +170,8 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style={dark ? 'light' : 'dark'} />
+      <WebFrame root>
+      <StartHrefProvider value={start}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfacePage } }}>
         <Stack.Protected guard={signedIn && gate.needsEmail}>
           <Stack.Screen name="email-code" />
@@ -185,6 +223,7 @@ export default function RootLayout() {
           <Stack.Screen name="open-wallet-rejected" />
           <Stack.Screen name="open-wallet-account" />
           <Stack.Screen name="open-wallet-pin" />
+          <Stack.Screen name="suspended" />
           <Stack.Screen name="settings/index" />
           <Stack.Screen name="settings/notifications" />
           <Stack.Screen name="settings/privacy" />
@@ -307,7 +346,7 @@ export default function RootLayout() {
           <Stack.Screen name="swap" />
           <Stack.Screen name="tgif" />
           <Stack.Screen name="tier-done" />
-          <Stack.Screen name="tiers" />
+          <Stack.Screen name="tiers" options={TIERS_SHEET} />
           <Stack.Screen name="transactions/[id]" />
           <Stack.Screen name="transactions/index" />
           <Stack.Screen name="verification" />
@@ -327,15 +366,18 @@ export default function RootLayout() {
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="forgot-password" />
         </Stack.Protected>
+        <Stack.Screen name="reset-password" />
         <Stack.Screen name="about" />
         <Stack.Screen name="terms" />
         <Stack.Screen name="privacy-policy" />
         <Stack.Screen name="legal-documents/index" />
         <Stack.Screen name="legal-documents/[slug]" />
       </Stack>
-      <TierOfferBridge checkout={tierOffer.checkout} />
+      </StartHrefProvider>
+      <TierOfferBridge checkout={tierOffer.checkout} toTiers={tierOffer.toTiers} />
       <PushBridge live={inApp} />
       <PlaceBridge live={inApp} />
+      </WebFrame>
     </QueryClientProvider>
   );
 }

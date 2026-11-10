@@ -1,10 +1,11 @@
 import type { ReactNode, RefObject } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Pressable, StyleSheet, View, type ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { font, layout, space, useWawu } from '@/theme';
 
 import { IconButton } from './Button';
+import { FieldScroll } from './FieldScroll';
 import { useFocusRing } from './focusRing';
 import { Text } from './Text';
 
@@ -94,18 +95,17 @@ export function ScreenFrame({ title, onBack, action, right, gap, idPrefix, keybo
           ) : null}
         </View>
       </View>
-      <ScrollView
+      <FieldScroll
         ref={scrollRef}
         style={styles.scroll}
         testID={`${idPrefix}-scroll`}
-        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.content,
           { gap, paddingBottom: Math.max(insets.bottom, 0) + bodyMetrics.bottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right },
         ]}
       >
         {children}
-      </ScrollView>
+      </FieldScroll>
     </Root>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { useAnnounceFocus } from '@/components/FieldScroll';
 import { browserOutlineOff } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
 import { IconTile } from '@/components/IconTile';
@@ -120,6 +121,8 @@ export type PointsFieldProps = {
 export function PointsField({ digits, onChangeDigits, hint, error, disabled, testID }: PointsFieldProps) {
   const { colors } = useWawu();
   const [focused, setFocused] = useState(false);
+  // R-117: the scroll this field sits in brings it into view above the keyboard when it takes the focus.
+  const announceFocus = useAnnounceFocus();
   const bad = Boolean(error);
   const border = bad ? colors.danger : focused && !disabled ? colors.accent : colors.borderHairline;
   const message = error ?? hint;
@@ -143,7 +146,7 @@ export function PointsField({ digits, onChangeDigits, hint, error, disabled, tes
           keyboardType="number-pad"
           selectionColor={colors.accent}
           cursorColor={colors.accent}
-          onFocus={() => setFocused(true)}
+          onFocus={() => (setFocused(true), announceFocus())}
           onBlur={() => setFocused(false)}
           style={[styles.fieldInput, Platform.OS === 'web' ? browserOutlineOff : null, { color: colors.textPrimary }]}
         />

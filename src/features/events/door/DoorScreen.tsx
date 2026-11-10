@@ -2,7 +2,7 @@ import { CameraView, type BarcodeScanningResult } from 'expo-camera';
 import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
@@ -10,6 +10,7 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Button, IconButton } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { Text } from '@/components/Text';
+import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { canvasNormalLineHeight, font, layout, space } from '@/theme';
 
 import { checkInAtDoor, isEventId, type DoorScan } from './doorApi';
@@ -62,6 +63,8 @@ export type DoorScreenProps = {
  */
 export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
   const insets = useSafeAreaInsets();
+  // R-117 part B: the type-the-code sheet is a modal the keyboard covers (a KeyboardAvoidingView inside a sheet measures itself against the sheet, not the window, and moves nothing), so the sheet adds the keyboard's height under its button.
+  const lift = useKeyboardLift();
   const focused = useIsFocused();
   const { camera, onMountError } = useDoorCamera();
   const known = isEventId(eventId);
@@ -229,7 +232,7 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
       ) : null}
 
       <BottomSheet visible={sheetOpen} onClose={() => setTyping(false)} label="Type the ticket code" testID="door-type-sheet">
-        <KeyboardAvoidingView behavior="padding" style={styles.sheetBody}>
+        <View style={styles.sheetBody}>
           <Text variant="sheetTitleSm">Type the ticket code</Text>
           <TextField
             label="Ticket code"
@@ -246,7 +249,8 @@ export function DoorScreen({ eventId, onClose }: DoorScreenProps) {
             testID="door-code-input"
           />
           <Button label="Check ticket" full disabled={!canSend(typed)} onPress={checkTyped} testID="door-code-check" />
-        </KeyboardAvoidingView>
+          {lift > 0 ? <View testID="door-keyboard-lift" style={{ height: lift }} /> : null}
+        </View>
       </BottomSheet>
     </View>
   );

@@ -1,4 +1,5 @@
 import { pickFile } from '@/features/create/pickFile';
+import { isPhoto, redrawPhoto } from '@/features/media/redrawPhoto';
 
 import type { ChatFile } from './attachments';
 
@@ -7,14 +8,19 @@ import type { ChatFile } from './attachments';
 const MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'video/quicktime'] as const;
 
 export function pickPhotoOrVideo(): Promise<ChatFile | null> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = MEDIA_TYPES.join(',');
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) return resolve(null);
-      resolve({ blob: file, name: file.name, contentType: file.type, previewUri: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined });
+      if (!isPhoto(file.type)) return resolve({ blob: file, name: file.name, contentType: file.type, previewUri: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined });
+      redrawPhoto(file).then((out) => {
+        const stem = file.name.replace(/\.[^.]*$/, '') || 'photo';
+        resolve({ blob: out.blob, name: `${stem}.${out.extension}`, contentType: out.contentType, previewUri: URL.createObjectURL(out.blob) });
+      }, reject);
+      return undefined;
     };
     input.oncancel = () => resolve(null);
     input.click();

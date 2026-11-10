@@ -28,7 +28,7 @@ export const xhrPut: Put = (url, body, contentType, onProgress, signal) =>
     xhr.send(body);
   });
 
-export type UploadTarget = { folder: 'content/full' | 'content/preview'; format: FormatId };
+export type UploadTarget = { folder: 'content/full' | 'content/preview'; format: FormatId } | { folder: 'content/cover'; format?: undefined };
 
 /**
  * Uploads one file to the Hub's storage under the format's rule and answers what the create call takes. The link comes

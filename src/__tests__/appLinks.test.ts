@@ -11,6 +11,7 @@ import {
   LINK_ORIGIN,
   PROFILE_PATH_PREFIX,
   RECEIPT_PATH_PREFIX,
+  RESET_PASSWORD_PATH,
   ROOM_PATH_PREFIX,
   SELFIE_PATH,
   inviteLink,
@@ -22,7 +23,7 @@ import {
 
 /**
  * LINKS-01: the addresses WAWU shares and receives. `app.json` (what the phone is told) and `src/lib/appLinks.ts` (what
- * the app builds and the website lists) must say the same, and say only the seven app paths.
+ * the app builds and the website lists) must say the same, and say only the eight app paths.
  */
 describe('LINKS-01: the app links', () => {
   it('an invite is shared as an https address on the website, the code in lower case', () => {
@@ -76,7 +77,7 @@ describe('LINKS-01: the app links', () => {
     expect(appConfig.expo.scheme).toBe('wawu');
   });
 
-  it('app.json tells Android to open exactly the seven app paths on the website, verified', () => {
+  it('app.json tells Android to open exactly the eight app paths on the website, verified', () => {
     const filters = appConfig.expo.android.intentFilters;
     expect(filters).toHaveLength(1);
     const [filter] = filters;
@@ -87,6 +88,7 @@ describe('LINKS-01: the app links', () => {
       { scheme: 'https', host: LINK_HOST, pathPrefix: INVITE_PATH_PREFIX },
       { scheme: 'https', host: LINK_HOST, path: SELFIE_PATH },
       { scheme: 'https', host: LINK_HOST, path: ACTIVATE_PATH },
+      { scheme: 'https', host: LINK_HOST, path: RESET_PASSWORD_PATH },
       { scheme: 'https', host: LINK_HOST, pathPrefix: RECEIPT_PATH_PREFIX },
       { scheme: 'https', host: LINK_HOST, pathPrefix: PROFILE_PATH_PREFIX },
       { scheme: 'https', host: LINK_HOST, pathPrefix: ROOM_PATH_PREFIX },
@@ -102,6 +104,7 @@ describe('LINKS-01: the app links', () => {
       '/r/': 'r/[code].tsx',
       '/selfie': 'selfie.tsx',
       '/activate': 'activate.tsx',
+      '/reset-password': 'reset-password.tsx',
       '/receipt/': 'receipt/[code].tsx',
       '/u/': 'u/[handle].tsx',
       '/c/': 'c/[slug].tsx',
@@ -110,6 +113,11 @@ describe('LINKS-01: the app links', () => {
     const claimed = appConfig.expo.android.intentFilters[0].data.map((entry) => `${'path' in entry ? entry.path : entry.pathPrefix}`);
     expect([...claimed].sort()).toEqual(Object.keys(routeFile).sort());
     for (const path of claimed) expect(existsSync(join(__dirname, '..', 'app', routeFile[path]))).toBe(true);
+  });
+
+  it('the reset link keeps its exact path, and is the Forgot password email\'s own address (RESET-APP, R-123)', () => {
+    expect(RESET_PASSWORD_PATH).toBe('/reset-password');
+    expect(`${LINK_ORIGIN}${RESET_PASSWORD_PATH}?token=t&email=a%40b.c`).toBe('https://wawuafrica.com/reset-password?token=t&email=a%40b.c');
   });
 
   it('the origin is the one host and no other', () => {

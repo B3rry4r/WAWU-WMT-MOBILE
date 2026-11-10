@@ -4,8 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/icon';
 
 import { media, metrics } from './look';
-import { isPicture } from './model';
+import { pictureCandidates } from './model';
 import { PostFrame, type PostProps } from './PostFrame';
+import { usePicture } from './usePicture';
 
 /**
  * H8: a template in the feed. Its cover fills the frame (the creator's preview of it), the pill
@@ -16,14 +17,15 @@ import { PostFrame, type PostProps } from './PostFrame';
  */
 export function TemplatePost(props: PostProps) {
   const { item } = props;
-  const cover = isPicture(item.previewAssetUrl) ? item.previewAssetUrl : null;
+  // The creator's cover first (R-114), then the preview when it is a picture; a picture that will not load gives way to the mark.
+  const { uri: cover, onError } = usePicture(pictureCandidates(item, item.previewAssetUrl));
   return (
     <PostFrame
       {...props}
       kind="template"
       backdrop={
         cover ? (
-          <Image testID={`cover-${item.id}`} source={{ uri: cover }} contentFit="cover" accessibilityLabel={item.title} style={StyleSheet.absoluteFill} />
+          <Image testID={`cover-${item.id}`} source={{ uri: cover }} contentFit="cover" accessibilityLabel={item.title} onError={onError} style={StyleSheet.absoluteFill} />
         ) : (
           <View testID={`cover-${item.id}-none`} style={[StyleSheet.absoluteFill, styles.none, { backgroundColor: media.backdrop }]}>
             <Icon name="LayoutTemplate" size={metrics.templateMark} color={media.tabIdle} />

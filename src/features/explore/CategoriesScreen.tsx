@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -12,6 +13,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
 import { fetchMyId, meKey } from '@/features/feed/api';
+import { canFollow } from '@/features/home/model';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 import { categoriesKey, creatorsKey, fetchCategories, fetchCreatorsPage, type ExploreCreator } from './api';
@@ -53,7 +55,7 @@ export type CategoriesScreenProps = {
 
 /** One column of the two: the screen less its gutters and the gap, halved. */
 function useCellWidth(): number {
-  const { width } = useWindowDimensions();
+  const width = useFrameWidth();
   return Math.floor((width - 2 * layout.gutter - creatorCardMetrics.between) / 2);
 }
 
@@ -164,7 +166,7 @@ export function CategoriesScreen({ initial, onBack, title = 'Categories', onSear
             width={cell}
             height={creatorCardMetrics.gridHeight}
             onPress={onOpenCreator ? () => onOpenCreator(item.wawuId) : undefined}
-            onToggleFollow={item.wawuId === me.data ? undefined : () => follow.toggle(item)}
+            onToggleFollow={canFollow(item.wawuId, me.data) ? () => follow.toggle(item) : undefined}
           />
         )}
         columnWrapperStyle={styles.columns}

@@ -2,7 +2,7 @@ import { ApiError } from '@/api/errors';
 
 import { interestLabelOf } from '@/features/explore/interestLabel';
 
-import { discoverable, moneyCard, suggestionLine, suggestionTick, tgifDayLabel, tgifMeta, todayPhase } from '../model';
+import { canFollow, moneyCard, suggestionLine, suggestionTick, tgifDayLabel, tgifMeta, todayPhase } from '../model';
 
 const tick = (verified: boolean) => ({ verified, expiresAt: null });
 const person = (wawuId: string, over: Record<string, unknown> = {}) => ({
@@ -57,9 +57,12 @@ describe('the TGIF card words', () => {
 });
 
 describe('creators to discover', () => {
-  it('never offers the viewer', () => {
-    expect(discoverable([person('a'), person('me'), person('b')], 'me').map((p) => p.wawuId)).toEqual(['a', 'b']);
-    expect(discoverable([person('a')], null)).toHaveLength(1);
+  it('draws Follow for another creator only, and only once the viewer is known (HOME-SELF)', () => {
+    expect(canFollow('a', 'me')).toBe(true);
+    expect(canFollow('me', 'me')).toBe(false);
+    expect(canFollow('a', null)).toBe(false);
+    expect(canFollow('a', undefined)).toBe(false);
+    expect(canFollow('a', '')).toBe(false);
   });
 
   it('shows the creator tick first, then the professional tick, and none for neither', () => {

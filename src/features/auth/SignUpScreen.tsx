@@ -46,6 +46,8 @@ export type SignUpScreenProps = {
   /** Starts the sign-up. Resolves when the code has been sent (the route opens A4); rejects with an ApiError. */
   onContinue: (values: SignUpValues) => Promise<void>;
   onBack?: () => void;
+  /** The phone field's own country at Continue, told before `onContinue` (the web keeps it for a refresh; never sent to WAWU ID). */
+  onPhoneCountry?: (code: string) => void;
   /** A sign-up is waiting for its code: A3 offers to go back and enter it. */
   onEnterSentCode?: () => void;
   /**
@@ -68,7 +70,7 @@ export type SignUpScreenProps = {
   /** The country this phone is set to (ISO alpha-2), where the phone field starts. Left out, it is read from the system; a test names it. */
   region?: string | null;
   /** What the fields start with (a preview, never the app). */
-  initial?: Partial<Omit<SignUpValues, 'countryCode'>>;
+  initial?: Partial<Omit<SignUpValues, 'countryCode'>> & { residence?: string; phoneCountry?: string };
   /** A refusal to show at first (a preview, never the app). */
   initialFailure?: SignupFailure;
 };
@@ -85,14 +87,14 @@ const AGREE_NEEDS = 'Tick the box to agree before you continue.';
  * identity checks happen when someone opens a wallet (R-6, BRIEF A3). A failed
  * Continue keeps what was typed and says why in a banner.
  */
-export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenLegal, checkUsername, channel, countries, countriesFailed, onRetryCountries, region, initial, initialFailure }: SignUpScreenProps) {
+export function SignUpScreen({ onContinue, onPhoneCountry, onBack, onEnterSentCode, onOpenLegal, checkUsername, channel, countries, countriesFailed, onRetryCountries, region, initial, initialFailure }: SignUpScreenProps) {
   const [firstName, setFirstName] = useState(initial?.firstName ?? '');
   const [lastName, setLastName] = useState(initial?.lastName ?? '');
   const [username, setUsername] = useState(initial?.username ?? '');
   const [email, setEmail] = useState(initial?.email ?? '');
-  const phone = usePhoneInput(countries, region, initial?.phone);
+  const phone = usePhoneInput(countries, region, initial?.phone, initial?.phoneCountry ?? null);
   // The country of residence follows the phone's country until the person chooses one of their own.
-  const [residence, setResidence] = useState<string | null>(null);
+  const [residence, setResidence] = useState<string | null>(initial?.residence ?? null);
   const [choosing, setChoosing] = useState(false);
   const [password, setPassword] = useState(initial?.password ?? '');
   const [agreed, setAgreed] = useState(false);
@@ -141,6 +143,7 @@ export function SignUpScreen({ onContinue, onBack, onEnterSentCode, onOpenLegal,
     setBusy(true);
     setFailure(null);
     try {
+      onPhoneCountry?.(phone.country);
       await onContinue(values);
     } catch (error) {
       // A name taken since the line under the field last said "free": the Hub's sentence goes under that field.

@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import type { ReactNode } from 'react';
-import { ScrollView, Share, StyleSheet, View } from 'react-native';
+import { useEffect, type ReactNode } from 'react';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -18,7 +19,9 @@ import { fetchRoom, roomKey, type RoomView } from '@/features/communities/api';
 import { membersFull } from '@/features/communities/format';
 import { openRoom } from '@/features/communities/routes';
 import { RestoreRow, SaidBanner, StoreLoading, StoreUnready } from '@/features/store/StoreParts';
-import { buyLabel, forDays } from '@/features/store/model';
+import { buyLabel, forDays, type StoreItem, type StoreState } from '@/features/store/model';
+import { formatNaira } from '@/components/pay-sheet';
+import { useWebBuy } from '@/features/store/webwallet/useWebBuy';
 import { useLadder } from '@/features/store/ladder/useLadder';
 import { layout, space, useWawu } from '@/theme';
 
@@ -117,12 +120,28 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
   // R-101: a pass is a store purchase on the price ladder, at the room's list price (whole naira, on the Hub's list). The Hub says whether this
   // person can buy: the room sells a pass and they are not its host. The price drawn is the store's for that list price, never the list price.
   const ladder = useLadder();
-  const { buyer } = ladder;
-  const store = { state: ladder.state, refetch: ladder.refetch };
+  // WEBAPP-06 (R-128): on the web the pass is paid from the wallet at the room's own price (no store, no credit, nothing to restore).
+  const onWeb = Platform.OS === 'web';
+  const web = useWebBuy();
+  const client = useQueryClient();
+  const webGranted = web.granted !== null;
+  useEffect(() => {
+    if (webGranted) void client.invalidateQueries({ queryKey: ['community'] });
+  }, [webGranted, client]);
+  const buyer = onWeb ? { ...ladder.buyer, busy: web.busy, said: web.said, granted: web.granted, sheets: web.sheets } : ladder.buyer;
+  const webReady: StoreState = { kind: 'ready', items: [] };
+  const store = onWeb ? { state: webReady, refetch: ladder.refetch } : { state: ladder.state, refetch: ladder.refetch };
   const naira = pass.priceKobo !== null && pass.priceKobo % 100 === 0 ? pass.priceKobo / 100 : null;
-  const selected = ladder.itemFor(naira);
-  const credit = ladder.creditFor('pass', naira);
-  const buyPass = (payWith?: 'credit') => (naira === null ? undefined : void buyer.buyLadder({ kind: 'pass', communityId: id, listPriceNaira: naira }, payWith));
+  const webItem: StoreItem | null =
+    onWeb && pass.priceKobo !== null && pass.priceKobo > 0
+      ? { product: { id: `web.pass.${id}`, platform: 'web', storeProductId: `web.pass.${id}`, kind: 'pass', title: room.name, subscription: false, grants: {} } as unknown as StoreItem['product'], price: formatNaira(pass.priceKobo), offerToken: null }
+      : null;
+  const selected = onWeb ? webItem : ladder.itemFor(naira);
+  const credit = onWeb ? null : ladder.creditFor('pass', naira);
+  const buyPass = (payWith?: 'credit') => {
+    if (onWeb) return void web.begin({ kind: 'pass', communityId: id }, room.name, {}, verb);
+    return naira === null ? undefined : void ladder.buyer.buyLadder({ kind: 'pass', communityId: id, listPriceNaira: naira }, payWith);
+  };
   // A room that sells a pass and a person who cannot buy it: the host removed them (a pending row in a pass room, G-INBOX-24-6; R-63 has no
   // join request, and the host lets them back in with the existing approve). A removed member can still hold a pass that has days left (the
   // Hub keeps `active` true and turns `canBuy` and `canRenew` off), so the pass being active does not make them a member: what decides is
@@ -132,7 +151,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
   const enter = () => openRoom(router, id);
   const sub = [membersFull(room.memberCount), handle ? `hosted by @${handle}` : null].filter(Boolean).join(' · ');
   const share = () => {
-    void Share.share({ message: room.link }).catch(() => undefined);
+    void shareOut({ message: room.link }).catch(() => undefined);
   };
   const cover = <CoverHeader name={room.name} imageUrl={room.imageUrl} sub={sub} onBack={onBack} right={<CoverShare onPress={share} />} />;
 
@@ -225,6 +244,7 @@ function Loaded({ id, room, pass, handle, onBack }: { id: string; room: RoomView
         {body}
       </ScrollView>
       {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>{footer}</View> : null}
+      {web.sheets}
     </>
   );
 }

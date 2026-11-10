@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { VoicePlayer, type VoicePlayerStatus } from '@/components/VoicePlayer';
-import { AudioSource, type SeekRequest } from '@/features/feed/player';
+import { AudioSource, type LoadState, type SeekRequest } from '@/features/feed/player';
 
 /**
  * How long a tap on Play waits for the clip to come in before the player says it could not play it. The audio player reports
@@ -32,6 +32,8 @@ export function BioPlayer({ url, aiVoice, active = true, testID }: BioPlayerProp
   const [length, setLength] = useState(0);
   const [seek, setSeek] = useState<SeekRequest>(null);
   const [failed, setFailed] = useState(false);
+  // R-117: the player says when the file is still coming in (or has run dry), so the pill shows its loading state, not Pause with no sound.
+  const [waiting, setWaiting] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [wasActive, setWasActive] = useState(active);
 
@@ -51,7 +53,12 @@ export function BioPlayer({ url, aiVoice, active = true, testID }: BioPlayerProp
     setSeek({ to: 0, at: Date.now() });
   }, []);
 
-  const status: VoicePlayerStatus = failed ? 'error' : !wantsPlay ? 'idle' : length > 0 ? 'playing' : 'loading';
+  const onLoad = useCallback((state: LoadState) => {
+    setWaiting(state === 'waiting');
+    if (state === 'failed') setFailed(true);
+  }, []);
+
+  const status: VoicePlayerStatus = failed ? 'error' : !wantsPlay ? 'idle' : length > 0 && !waiting ? 'playing' : 'loading';
 
   useEffect(() => {
     if (status !== 'loading') return;
@@ -72,7 +79,7 @@ export function BioPlayer({ url, aiVoice, active = true, testID }: BioPlayerProp
 
   return (
     <>
-      <AudioSource key={attempt} uri={url} playing={wantsPlay && active && !failed} seek={seek} onTime={onTime} onEnded={onEnded} />
+      <AudioSource key={attempt} uri={url} playing={wantsPlay && active && !failed} seek={seek} onTime={onTime} onEnded={onEnded} onLoad={onLoad} />
       <VoicePlayer
         testID={testID}
         status={status}

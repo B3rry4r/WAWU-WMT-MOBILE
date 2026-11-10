@@ -3,7 +3,7 @@
  * website and the phone's link settings cannot drift apart.
  *
  * An app link is an https address on wawuafrica.com that this app opens when it is
- * installed. Seven exist, and only these seven (the website lists exactly the same
+ * installed. Eight exist, and only these eight (the website lists exactly the same
  * paths in `/.well-known/apple-app-site-association`; `app.json` registers them
  * as the `associatedDomains` entry and the Android `intentFilters`, and a spec
  * checks that it does):
@@ -11,6 +11,7 @@
  *   /r/<code>        an invite, as a person shares it (REF-03 claims the code)
  *   /selfie          where Nuvion's hosted selfie page sends a person back to
  *   /activate        the "Set My Password" button in the activation email (opens sign-in; the query is not read)
+ *   /reset-password  the link in the "Forgot password" email (`?token=...&email=...`): opens the New password screen (RESET-APP, R-123)
  *   /receipt/<code>  a receipt's check address, its own path (never `/r/`, the invite path)
  *   /u/<handle>      a profile, as Share on Me sends it
  *   /c/<slug>        a community room, as the Hub issues its link
@@ -19,10 +20,22 @@
  * Without the app installed the website shows a small "Open in the WAWU app" page
  * for each. `/join` is the registration campaign and is never one of these.
  */
+import { Platform } from 'react-native';
 
 /** The website's host and origin. The only host an app link may be on. */
 export const LINK_HOST = 'wawuafrica.com';
 export const LINK_ORIGIN = `https://${LINK_HOST}`;
+
+/**
+ * The origin links are written on (WEBAPP-01). On the phone app it is `LINK_ORIGIN`, as always. On the web app (usewmt.com, R-127)
+ * it is the page's own origin, so a link a person shares there opens the web app and the hosted selfie comes back to it.
+ * `Platform.OS === 'web'` with no `window.location` (a server render) falls back to `LINK_ORIGIN`.
+ */
+export function linkOrigin(): string {
+  if (Platform.OS !== 'web') return LINK_ORIGIN;
+  const origin = typeof window !== 'undefined' ? window.location?.origin : undefined;
+  return origin && /^https?:\/\//i.test(origin) ? origin : LINK_ORIGIN;
+}
 
 /** The path every invite lives under, with its closing slash: `/r/<code>`. */
 export const INVITE_PATH_PREFIX = '/r/';
@@ -33,8 +46,21 @@ export const SELFIE_PATH = '/selfie';
 /** The activation email's button lands here (`FRONTEND_URL/activate?token&email`, written by wawu-id). */
 export const ACTIVATE_PATH = '/activate';
 
+/** The Forgot password email's link lands here (`FRONTEND_URL/reset-password?token&email`, written by wawu-id); the app reads both. */
+export const RESET_PASSWORD_PATH = '/reset-password';
+
 /** A receipt's check address, `/receipt/<code>`, with its closing slash. Never `/r/`: that is the invite path. */
 export const RECEIPT_PATH_PREFIX = '/receipt/';
+
+/** A receipt's check address as it is shared: `https://wawuafrica.com/receipt/<code>` on the phone, the web app's own origin on the web. */
+export function receiptLink(code: string): string {
+  return `${linkOrigin()}${RECEIPT_PATH_PREFIX}${encodeURIComponent(code.trim())}`;
+}
+
+/** A piece of content as its Share sends it: `https://wawuafrica.com/content/<id>` on the phone, the web app's own origin on the web. */
+export function contentShareLink(id: string): string {
+  return `${linkOrigin()}${CONTENT_PATH_PREFIX}${encodeURIComponent(id)}`;
+}
 
 /** A profile as it is shared, `/u/<handle>`, with its closing slash. */
 export const PROFILE_PATH_PREFIX = '/u/';
@@ -50,17 +76,17 @@ export const CONTENT_PATH_PREFIX = '/content/';
  * The Hub's own `link` field (`wawu/r/<code>`, no scheme) is not used: a chat app makes no link of it.
  */
 export function inviteLink(code: string): string {
-  return `${LINK_ORIGIN}${INVITE_PATH_PREFIX}${encodeURIComponent(code.trim().toLowerCase())}`;
+  return `${linkOrigin()}${INVITE_PATH_PREFIX}${encodeURIComponent(code.trim().toLowerCase())}`;
 }
 
 /** A profile as it is shared: `https://wawuafrica.com/u/<handle>`, the handle without its `@`. */
 export function profileLink(handle: string): string {
-  return `${LINK_ORIGIN}${PROFILE_PATH_PREFIX}${encodeURIComponent(handle.trim().replace(/^@+/, ''))}`;
+  return `${linkOrigin()}${PROFILE_PATH_PREFIX}${encodeURIComponent(handle.trim().replace(/^@+/, ''))}`;
 }
 
 /** A community room as a person shares it: `https://wawuafrica.com/c/<slug>`. The Hub's own `link` field is `wawu/c/<slug>`, no scheme. */
 export function roomLink(slug: string): string {
-  return `${LINK_ORIGIN}${ROOM_PATH_PREFIX}${encodeURIComponent(slug.trim().toLowerCase())}`;
+  return `${linkOrigin()}${ROOM_PATH_PREFIX}${encodeURIComponent(slug.trim().toLowerCase())}`;
 }
 
 /**
@@ -81,5 +107,5 @@ export function readableLink(link: string): string {
 
 /** The address the hosted selfie page returns to. The Hub takes it only when `NUVION_LIVENESS_REDIRECT_ORIGINS` lists it. */
 export function selfieReturnUrl(): string {
-  return `${LINK_ORIGIN}${SELFIE_PATH}`;
+  return `${linkOrigin()}${SELFIE_PATH}`;
 }

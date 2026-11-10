@@ -45,6 +45,12 @@ export type Engine<Q extends QuoteLike, V extends PaymentViewLike> = {
   send: (quote: Q, key: string, credential: Credential) => Promise<PayOutcome<V>>;
   /** One payment as it stands now (what the app polls after `pending`). */
   read: (id: string) => Promise<V>;
+  /**
+   * `payment_in_progress` names the open payment (another tab, an earlier try). When this is given and says the open payment is for exactly what is on
+   * screen, the sheet reads that payment until the Hub decides and shows its result, never a second charge (WEBAPP-09 W4). Left out: the sheet says it is
+   * still being confirmed, as before.
+   */
+  sameAs?: (view: V) => boolean;
   /** Where a polled view is cached. */
   readKey: (id: string) => readonly unknown[];
   /** The sentence for a payment the Hub could not take for lack of money, when it sent no figures. */
@@ -117,6 +123,8 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
   const askSeq = useRef(0);
   const busy = useRef(false);
   const handled = useRef<string | null>(null);
+  /** The id of an open payment `payment_in_progress` named, read to see whether it is for what is on screen. */
+  const adopted = useRef<string | null>(null);
 
   const afterMoney = useCallback(() => {
     void client.invalidateQueries({ queryKey: ['money'] });
@@ -166,6 +174,7 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
       setView(null);
       setPendingId(null);
       handled.current = null;
+      adopted.current = null;
       const next = await ask();
       if (next) {
         setStatus({ kind: 'review' });
@@ -267,6 +276,14 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
         // Another payment for this is being confirmed: this key moved nothing.
         nothingMoved();
         setPinOpen(false);
+        if (outcome.paymentId && live.current.sameAs) {
+          // It may be this very purchase, paid in another tab: read it until the Hub decides (W4).
+          adopted.current = outcome.paymentId;
+          handled.current = null;
+          setStatus({ kind: 'confirming' });
+          setPendingId(outcome.paymentId);
+          return { code: 'approved' };
+        }
         setStatus({
           kind: 'blocked',
           title: 'Still confirming',
@@ -319,6 +336,15 @@ export function usePaymentFlow<Q extends QuoteLike, V extends PaymentViewLike>(e
   useEffect(() => {
     const next = polled.data;
     if (!next || next.id !== pendingId || !polled.isFetchedAfterMount) return;
+    if (adopted.current === next.id && live.current.sameAs && !live.current.sameAs(next)) {
+      // The open payment is for something else: this one waits, and the person is told so.
+      adopted.current = null;
+      queueMicrotask(() => {
+        setPendingId(null);
+        setStatus({ kind: 'blocked', title: 'Still confirming', message: 'A payment for this is still being confirmed. Check your wallet activity before you pay again.' });
+      });
+      return;
+    }
     queueMicrotask(() => settle(next));
   }, [polled.data, polled.isFetchedAfterMount, pendingId, settle]);
 

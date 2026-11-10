@@ -21,6 +21,7 @@ const { UploadScreen } = require('../UploadScreen') as typeof import('../UploadS
 const { PreviewScreen } = require('../PreviewScreen') as typeof import('../PreviewScreen');
 const { CreateEntry } = require('../CreateEntry') as typeof import('../CreateEntry');
 const draft = require('../draft') as typeof import('../draft');
+const details = require('../details') as typeof import('../details');
 const { adoptSession, signOut, resetSessionForTests } = require('@/api/session') as typeof import('@/api/session');
 
 const RELEASE = '/api/hub/uploads/release';
@@ -84,7 +85,7 @@ describe('M19 · Create', () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
     await open();
     expect(await screen.findByText('4 of 5 used')).toBeTruthy();
-    expect(screen.getByText('Get verified for up to 25 uploads and more reach.')).toBeTruthy();
+    expect(screen.getByText('Get verified for a tick beside your name and more reach.')).toBeTruthy();
   });
 
   // DV2-04 (R-43, M19): the products meter of a person with a tier, "Needs an active tier" on Event.
@@ -124,6 +125,22 @@ describe('M19 · Create', () => {
       expect(await screen.findByText('5 of 8')).toBeTruthy();
       // An ending tier says when it ends, not that it renews.
       expect(screen.getByText(/^Ends /)).toBeTruthy();
+    });
+
+    it('R-129: a Founding Maker whose tier read says 15 but whose Hub allowance says 25 sees 25 on the meter, the one number', async () => {
+      hub.answers[`GET ${TIER}`] = ok(running('active', 4, 15));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 25, true));
+      await open();
+      expect(await screen.findByText('4 of 25')).toBeTruthy();
+      expect(screen.queryByText('4 of 15')).toBeNull();
+    });
+
+    it('R-129: with the Hub allowance and the tier agreeing at 15, the meter says 4 of 15 and no 25 is stated anywhere', async () => {
+      hub.answers[`GET ${TIER}`] = ok(running('active', 4, 15));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 15, false));
+      await open();
+      expect(await screen.findByText('4 of 15')).toBeTruthy();
+      expect(screen.queryByText(/25/)).toBeNull();
     });
 
     it('a person with no tier gets no products meter; a live tick keeps its uploads count', async () => {
@@ -269,7 +286,7 @@ describe('M19 · Create at "5 of 5 used"', () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 5));
     const calls = await open();
     expect(await screen.findByText('Your 5 free uploads are used')).toBeTruthy();
-    expect(screen.getByText('Get verified for up to 25 uploads, or take something down.')).toBeTruthy();
+    expect(screen.getByText('Take something down to make room for a new one, or get verified for more reach.')).toBeTruthy();
     expect(screen.getByTestId('create-meter-count').props.children).toBe('5 of 5 used');
     await fireEvent.press(screen.getByTestId('create-tile-content'));
     expect(calls.content).not.toHaveBeenCalled();
@@ -312,21 +329,23 @@ describe('M20 · What are you making?', () => {
     expect(onContinue).toHaveBeenCalledWith('pdf');
   });
 
-  it('says each file type and clip length the way the Hub lists them', async () => {
+  it('says each file type the way the Hub lists them, and asks for no clip, length or extract (R-118)', async () => {
     await renderFrame(<FormatScreen onBack={jest.fn()} onContinue={jest.fn()} />);
     expect(await screen.findByText('MP4 or MOV · buyers see a clip')).toBeTruthy();
-    expect(screen.getByText('MP3 or WAV · 30–60 second clip')).toBeTruthy();
+    expect(screen.getByText('MP3 or WAV · buyers hear a clip')).toBeTruthy();
     expect(screen.getByText('Lessons · the first is the preview')).toBeTruthy();
-    expect(screen.getByText('Guides, ebooks · give away an extract')).toBeTruthy();
+    expect(screen.getByText('Guides, ebooks · buyers read the first pages')).toBeTruthy();
+    expect(screen.queryByText(/30–60/)).toBeNull();
+    expect(screen.queryByText(/extract|second clip/)).toBeNull();
   });
 
   it('changes a row when the Hub changes its rule', async () => {
     hub.answers[`GET ${FORMATS_PATH}`] = ok({
-      formats: FORMATS.formats.map((f) => (f.id === 'audio' ? { ...f, preview: { ...f.preview, seconds: { min: 20, max: 45 } } } : f)),
+      formats: FORMATS.formats.map((f) => (f.id === 'audio' ? { ...f, full: { ...f.full, extensions: ['mp3'] } } : f)),
     });
     await renderFrame(<FormatScreen onBack={jest.fn()} onContinue={jest.fn()} />);
-    expect(await screen.findByText('MP3 or WAV · 20–45 second clip')).toBeTruthy();
-    expect(screen.queryByText(/30–60/)).toBeNull();
+    expect(await screen.findByText('MP3 · buyers hear a clip')).toBeTruthy();
+    expect(screen.queryByText(/MP3 or WAV/)).toBeNull();
   });
 
   it('shows a loading list while the rules are on their way', async () => {
@@ -486,96 +505,106 @@ describe('M21 · Upload', () => {
   });
 });
 
-describe('M22 · Preview', () => {
-  const pdfBytes = '%PDF-1.4\n2 0 obj << /Type /Pages /Kids [3 0 R] /Count 12 >> endobj\n3 0 obj << /Type /Page >> endobj\n%%EOF';
-  const open = (format: 'pdf' | 'audio' = 'pdf', onContinue?: () => void) => renderFrame(<PreviewScreen format={format} onBack={jest.fn()} onContinue={onContinue} />);
-
-  it('a user can upload a preview file, see how it will look, and remove it', async () => {
-    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'p.pdf');
-    mockPick.mockResolvedValue(chosen('chapter-1-free.pdf', 'application/pdf', 5, { blob: new Blob([pdfBytes]) }));
-    await open();
-    expect(await screen.findByText('Add a preview')).toBeTruthy();
-    expect(await screen.findByText('Buyers see this before paying. For a PDF, upload the extract you want to give away.')).toBeTruthy();
-    expect(screen.getByText('Step 3 of 5')).toBeTruthy();
-    expect(screen.queryByTestId('preview-look')).toBeNull();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
+describe('M22 · step 3 is the cover step for every kind (R-118)', () => {
+  const full = (name: string, contentType: string, extra: object = {}) => ({ name, bytes: 5 * MB, contentType, key: `content/full/u1/${name}`, fileUrl: `https://storage.test/content/full/u1/${name}?read=1`, ...extra });
+  const open = (format: 'pdf' | 'audio' | 'template' | 'course' | 'image' = 'pdf', onContinue?: () => void) =>
+    renderFrame(<PreviewScreen format={format} onBack={jest.fn()} onContinue={onContinue} />);
+  const COVER_LINK = 'https://storage.test/content/cover/u1/cover.png?read=1';
+  /** The phone's photo picker gives a cover: it goes up to content/cover. */
+  async function pickCover() {
+    hub.answers[`POST ${PRESIGN}`] = presigned('content/cover', 'cover.png');
+    mockPick.mockResolvedValue(chosen('cover.png', 'image/png', 3, { previewUri: 'file:///cache/cover.png' }));
+    await fireEvent.press(screen.getByTestId('cover-pick'));
     await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
-    const presign = hub.sent.find((s) => s.path === PRESIGN);
-    expect(presign?.body).toMatchObject({ folder: 'content/preview', format: 'pdf', contentType: 'application/pdf' });
     await act(async () => { ScriptedXhr.last?.finish(200); });
-    expect(await screen.findByText('chapter-1-free.pdf')).toBeTruthy();
-    expect(screen.getByText('12 pages · public')).toBeTruthy();
+    await screen.findByTestId('cover-picked-image');
+  }
+
+  beforeEach(() => details.resetDetails());
+
+  it('a PDF asks for no extract: "Add a cover", one muted line, the tiles and the cover choice, and Continue is not held up', async () => {
+    draft.setFormat('pdf');
+    draft.setFull(full('guide.pdf', 'application/pdf'));
+    const onContinue = jest.fn();
+    await open('pdf', onContinue);
+    expect(await screen.findByText('Add a cover')).toBeTruthy();
+    expect(screen.getByText('Step 3 of 5')).toBeTruthy();
+    expect(screen.getByText('Your preview is the first pages, made for you.')).toBeTruthy();
+    expect(screen.queryByTestId('preview-drop')).toBeNull();
+    expect(screen.queryByText('Add a preview')).toBeNull();
     expect(screen.getByText('How it will look')).toBeTruthy();
     expect(screen.getAllByTestId('preview-tile')).toHaveLength(2);
     expect(screen.getByTestId('preview-tile-locked')).toBeTruthy();
-    expect(draft.getDraft().preview).toMatchObject({ name: 'chapter-1-free.pdf', pages: 12, key: 'content/preview/u1/p.pdf' });
-    await fireEvent.press(screen.getByTestId('create-remove'));
-    expect(draft.getDraft().preview).toBeNull();
-    expect(screen.queryByTestId('preview-look')).toBeNull();
-    expect(screen.getByTestId('preview-drop')).toBeTruthy();
-    // Remove gives the file back to the Hub.
-    await waitFor(() => expect(hub.sent.filter((s) => s.path === RELEASE).map((s) => s.body)).toEqual([{ key: 'content/preview/u1/p.pdf' }]));
-  });
-
-  it('removes the preview at once even when the Hub cannot be asked to release it', async () => {
-    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'p.pdf');
-    hub.answers[`POST ${RELEASE}`] = 'hang';
-    mockPick.mockResolvedValue(chosen('p.pdf', 'application/pdf'));
-    await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
-    await act(async () => { ScriptedXhr.last?.finish(200); });
-    await screen.findByTestId('preview-look');
-    await fireEvent.press(screen.getByTestId('create-remove'));
-    expect(draft.getDraft().preview).toBeNull();
-    expect(screen.getByTestId('preview-drop')).toBeTruthy();
-    hub.answers[`POST ${RELEASE}`] = refusal(503, 'Could not remove that file right now. Try again in a moment.');
-    await act(async () => undefined);
-    expect(screen.queryByText(/Could not remove/)).toBeNull();
-  });
-
-  it('leaves the page count out when the file does not say how many pages it has', async () => {
-    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'p.pdf');
-    mockPick.mockResolvedValue(chosen('extract.pdf', 'application/pdf', 5, { blob: new Blob(['%PDF-1.5 packed']) }));
-    await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
-    await act(async () => { ScriptedXhr.last?.finish(200); });
-    expect(await screen.findByText('1 KB \u00b7 public')).toBeTruthy();
-  });
-
-  it('asks for the clip length the Hub sets on an audio piece', async () => {
-    await open('audio');
-    expect(await screen.findByText('Buyers see this before paying. Upload a 30–60 second clip.')).toBeTruthy();
-  });
-
-  it('draws no Continue until the details step exists, and then waits for the preview to land', async () => {
-    hub.answers[`POST ${PRESIGN}`] = presigned('content/preview', 'p.pdf');
-    mockPick.mockResolvedValue(chosen('p.pdf', 'application/pdf'));
-    const first = await open();
-    await screen.findByText('Add a preview');
-    expect(screen.queryByTestId('create-continue')).toBeNull();
-    await first.unmount();
-
-    const onContinue = jest.fn();
-    await open('pdf', onContinue);
-    expect(await screen.findByTestId('create-continue')).toBeTruthy();
-    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBe(true);
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    await waitFor(() => expect(ScriptedXhr.last).not.toBeNull());
-    await act(async () => { ScriptedXhr.last?.finish(200); });
-    await screen.findByTestId('preview-look');
+    expect(screen.getByTestId('cover-choice')).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Video frame' })).toBeNull();
     await fireEvent.press(screen.getByTestId('create-continue'));
-    expect(onContinue).toHaveBeenCalled();
+    expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the Hub's sentence when a preview is refused", async () => {
-    hub.answers[`POST ${PRESIGN}`] = refusal(400, 'video/webm is not allowed in content/preview.');
-    mockPick.mockResolvedValue(chosen('p.pdf', 'application/pdf'));
+  it('an audio piece says the Hub makes the preview, and Continue is not held up', async () => {
+    draft.setFormat('audio');
+    draft.setFull(full('song.mp3', 'audio/mpeg'));
+    const onContinue = jest.fn();
+    await open('audio', onContinue);
+    expect(await screen.findByText('Your preview is the first 30 seconds, made for you.')).toBeTruthy();
+    expect(screen.queryByTestId('preview-drop')).toBeNull();
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBeFalsy();
+    await fireEvent.press(screen.getByTestId('create-continue'));
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it('a template previews as its cover, so the cover is needed: no None, Continue waits for a picture, and then goes', async () => {
+    draft.setFormat('template');
+    draft.setFull(full('rate-card.zip', 'application/zip'));
+    const onContinue = jest.fn();
+    await open('template', onContinue);
+    expect(await screen.findByText('Your cover is the preview buyers see. A cover is needed.')).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'None' })).toBeNull();
+    expect(screen.getByTestId('cover-pick').props.accessibilityState?.disabled).toBeFalsy();
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId('create-continue'));
+    expect(onContinue).not.toHaveBeenCalled();
+    await pickCover();
+    expect(draft.getCover()).toMatchObject({ mode: 'picture', file: { key: 'content/cover/u1/cover.png' } });
+    expect(screen.getAllByTestId('preview-tile-image')[0].props.source).toEqual([{ uri: COVER_LINK }]);
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBeFalsy();
+    await fireEvent.press(screen.getByTestId('create-continue'));
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it('a course whose first lesson is a document says its cover is the preview and needs one; with a video first lesson it is cut and needs none', async () => {
+    draft.setFormat('course');
+    draft.addLesson();
+    draft.setLessonFile(draft.getLessons()[0].key, full('notes.pdf', 'application/pdf'));
+    const first = await open('course', jest.fn());
+    expect(await screen.findByText('Your first lesson is not a video, so your cover is the preview. A cover is needed.')).toBeTruthy();
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBe(true);
+    await first.unmount();
+    draft.setLessonFile(draft.getLessons()[0].key, full('lesson-1.mp4', 'video/mp4'));
+    await open('course', jest.fn());
+    expect(await screen.findByText('Your preview is the first 30 seconds of your first lesson, made for you.')).toBeTruthy();
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBeFalsy();
+  });
+
+  it('a FREE piece has no preview line and no tiles (nothing is held back), and a free template needs no cover', async () => {
+    draft.setFormat('template');
+    draft.setFull(full('rate-card.zip', 'application/zip'));
+    details.setDetails({ accessType: 'free' });
+    await open('template', jest.fn());
+    expect(await screen.findByText('Add a cover')).toBeTruthy();
+    expect(screen.queryByTestId('preview-line')).toBeNull();
+    expect(screen.queryByText(/preview/i)).toBeNull();
+    expect(screen.queryByTestId('preview-look')).toBeNull();
+    expect(screen.getByTestId('cover-choice')).toBeTruthy();
+    expect(screen.getByTestId('create-continue').props.accessibilityState?.disabled).toBeFalsy();
+  });
+
+  it('draws no Continue until the details step exists', async () => {
+    draft.setFormat('pdf');
+    draft.setFull(full('guide.pdf', 'application/pdf'));
     await open();
-    await fireEvent.press(await screen.findByTestId('preview-drop'));
-    expect(await screen.findByText('video/webm is not allowed in content/preview.')).toBeTruthy();
-    expect(draft.getDraft().preview).toBeNull();
+    await screen.findByText('Add a cover');
+    expect(screen.queryByTestId('create-continue')).toBeNull();
   });
 });
 
@@ -698,5 +727,39 @@ describe('the Create routes are for creator accounts', () => {
     await act(async () => undefined);
     expect(screen.getByTestId('gate').props.children).toBe('checking');
     expect(hub.sent.some((x) => x.path === ME)).toBe(false);
+  });
+});
+
+describe('R-129 · the limit sheet follows the Hub places alone', () => {
+  const TIER = '/api/hub/me/tier';
+  const none = { state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
+  const { Platform } = require('react-native') as typeof import('react-native');
+
+  it('a person whose 25 places come from a tick bought before tiers (no tier) at 25 of 25 is routed to the limit sheet, on a phone', async () => {
+    const was = Platform.OS;
+    Platform.OS = 'android';
+    try {
+      hub.answers[`GET ${TIER}`] = ok(none);
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(25, 25, true));
+      const calls = { close: jest.fn(), content: jest.fn(), event: jest.fn(), service: jest.fn(), full: jest.fn() };
+      await renderFrame(<CreateScreen onClose={calls.close} onContent={calls.content} onEvent={calls.event} onService={calls.service} onProductsFull={calls.full} />);
+      await screen.findByText('25 of 25 used');
+      await fireEvent.press(screen.getByTestId('create-tile-content'));
+      expect(calls.full).toHaveBeenCalledTimes(1);
+      expect(calls.content).not.toHaveBeenCalled();
+    } finally {
+      Platform.OS = was;
+    }
+  });
+
+  it('with places left the same person starts a piece, not the sheet', async () => {
+    hub.answers[`GET ${TIER}`] = ok(none);
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(24, 25, true));
+    const calls = { close: jest.fn(), content: jest.fn(), event: jest.fn(), service: jest.fn(), full: jest.fn() };
+    await renderFrame(<CreateScreen onClose={calls.close} onContent={calls.content} onEvent={calls.event} onService={calls.service} onProductsFull={calls.full} />);
+    await screen.findByText('24 of 25 used');
+    await fireEvent.press(screen.getByTestId('create-tile-content'));
+    expect(calls.content).toHaveBeenCalledTimes(1);
+    expect(calls.full).not.toHaveBeenCalled();
   });
 });

@@ -329,15 +329,31 @@ describe('H2 and H26: the rail and the tip sheet', () => {
     expect(screen.queryByText(/Fintava/)).toBeNull();
   });
 
-  it('shows the six tiles from the Hub\'s tip list, each with what the fan pays and what Tife gets (85%), and no field to type another amount', async () => {
+  it('shows the six tiles from the Hub\'s tip list, each with only what the fan pays, never what Tife gets (R-120), and no field to type another amount', async () => {
     const screen = await openSheet(null);
     const tiles = screen.getAllByTestId(/^tip-tile-\d+$/).map((t) => String(t.props.testID).replace('tip-tile-', ''));
     expect(tiles).toEqual(['200', '500', '1000', '2000', '5000', '10000']);
-    expect(screen.getByTestId('tip-tile-1000').props.accessibilityLabel).toBe('₦1,000. Tife gets ₦850');
-    expect(screen.getByTestId('tip-tile-200').props.accessibilityLabel).toBe('₦200. Tife gets ₦170');
-    expect(screen.getByTestId('tip-tile-10000').props.accessibilityLabel).toBe('₦10,000. Tife gets ₦8,500');
+    expect(screen.getByTestId('tip-tile-1000').props.accessibilityLabel).toBe('₦1,000');
+    expect(screen.getByTestId('tip-tile-200').props.accessibilityLabel).toBe('₦200');
+    expect(screen.getByTestId('tip-tile-10000').props.accessibilityLabel).toBe('₦10,000');
+    for (const t of tiles) expect(screen.getByTestId(`tip-tile-${t}`).props.accessibilityLabel).not.toMatch(/get|gets|earn|keep|share/i);
+    // Nothing on the sheet says what the creator receives: no "Tife gets", no "They get", none of the 85% figures (R-120).
+    expect(screen.queryByText(/gets|They get|earn|keeps/i)).toBeNull();
+    expect(screen.queryByText(/₦850|₦170|₦8,500/)).toBeNull();
     expect(screen.queryByTestId('tip-other')).toBeNull();
     expect(screen.queryByPlaceholderText('Other amount')).toBeNull();
+  });
+
+  it('the Android back button (the sheet\'s onRequestClose) closes the wallet tip sheet and pays nothing', async () => {
+    const screen = await openSheet(null);
+    type Ancestor = { props: { onRequestClose?: () => void }; parent: Ancestor | null };
+    await rtl.act(async () => {
+      let node: Ancestor | null = screen.getByTestId('tip-sheet') as unknown as Ancestor;
+      while (node && !node.props.onRequestClose) node = node.parent;
+      node?.props.onRequestClose?.();
+    });
+    expect(screen.queryByTestId('tip-sheet')).toBeNull();
+    expect(hub.pays).toEqual([]);
   });
 
   it('another tile is quoted again, and only a tile from the list is ever quoted', async () => {

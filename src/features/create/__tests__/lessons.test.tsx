@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 
 import { ScriptedXhr, FORMATS, allowance, chosen, hub, installFetch, installXhr, ok, presigned, refusal, renderFrame } from '../__helpers__/harness';
 
@@ -69,6 +70,23 @@ describe('the course step 2: the lessons, one by one', () => {
   };
   const next = () => screen.getByTestId('create-continue');
   const keys = () => draft.getLessons().map((l) => l.key);
+
+  // WALK1031-FIX F2 (R-118): step 2's line used to say "The first lesson is free. The rest unlock when someone buys the course." beside step 3's
+  // "Your preview is the first 30 seconds of your first lesson". No test pinned the old line; this one pins what is true (the Hub's rule in
+  // `freeLessonCount`: with two lessons or more the first plays free, a course of one has none free) in step 3's words for the preview.
+  it.each(['android', 'ios'] as const)('says what a buyer sees: the first 30 seconds as the preview, and which lessons play free (%s)', async (os) => {
+    const platform = jest.replaceProperty(Platform, 'OS', os);
+    await open();
+    const line = screen.getByTestId('lessons-line');
+    expect(line.props.children).toBe(
+      'Your preview is the first 30 seconds of your first lesson, made for you. With two or more lessons, the first plays free and the rest unlock when someone buys the course.',
+    );
+    expect(screen.queryByText('The first lesson is free. The rest unlock when someone buys the course.')).toBeNull();
+    const [first] = keys();
+    await uploadFor(first, 'l1.mp4');
+    expect(screen.getByTestId('lessons-line').props.children).toBe(line.props.children);
+    platform.restore();
+  });
 
   it('a creator fills a lesson (title, length, a file each), adds a second, and Continue waits for every lesson', async () => {
     const calls = await open();
@@ -183,7 +201,6 @@ describe('the course step 5: the piece, then its lessons', () => {
     draft.setLessonFile(a, file('l1.mp4'));
     draft.setLessonText(b, { title: 'The first job' });
     draft.setLessonFile(b, file('l2.mp4'));
-    draft.setPreview(file('p.mp4', 'content/preview'));
     details.setDetails({ title: 'VFX for Beginners', description: 'Twelve lessons.', category: 'media_communications', accessType: 'paid', price: '8000' });
   };
   const open = async () => {
@@ -204,7 +221,7 @@ describe('the course step 5: the piece, then its lessons', () => {
     expect(writes('POST', CREATE)[0].body).toMatchObject({
       contentType: 'course',
       price: 8000,
-      previewAsset: 'https://storage.test/content/preview/u1/p.mp4?read=1',
+      previewFromFile: true,
       fullAsset: 'https://storage.test/content/full/u1/l1.mp4?read=1',
     });
     expect(writes('PUT', PUT_LESSONS)[0].body).toEqual({
@@ -297,7 +314,6 @@ describe('M23: From a course (FIX-111, H24)', () => {
   it('a piece that names a course sends it as parentCourseId, and one that names none sends no such key', async () => {
     draft.setFormat('video');
     draft.setFull(file('full.mp4'));
-    draft.setPreview(file('clip.mp4', 'content/preview'));
     details.setDetails({ title: 'Orbit shot', description: 'One take.', category: 'media_communications', accessType: 'free', parentCourse: { id: 'c1', title: 'VFX for Beginners' } });
     hub.answers[`POST ${CREATE}`] = created('Orbit shot');
     const onSent = jest.fn();
@@ -312,7 +328,6 @@ describe('M23: From a course (FIX-111, H24)', () => {
   it('a piece with no course sends no parentCourseId', async () => {
     draft.setFormat('video');
     draft.setFull(file('full.mp4'));
-    draft.setPreview(file('clip.mp4', 'content/preview'));
     details.setDetails({ title: 'Orbit shot', description: 'One take.', category: 'media_communications', accessType: 'free' });
     hub.answers[`POST ${CREATE}`] = created('Orbit shot');
     const onSent = jest.fn();

@@ -12,7 +12,9 @@ import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TierBadge } from '@/components/TierBadge';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
 import { fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
+import { placesOf } from '@/features/me/model';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { PointsFrame } from '@/features/points/PointsFrame';
 import { tierItemOf } from '@/features/store/model';
@@ -75,7 +77,10 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
   const plans = useQuery(plansQuery(owner), queryClient);
   // Renew is bought in the store sheet, so the price on it is the store's own (IAP-03, R-86); none is drawn until the store has answered.
   const store = useStoreCatalog(['tier']);
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
   const tier = mine.data;
+  // A tick bought before tiers keeps its places (R-129): say so, never that the person cannot publish.
+  const places = allowance.data?.uploads.allowed ?? 0;
   const held = tier && tier.state !== 'none' && tier.tier ? tier.tier : null;
 
   let body;
@@ -108,7 +113,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
         testID="your-tier-none"
         icon="BadgeCheck"
         title="You have no tier yet"
-        message="Make it official to publish, upload files and unlock your points."
+        message={places > 0 ? `Your tick still gives you ${places} places to publish until it ends. See tiers for what a tier gives.` : 'Make it official to publish, upload files and unlock your points.'}
         action={{ label: 'See tiers', onPress: onSeeTiers }}
       />
     );
@@ -157,7 +162,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
           </View>
         ) : null}
         <GroupedList testID="your-tier-rows">
-          <KeyValueRow testID="your-tier-products" label="Products" value={`${tier.productsUsed} of ${tier.productsAllowed}`} />
+          <KeyValueRow testID="your-tier-products" label="Products" value={`${placesOf(tier, allowance.data).used} of ${placesOf(tier, allowance.data).allowed}`} />
           {tier.pointsIncluded > 0 ? <KeyValueRow testID="your-tier-points" label="Points included" value={formatPointsCount(tier.pointsIncluded)} /> : null}
           {tier.eventPass ? <KeyValueRow testID="your-tier-pass" label="Event pass" value={tier.eventPass.name} /> : null}
         </GroupedList>

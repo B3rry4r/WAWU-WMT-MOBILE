@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
@@ -172,7 +172,8 @@ export function SettingsScreen(props: SettingsScreenProps) {
           ) : (
             <PendingRow testID="settings-tgif-pending" title={TGIF_TITLE} subtitle={TGIF_SUBTITLE} failed={tgif.query.isError} onRetry={() => void tgif.query.refetch()} />
           )}
-          <SwitchRow testID="settings-sound" title={ALERT_SOUND_TITLE} subtitle={ALERT_SOUND_SUBTITLE} on={prefs.sound} onChange={(next) => void setSound(next)} />
+          {/* A browser gets no push, so there is no alert sound to switch (R-127, R-47): the row is not drawn on the web. */}
+          {Platform.OS === 'web' ? null : <SwitchRow testID="settings-sound" title={ALERT_SOUND_TITLE} subtitle={ALERT_SOUND_SUBTITLE} on={prefs.sound} onChange={(next) => void setSound(next)} />}
           <SwitchRow testID="settings-music" title={MUSIC_TITLE} subtitle={MUSIC_SUBTITLE} on={music.on} busy={music.busy} onChange={(next) => void setThemeMusic(next)} />
           <ThemeRow value={THEME_LABEL[prefs.theme]} onPress={() => setChoosingTheme(true)} />
         </GroupedList>

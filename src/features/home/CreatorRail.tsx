@@ -15,7 +15,7 @@ import { space } from '@/theme';
 import { useTodayClient } from './client';
 import { setFollowing, suggestionsKey, type CreatorSuggestion } from './api';
 import { gutter, todayMetrics as m } from './look';
-import { suggestionLine, suggestionTick } from './model';
+import { canFollow, suggestionLine, suggestionTick } from './model';
 
 /**
  * One creator on the rail: the shared stacked `MediaCard` (H1's `cCard`, 146 by 196), the tick after the name
@@ -23,7 +23,7 @@ import { suggestionLine, suggestionTick } from './model';
  * canvas's Follow (13 at 700) and Following (white at 20%, no ring) for every creator card. With no photo the card
  * shows the canvas's portrait tile in the person's hue through `placeholder` (FIX-68 F-7).
  */
-function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggestion; onFollow: () => void; onOpen?: () => void; busy: boolean }) {
+function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggestion; onFollow?: () => void; onOpen?: () => void; busy: boolean }) {
   const tick = suggestionTick(item);
   const labelOf = useInterestLabel();
   return (
@@ -38,14 +38,16 @@ function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggest
       imageUrl={item.avatarUrl ?? undefined}
       placeholder={<PortraitTile hue={hueFor(item.wawuId)} testID={`today-creator-${item.wawuId}-portrait`} />}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={m.cardTick} /> : undefined}
-      action={{ label: item.following ? 'Following' : 'Follow', on: item.following, onPress: onFollow, loading: busy, testID: `today-follow-${item.wawuId}` }}
+      action={onFollow ? { label: item.following ? 'Following' : 'Follow', on: item.following, onPress: onFollow, loading: busy, testID: `today-follow-${item.wawuId}` } : undefined}
     />
   );
 }
 
 export type CreatorRailProps = {
-  /** The people to show, already without the viewer; null while their read has failed. */
+  /** The people to show, the viewer's own card among them when the Hub lists it (it draws no Follow); null while their read has failed. */
   creators: CreatorSuggestion[] | null;
+  /** The viewer's own id. A card draws Follow only once it is known and is not that card's (HOME-SELF, `canFollow`). */
+  myId?: string | null;
   onRetry: () => void;
   retrying: boolean;
   /** "See all" at the end of the heading opens All creators (X4). Not drawn without it. */
@@ -65,7 +67,7 @@ export const NO_CREATORS_LINE = 'New creators show up here as they join and publ
  * Hub's answer is changed at once and put right by its reply; a refused follow goes back and
  * says so. "See all" opens All creators (X4, EXPLORE-02); a card opens the profile (M5, ME-02).
  */
-export function CreatorRail({ creators, onRetry, retrying, onSeeAll, onFollowChange, onOpenCreator }: CreatorRailProps) {
+export function CreatorRail({ creators, myId, onRetry, retrying, onSeeAll, onFollowChange, onOpenCreator }: CreatorRailProps) {
   const client = useTodayClient();
   const [failed, setFailed] = useState<string | null>(null);
   const follow = useMutation(
@@ -122,10 +124,14 @@ export function CreatorRail({ creators, onRetry, retrying, onSeeAll, onFollowCha
             item={item}
             busy={busyId === item.wawuId}
             onOpen={onOpenCreator ? () => onOpenCreator(item.wawuId) : undefined}
-            onFollow={() => {
-              if (follow.isPending) return;
-              follow.mutate({ item, on: !item.following });
-            }}
+            onFollow={
+              canFollow(item.wawuId, myId)
+                ? () => {
+                    if (follow.isPending) return;
+                    follow.mutate({ item, on: !item.following });
+                  }
+                : undefined
+            }
           />
         ))}
       </ScrollView>

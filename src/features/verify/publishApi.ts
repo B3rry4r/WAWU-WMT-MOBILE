@@ -3,9 +3,9 @@ import type { components } from '@/api/schema.generated';
 import { contentLink } from '@/features/content-detail/model';
 
 /**
- * Publishing a draft (VERIFY-04, VF12): `POST /product-drafts/{id}/publish` takes the two files that went up under the draft's format
- * (`previewAsset`, the part buyers see before paying, and `fullAsset`) and turns the draft into a product waiting for review, exactly as
- * `POST /content` would. The Hub refuses it, with the person's own numbers, when no tier is running (`402 tier_required`), when every
+ * Publishing a draft (VERIFY-04, VF12): `POST /product-drafts/{id}/publish` takes the full file that went up under the draft's format
+ * (`fullAsset`), its cover and its preview (R-118: nobody uploads a preview, see `PublishFiles`) and turns the draft into a product waiting
+ * for review, exactly as `POST /content` would. The Hub refuses it, with the person's own numbers, when no tier is running (`402 tier_required`), when every
  * place is used (`402 product_limit_reached`, with the offers), when the identity check is paused (`403 identity_paused`, with the Hub's own
  * sentence), when the draft still lacks something (`400 draft_incomplete`), or when
  * the draft is gone (a first answer that was lost: `404`, or `409` for a publish a moment ago).
@@ -45,7 +45,14 @@ function messageOf(error: unknown, fallback: string): string {
   return filled(e.message) ? e.message.trim() : fallback;
 }
 
-export async function publishDraft(id: string, files: { previewAsset: string; fullAsset: string }): Promise<PublishOutcome> {
+/**
+ * What a publish takes (R-118, as `POST /content` does): the full file, the cover when there is one, and the preview of a PAID piece, which
+ * is either `previewFromFile: true` (the Hub makes it from the full file) or, for a picture, `previewAsset` (the smaller copy the phone made).
+ * A free piece sends neither.
+ */
+export type PublishFiles = Pick<components['schemas']['PublishProductDraftDto'], 'fullAsset' | 'coverAsset' | 'previewAsset' | 'previewFromFile'>;
+
+export async function publishDraft(id: string, files: PublishFiles): Promise<PublishOutcome> {
   let result;
   try {
     result = await api.POST('/api/hub/product-drafts/{id}/publish', { params: { path: { id } }, body: files });

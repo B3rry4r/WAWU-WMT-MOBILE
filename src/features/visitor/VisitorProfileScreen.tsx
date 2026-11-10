@@ -1,9 +1,11 @@
 import { QueryClientContext, useInfiniteQuery, useMutation, useQuery, type QueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ScrollView, Share, StyleSheet, View, Linking, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { AccessibilityInfo, ScrollView, StyleSheet, View, Linking, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/query';
+import { useReporting } from '@/features/report/useReporting';
 import { isApiError } from '@/api/errors';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Banner } from '@/components/Banner';
@@ -129,6 +131,11 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
   const [notice, setNotice] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmBlock, setConfirmBlock] = useState(false);
+  // REPORT-UGC: Report sits beside Block; once the Hub took it the person is out of their lists, so the page leaves.
+  const reporting = useReporting(() => {
+    void queryClient.invalidateQueries();
+    onBack();
+  });
   const tip = useTip(pay ?? NOT_WIRED);
   const asking = Boolean(pay && onOpenPaidThread);
   const ask = useAsk(pay ?? NOT_WIRED, (who) => onOpenPaidThread?.(who), focused);
@@ -216,7 +223,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
     if (!view) return;
     setNotice(null);
     try {
-      await Share.share({ message: profileShareText(name, view.profile.handle) });
+      await shareOut({ message: profileShareText(name, view.profile.handle) });
     } catch {
       setNotice('Sharing is not available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');
@@ -311,11 +318,21 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
                   }}
                 />
               ) : null}
+              <ListRow
+                testID="visitor-menu-report"
+                lead={<IconTile icon="Flag" />}
+                title="Report this profile"
+                onPress={() => {
+                  setMenuOpen(false);
+                  if (person) reporting.ask('profile', person);
+                }}
+              />
               <ListRow testID="visitor-menu-block" lead={<IconTile icon="Ban" />} title={`Block ${name}`} onPress={() => setConfirmBlock(true)} />
             </GroupedList>
           )}
         </BottomSheet>
       ) : null}
+      {reporting.element}
       {pay ? <TipSheets tip={tip} onAddMoney={pay.onAddMoney} onOpenWallet={pay.onOpenWallet} onForgotPin={pay.onForgotPin} /> : null}
       {pay && asking ? <AskSheets ask={ask} onAddMoney={pay.onAddMoney} onOpenWallet={pay.onOpenWallet} onForgotPin={pay.onForgotPin} /> : null}
     </>

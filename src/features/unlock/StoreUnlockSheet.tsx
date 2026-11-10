@@ -5,7 +5,7 @@ import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { KeyValueRow } from '@/components/ListRow';
 import { ICON_STROKE } from '@/components/icon';
-import { isPicture, tickKind } from '@/features/feed/model';
+import { pictureCandidates, tickKind } from '@/features/feed/model';
 import { StatusSheet } from '@/features/feedpay/StatusSheet';
 import { StoreUnready } from '@/features/store/StoreParts';
 import type { FeedItem } from '@/features/feed/api';
@@ -69,7 +69,7 @@ export function StoreUnlockSheet({ item, ladder, onDone }: { item: FeedItem; lad
         by: unlockPayee(item.creator ?? { displayName: null, handle: null }),
         verified: tickKind(item.creator) ?? undefined,
         subtitle: sheetSubtitle(item),
-        image: isPicture(item.previewAssetUrl) ? item.previewAssetUrl : undefined,
+        image: pictureCandidates(item, item.previewAssetUrl)[0],
       }}
       price={entry?.price ?? null}
       details={YOURS}

@@ -1,6 +1,7 @@
 import { QueryClientContext, useInfiniteQuery, useQuery, type QueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useState } from 'react';
-import { AccessibilityInfo, Linking, ScrollView, Share, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { AccessibilityInfo, Linking, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/query';
@@ -9,6 +10,8 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import { Banner } from '@/components/Banner';
 import { ProductsMeter } from '@/components/ProductsMeter';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
+import { UploadsMeter, noAllowance } from '@/features/create/UploadsMeter';
 import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
@@ -56,6 +59,8 @@ import {
   type SocialLink,
 } from './model';
 import { BioPlayer } from './BioPlayer';
+import { SuspendedBanner } from '@/features/suspension/SuspendedBanner';
+
 import { Counts, HeaderSkeleton, NameBlock, ProfileTop, SocialChips, bodyTop } from './ProfileHeader';
 import { ProfileTabs } from './ProfileTabs';
 import { whereLine } from '@/features/geo/place';
@@ -92,6 +97,8 @@ export type MeScreenProps = {
   onOpenSettings: () => void;
   /** The gift button over the cover (M1) opens Invite and earn (RF1, REF-03). Not drawn without it. */
   onOpenInvite?: () => void;
+  /** USER-SUSPEND (R-121): the banner on a suspended person's Me opens the suspended screen. */
+  onOpenSuspended?: () => void;
   /** My courses (SCHOOLS-08): the menu's row, drawn only when given. */
   onOpenCourses?: () => void;
   /** Verification (ME-13): the menu's row, drawn only when given. */
@@ -138,7 +145,7 @@ export type MeScreenProps = {
  * bio instead (M1, "Bio" with the "AI voice" tag, R-66, FIX-103), playing `audioUrl` from the same read. A draft tile opens
  * Your shop (VF2, VERIFY-01), where the draft is edited or deleted.
  */
-export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onOpenPiece, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
+export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings, onOpenPaid, onOpenSettings, onOpenInvite, onOpenSuspended, onOpenCourses, onOpenVerification, onOpenTier, onOpenShop, onOpenPiece, onCreate, onOpenDashboard, onOpenLibrary, onOpenPurchases, onOpenSaved, onOpenNotifications, onOpenVoiceIntro, focused = true }: MeScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const room = useFloatingRoom();
@@ -169,7 +176,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
     if (!me.data) return;
     setNotice(null);
     try {
-      await Share.share({ message: profileShareText(nameOf(me.data), me.data.handle) });
+      await shareOut({ message: profileShareText(nameOf(me.data), me.data.handle) });
     } catch {
       setNotice('Sharing is not available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');
@@ -234,6 +241,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
             </LoadingView>
           ) : (
             <>
+              <SuspendedBanner onOpen={onOpenSuspended} />
               <NameBlock
                 wawuId={ready.profile.wawuUserId}
                 name={nameOf(ready.profile)}
@@ -251,7 +259,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
               ) : null}
               <SocialChips links={socialLinksOf(ready.profile, ready.details)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
               <Counts counts={countsOf(ready.counts)} />
-              <TierMeter tier={tier} />
+              <TierMeter tier={tier} creator={creator} />
               <ProfileTabs value={tab} onChange={setTab} />
               {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} onOpenPiece={onOpenPiece} /> : null}
               {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} /> : null}
@@ -358,11 +366,15 @@ type DraftsQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchDra
  * The products meter under the counts. Loading is a block the meter's size; a person with no running tier sees nothing here
  * (`productsMeterOf` is null); a failed read is a note with a retry, never "no tier".
  */
-function TierMeter({ tier }: { tier: TierQuery }) {
+function TierMeter({ tier, creator }: { tier: TierQuery; creator: boolean }) {
+  const cache = useCache();
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, enabled: creator && Boolean(tier.data) }, cache);
   if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" retryLabel="Try loading your tier again" onRetry={() => void tier.refetch()} />;
   if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
-  const meter = productsMeterOf(tier.data);
-  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} tier={meter.tier} testID="me-products" /> : null;
+  const meter = productsMeterOf(tier.data, allowance.data);
+  if (meter) return <ProductsMeter used={meter.used} allowed={meter.allowed} tier={meter.tier} testID="me-products" />;
+  // No running tier but the Hub still gives places (a tick bought before tiers, R-129): the same count, from the Hub's own read.
+  return allowance.data && !noAllowance(allowance.data) ? <UploadsMeter allowance={allowance.data} /> : null;
 }
 
 function ContentBody({ query, drafts, creator, onOpenShop, onOpenPiece }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void; onOpenPiece?: (id: string) => void }) {

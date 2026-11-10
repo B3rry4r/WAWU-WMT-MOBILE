@@ -4,6 +4,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { font, radius, useWawu } from '@/theme';
 
 import { KEYPAD } from './kit';
+import { useKeypadKeys } from './useKeypadKeys';
 
 const BIOMETRIC_ICON = KEYPAD.biometric;
 const DELETE_ICON = KEYPAD.delete;
@@ -24,6 +25,8 @@ type KeypadProps = {
   onDigit: (digit: string) => void;
   onDelete: () => void;
   onClear: () => void;
+  /** Enter on a laptop's keyboard (web only); the PIN sheet submits by itself at four digits, so it passes none. */
+  onEnter?: () => void;
   /** The biometric key, bottom left, when the phone has one; empty otherwise. */
   biometric?: { icon: IconName; label: string; onPress: () => void };
 };
@@ -54,8 +57,9 @@ function Key({ label, inactive, onPress, onLongPress, children }: KeyProps) {
   );
 }
 
-export function Keypad({ inactive, onDigit, onDelete, onClear, biometric }: KeypadProps) {
+export function Keypad({ inactive, onDigit, onDelete, onClear, onEnter, biometric }: KeypadProps) {
   const { colors } = useWawu();
+  useKeypadKeys({ inactive, onDigit, onDelete, onEnter });
   const ink = inactive ? colors.textDisabled : colors.textPrimary;
   const digit = (d: string) => (
     <Key key={d} label={d} inactive={inactive} onPress={() => onDigit(d)}>

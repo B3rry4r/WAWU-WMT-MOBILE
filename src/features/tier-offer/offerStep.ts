@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import { Platform } from 'react-native';
 
 import { getAccessToken, onSessionEnd } from '@/api/session';
 import { accountTypeWriteResult } from '@/features/auth/accountTypeWrite';
@@ -31,12 +32,36 @@ import { fetchTierOffer, markTierOfferSeen } from './api';
  */
 export const TIER_OFFER_WAIT_MS = 2500;
 
+/**
+ * On the web a "start" is a browser session (the tab), not a page load (R-127, WEBAPP-03): once the offer has been drawn for a person, a
+ * refresh in the same tab does not ask the Hub again. A new tab, or a tab opened another day, is a new start. A phone is unchanged.
+ */
+export const TIER_OFFER_SEEN_KEY = 'wmt.tierOfferSeen';
+function seenInThisTab(sub: string): boolean {
+  if (Platform.OS !== 'web') return false;
+  try {
+    return sessionStorage.getItem(TIER_OFFER_SEEN_KEY) === sub;
+  } catch {
+    return false;
+  }
+}
+function markSeenInThisTab(sub: string | null): void {
+  if (Platform.OS !== 'web' || !sub) return;
+  try {
+    sessionStorage.setItem(TIER_OFFER_SEEN_KEY, sub);
+  } catch {
+    // A browser that refuses storage asks again on a refresh, as before.
+  }
+}
+
 type Phase = 'idle' | 'asking' | 'visible' | 'done';
 type State = {
   sub: string | null;
   phase: Phase;
   closeButton: boolean;
   checkout: { tierId: string; kind: 'tier' } | null;
+  /** WEBAPP-08 F4: the offer ended with "See the tiers" (a person billed in dollars on the web): the bridge opens the tiers sheet once the offer is gone. */
+  toTiers: boolean;
   /** The app has been let through (the step ended, or never applied) since the gate opened: a session that changes under it holds nothing. */
   live: boolean;
 };
@@ -46,6 +71,7 @@ const initial: State = {
   phase: 'idle',
   closeButton: true,
   checkout: null,
+  toTiers: false,
   live: false,
 };
 let state: State = initial;
@@ -87,6 +113,10 @@ async function ask(): Promise<void> {
     publish({ ...state, phase: 'done' });
     return;
   }
+  if (seenInThisTab(sub)) {
+    publish({ ...state, sub, phase: 'done' });
+    return;
+  }
   publish({ ...state, sub, phase: 'asking' });
   let answer = await within(fetchTierOffer().catch(() => null), TIER_OFFER_WAIT_MS);
   if (!answer?.show && state.sub === sub && state.phase === 'asking') {
@@ -106,6 +136,7 @@ async function ask(): Promise<void> {
 export function settleTierOffer(): void {
   if (settled) return;
   settled = true;
+  markSeenInThisTab(state.sub);
   void markTierOfferSeen().catch(() => {
     // The Hub could not be told: nothing changes here; the next start asks the Hub again.
   });
@@ -115,6 +146,19 @@ export function settleTierOffer(): void {
 export function finishTierOffer(checkout: State['checkout'] = null): void {
   if (state.phase === 'visible') settleTierOffer();
   publish({ ...state, phase: 'done', checkout });
+}
+
+/** The offer ended on "See the tiers" (web, a person billed in dollars): the tiers sheet is what the bridge opens next. */
+export function finishTierOfferToTiers(): void {
+  if (state.phase === 'visible') settleTierOffer();
+  publish({ ...state, phase: 'done', checkout: null, toTiers: true });
+}
+
+/** The tiers sheet "See the tiers" asked for, taken once by the bridge. */
+export function takeTierOfferToTiers(): boolean {
+  const next = state.toTiers;
+  if (next) state = { ...state, toTiers: false };
+  return next;
 }
 
 /** The checkout Subscribe asked for, taken once by the bridge. */
@@ -156,6 +200,7 @@ export function useTierOfferStep(asked: boolean): {
   holding: boolean;
   closeButton: boolean;
   checkout: State['checkout'];
+  toTiers: boolean;
 } {
   const current = useSyncExternalStore(
     subscribe,
@@ -178,7 +223,17 @@ export function useTierOfferStep(asked: boolean): {
     holding: open,
     closeButton: current.closeButton,
     checkout: current.checkout,
+    toTiers: current.toTiers,
   };
+}
+
+/** Whether the tier offer is on screen now (the route graph holds every other screen back while it is), for a screen that must send a person where "/" does. */
+export function useTierOfferShowing(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => state.phase === 'visible',
+    () => state.phase === 'visible',
+  );
 }
 
 /** For the offer screen: whether this offer has the close X (true) or a "Not now" button (false). The Hub's answer to the one ask. */

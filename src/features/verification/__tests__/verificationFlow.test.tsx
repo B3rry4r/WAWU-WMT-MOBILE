@@ -48,6 +48,8 @@ type Hub = {
   plans: 'ngn' | 'usd' | 'none';
   /** The uploads allowance, or nothing (404). */
   allowance: boolean;
+  /** What the Hub's `uploads` and `tickHeld` say for this person (default: no tick, 5 places). */
+  places?: { tickHeld: boolean; allowed: number };
 };
 const fresh = (): Hub => ({ wallet: { state: 'not_open' }, selfie: { matchedAt: null, checksLeft: 3 }, tier: { state: 'none' }, pending: null, failWallet: false, plans: 'none', allowance: false });
 let hub: Hub = fresh();
@@ -86,7 +88,7 @@ function install() {
       }
       case 'GET /uploads/allowance':
         if (!hub.allowance) return new Response(JSON.stringify({ statusCode: 404, message: 'Not here' }), { status: 404 });
-        return ok({ tickHeld: false, uploads: { used: 0, allowed: 5, remaining: 5 }, storage: { usedBytes: 0, quotaBytes: 1_073_741_824 }, free: { uploads: 5, storageBytes: 1_073_741_824 }, withTick: { uploads: 25, storageBytes: 10_737_418_240 } });
+        return ok({ tickHeld: hub.places?.tickHeld ?? false, uploads: { used: 0, allowed: hub.places?.allowed ?? 5, remaining: hub.places?.allowed ?? 5 }, storage: { usedBytes: 0, quotaBytes: 1_073_741_824 }, free: { uploads: 5, storageBytes: 1_073_741_824 }, withTick: { uploads: 25, storageBytes: 10_737_418_240 } });
       case 'GET /plans/purchases/pending':
         return ok({ purchase: hub.pending ? { id: hub.pending.id, kind: 'tier', tierId: 'founding', status: hub.pending.status ?? 'pending' } : null });
       default:
@@ -273,15 +275,32 @@ describe('ME-13: Verification', () => {
     expect(screen.queryByTestId('verification-get-tick')).toBeNull();
   });
 
-  it('D-7 · M16: "Every tick gives you" draws the uploads and library space from the Hub, then reach and the tick, and nothing it did not give', async () => {
+  it('D-7 · M16 (R-129): a person whose tick from before tiers still gives 25 reads it from the Hub, then space, reach and the tick', async () => {
     hub.allowance = true;
+    hub.places = { tickHeld: true, allowed: 25 };
     await open();
     expect(await screen.findByTestId('verification-gives-uploads')).toHaveTextContent(/Up to 25 uploads/);
-    expect(screen.getByTestId('verification-gives-uploads')).toHaveTextContent(/Free accounts get 5/);
     expect(screen.getByTestId('verification-gives-space')).toHaveTextContent(/10 GB library space/);
     expect(screen.getByTestId('verification-gives-space')).toHaveTextContent(/Free accounts get 1 GB/);
     expect(screen.getByTestId('verification-gives-reach')).toHaveTextContent(/Reach more people/);
     expect(screen.getByTestId('verification-gives-tick')).toHaveTextContent(/And you can host events/);
+  });
+
+  it('D-7 · M16 (R-129): a person with no tick, or whose tier gives 15, is never promised 25 uploads', async () => {
+    hub.allowance = true;
+    hub.places = { tickHeld: false, allowed: 15 };
+    await open();
+    await screen.findByTestId('verification-gives-space');
+    expect(screen.queryByTestId('verification-gives-uploads')).toBeNull();
+    expect(screen.queryByText(/25 uploads/)).toBeNull();
+  });
+
+  it('D-7 · M16 (R-129): a tick that no longer lifts the Hub allowance above the tier says no upload figure either', async () => {
+    hub.allowance = true;
+    hub.places = { tickHeld: true, allowed: 15 };
+    await open();
+    await screen.findByTestId('verification-gives-space');
+    expect(screen.queryByTestId('verification-gives-uploads')).toBeNull();
   });
 
   it('D-7: with no allowance from the Hub, the two rows that carry its figures are not drawn', async () => {

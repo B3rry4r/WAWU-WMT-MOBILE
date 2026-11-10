@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 
 import { useSession } from '@/api/session';
-import { finishTierOffer, useTierOfferCloseButton } from '@/features/tier-offer/offerStep';
+import { finishTierOffer, finishTierOfferToTiers, useTierOfferCloseButton } from '@/features/tier-offer/offerStep';
 import { TierOfferScreen } from '@/features/tier-offer/TierOfferScreen';
 
 /**
@@ -19,6 +19,7 @@ export default function TierOfferRoute() {
       closeButton={closeButton}
       onClose={() => finishTierOffer()}
       onSubscribe={(tierId) => finishTierOffer({ tierId, kind: 'tier' })}
+      onSeeTiers={finishTierOfferToTiers}
     />
   );
 }

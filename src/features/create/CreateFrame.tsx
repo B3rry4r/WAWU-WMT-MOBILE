@@ -1,8 +1,9 @@
-import type { ReactElement, ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps } from 'react-native';
+import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
+import { KeyboardAvoidingView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type RefreshControlProps, type ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { Text } from '@/components/Text';
 import { font, layout, space, useWawu } from '@/theme';
 
@@ -30,6 +31,12 @@ export type CreateFrameProps = {
   onNearEnd?: () => void;
   /** A pull-to-refresh on the body (M31's list reads the Hub again). */
   refreshControl?: ReactElement<RefreshControlProps>;
+  /**
+   * A refusal or a notice drawn at the END of the body (the price step's "Not sent"): when this turns from empty to something the body
+   * scrolls to its end, so the notice is read in full and nothing is covered by it (UPLOAD-REST: it used to sit in the foot and push
+   * the Listing fee card behind it).
+   */
+  endKey?: string | null;
   children: ReactNode;
   testID?: string;
 };
@@ -37,10 +44,20 @@ export type CreateFrameProps = {
 /** How near the end of the body (in points) the next page of a long list is asked for. */
 const MORE_WITHIN = 600;
 
-/** The Create screens' frame: safe areas, the bar (a round button, a title with a line under it), the scrolling body and a pinned foot. */
-export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, refreshControl, children, testID }: CreateFrameProps) {
+/**
+ * The Create screens' frame: safe areas, the bar (a round button, a title with a line under it), the scrolling body and a pinned foot.
+ * R-117 part B: the whole frame is padded by the keyboard (`KeyboardAvoidingView`, 'padding', on both phones: Android draws edge to edge and
+ * no longer resizes the window), so the pinned foot sits right on the keyboard, and the body is a `FieldScroll`, which brings the field being
+ * typed in into view in the room that is left.
+ */
+export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, trailing, gap, onNearEnd, refreshControl, endKey, children, testID }: CreateFrameProps) {
   const { colors } = useWawu();
+  const scroller = useRef<ScrollView>(null);
+  useEffect(() => {
+    if (endKey) scroller.current?.scrollToEnd?.({ animated: true });
+  }, [endKey]);
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   const onScroll = onNearEnd
     ? (e: NativeSyntheticEvent<NativeScrollEvent>) => {
         const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
@@ -48,7 +65,7 @@ export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, 
       }
     : undefined;
   return (
-    <View testID={testID} style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID={testID} behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <View style={styles.nav}>
         <View style={styles.side}>
           <IconButton icon={leading === 'close' ? 'X' : 'ChevronLeft'} label={leading === 'close' ? 'Close' : 'Back'} onPress={onLeave} testID="create-leave" />
@@ -65,23 +82,23 @@ export function CreateFrame({ title, subtitle, leading = 'back', onLeave, foot, 
         </View>
         <View style={styles.side}>{trailing}</View>
       </View>
-      <ScrollView
+      <FieldScroll
+        ref={scroller}
         testID={testID ? `${testID}-scroll` : undefined}
         style={styles.scroll}
-        keyboardShouldPersistTaps="handled"
         refreshControl={refreshControl}
         onScroll={onScroll}
         scrollEventThrottle={onScroll ? 100 : undefined}
         contentContainerStyle={[styles.content, gap === undefined ? null : { gap }, { paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right, paddingBottom: bodyMetrics.bottom }]}
       >
         {children}
-      </ScrollView>
+      </FieldScroll>
       {foot ? (
-        <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>
+        <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>
           {foot}
         </View>
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

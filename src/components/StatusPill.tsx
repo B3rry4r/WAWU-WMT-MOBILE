@@ -8,7 +8,7 @@ import { Text } from './Text';
 /** design/_gen/kit.js line 57, `pill`: 26 high, 10 across, 5 between icon and label, 12.5 bold, icon 13 at stroke 2.4. */
 export const pillMetrics = { height: 26, padH: 10, iconGap: 5, font: 12.5, icon: 13, iconStroke: 2.4 } as const;
 
-export type PillTone = 'positive' | 'warning' | 'danger' | 'info' | 'accent' | 'neutral';
+export type PillTone = 'positive' | 'warning' | 'danger' | 'info' | 'accent' | 'accentReadable' | 'neutral';
 
 /** kit.js line 57: the kit tints the pill in the tone's tint and writes in the tone itself; neutral is the sunken surface and secondary text. */
 const tones: Record<PillTone, { background: ColorToken; ink: ColorToken }> = {
@@ -17,6 +17,8 @@ const tones: Record<PillTone, { background: ColorToken; ink: ColorToken }> = {
   danger: { background: 'dangerTint', ink: 'danger' },
   info: { background: 'infoTint', ink: 'info' },
   accent: { background: 'accentTint', ink: 'accent' },
+  /** WEBAPP-08 F13: the accent tint with the accent ink that reads on dark (`accentFg`; the same colour as `accent` in light). */
+  accentReadable: { background: 'accentTint', ink: 'accentFg' },
   neutral: { background: 'surfaceSunken', ink: 'textSecondary' },
 };
 

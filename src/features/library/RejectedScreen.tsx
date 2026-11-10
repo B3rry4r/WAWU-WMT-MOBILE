@@ -19,6 +19,8 @@ import { allowanceKey } from '@/features/create/api';
 import { CreateFrame } from '@/features/create/CreateFrame';
 import { setSent } from '@/features/create/details';
 import { sendFailure } from '@/features/create/PriceScreen';
+import { pictureCandidates } from '@/features/feed/model';
+import { usePicture } from '@/features/feed/usePicture';
 import { kindIcon } from '@/features/me/model';
 import { font, radius, space, useWawu } from '@/theme';
 
@@ -186,13 +188,19 @@ function NotRejected({ status }: { status: LibraryPiece['status'] }) {
 /** The piece as the board draws it: its picture, its title and the Rejected pill with its X. */
 function PieceCard({ piece }: { piece: LibraryPiece }) {
   const { colors } = useWawu();
-  const [broken, setBroken] = useState(false);
-  const still = piece.contentType === 'image' && piece.previewAssetUrl && !broken ? piece.previewAssetUrl : null;
+  // The creator's cover first (R-114), then the preview when it is a picture.
+  const { uri: still, onError: stillFailed } = usePicture(pictureCandidates(piece, piece.previewAssetUrl));
   return (
     <Card padded testID="rejected-piece" style={styles.card}>
       <View style={styles.cardRow}>
         <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
-          {still ? <Image source={{ uri: still }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} /> : <Icon name={kindIcon(piece.contentType)} size={cardMetrics.mark} color={colors.textMuted} />}
+          {still ? (
+            <Image testID="rejected-thumb-image" source={{ uri: still }} contentFit="cover" style={StyleSheet.absoluteFill} onError={stillFailed} />
+          ) : (
+            <View testID="rejected-thumb-mark">
+              <Icon name={kindIcon(piece.contentType)} size={cardMetrics.mark} color={colors.textMuted} />
+            </View>
+          )}
         </View>
         <View style={styles.words}>
           <Text variant="body" numberOfLines={2} style={[font(600), styles.title]}>

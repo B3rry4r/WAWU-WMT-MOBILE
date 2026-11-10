@@ -166,7 +166,7 @@ afterEach(async () => {
 });
 
 describe('H1 and H36 · the ad card on Today', () => {
-  it("asks the Hub for Today's placement and draws the card in TGIF's place, with the advertiser's words and the button word the Hub served", async () => {
+  it("asks the Hub for Today's placement and draws the card in TGIF's place: the picture and the chip, the advertiser's words as the card's label (R-116)", async () => {
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
     expect(calls(T.ads)).toHaveLength(1);
@@ -174,10 +174,14 @@ describe('H1 and H36 · the ad card on Today', () => {
     // R-92: the Today strip is the Explore advert slide, so its chip says SPONSORED, not AD.
     expect(screen.getByText('SPONSORED')).toBeTruthy();
     expect(screen.queryByText('AD')).toBeNull();
-    expect(screen.getByTestId('today-sponsored-headline')).toHaveTextContent('Harvest Praise Night');
-    expect(screen.getByTestId('today-sponsored-subline')).toHaveTextContent('Lagos · Sun 2 November · from ₦3,500');
-    expect(screen.getByTestId('today-sponsored-cta')).toHaveTextContent('Book a seat');
-    expect(screen.getByTestId('today-sponsored-button')).toBeTruthy();
+    // R-116 (changed assertion: the headline, the line and the button word were drawn text before, read with getByTestId(...-headline, -subline, -cta, -button)):
+    // the owner's banner carries its own words and button painted in, so the app draws none of them over the picture. They are the card's label.
+    expect(screen.queryByTestId('today-sponsored-headline')).toBeNull();
+    expect(screen.queryByTestId('today-sponsored-subline')).toBeNull();
+    expect(screen.queryByTestId('today-sponsored-cta')).toBeNull();
+    expect(screen.queryByTestId('today-sponsored-button')).toBeNull();
+    expect(screen.queryByText('Harvest Praise Night')).toBeNull();
+    expect(screen.getByTestId('today-sponsored').props.accessibilityLabel).toBe('Sponsored. Harvest Praise Night. Lagos · Sun 2 November · from ₦3,500. Book a seat');
     expect(screen.getByTestId('today-sponsored-artwork', hiddenOk).props.source).toEqual([{ uri: AD.artworkUrl }]);
     expect(screen.queryByTestId('today-tgif')).toBeNull();
     expect(calls(T.day)).toHaveLength(0);
@@ -249,13 +253,13 @@ describe('H1 and H36 · the ad card on Today', () => {
     expect(reported().filter((t) => t === 'view')).toHaveLength(1);
   });
 
-  it('draws a card with no line under the headline without that line, and always with its picture', async () => {
+  it('labels a card with no line under the headline without that line, and always draws its picture', async () => {
     answers[T.ads] = [ok({ ...AD, subline: null })];
     const screen = await boot();
     await rtl.waitFor(() => expect(screen.getByTestId('today-sponsored')).toBeTruthy());
-    expect(screen.queryByTestId('today-sponsored-subline')).toBeNull();
     expect(screen.getByTestId('today-sponsored-artwork', hiddenOk).props.source).toEqual([{ uri: AD.artworkUrl }]);
-    expect(screen.getByTestId('today-sponsored-headline')).toHaveTextContent('Harvest Praise Night');
+    // Changed assertion (R-116): the headline is the card's label now, not a drawn line.
+    expect(screen.getByTestId('today-sponsored').props.accessibilityLabel).toBe('Sponsored. Harvest Praise Night. Book a seat');
   });
 });
 

@@ -8,7 +8,6 @@ import { queryClient } from '@/api/query';
 import { gradientEnds } from '@/components/MediaCard';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon } from '@/components/icon';
-import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 import { darkColors } from '@/theme/tokens.generated';
@@ -203,11 +202,6 @@ function EventCard({ event, onOpen }: { event: EventView; onOpen: () => void }) 
       <View pointerEvents="none" style={[styles.edge, { borderColor: colors.borderHairline }]} />
     </Pressable>
   );
-}
-
-/** X14's block where the featured event will be. */
-export function ExploreFeaturedEventSkeleton() {
-  return <Skeleton height={m.heroHeight} radius={m.heroCorner} />;
 }
 
 const styles = StyleSheet.create({

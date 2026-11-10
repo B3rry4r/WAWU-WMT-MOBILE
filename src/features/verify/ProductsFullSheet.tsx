@@ -11,7 +11,9 @@ import { IconTile } from '@/components/IconTile';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
 import { fetchMyTier, tierKey } from '@/features/me/api';
+import { placesOf } from '@/features/me/model';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { buyLabel } from '@/features/store/model';
 import { SaidBanner, StoreUnready } from '@/features/store/StoreParts';
@@ -52,8 +54,10 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
   const plans = useQuery(plansQuery(owner), queryClient);
   const store = useStoreCatalog(['extra_products']);
   const buyer = useStoreBuyer(store.catalog);
-  const used = mine.data?.productsUsed ?? null;
-  const allowed = mine.data?.productsAllowed ?? null;
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
+  const places = mine.data ? placesOf(mine.data, allowance.data) : null;
+  const used = places?.used ?? null;
+  const allowed = places?.allowed ?? null;
   // What the person could publish when the store sheet opened, so the result never says a count from before the grant.
   const [before, setBefore] = useState<number | null>(null);
   const pack = store.state.kind === 'ready' ? (store.state.items[0] ?? null) : null;
@@ -128,6 +132,9 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
     // The pack only where the Hub would sell it (its quote is not refused) AND this person has a running tier with room: the check is kept
     // beside the Hub's answer so the store sheet never opens for no tier or an ended one, even when the Hub is an old one (R-100, round 4).
     const offer = pack !== null && count > 0 && packOffered(mine.data, count) && verdict.kind === 'offered' && refusal === null ? pack : null;
+    // The line under the title says what the pack decides (offered, refused by rule, or not sold here), so it is drawn only once that is known:
+    // the store has answered and, when it sells the pack, so has the Hub's quote. Before then the old fallback line was drawn and taken back (VF13-RACE).
+    const packKnown = store.state.kind !== 'loading' && (pack === null || verdict.kind !== 'checking');
     const packRefusedByRule = refusal !== null || (verdict.kind === 'refused' && verdict.code === PACK_NOT_ALLOWED);
     const up = nextTiers(plans.data.tiers, mine.data.tier?.id ?? null, mine.data.extraProducts, used).length > 0;
     body = (
@@ -136,19 +143,23 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
           <Text variant="display" accessibilityRole="header" testID="full-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
             {`You have used ${used} of ${allowed}`}
           </Text>
-          <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
-            {offer
-              ? up
-                ? 'Add more products, or move up a tier.'
-                : 'Add more products, or take something down.'
-              : packRefusedByRule
+          {packKnown ? (
+            <Text variant="body" tone="textSecondary" testID="full-line" style={styles.blurb}>
+              {offer
                 ? up
-                  ? PACK_TIERS_LINE
-                  : PACK_CAP_LINE
-                : up
-                  ? 'Move up a tier, or take something down.'
-                  : PACK_TAKE_DOWN_LINE}
-          </Text>
+                  ? 'Add more products, or move up a tier.'
+                  : 'Add more products, or take something down.'
+                : packRefusedByRule
+                  ? up
+                    ? PACK_TIERS_LINE
+                    : PACK_CAP_LINE
+                  : up
+                    ? 'Move up a tier, or take something down.'
+                    : PACK_TAKE_DOWN_LINE}
+            </Text>
+          ) : (
+            <Skeleton testID="full-line-loading" height={20} width="80%" radius={radius.chip} style={styles.blurb} />
+          )}
           {refusal !== null && refusal !== (up ? PACK_TIERS_LINE : PACK_CAP_LINE) ? (
             <Text variant="meta" tone="danger" testID="full-refused" accessibilityLiveRegion="polite" style={styles.blurb}>
               {refusal}
@@ -198,9 +209,12 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
   }
 
   return (
-    <BottomSheet visible onClose={onClose} label="All products used" dismissible={!buyer.busy}>
-      {body}
-    </BottomSheet>
+    <>
+      <BottomSheet visible onClose={onClose} label="All products used" dismissible={!buyer.busy}>
+        {body}
+      </BottomSheet>
+      {buyer.sheets}
+    </>
   );
 }
 

@@ -244,13 +244,17 @@ describe('H14 and H16 · unlocking a piece on a phone with a store', () => {
 });
 
 describe('H26 and H28 · tipping on a phone with a store', () => {
-  it('draws the tip list at the store’s price with what the creator gets, and tips on the chosen one', async () => {
+  it('draws the tip list at the store’s own price text, never what the creator gets (R-120), and tips on the chosen one', async () => {
     serve();
     await boot();
     await press('open-tip');
     expect(await rtl.screen.findByTestId('tip-tiles')).toBeTruthy();
-    // ₦500 is on the list; the creator gets 85% of the LIST tip.
-    expect(rtl.screen.getAllByText(/₦425/).length).toBeGreaterThan(0);
+    // Each tile is the string the Tip button charges, the store's: one currency on the sheet (R-120). The creator's 85% (₦425 of ₦500) is nowhere.
+    expect(rtl.screen.getByTestId('tip-tile-500-price').props.children).toBe('$1.49');
+    expect(rtl.screen.getByTestId('tip-tile-1000-price').props.children).toBe('$2.99');
+    expect(rtl.screen.getByTestId('tip-tile-5000-price').props.children).toBe('$12.99');
+    expect(rtl.screen.queryByText(/₦/)).toBeNull();
+    expect(rtl.screen.queryByText(/gets|They get|earn|keeps/i)).toBeNull();
     noMoneyWords();
     await press('tip-tile-500');
     expect(await rtl.screen.findByText('Tip · $1.49')).toBeTruthy();

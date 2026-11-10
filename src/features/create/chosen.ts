@@ -1,4 +1,9 @@
+import type { VideoThumbnail } from 'expo-video';
+
 import { formatBytes, typesLine, type FileRule } from './model';
+
+/** One picture taken out of a person's own video (`frames.ts`): the phone's native image (it is a source `expo-image` draws as it is), or a link on the web. */
+export type Frame = VideoThumbnail | string;
 
 /** A file the person chose, ready to upload. */
 export type ChosenFile = {

@@ -17,6 +17,7 @@ import {
   refundLine,
   refundedCard,
   rowLeft,
+  SOURCE_PENDING,
   shortLine,
   threadEntries,
   tookLong,
@@ -123,7 +124,7 @@ describe('I4, I5 and I7: the cards', () => {
   it('after an answer offers the follow-up only with terms the Hub gave', () => {
     expect(answeredCard('Chidi Eze', { priceKobo: 150000, windowHours: 24 })).toEqual({
       tone: 'answered',
-      title: "Chidi answered, so they've been paid",
+      title: "Chidi answered",
       body: 'Ask a follow-up for ₦1,500. Each paid message gets its own 24-hour window.',
     });
     expect(answeredCard('Chidi Eze', { priceKobo: 150000, windowHours: 48 }).body).toBe('Ask a follow-up for ₦1,500. Each paid message gets its own 2-day window.');
@@ -131,10 +132,10 @@ describe('I4, I5 and I7: the cards', () => {
     expect(answeredCard('Chidi Eze', null).body).toBe('This question is closed.');
   });
   it('says nothing about asking again until the creator\'s terms are known: no body, never "closed"', () => {
-    expect(answeredCard('Chidi Eze', 'pending')).toEqual({ tone: 'answered', title: "Chidi answered, so they've been paid", body: null });
+    expect(answeredCard('Chidi Eze', 'pending')).toEqual({ tone: 'answered', title: "Chidi answered", body: null });
   });
   it('when the creator\'s terms could not be read the card says so in words, with a body of its own: not loading for good, never "closed", no offer', () => {
-    expect(answeredCard('Chidi Eze', 'failed')).toEqual({ tone: 'answered', title: "Chidi answered, so they've been paid", body: "We couldn't check if you can ask a follow-up. Try again below." });
+    expect(answeredCard('Chidi Eze', 'failed')).toEqual({ tone: 'answered', title: "Chidi answered", body: "We couldn't check if you can ask a follow-up. Try again below." });
   });
   it('turns the creator\'s terms into what an answer may say: not known yet, not readable, closed, or the offer', () => {
     expect(followUpOf(null)).toBe('pending');
@@ -155,18 +156,61 @@ describe('I4, I5 and I7: the cards', () => {
     const wallet = { status: 'refunded', payment: { hold: { refundedKobo: 152325, settledAt: at(24, 5) } } } as unknown as Parameters<typeof refundedCard>[2];
     const card = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', wallet, new Date(at(25)).getTime());
     expect(card.title).toBe('No reply in 24 hours, so you got ₦1,523.25 back');
-    expect(card.body).toBe('It went back to your Naira wallet today at 10:05. Zainab earned nothing.');
+    expect(card.body).toBe('It went back to your Naira wallet today at 10:05.');
     const noRecord = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', null, NOW);
     expect(noRecord.title).toBe('No reply in 24 hours, so this question was refunded');
-    expect(noRecord.body).toBe('Zainab earned nothing.');
+    // UPLOAD-REST r2 (changed assertion): this read 'Your money went back to your Naira wallet.', which a foreign-currency payer saw while the
+    // payment record loaded and a store-bought question (it ends as a credit) saw for good. With no record the card names no account.
+    expect(noRecord.body).toBe('Your money is back with you.');
     const moving = { status: 'refunding', payment: { hold: { refundedKobo: 152325, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
     expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW).title).toBe('No reply in 24 hours, so ₦1,523.25 is coming back');
+  });
+  // R-120 (owner): a buyer never sees what the creator gets. Any wording of it, not one word: earning, being paid, a payout, a share or a
+  // cut, a percentage, "their money". (The asker's own money is named freely: "you got ₦1,523.25 back", "your money".)
+  const CREATOR_PAY = /earn|been paid|was paid|got paid|gets? paid|is paid|paid (out|to|them|her|him)|payout|pay-out|payment to|received|\bshare\b|\bcut\b|commission|\b85\b|%|\b(their|her|his|creator'?s?) (pay|money|cash|income|revenue|wallet|account)|\bkeeps?\b|\bkept\b|\bsplit\b|profit/i;
+  const everyCard = () => {
+    const settled = { status: 'refunded', payment: { hold: { refundedKobo: 152325, settledAt: at(24, 5) } } } as unknown as Parameters<typeof refundedCard>[2];
+    const moving = { status: 'refunding', payment: { hold: { refundedKobo: 152325, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
+    const owed = { status: 'refunding', payment: { hold: { refundedKobo: null, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
+    const asked = { sentAt: at(0), deadlineAt: at(24) };
+    const usdAccount = { currency: 'USD', decimals: 2, totalMinor: 23, refundedMinor: 23 };
+    const states = [undefined, null, SOURCE_PENDING, usdAccount] as const;
+    const refunds = [settled, moving, owed, null].flatMap((w) => states.flatMap((from) => [false, true].map((store) => refundedCard(asked, 'Zainab Bello', w, NOW, from, store))));
+    const waits = [at(-1), at(17, 52)].flatMap((deadlineAt) => states.flatMap((from) => [false, true].map((store) => waitingCard(q({ deadlineAt }), 'Chidi Eze', NOW, from, store))));
+    const answers = [{ priceKobo: 150000, windowHours: 24 }, { priceKobo: null, windowHours: null }, 'pending', 'failed', null].map((f) => answeredCard('Chidi Eze', f as Parameters<typeof answeredCard>[1]));
+    return [...refunds, ...waits, ...answers];
+  };
+  it('R-120: a buyer never reads what the creator earned or was paid, in any wording, on any answered, waiting or refunded card', () => {
+    const cards = everyCard();
+    expect(cards).toHaveLength(53);
+    for (const card of cards) expect(`${card.title} ${card.body ?? ''}`).not.toMatch(CREATOR_PAY);
+    // The pattern is not asleep: it catches the wordings it is there for.
+    for (const bad of ['Zainab earned ₦1,275', 'Zainab was paid', 'Zainab gets paid 85%', 'Their share went to them', 'A payout to the creator', 'Zainab keeps ₦225', 'The creator received it']) expect(bad).toMatch(CREATOR_PAY);
+  });
+  it('UPLOAD-REST r2: while the payment record is read, or when there is none, a refunded card names no account; a store-bought question says its credit came back', () => {
+    const asked = { sentAt: at(0), deadlineAt: at(24) };
+    const usdAccount = { currency: 'USD', decimals: 2, totalMinor: 23, refundedMinor: 23 };
+    // Loading: the same plain words for a Naira payer and a dollar payer (nobody has been told which account yet).
+    const loading = refundedCard(asked, 'Zainab Bello', null, NOW, SOURCE_PENDING);
+    expect(loading).toEqual({ tone: 'refunded', title: 'No reply in 24 hours, so this question was refunded', body: 'Your money is back with you.' });
+    // No record at all (read, nothing found) is plain too, never "Naira wallet": the payer may have used another account.
+    for (const card of [loading, refundedCard(asked, 'Zainab Bello', null, NOW), refundedCard(asked, 'Zainab Bello', null, NOW, null), refundedCard(asked, 'Zainab Bello', null, NOW, usdAccount)])
+      expect(`${card.title} ${card.body}`).not.toMatch(/wallet|naira|account|USD/i);
+    // A phone with a store: a question with no wallet record ended as a question credit.
+    const credit = refundedCard(asked, 'Zainab Bello', null, NOW, null, true);
+    expect(credit).toEqual({ tone: 'refunded', title: 'No reply in 24 hours, so your question credit came back', body: 'Use it to ask anyone at this price or less.' });
+    expect(`${credit.title} ${credit.body}`).not.toMatch(/wallet|naira|₦|refund/i);
+    // While the record is still being read even a store phone stays plain (an older wallet payment may be what is being read).
+    expect(refundedCard(asked, 'Zainab Bello', null, NOW, SOURCE_PENDING, true).body).toBe('Your money is back with you.');
+    // A record that says which account wins: the figure, the time and the account.
+    const wallet = { status: 'refunded', payment: { hold: { refundedKobo: 152325, settledAt: at(24, 5) } } } as unknown as Parameters<typeof refundedCard>[2];
+    expect(refundedCard(asked, 'Zainab Bello', wallet, new Date(at(25)).getTime(), null, true).title).toBe('No reply in 24 hours, so you got ₦1,523.25 back');
   });
   it('INBOX-10 N1: while the refund is still moving and the hold has no figure yet, says the money is on its way back, not that it was refunded', () => {
     const owed = { status: 'refunding', payment: { hold: { refundedKobo: null, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
     const card = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', owed, NOW);
     expect(card.title).toBe('No reply in 24 hours, so your money is on its way back');
-    expect(card.body).toBe('It is on its way to your Naira wallet. Zainab earned nothing.');
+    expect(card.body).toBe('It is on its way to your Naira wallet.');
     // A hold that is not settled says the same, whatever the wallet's own word for it.
     const held = { status: 'refunded', payment: { hold: { refundedKobo: null, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
     expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', held, NOW).title).toBe('No reply in 24 hours, so your money is on its way back');
@@ -249,8 +293,8 @@ describe('PAY-FX (R-91): a paid question from a dollar account says the dollar a
     const moving = { status: 'refunding', payment: { hold: { refundedKobo: 10000, settledAt: null } } } as unknown as Parameters<typeof refundedCard>[2];
     const onItsWay = refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW, usd);
     // A question whose payment record is not known names the Naira wallet.
-    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW).body).toBe('It is on its way to your Naira wallet. Zainab earned nothing.');
+    expect(refundedCard({ sentAt: at(0), deadlineAt: at(24) }, 'Zainab Bello', moving, NOW).body).toBe('It is on its way to your Naira wallet.');
     expect(onItsWay.title).toBe('No reply in 24 hours, so $0.23 is coming back');
-    expect(onItsWay.body).toBe('It is on its way to your USD account. Zainab earned nothing.');
+    expect(onItsWay.body).toBe('It is on its way to your USD account.');
   });
 });

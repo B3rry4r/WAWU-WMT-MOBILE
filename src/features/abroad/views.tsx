@@ -107,6 +107,23 @@ export function AbroadHomeView({ recipients, onBack, onNew, onPick }: AbroadHome
   );
 }
 
+/** New recipient when the list of countries could not be read: the screen says so and offers Try again (it was a blank page). */
+export function CorridorsFailedView({ onBack, onRetry }: { onBack: () => void; onRetry: () => void }) {
+  return (
+    <AuthFrame testID="abroad-corridors-screen" navTitle="New recipient" onBack={onBack}>
+      <View style={styles.body}>
+        <ErrorState
+          testID="abroad-corridors-error"
+          icon="TriangleAlert"
+          title="We couldn't load the countries"
+          message="Check your connection and try again."
+          onRetry={onRetry}
+        />
+      </View>
+    </AuthFrame>
+  );
+}
+
 // -- amount -------------------------------------------------------------------
 
 export type QuoteRead =

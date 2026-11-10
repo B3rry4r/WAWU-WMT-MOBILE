@@ -20,6 +20,8 @@ export default function AddWorkRoute() {
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
 
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  // WEBAPP-08 F15: opened cold (no history), a saved work lands on the person's own works (M34), not on Home.
+  const toWorks = (id: string | undefined) => (router.canGoBack() ? router.back() : id ? router.replace({ pathname: '/works/[wawuId]', params: { wawuId: id } }) : router.replace('/'));
   // Somebody else's work (a link typed or shared): the edit is never drawn, the work's own page (M35) opens in its place.
   if (workId && wawuId) {
     return (
@@ -27,7 +29,7 @@ export default function AddWorkRoute() {
         wawuId={wawuId}
         workId={workId}
         onBack={leave}
-        onSaved={leave}
+        onSaved={() => toWorks(wawuId)}
         onNotOwner={() => router.replace({ pathname: '/works/[wawuId]/[workId]', params: { wawuId, workId } })}
       />
     );
@@ -35,7 +37,7 @@ export default function AddWorkRoute() {
   return (
     <AddWorkScreen
       onBack={leave}
-      onSaved={leave}
+      onSaved={toWorks}
       onOpenWorks={(id) => router.dismissTo({ pathname: '/works/[wawuId]', params: { wawuId: id } })}
     />
   );

@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
@@ -57,6 +57,8 @@ export function SaidBanner({ said, testID }: { said: Said | null; testID: string
 
 /** Restore purchases, where a subscription lives: asks the store what this account bought and hands the Hub what it has not seen. */
 export function RestoreRow({ buyer, testID, communityId }: { buyer: Pick<StoreBuyer, 'restore' | 'restoring' | 'restoreLine' | 'busy'>; testID: string; communityId?: string | null }) {
+  // The web has no store account to restore from (R-128): nothing is drawn, never a button that does nothing (R-47).
+  if (Platform.OS === 'web') return null;
   return (
     <View style={styles.restore}>
       <Button testID={testID} label={buyer.restoring ? RESTORE_WORDS.working : RESTORE_WORDS.label} variant="secondary" full loading={buyer.restoring} disabled={buyer.busy || buyer.restoring} onPress={() => void buyer.restore(communityId ? { communityId } : undefined)} />

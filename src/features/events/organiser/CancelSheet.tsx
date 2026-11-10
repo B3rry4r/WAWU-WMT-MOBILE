@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { IconTile } from '@/components/IconTile';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
+import { useKeyboardLift } from '@/features/feedpay/useKeyboardLift';
 import { space } from '@/theme';
 
 import { DangerButton } from './organiserParts';
@@ -31,6 +32,8 @@ export type CancelSheetProps = {
  * sheet becomes what happened (refunds sent, refunds still going out, refunds that need a person), from the Hub's answer.
  */
 export function CancelSheet({ visible, onClose, buyers, onCancel, onDone }: CancelSheetProps) {
+  // R-117 part B: the sheet is a modal the keyboard covers, so it adds the keyboard's height under its last row (Android draws edge to edge).
+  const lift = useKeyboardLift();
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [failure, setFailure] = useState<string | null>(null);
@@ -104,6 +107,7 @@ export function CancelSheet({ visible, onClose, buyers, onCancel, onDone }: Canc
             <DangerButton testID="cancel-confirm" label="Cancel and refund everyone" loading={busy} onPress={() => void send()} />
             <Button testID="cancel-keep" label="Keep the event" variant="secondary" size="lg" full disabled={busy} onPress={onClose} />
           </View>
+          {lift > 0 ? <View testID="cancel-keyboard-lift" style={{ height: lift }} /> : null}
         </>
       )}
     </BottomSheet>

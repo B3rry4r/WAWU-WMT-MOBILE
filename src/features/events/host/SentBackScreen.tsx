@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
 import { Button } from '@/components/Button';
+import { FieldScroll, useFootBottom } from '@/components/FieldScroll';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
@@ -39,6 +40,7 @@ export type SentBackScreenProps = {
 export function SentBackScreen({ id, onBack, onDone, onSeeTiers }: SentBackScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const footBottom = useFootBottom(footMetrics.bottom + insets.bottom);
   const client = useQueryClient();
   const event = useQuery({ queryKey: detailKey(id), queryFn: () => fetchEvent(id) });
   const options = useQuery({ queryKey: optionsKey, queryFn: fetchOptions });
@@ -92,7 +94,7 @@ export function SentBackScreen({ id, onBack, onDone, onSeeTiers }: SentBackScree
   const pending = event.isPending || options.isPending;
 
   return (
-    <View testID="sent-back-screen" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView testID="sent-back-screen" behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
       <NavBar title={data?.name ?? 'Sent back'} onBack={onBack} backTestID="sent-back-back" />
       {pending ? (
         <View style={styles.body} testID="sent-back-loading">
@@ -112,7 +114,7 @@ export function SentBackScreen({ id, onBack, onDone, onSeeTiers }: SentBackScree
         />
       ) : (
         <>
-          <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <FieldScroll contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
             <SentBackNote reason={data.lastDecisionReason} />
             <TextField
               testID="sent-back-address"
@@ -137,8 +139,8 @@ export function SentBackScreen({ id, onBack, onDone, onSeeTiers }: SentBackScree
               maxLength={opts.fields.nameMax}
               error={errors.name}
             />
-          </ScrollView>
-          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom }]}>
+          </FieldScroll>
+          <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footBottom }]}>
             {failure ? (
               <Text variant="errorLine" tone="danger" accessibilityRole="alert" testID="sent-back-failure">
                 {failure}
@@ -148,7 +150,7 @@ export function SentBackScreen({ id, onBack, onDone, onSeeTiers }: SentBackScree
           </View>
         </>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

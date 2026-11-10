@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -15,6 +15,7 @@ import { PointsFrame } from '@/features/points/PointsFrame';
 import { heldSubscription } from '@/features/store/buy';
 import { RestoreRow, SaidBanner, StoreUnready } from '@/features/store/StoreParts';
 import { buyLabel } from '@/features/store/model';
+import { useUpgradeCharge } from '@/features/store/webwallet/useUpgradeCharge';
 import { useStoreBuyer, useStoreCatalog, type StoreBuyer } from '@/features/store/useStore';
 import type { Said } from '@/features/store/words';
 import { font, radius, space } from '@/theme';
@@ -65,9 +66,14 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
     if (!item) return;
     // An upgrade replaces the tier held: Google Play needs that subscription's token to change it rather than add another.
     const tierIds = (store.catalog?.products ?? []).filter((p) => p.kind === 'tier').map((p) => p.storeProductId);
-    const replace = kind === 'upgrade' ? await heldSubscription(tierIds.filter((id) => id !== item.product.storeProductId)) : null;
-    await buyer.buy(item, { replace });
+    // The web pays from the wallet at the list price (R-128): no store subscription is held, and the Hub works out an upgrade's difference.
+    const replace = kind === 'upgrade' && Platform.OS !== 'web' ? await heldSubscription(tierIds.filter((id) => id !== item.product.storeProductId)) : null;
+    await buyer.buy(item, { replace, webKind: kind });
   };
+
+  // WEBAPP-09 W5: an upgrade on the web charges the difference, so the row shows the quote's total (as the button does), never the tier's full price; nothing until the quote has come.
+  const charge = useUpgradeCharge(tier?.id, kind === 'upgrade');
+  const rowPrice = (item: { price: string }) => (Platform.OS === 'web' && kind === 'upgrade' ? charge : item.price);
 
   let body;
   if (plans.isError && !plans.data) {
@@ -89,18 +95,21 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
   } else if (!item) {
     body = <ErrorState testID="checkout-none" icon="TriangleAlert" title="That tier is not on sale" message="Your store does not have it right now. Choose a tier again." onRetry={onBack} />;
   } else {
-    body = <CheckoutReady tier={tier} price={item.price} kind={kind} said={buyer.said} buyer={buyer} />;
+    body = <CheckoutReady tier={tier} price={rowPrice(item)} kind={kind} said={buyer.said} buyer={buyer} />;
   }
 
   const verb = kind === 'renew' ? 'Renew' : kind === 'upgrade' ? 'Upgrade' : 'Buy';
   const foot = item ? (
-    <Button testID="checkout-pay" label={buyer.busy ? 'Buying...' : buyLabel(item, verb)} full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buy()} />
+    <Button testID="checkout-pay" label={buyer.busy ? 'Buying...' : Platform.OS === 'web' && kind === 'upgrade' ? (charge ? `${verb} · ${charge}` : verb) : buyLabel(item, verb)} full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buy()} />
   ) : undefined;
 
   return (
-    <PointsFrame title={TIER_WORDS.checkout} onBack={onBack} gap={BODY_GAP} foot={foot} testID="checkout-screen">
-      {body}
-    </PointsFrame>
+    <>
+      <PointsFrame title={TIER_WORDS.checkout} onBack={onBack} gap={BODY_GAP} foot={foot} testID="checkout-screen">
+        {body}
+      </PointsFrame>
+      {buyer.sheets}
+    </>
   );
 }
 
@@ -113,7 +122,8 @@ export function CheckoutReady({
   buyer,
 }: {
   tier: PlanTier;
-  price: string;
+  /** Null: the price is not known yet (an upgrade's charge on the web waits for the Hub's quote). */
+  price: string | null;
   kind: CheckoutScreenProps['kind'];
   said: Said | null;
   buyer: Pick<StoreBuyer, 'restore' | 'restoring' | 'restoreLine' | 'busy'>;
@@ -126,13 +136,21 @@ export function CheckoutReady({
           <Text variant="secondary" tone="textMuted" testID="checkout-line" style={styles.summaryLine}>
             {tierLine(tier)}
           </Text>
-          <Text variant="body" testID="checkout-price" style={[font(700), styles.price]}>
-            {price}
-          </Text>
+          {price !== null ? (
+            <Text variant="body" testID="checkout-price" style={[font(700), styles.price]}>
+              {price}
+            </Text>
+          ) : null}
         </View>
       </Card>
       <Text variant="meta" tone="textMuted" testID="checkout-renews" style={styles.centre}>
-        {kind === 'upgrade' ? 'The store works out what moving up costs, and renews this tier until you cancel there.' : 'The store renews this tier until you cancel there.'}
+        {Platform.OS === 'web'
+          ? kind === 'upgrade'
+            ? 'You pay the difference from your wallet.'
+            : 'You pay once from your wallet. Renew when it ends.'
+          : kind === 'upgrade'
+            ? 'The store works out what moving up costs, and renews this tier until you cancel there.'
+            : 'The store renews this tier until you cancel there.'}
       </Text>
       <SaidBanner said={said} testID="checkout-said" />
       <RestoreRow buyer={buyer} testID="checkout-restore" />

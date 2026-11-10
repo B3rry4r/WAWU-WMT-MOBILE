@@ -7,6 +7,7 @@ import { Card } from '@/components/Card';
 import { Text } from '@/components/Text';
 import { VoiceLabel, VoicePlayer } from '@/components/VoicePlayer';
 import { AudioSource, type SeekRequest } from '@/features/feed/player';
+import { usePlayerLoad } from '@/features/feed/player/useLoad';
 import { space } from '@/theme';
 
 import { ShopFrame } from './parts';
@@ -44,6 +45,9 @@ export function VoiceHearScreen({ name, hue, avatarUrl, audioUrl, text, aiVoice,
   const [position, setPosition] = useState(0);
   const [length, setLength] = useState(0);
   const [seek, setSeek] = useState<SeekRequest>(null);
+  // R-117: the intro is still coming in (the pill shows its loading state, not Pause with no sound); or it will not load (the pill's own "Couldn't play this" row, and a tap asks again).
+  const stop = useCallback(() => setPlaying(false), []);
+  const load = usePlayerLoad(playing, stop);
 
   const onTime = useCallback((at: number, total: number) => {
     setPosition(at);
@@ -74,7 +78,7 @@ export function VoiceHearScreen({ name, hue, avatarUrl, audioUrl, text, aiVoice,
         </>
       }
     >
-      <AudioSource uri={audioUrl} playing={playing} seek={seek} onTime={onTime} onEnded={onEnded} />
+      <AudioSource key={load.attempt} uri={audioUrl} playing={playing} seek={seek} onTime={onTime} onEnded={onEnded} onLoad={load.onLoad} />
       <View style={styles.body}>
         <View style={styles.head}>
           <Avatar name={name} hue={hue} size={board.avatar} source={avatarUrl ?? undefined} testID="voice-hear-avatar" />
@@ -84,7 +88,7 @@ export function VoiceHearScreen({ name, hue, avatarUrl, audioUrl, text, aiVoice,
           testID="voice-hear-player"
           label="none"
           aiVoice={aiVoice}
-          status={playing ? 'playing' : 'idle'}
+          status={load.failed ? 'error' : playing ? (load.waiting ? 'loading' : 'playing') : 'idle'}
           progress={length > 0 ? position / length : 0}
           durationSeconds={length}
           onToggle={() => setPlaying((on) => !on)}

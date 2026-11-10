@@ -97,7 +97,7 @@ beforeEach(() => {
 describe('the last steps of Open your wallet are signed-in screens (SHARED-CHANGES KYC-06 #1)', () => {
   it.each(lastSteps)('a signed-out visitor to %s lands on the welcome screen', async (url, title) => {
     await renderRouter(routes, { initialUrl: url });
-    await waitFor(() => expect(screen.getByText('The creators and professionals ecosystem.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Create. Sell. Get paid. Connect. Grow.')).toBeTruthy());
     expect(screen.queryByRole('header', { name: title })).toBeNull();
   });
 

@@ -36,7 +36,7 @@ describe('M27 · every upload used (M20 when the Hub says so)', () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 5));
     const handlers = await open();
     expect(await screen.findByText('Your 5 free uploads are used')).toBeTruthy();
-    expect(screen.getByText('Get verified for up to 25 uploads, or take something down.')).toBeTruthy();
+    expect(screen.getByText('Take something down to make room for a new one, or get verified for more reach.')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('create-slots-full-library'));
     expect(handlers.library).toHaveBeenCalledTimes(1);
     expect(await screen.findByTestId('format-video')).toBeTruthy();
@@ -79,13 +79,20 @@ describe('M27 · every upload used (M20 when the Hub says so)', () => {
     expect(screen.getByTestId('create-continue').props.accessibilityState.disabled).toBe(true);
   });
 
-  it('a person with no tier is not sent the sheet: the note with Get verified stays as M27 draws it', async () => {
-    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 5));
+  it('R-129: the sheet follows the Hub places alone, so a person with no tier at the limit (a tick from before tiers) is sent to it too', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(25, 25, true));
     hub.answers['GET /api/hub/me/tier'] = ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
     const full = jest.fn();
     await renderFrame(<FormatScreen onBack={jest.fn()} onContinue={jest.fn()} onOpenLibrary={jest.fn()} onProductsFull={full} />);
-    expect(await screen.findByText('Get verified for up to 25 uploads, or take something down.')).toBeTruthy();
-    await waitFor(() => expect(calls('GET', '/api/hub/me/tier').length).toBeGreaterThan(0));
+    await waitFor(() => expect(full).toHaveBeenCalledTimes(1));
+  });
+
+  it('with places left, no sheet and no note', async () => {
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(24, 25, true));
+    const full = jest.fn();
+    await renderFrame(<FormatScreen onBack={jest.fn()} onContinue={jest.fn()} onOpenLibrary={jest.fn()} onProductsFull={full} />);
+    expect(await screen.findByTestId('format-video')).toBeTruthy();
+    expect(screen.queryByTestId('create-slots-full')).toBeNull();
     expect(full).not.toHaveBeenCalled();
   });
 

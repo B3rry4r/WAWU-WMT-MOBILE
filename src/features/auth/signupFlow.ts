@@ -26,6 +26,7 @@ import { claimSignupUsername } from './identityStep';
 import { authed } from './signupApi';
 import { UsernameRefused, usernameOf, usernameProblem } from './username';
 import { refreshSignupGate, setSignupProgress } from './signupGate';
+import { clearSignupDraft } from './signupDraft';
 import { clearSignup, heldSignup, loadSignup, saveSignup, setStarted, started } from './signupStore';
 
 /**
@@ -126,6 +127,7 @@ export async function confirmSignupCode(code: string, emailCode: string): Promis
         });
   const username = held.username ?? null;
   await clearSignup();
+  clearSignupDraft();
   // JOIN-03: this account is new, so it is asked once whether it has an access code (SHARED-CHANGES JOIN-03 #4).
   await markOfferPending(tokens.accessToken);
   // VERIFY-01: and, after that, once to "Your bonus is waiting" (VF1), the same way (SHARED-CHANGES VERIFY-01 #1).

@@ -3,7 +3,8 @@ import { Redirect, useRouter } from 'expo-router';
 import { useSession } from '@/api/session';
 import { useCreatorGate } from '@/features/create/CreateEntry';
 import { detailsReady, useDetails, useSent } from '@/features/create/details';
-import { fullFileOf, useDraft, useLessons } from '@/features/create/draft';
+import { fullFileOf, useCover, useDraft, useLessons } from '@/features/create/draft';
+import { coverRequired, previewWayOf } from '@/features/create/model';
 import { PriceScreen } from '@/features/create/PriceScreen';
 
 /**
@@ -15,11 +16,12 @@ export default function CreatePriceRoute() {
   const router = useRouter();
   const { status } = useSession();
   const draft = useDraft();
-  const { format, preview } = draft;
+  const { format } = draft;
   const lessons = useLessons();
   const full = fullFileOf(draft, lessons);
   const details = useDetails();
   const sent = useSent();
+  const cover = useCover();
   const gate = useCreatorGate(status === 'signedIn');
   if (status === 'restoring') return null;
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
@@ -27,7 +29,8 @@ export default function CreatePriceRoute() {
   if (sent) return null;
   if (!format) return <Redirect href="/create-format" />;
   if (!full) return <Redirect href="/create-upload" />;
-  if (!preview) return <Redirect href="/create-preview" />;
+  // A paid template, or a paid course with no video first, previews as its cover (R-118): the cover step holds it until there is one.
+  if (coverRequired(previewWayOf(format, full), details.accessType === 'free') && !(cover.mode === 'picture' && cover.file)) return <Redirect href="/create-preview" />;
   if (!detailsReady(details)) return <Redirect href="/create-details" />;
 
   return (

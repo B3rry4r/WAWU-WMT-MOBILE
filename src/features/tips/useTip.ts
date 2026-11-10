@@ -40,7 +40,9 @@ export function useTip(handlers: FlowHandlers) {
   const clearBought = ladder.buyer.clear;
   const shown = useShownPrice();
   const listed = (prices.data?.tips ?? []).map((t) => t.priceNaira);
-  const tips = ladder.native ? listed.filter((n) => shown.kobo(n) !== null) : listed;
+  // Once the store has priced its tiers, a tile is a tier the store sells (its text is what the tile shows, R-120); until then the Hub's list stands.
+  const soldByStore = (n: number) => ladder.state.kind !== 'ready' || ladder.itemFor(n) !== null;
+  const tips = ladder.native ? listed.filter((n) => shown.kobo(n) !== null && soldByStore(n)) : listed;
   const tipNaira = nearestOf(tips, chosen / 100);
   const amountKobo = tipNaira === null ? null : tips.includes(chosen / 100) ? chosen : tipNaira * 100;
   const trimmed = note.trim();

@@ -29,7 +29,7 @@ export function readUnlockQuote(value: unknown): UnlockQuote {
   if (!q || typeof q !== 'object' || !filled(q.contentId) || !filled(q.title) || !q.creator || typeof q.creator !== 'object' || !isKobo(q.priceKobo)) {
     throw unreadable('price');
   }
-  return { contentId: q.contentId, title: q.title, creator: q.creator, priceKobo: q.priceKobo, payment: readPaymentQuote(q.payment) };
+  return { contentId: q.contentId, title: q.title, creator: q.creator, priceKobo: q.priceKobo, coverUrl: q.coverUrl ?? null, payment: readPaymentQuote(q.payment) };
 }
 
 /** An unlock as the screens read it: a known status, whole-kobo money and the payment under it. */

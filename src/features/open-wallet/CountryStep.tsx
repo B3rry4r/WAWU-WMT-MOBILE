@@ -11,6 +11,7 @@ import { ListRow } from "@/components/ListRow";
 import { Skeleton } from "@/components/Skeleton";
 import { Text } from "@/components/Text";
 import { TextField } from "@/components/TextField";
+import { useKeyboardLift } from "@/features/feedpay/useKeyboardLift";
 import { canvasNormalLineHeight, space, type, useWawu } from "@/theme";
 
 import { AuthFrame } from "@/features/auth/AuthFrame";
@@ -31,6 +32,9 @@ const TITLE_GAP = 6;
 const BODY_GAP = 14;
 /** The country list is long: the sheet shows about half the screen, like the state list. */
 const LIST_SHARE = 0.5;
+/** R-117: what the sheet's grabber, title and search field take above the list, and the phone's top edge; the list gives way to the keyboard inside what is left. */
+const CHROME = 260;
+const LIST_MIN = 120;
 const SEARCH_MAX = 60;
 
 /** Why a wallet cannot be opened from a country now, in words the person can act on (the Hub's `unavailableReason`). */
@@ -300,6 +304,9 @@ function CountrySheet({
 }: CountrySheetProps) {
   const { colors } = useWawu();
   const { height } = useWindowDimensions();
+  // R-117 part B: the sheet is a modal the keyboard covers (Android draws edge to edge), so it adds the keyboard's height under its list and the list shortens to fit.
+  const lift = useKeyboardLift();
+  const listHeight = lift > 0 ? Math.max(LIST_MIN, Math.min(height * LIST_SHARE, height - lift - CHROME)) : height * LIST_SHARE;
   const [typed, setTyped] = useState("");
   const shown = useMemo(
     () => filterCountries(countries, typed),
@@ -330,7 +337,7 @@ function CountrySheet({
         keyExtractor={(c) => c.code}
         initialNumToRender={24}
         keyboardShouldPersistTaps="handled"
-        style={{ maxHeight: height * LIST_SHARE }}
+        style={{ maxHeight: listHeight }}
         renderItem={({ item }) => (
           <ListRow
             testID={`country-${item.code}`}
@@ -354,6 +361,7 @@ function CountrySheet({
           />
         )}
       />
+      {lift > 0 ? <View testID="country-sheet-keyboard-lift" style={{ height: lift }} /> : null}
     </BottomSheet>
   );
 }

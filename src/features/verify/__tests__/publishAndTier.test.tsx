@@ -2,7 +2,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, usePathname } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
-import { Share, Text, View } from 'react-native';
+import { Platform, Share, Text, View } from 'react-native';
 
 import type { ComponentType } from 'react';
 
@@ -21,18 +21,37 @@ jest.mock('expo-secure-store', () => ({
     mockVault.delete(key);
   }),
 }));
+jest.mock('@/features/verify/DraftFormScreen', () => ({
+  // The draft form's own screen is not under test: a Publish button that hands the draft id to the route, as the form's does.
+  DraftFormScreen: ({ onPublish }: { onPublish: (id: string) => void }) => {
+    const { Pressable, Text: T } = require('react-native') as typeof import('react-native');
+    return (
+      <Pressable testID="draft-publish" onPress={() => onPublish('d1')}>
+        <T>Publish the draft</T>
+      </Pressable>
+    );
+  },
+}));
 jest.mock('@/features/create/pickFile', () => ({
   canPickFile: true,
-  pickFile: jest.fn(async (types: string[]) => ({ blob: { size: 18 * 1024 * 1024 }, name: types.includes('application/pdf') ? 'brand-deck.pdf' : 'cover.png', contentType: types[0], extension: 'pdf' })),
+  // The full file is picked with the format's own types; a cover is picked with a second argument (how it is read), as `pickCover` does.
+  pickFile: jest.fn(async (types: string[], read?: unknown) =>
+    read ? { blob: { size: 90_000 }, name: 'cover.png', contentType: 'image/png', extension: 'png' } : { blob: { size: 18 * 1024 * 1024 }, name: types.includes('application/pdf') ? 'brand-deck.pdf' : 'file.bin', contentType: types[0], extension: 'pdf' },
+  ),
 }));
 jest.mock('@/features/create/upload', () => ({
   UPLOAD_CANCELLED: 'upload_cancelled',
   UPLOAD_FAILED: 'upload_failed',
-  uploadFile: jest.fn(async (file: { name: string }, target: { folder: string }, onProgress: (n: number) => void) => {
+  uploadFile: jest.fn(async (file: { name: string; contentType?: string }, target: { folder: string }, onProgress: (n: number) => void) => {
     onProgress(0.62);
-    return { name: file.name, bytes: 18 * 1024 * 1024, contentType: 'application/pdf', key: `k-${target.folder}`, fileUrl: `https://files.test/${target.folder}/${file.name}` };
+    return { name: file.name, bytes: 18 * 1024 * 1024, contentType: file.contentType ?? 'application/pdf', key: `k-${target.folder}`, fileUrl: `https://files.test/${target.folder}/${file.name}` };
   }),
 }));
+// R-118: what the phone makes of a file (a video's frame, a picture's smaller copy) is read with native modules jest has no phone for; each is scripted.
+jest.mock('expo-video', () => ({ VideoView: 'VideoView', useVideoPlayer: jest.fn(), createVideoPlayer: jest.fn() }));
+jest.mock('@/features/create/frames', () => ({ frameFor: jest.fn(async () => null) }));
+jest.mock('@/features/create/frameFile', () => ({ frameFile: jest.fn(async () => ({ blob: { size: 4000 }, name: 'frame.jpg', contentType: 'image/jpeg', extension: 'jpg' })) }));
+jest.mock('@/features/create/previewCopy', () => ({ smallCopyOf: jest.fn(async () => ({ blob: { size: 900 }, name: 'preview.jpg', contentType: 'image/jpeg', extension: 'jpg', discard: jest.fn() })) }));
 
 const MB18 = 18 * 1024 * 1024;
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -49,6 +68,8 @@ const pinClock = (iso: string) => jest.setSystemTime(new Date(iso));
 /** The Hub's own sentence for a paused identity check (`403 identity_paused`, S7 round 2). */
 const HUB_PAUSE = 'Publishing is paused until your identity check passes. Your wallet is not finished opening. Send the documents the bank asked for.';
 const hub = {
+  /** Places the Hub allows from a tick bought before tiers (R-129); 0: the Hub's allowance read is not answered. */
+  tickPlaces: 0,
   tier: 'active' as 'none' | 'active' | 'ending' | 'ended',
   /** The Hub fails the tier read this many more times (a real failure, FIX-68 F-2). */
   tierFails: 0,
@@ -64,6 +85,12 @@ const hub = {
   openAfter: 0,
   category: null as string | null,
   publishes: [] as Record<string, unknown>[],
+  /** The draft's kind and whether it is paid (VF12 follows R-118 for every kind). */
+  kind: 'pdf' as string,
+  access: 'paid' as 'paid' | 'free',
+  /** The Hub answers this many publishes with a failure it does not explain (a lost answer). */
+  publishFails: 0,
+  releases: [] as string[],
   patches: [] as Record<string, unknown>[],
   buys: [] as { key: string | null; body: Record<string, unknown> }[],
   full: false,
@@ -71,8 +98,9 @@ const hub = {
   lostFirstBuy: false,
   quoted: 0,
 };
-const FORMATS = [{ id: 'pdf', full: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000 }, preview: { contentTypes: ['application/pdf'], extensions: ['pdf'], maxBytes: 100_000_000, kind: 'extract', seconds: null } }];
-const draft = () => ({ id: 'd1', title: 'Brand deck template', contentType: 'pdf', description: 'A deck', category: hub.category, specializations: [], tags: [], accessType: 'paid', price: 4500, missing: hub.category ? [] : ['category'], createdAt: '2026-10-16T00:00:00.000Z', updatedAt: '2026-10-16T00:00:00.000Z' });
+const KINDS = { pdf: 'application/pdf', audio: 'audio/mpeg', video: 'video/mp4', image: 'image/png', template: 'text/csv', course: 'video/mp4' } as const;
+const FORMATS = Object.entries(KINDS).map(([id, type]) => ({ id, full: { contentTypes: [type], extensions: [type.split('/')[1]], maxBytes: 100_000_000 }, preview: { contentTypes: [type], extensions: [type.split('/')[1]], maxBytes: 100_000_000, kind: 'extract', seconds: null } }));
+const draft = () => ({ id: 'd1', title: 'Brand deck template', contentType: hub.kind, description: 'A deck', category: hub.category, specializations: [], tags: [], accessType: hub.access, price: hub.access === 'paid' ? 4500 : 0, missing: hub.category ? [] : ['category'], createdAt: '2026-10-16T00:00:00.000Z', updatedAt: '2026-10-16T00:00:00.000Z' });
 
 globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const request = input instanceof Request ? input : new Request(String(input), init);
@@ -94,6 +122,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     const tier = (id: string, name: string, price: number, products = 3) => ({ id, name, days: 30, products, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor: price, eventPass: { id: 'p', name: 'Pass' }, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: false });
     return ok({ currency: 'NGN', currencyFixed: false, tiers: [tier('verify', 'Verify', 100_000), tier('founding', 'Founding Maker', 500_000, 10)], extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: { points: 1000, priceMinor: 80_000 }, actions: [], caps: {} });
   }
+  if (path === '/uploads/allowance' && hub.tickPlaces > 0) return ok({ tickHeld: true, uploads: { used: 3, allowed: hub.tickPlaces, remaining: hub.tickPlaces - 3 }, storage: { usedBytes: 0, limitBytes: 10_737_418_240, remainingBytes: 10_737_418_240 }, free: { uploads: 0, storageBytes: 1_073_741_824 }, withTick: { uploads: 25, storageBytes: 10_737_418_240 } });
   if (path === '/uploads/formats') return ok({ formats: FORMATS });
   if (path === '/money/wallet') {
     hub.walletReads += 1;
@@ -112,9 +141,17 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     const body = (await request.json()) as Record<string, unknown>;
     if (hub.paused) return refuse(403, { code: 'identity_paused', message: HUB_PAUSE, stage: 'needs_documents' });
     if (hub.full) return refuse(402, { code: 'product_limit_reached', message: 'You have used all 3 of your products.' });
+    if (hub.publishFails > 0) {
+      hub.publishFails -= 1;
+      return refuse(500, { message: 'Something went wrong on our side.' });
+    }
     hub.publishes.push(body);
     hub.used += 1;
     return json(201, { statusCode: 201, message: 'Created', data: { id: 'c1', title: 'Brand deck template', slug: 'brand-deck', creatorWawuId: 'lennox', status: 'pending' } });
+  }
+  if (path === '/uploads/release' && method === 'POST') {
+    hub.releases.push(((await request.json()) as { key: string }).key);
+    return ok({ released: true });
   }
   if (path === '/plans/purchases/quote') {
     hub.quoted += 1;
@@ -194,7 +231,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   pinClock(TODAY);
-  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false, quoted: 0 });
+  Object.assign(hub, { tickPlaces: 0, tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], kind: 'pdf', access: 'paid', publishFails: 0, releases: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false, quoted: 0 });
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
   mockVault.clear();
@@ -232,15 +269,12 @@ describe('identityStateOf · the identity check is the wallet’s own state (VF1
 });
 
 describe('VF12 · publish your first product', () => {
-  it('a user with a tier adds the preview and the file, picks a category, publishes once, and shares the link from the phone’s share sheet', async () => {
+  it('a user with a tier adds the file, picks a category, publishes once with the Hub making the preview, and shares the link from the phone’s share sheet', async () => {
     const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
     await renderRouter(routes, { initialUrl: '/publish?id=d1' });
     await screen.findByTestId('publish-submit');
     expect(screen.getByTestId('publish-meter')).toBeTruthy();
     expect(screen.getByTestId('publish-submit')).toBeDisabled();
-    await fireEvent.press(screen.getByTestId('publish-preview'));
-    await waitFor(() => expect(screen.getByTestId('publish-preview')).toHaveTextContent(/cover|brand-deck/));
-    await sleep(900);
     await fireEvent.press(screen.getByTestId('publish-file'));
     expect(await screen.findByText('18 MB · ready')).toBeTruthy();
     expect(screen.getByTestId('publish-submit')).toBeDisabled();
@@ -250,7 +284,7 @@ describe('VF12 · publish your first product', () => {
     expect(await screen.findByTestId('publish-published')).toBeTruthy();
     expect(hub.patches).toEqual([{ category: 'technology' }]);
     expect(hub.publishes).toHaveLength(1);
-    expect(hub.publishes[0]).toEqual({ previewAsset: expect.stringContaining('content/preview'), fullAsset: expect.stringContaining('content/full') });
+    expect(hub.publishes[0]).toEqual({ fullAsset: expect.stringContaining('content/full'), previewFromFile: true });
     expect(screen.getByTestId('publish-published-line')).toHaveTextContent(/with our team for review/);
     expect(screen.getByTestId('publish-link')).toHaveTextContent('wawuafrica.com/content/c1');
     await fireEvent.press(screen.getByTestId('publish-share'));
@@ -265,6 +299,45 @@ describe('VF12 · publish your first product', () => {
     expect(screen.queryByTestId('publish-submit')).toBeNull();
     await fireEvent.press(screen.getByText('Try again'));
     expect(await screen.findByTestId('where')).toHaveTextContent(/\/tiers/);
+  });
+
+  it('R-129: a person with no tier whose tick from before tiers still gives 25 places is not told publishing needs a tier', async () => {
+    hub.tier = 'none';
+    hub.tickPlaces = 25;
+    await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    expect(await screen.findByTestId('publish-draft-title')).toBeTruthy();
+    expect(screen.queryByTestId('publish-no-tier')).toBeNull();
+    expect(screen.queryByText('Publishing needs a tier. Drafts stay free.')).toBeNull();
+  });
+
+  describe('R-129 · Publish on a product draft follows the Hub places (shop-product)', () => {
+    const real = () => {
+      routes['shop-product'] = page('@/app/shop-product');
+    };
+    it('a person with no tier whose tick bought before tiers gives 25 places goes on to the Publish screen, on a phone', async () => {
+      const was = Platform.OS;
+      Platform.OS = 'android';
+      try {
+        real();
+        hub.tier = 'none';
+        hub.tickPlaces = 25;
+        await renderRouter(routes, { initialUrl: '/shop-product?id=d1' });
+        await fireEvent.press(await screen.findByTestId('draft-publish'));
+        expect(await screen.findByTestId('publish-draft-title')).toBeTruthy();
+        expect(screen.queryByText('Tiers')).toBeNull();
+      } finally {
+        Platform.OS = was;
+      }
+    });
+
+    it('a person the Hub gives no places (no tier, no tick) is still sent to the tiers', async () => {
+      real();
+      hub.tier = 'none';
+      hub.tickPlaces = 0;
+      await renderRouter(routes, { initialUrl: '/shop-product?id=d1' });
+      await fireEvent.press(await screen.findByTestId('draft-publish'));
+      expect(await screen.findByText('Tiers')).toBeTruthy();
+    });
   });
 
   it('a person whose identity check is not through sees uploads paused with the Hub’s reason and cannot publish; Try again opens Open your wallet', async () => {
@@ -283,8 +356,6 @@ describe('VF12 · publish your first product', () => {
     hub.category = 'technology';
     await renderRouter(routes, { initialUrl: '/publish?id=d1' });
     await screen.findByTestId('publish-submit');
-    await fireEvent.press(screen.getByTestId('publish-preview'));
-    await sleep(900);
     await fireEvent.press(screen.getByTestId('publish-file'));
     await screen.findByText('18 MB · ready');
     await fireEvent.press(screen.getByTestId('publish-submit'));
@@ -343,12 +414,186 @@ describe('VF12 · publish your first product', () => {
     hub.category = 'technology';
     await renderRouter(routes, { initialUrl: '/publish?id=d1' });
     await screen.findByTestId('publish-submit');
-    await fireEvent.press(screen.getByTestId('publish-preview'));
-    await sleep(900);
     await fireEvent.press(screen.getByTestId('publish-file'));
     await screen.findByText('18 MB · ready');
     await fireEvent.press(screen.getByTestId('publish-submit'));
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 2 of 3');
+  });
+});
+
+describe('VF12 · R-118: no preview file is asked for; the cover step, as Create does it (UPLOAD-REST, Android)', () => {
+  const pick = (require('@/features/create/pickFile') as { pickFile: jest.Mock }).pickFile;
+  const upload = (require('@/features/create/upload') as { uploadFile: jest.Mock }).uploadFile;
+  const frames = (require('@/features/create/frames') as { frameFor: jest.Mock }).frameFor;
+  const copyOf = (require('@/features/create/previewCopy') as { smallCopyOf: jest.Mock }).smallCopyOf;
+  const createDraft = require('@/features/create/draft') as typeof import('@/features/create/draft');
+  let android: { restore: () => void };
+  beforeEach(() => {
+    android = jest.replaceProperty(Platform, 'OS', 'android');
+    upload.mockClear();
+    copyOf.mockClear();
+    frames.mockReset();
+    frames.mockResolvedValue(null);
+    createDraft.resetDraft();
+    hub.category = 'technology';
+  });
+  afterEach(() => android.restore());
+  /** The folders every upload of the screen went to, in order. */
+  const folders = () => upload.mock.calls.map((c) => (c[1] as { folder: string }).folder);
+  const addFile = async (contentType: string, name = 'file.bin') => {
+    pick.mockImplementationOnce(async () => ({ blob: { size: 18 * 1024 * 1024 }, name, contentType, extension: contentType.split('/')[1] }));
+    await fireEvent.press(await screen.findByTestId('publish-file'));
+    await screen.findByText('18 MB · ready');
+  };
+  const open = async () => {
+    await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    await screen.findByTestId('publish-submit');
+  };
+
+  it('there is no "Add a preview" tile and no preview upload: the screen asks for the file, then the cover', async () => {
+    await open();
+    expect(screen.queryByText('Add a preview')).toBeNull();
+    expect(screen.queryByTestId('publish-preview')).toBeNull();
+    expect(screen.queryByTestId('publish-cover')).toBeNull();
+    await addFile('application/pdf', 'brand-deck.pdf');
+    expect(screen.getByTestId('publish-cover')).toBeTruthy();
+    expect(screen.getByTestId('publish-preview-line')).toHaveTextContent('Your preview is the first pages, made for you.');
+    expect(screen.getByTestId('cover-choice')).toBeTruthy();
+    expect(screen.queryByText('Add a preview')).toBeNull();
+  });
+
+  it.each([
+    ['pdf', 'application/pdf', 'Your preview is the first pages, made for you.'],
+    ['audio', 'audio/mpeg', 'Your preview is the first 30 seconds, made for you.'],
+    ['video', 'video/mp4', 'Your preview is the first 30 seconds, made for you.'],
+  ])('a paid %s asks the Hub to make the preview: previewFromFile, no previewAsset, one upload (the file)', async (kind, type, line) => {
+    hub.kind = kind;
+    await open();
+    await addFile(type);
+    expect(screen.getByTestId('publish-preview-line')).toHaveTextContent(line);
+    await waitFor(() => expect(screen.getByTestId('publish-submit')).toBeEnabled());
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    expect(hub.publishes).toEqual([{ fullAsset: expect.stringContaining('content/full'), previewFromFile: true }]);
+    expect(folders()).toEqual(['content/full']);
+    expect(copyOf).not.toHaveBeenCalled();
+  });
+
+  it('a paid video sends the frame read from the full file as its cover (the default), and the cover is Publish’s own, never Create’s', async () => {
+    hub.kind = 'video';
+    frames.mockResolvedValue({ kind: 'thumbnail', width: 480, height: 270 });
+    await open();
+    await addFile('video/mp4', 'reel.mp4');
+    expect(screen.getByText('Video frame')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    expect(hub.publishes).toEqual([{ fullAsset: expect.stringContaining('content/full'), coverAsset: expect.stringContaining('content/cover'), previewFromFile: true }]);
+    expect(folders()).toEqual(['content/full', 'content/cover']);
+    expect(createDraft.getCover()).toEqual({ mode: 'default', file: null });
+  });
+
+  it('a paid picture: the phone made the smaller copy while the picture was chosen and Publish uploads it as the preview, no flag', async () => {
+    hub.kind = 'image';
+    await open();
+    await addFile('image/png', 'art.png');
+    expect(copyOf).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('publish-preview-line')).toHaveTextContent('Your preview is a smaller copy of your first picture.');
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    expect(hub.publishes).toEqual([{ fullAsset: expect.stringContaining('content/full'), previewAsset: expect.stringContaining('content/preview') }]);
+    expect(upload.mock.calls.find((c) => (c[1] as { folder: string }).folder === 'content/preview')?.[1]).toEqual({ folder: 'content/preview', format: 'image' });
+  });
+
+  it('a publish that was lost and is tried again uses the same preview copy: it is uploaded once', async () => {
+    hub.kind = 'image';
+    hub.publishFails = 1;
+    await open();
+    await addFile('image/png', 'art.png');
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-notice')).toBeTruthy();
+    expect(hub.publishes).toHaveLength(0);
+    await waitFor(() => expect(screen.getByTestId('publish-submit')).toBeEnabled());
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    expect(folders().filter((f) => f === 'content/preview')).toHaveLength(1);
+    expect(hub.publishes[0]).toMatchObject({ previewAsset: expect.stringContaining('content/preview') });
+  });
+
+  it('a picture the phone cannot read again says so at once and cannot be published', async () => {
+    hub.kind = 'image';
+    copyOf.mockResolvedValueOnce(null);
+    await open();
+    pick.mockImplementationOnce(async () => ({ blob: { size: 5000 }, name: 'art.png', contentType: 'image/png', extension: 'png', discard: jest.fn() }));
+    await fireEvent.press(await screen.findByTestId('publish-file'));
+    expect(await screen.findByText('That picture could not be read. Choose another.')).toBeTruthy();
+    expect(screen.queryByTestId('publish-cover')).toBeNull();
+    expect(screen.getByTestId('publish-submit')).toBeDisabled();
+    expect(folders()).toEqual([]);
+  });
+
+  it('a paid template needs its cover (it is the preview): no None, Publish stays shut until a picture is in, and the cover is sent with previewFromFile', async () => {
+    hub.kind = 'template';
+    await open();
+    await addFile('text/csv', 'pack.csv');
+    expect(screen.getByTestId('publish-preview-line')).toHaveTextContent('Your cover is the preview buyers see. A cover is needed.');
+    expect(screen.queryByTestId('cover-mode')).toBeNull();
+    expect(screen.getByTestId('publish-submit')).toBeDisabled();
+    await fireEvent.press(screen.getByTestId('cover-pick'));
+    await waitFor(() => expect(screen.getByTestId('publish-submit')).toBeEnabled());
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    expect(hub.publishes).toEqual([{ fullAsset: expect.stringContaining('content/full'), coverAsset: expect.stringContaining('content/cover'), previewFromFile: true }]);
+  });
+
+  it('a FREE piece has no line and no preview of any kind: the file alone is sent (a picture makes no copy)', async () => {
+    hub.access = 'free';
+    hub.kind = 'image';
+    await open();
+    await addFile('image/png', 'art.png');
+    expect(screen.queryByTestId('publish-preview-line')).toBeNull();
+    expect(screen.getByTestId('cover-choice')).toBeTruthy();
+    expect(copyOf).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('None'));
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    expect(hub.publishes).toEqual([{ fullAsset: expect.stringContaining('content/full') }]);
+    expect(folders()).toEqual(['content/full']);
+  });
+
+  it('a free template needs no cover', async () => {
+    hub.access = 'free';
+    hub.kind = 'template';
+    await open();
+    await addFile('text/csv', 'pack.csv');
+    await waitFor(() => expect(screen.getByTestId('publish-submit')).toBeEnabled());
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    expect(hub.publishes).toEqual([{ fullAsset: expect.stringContaining('content/full') }]);
+  });
+
+  it('leaving without publishing gives back the cover picture that went up', async () => {
+    hub.kind = 'template';
+    const view = await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    await screen.findByTestId('publish-submit');
+    await addFile('text/csv', 'pack.csv');
+    await fireEvent.press(screen.getByTestId('cover-pick'));
+    await waitFor(() => expect(screen.getByTestId('publish-submit')).toBeEnabled());
+    await view.unmount();
+    await waitFor(() => expect(hub.releases).toEqual(['k-content/cover']));
+  });
+
+  it('a published piece keeps its cover: nothing is given back', async () => {
+    hub.kind = 'template';
+    const view = await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    await screen.findByTestId('publish-submit');
+    await addFile('text/csv', 'pack.csv');
+    await fireEvent.press(screen.getByTestId('cover-pick'));
+    await waitFor(() => expect(screen.getByTestId('publish-submit')).toBeEnabled());
+    await fireEvent.press(screen.getByTestId('publish-submit'));
+    expect(await screen.findByTestId('publish-published')).toBeTruthy();
+    await view.unmount();
+    await sleep(50);
+    expect(hub.releases).toEqual([]);
   });
 });
 
@@ -360,7 +605,7 @@ describe('VF13 · all products used', () => {
     hub.used = 3;
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 3 of 3');
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.');
+    await waitFor(() => expect(screen.getByTestId('full-line')).toHaveTextContent('Move up a tier, or take something down.'));
     expect(screen.getByTestId('full-upgrade')).toHaveTextContent('Upgrade instead');
     expect(screen.getByTestId('full-library')).toHaveTextContent('Open library');
     expect(screen.queryByText(/Add 5|add 5|more products/)).toBeNull();
@@ -392,7 +637,7 @@ describe('VF13 · all products used', () => {
     hub.heldTier = 'founding';
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 10 of 10');
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.');
+    await waitFor(() => expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.'));
     expect(screen.queryByTestId('full-upgrade')).toBeNull();
     expect(screen.getByTestId('full-library')).toBeTruthy();
     expect(screen.queryByText(/Get verified|Add 5/)).toBeNull();
@@ -405,7 +650,7 @@ describe('VF13 · all products used', () => {
     await renderRouter(routes, { initialUrl: '/full' });
     expect(await screen.findByTestId('full-title')).toHaveTextContent('You have used 12 of 12');
     expect(screen.queryByTestId('full-upgrade')).toBeNull();
-    expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.');
+    await waitFor(() => expect(screen.getByTestId('full-line')).toHaveTextContent('Take something down to make room for a new one.'));
   });
 });
 
@@ -487,6 +732,15 @@ describe('VF14 · your tier', () => {
     hub.tier = 'none';
     await renderRouter(routes, { initialUrl: '/your-tier' });
     expect(await screen.findByTestId('your-tier-none')).toBeTruthy();
+  });
+
+  it('R-129: a person with no tier whose tick still gives 25 places is told so on Your tier, never that they cannot publish', async () => {
+    hub.tier = 'none';
+    hub.tickPlaces = 25;
+    await renderRouter(routes, { initialUrl: '/your-tier' });
+    expect(await screen.findByText('Your tick still gives you 25 places to publish until it ends. See tiers for what a tier gives.')).toBeTruthy();
+    expect(screen.queryByText(/Make it official to publish/)).toBeNull();
+    expect(screen.getByText('See tiers')).toBeTruthy();
   });
 
   it('no tier is not an error: no alert, no "Try again", and the one button says what it does and opens the tiers (FIX-68 F-2)', async () => {

@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { FrameModal } from '@/lib/FrameModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -16,7 +17,7 @@ export function PhotoViewer({ uri, onClose }: PhotoViewerProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={uri !== null} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <FrameModal visible={uri !== null} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <View testID="photo-viewer" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
         {uri ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Close photo" onPress={onClose} style={styles.fill}>
@@ -27,7 +28,7 @@ export function PhotoViewer({ uri, onClose }: PhotoViewerProps) {
           <IconButton icon="X" label="Close" onPress={onClose} size={40} testID="photo-viewer-close" />
         </View>
       </View>
-    </Modal>
+    </FrameModal>
   );
 }
 

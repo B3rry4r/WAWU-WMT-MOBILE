@@ -181,6 +181,9 @@ export function AmountScreen({ payee, onBack, onContinue, initial, onAddMoney }:
           onKey={(key) => setText((was) => pressKey(was, key))}
           onDelete={() => setText(deleteLast)}
           onClear={() => setText('')}
+          onEnter={() => {
+            if (amountKobo > 0 && !over) onContinue({ amountKobo, note: note.trim() });
+          }}
         />
       </View>
     </AuthFrame>

@@ -10,6 +10,8 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { CreateFrame } from '@/features/create/CreateFrame';
+import { pictureCandidates } from '@/features/feed/model';
+import { usePicture } from '@/features/feed/usePicture';
 import { kindIcon } from '@/features/me/model';
 import { font, space, useWawu } from '@/theme';
 
@@ -96,9 +98,10 @@ export function PurchasesScreen({ onBack, onOpen }: PurchasesScreenProps) {
 
 function PurchaseRow({ entry, line, onOpen }: { entry: PurchaseEntry; line: string; onOpen?: (target: PurchaseTarget) => void }) {
   const { colors } = useWawu();
-  const [broken, setBroken] = useState(false);
   const piece = entry.kind === 'content_unlock' ? entry.content : null;
-  const picture = piece?.thumbnailUrl && !broken ? piece.thumbnailUrl : null;
+  // The Hub's thumbnail is the piece's public file: a clip or a PDF for most kinds, which is never handed to Image (it would be fetched to fail).
+  // The creator's cover first (R-114), then the thumbnail when it is a picture.
+  const { uri: picture, onError: pictureFailed } = usePicture(piece ? pictureCandidates(piece, piece.thumbnailUrl) : []);
   const glyph = entry.kind === 'content_unlock' ? kindIcon(piece?.contentType ?? 'video') : KIND_ICONS[entry.kind];
   const target = onOpen ? targetOf(entry) : null;
   const action = target ? actionOf(entry) : null;
@@ -107,9 +110,11 @@ function PurchaseRow({ entry, line, onOpen }: { entry: PurchaseEntry; line: stri
     <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>
         {picture ? (
-          <Image source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={() => setBroken(true)} />
+          <Image testID="purchase-thumb-image" source={{ uri: picture }} contentFit="cover" style={StyleSheet.absoluteFill} onError={pictureFailed} />
         ) : (
-          <Icon name={glyph} size={rowMetrics.mark} color={colors.textMuted} />
+          <View testID="purchase-thumb-mark">
+            <Icon name={glyph} size={rowMetrics.mark} color={colors.textMuted} />
+          </View>
         )}
       </View>
       <View style={styles.words}>
