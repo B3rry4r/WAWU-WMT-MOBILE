@@ -119,3 +119,18 @@ _Owner: date, and "screenshots, PHONE CHECK list and evidence pack reviewed"._
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-18.md](history/POINTS-18.md).
 
+
+## Verifier report (T2, 10 Nov 2026, STUDIO-1110 6ac4d7d, verifier session; verdict FIX on two mediums below, otherwise MERGE-quality)
+
+Stack stv (Hub main 5dbef97 on ports 16020-16033, own databases, `ai.listed.*` and `points.daily_cap` set by SQL in my own database, voice and storage stand-ins; Playwright route adds CORS headers for the Hub/ID ports because the stack's CORS list omits my page port; web export served behind vercel.json headers, CSP hosts swapped for the stack only).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V8 per tool (19 tools, ok + double tap + provider failure) | passed | every new tool: one hold per double tap, kept on success, hold then release on failure, balance = PointLot sum = PointLedger sum = UI balance (cre2, cre3 dark, cre4 1440); video-music file marker did not fail (stand-in/Hub), provider-down run released 500 |
+| Create (R-109 p4) | passed with note | image piece reaches step 3 with real picture; paid Send POSTs /uploads/presign (preview jpg) then /content 201, ContentPiece has previewAssetUrl and price 1000 |
+| R-47 | passed | image+video off: tiles, chips, Create card text gone, route shows "unavailable"; all off: only the original seven |
+| Original seven | passed | all seven ran end to end |
+| Pictures | partial | /tmp/wmt-shots/studio-1110-verify/ |
+| Check parts | typecheck EXIT 0, lint EXIT 0, gates EXIT 0, tasks EXIT 0; jest full: see hand-back |
+
+Findings: medium (defect) More menu at 390 and 1440 is a fixed 593 px box clipped at y 609 on an 844/900 screen: Podcast maker is cut and Receptionist is hidden until scrolled, no cue. low: Home Studio tile not located by text in my script. NOT RUN: my-voice clone end to end (consent button stays disabled until a recording), Receptionist voice, phone paths (jest android not re-run beyond the full run), done/failed pictures for my-voice and receptionist at 1440 dark.
