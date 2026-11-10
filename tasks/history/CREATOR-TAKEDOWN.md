@@ -45,3 +45,7 @@ Verdict: FIX. The landing, Like/Save and SHARED-CHANGES fixes hold; the Rate on 
 - Diff 84e8729..f415ba1: tests only added (takeDownLanding.test, a kept-piece case and a `kept` factory flag in contentDetail.test); no assertion changed or removed. Note the added kept-piece test asserts no like/save and comments, and nothing about Rate.
 - Checks on f415ba1: typecheck EXIT 0, lint EXIT 0, gates EXIT 0, tasks EXIT 0, jest -w 2 523 suites 7772 passed EXIT 0.
 - Still low: POST /content/:id/view 404s for the buyer of a kept piece (no UI effect).
+
+## Builder fix round 2 (10 Nov 2026)
+Medium from verify2: no Rate and no Report/More on a kept piece; see Current state 'Fix round 2'. Check parts below.
+Check parts on the round 2 head: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (523 suites, 7774 passed, 6 skipped), gates EXIT 0, `npm run tasks -- --write` EXIT 0.
