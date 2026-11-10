@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** verifying (fix round 1 built). Hub `wmt/VIDEO-PRIVACY` head 02c0344 (no merge, a Hub merge deploys). Mobile: this file only. Round 0 verifier report and round 1 builder report are in `tasks/history/VIDEO-PRIVACY.md`.
+- **Status:** building (round 1 re-check found one medium: a web upload that stays `pending` is not cleaned at publish). Hub `wmt/VIDEO-PRIVACY` head 02c0344 (no merge, a Hub merge deploys). Mobile: this file only. Round 0 verifier report and round 1 builder report are in `tasks/history/VIDEO-PRIVACY.md`.
 - **Method (no ffmpeg, no re-encode, no offset rewrite):** every change keeps the size of the bytes it replaces, so each chunk offset stays valid.
   - MP4 and MOV: `udta`, `meta`, XMP boxes under `moov`, each `trak` and at the top become `free` with zeroed bodies; creation and modification times in `mvhd`, `tkhd`, `mdhd` are zero; `free` and `skip` bodies are zeroed (inside `moov` and at the top); EVERY top-level `uuid` becomes `free`; bytes after the last box (a phone maker's trailer) are zeroed; a timed-metadata track (`meta`, `mebx`, `gpmd`, `camm`) becomes `free` and its samples are zeroed (not in a fragmented file).
   - Kept on purpose: `ftyp`, `styp`, `moov`, `mdat`, `moof`, `sidx`, `mfra` and the other structure boxes; non-XMP `uuid` boxes inside `moov` (they can carry stream setup or DRM); handler names and encoder strings (they name no device; the Vorbis/Opus comment header in a WebM keeps `encoder=Lavc...`). Top-level boxes of unknown type are left.
@@ -30,7 +30,7 @@ As of 10 Nov 2026.
 - **Large files:** the phone's confirm call is a POST with no Idempotency-Key, so the app never aborts it (src/api/client.ts); the OS network timeouts still apply. The confirm waits only for files up to 100 MiB (about 10 s at 20 MB/s each way). A bigger one (only `content/full` and `ai/input-video` take more) is cleaned about 0.1 s after the confirm answers, in the background; it can be served for about its transfer time (2x its size at the bucket's speed, roughly 50 s for 512 MB at 20 MB/s, longer if two others are ahead of it) and, if the Hub restarts in that window, until the next 10-minute sweep.
 - **Sweep for videos already stored (NOT RUN):** wawu-backend `scripts/sweep-stored-videos.ts` (`count`, `plan`, `apply` with `VIDEO_SWEEP_OWNER_OK=yes` on the owner's word). Worst case 2x the stored video bytes plus about 1 MB of reads per file; 1,000 videos of 60 MB is about 120 GB and 50 minutes at 20 MB/s, 2 at once.
 - **Waits for:** the verifier, then the owner's word to merge.
-- **Next:** verifier re-check of the round 1 ids on wawu-backend `wmt/VIDEO-PRIVACY`.
+- **Next:** builder cleans the caller's own named keys at publish whatever the row status, expires the give-up count, then verify again (see the round 1 verifier report in history).
 
 ## Read first
 
