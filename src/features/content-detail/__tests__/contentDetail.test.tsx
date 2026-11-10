@@ -47,7 +47,7 @@ const lessons = Array.from({ length: 12 }, (_, i) => ({ id: `l${i + 1}`, title: 
 
 const pieces = (): Record<string, Hold> => ({
   [PDF]: {
-    piece: { ...base, id: PDF, title: 'The Freelancer’s Pricing Playbook', creatorWawuId: KEMI, contentType: 'pdf', accessType: 'paid', price: 3000, durationLabel: null, pageCount: 84, previewAssetUrl: 'https://cdn.test/p.pdf', views: 2140, fullAssetUrl: hub.bought ? 'https://cdn.test/full.pdf' : null, fullAssetLocked: !hub.bought },
+    piece: { ...base, status: hub.kept ? 'removed' : base.status, id: PDF, title: 'The Freelancer’s Pricing Playbook', creatorWawuId: KEMI, contentType: 'pdf', accessType: 'paid', price: 3000, durationLabel: null, pageCount: 84, previewAssetUrl: 'https://cdn.test/p.pdf', views: 2140, fullAssetUrl: hub.bought ? 'https://cdn.test/full.pdf' : null, fullAssetLocked: !hub.bought },
     detail: { contentId: PDF, contentType: 'pdf', updatedAt: '2026-09-20T10:00:00Z', purchasedAt: hub.bought ? '2026-09-26T08:00:00Z' : null, buyerCount: 12, studentCount: null, freePreview: { pages: 4, seconds: null, lessons: null }, lessons: [], creator: maker(KEMI, 'Kemi Okafor', 'Business coach', 22000) },
   },
   [VIDEO]: {
@@ -97,6 +97,8 @@ const hub = {
   parentCourse: null as null | { id: string; title: string; lessonCount: number; price: number; previewAssetUrl: string | null },
   /** The viewer made the course (H25 then offers Edit lessons). */
   ownCourse: false,
+  /** CREATOR-TAKEDOWN: the viewer bought the PDF and its creator has taken it down. */
+  kept: false,
 };
 
 const FEE = 2325;
@@ -309,6 +311,7 @@ beforeEach(() => {
     lessonRefusal: 0,
     parentCourse: null,
     ownCourse: false,
+    kept: false,
   });
   mockPlayers.length = 0;
 });
@@ -687,6 +690,18 @@ describe('CREATOR-TAKEDOWN: the creator takes their own piece down from its page
     await rtl.fireEvent.press(screen.getByTestId('detail-menu'));
     expect(await screen.findByTestId('detail-menu-report')).toBeTruthy();
     expect(screen.queryByTestId('detail-menu-takedown')).toBeNull();
+  });
+});
+
+describe('CREATOR-TAKEDOWN: the buyer of a piece its creator took down', () => {
+  it('still opens it, and is offered no like or save (the Hub would answer 404), so no error can follow', async () => {
+    hub.bought = true;
+    hub.kept = true;
+    const { screen } = await boot(PDF);
+    expect(screen.getByTestId('detail-open')).toBeTruthy();
+    expect(screen.queryByTestId('detail-like')).toBeNull();
+    expect(screen.queryByTestId('detail-save')).toBeNull();
+    expect(screen.getByTestId('detail-comments')).toBeTruthy();
   });
 });
 
