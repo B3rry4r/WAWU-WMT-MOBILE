@@ -7,7 +7,7 @@ order: 380
 priority: after-launch
 repo: wawu-backend
 type: flow
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-47]
 passes: [V1, V3, V4, V6, V7, V9]
@@ -19,9 +19,11 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** todo. Cut by the lead from WEBAPP-12's measurements (owner, 10 Nov: "we need to optimize those areas").
-- **Found (WEBAPP-12):** the Hub signs every picture link at the current second (wawu-backend `src/storage/storage.service.ts` `readUrlFor` about lines 734-757, `cover-link.ts` 31-39, `freshUrlFor` and `coverUrlFor` about 771 and 791), so the same picture gets a new address on every response and the browser downloads it again: 3.2 to 8.4 MB and 7 to 45 s on a second visit at 1.6 Mbps. A link stored unsigned already cached (2 KB on a second visit). Also a bug: `creator-discovery.service.ts:187` returns the stored avatar link unsigned, so it stops working after 7 days.
-- **Next:** a builder on wawu-backend `wmt/HUB-IMG-LINKS`.
+- **Status:** verifying. Built on wawu-backend `wmt/HUB-IMG-LINKS` (`fad6147`).
+- **Built:** one helper (`src/storage/read-link.ts`) signs every picture, preview, cover and avatar read link (`StorageService.readUrlFor`, so `freshUrlFor`, `coverUrlFor`, profile pictures, chat and AI media links; `CoverLinkService`) with `signingDate` rounded down to the start of the UTC day and `ResponseCacheControl: private, max-age=31536000, immutable`. Window: one UTC day (01:00 in Lagos). Default link signed for 7 days (the SigV4 maximum): **shortest life 6 days and 1 second** (at the last second of a window). A request for a life of one day or less (a chat attachment, 900 s) is signed at the second with no cache header, as before.
+- **Avatar bug:** `GET /creators` (creator-discovery) signs the stored avatar through the shared `freshOwnImage` (`src/storage/own-image.ts`, also now used by Explore). A stored value that is not the creator's own key is returned as stored, as before (`photo-position.contract.spec.ts` holds it).
+- **Not changed:** `presignUpload` (proved byte-identical to main for three uploads at a fixed clock), `signedReadUrl` (KYC, 900 s), `downloadUrlFor` (a saved file), the bucket probe.
+- **Next:** verifier.
 
 ## Read first
 
@@ -48,8 +50,8 @@ The same picture has the same link for a day, the browser is told it may keep it
 - [ ] A creator's avatar in the suggestions still loads after 8 days.
 - [ ] Every protected route behaves as before (V3).
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HUB-IMG-LINKS.md](history/HUB-IMG-LINKS.md).
 
 ## Owner sign-off
