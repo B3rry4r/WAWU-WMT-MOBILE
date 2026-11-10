@@ -49,3 +49,12 @@ Verdict: FIX. The landing, Like/Save and SHARED-CHANGES fixes hold; the Rate on 
 ## Builder fix round 2 (10 Nov 2026)
 Medium from verify2: no Rate and no Report/More on a kept piece; see Current state 'Fix round 2'. Check parts below.
 Check parts on the round 2 head: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (523 suites, 7774 passed, 6 skipped), gates EXIT 0, `npm run tasks -- --write` EXIT 0.
+
+## Verifier report, round 2 re-check (T1, 10 Nov 2026, mobile c2a0d87, Hub 582b8dd)
+
+Verdict: MERGE.
+- Kept piece (buyer, web export behind vercel.json headers, connect-src widened to the stack only): drawn controls are Read now, Download, Tip, Comments, Share, Follow; no Like, Save, Rate or More. Read now, Download, Share and Comments raise no error and no refused call. Tip and Follow show the same answers as on a live piece (Tip: wallet-gate 409 because the test buyer has no wallet; Follow: 404 and "Couldn't update who you follow" because the SQL-made creator has no follow-able profile): identical on the live control, so not caused by the take-down (setup artefact, not proven fixed). Pictures r1-f3-kept-* at 390 light, dark and 1440.
+- Live pieces, no regression: the buyer of a live piece and a non-buyer both still see Like, Save, Rate and More with Report; Like and Save clicks return no error.
+- Diff f415ba1..c2a0d87: tests only added or extended (kept-piece assertions, live-bought piece, android case); nothing weakened.
+- Checks on c2a0d87: typecheck EXIT 0, lint EXIT 0, gates EXIT 0, tasks EXIT 0, jest -w 2 523 suites 7774 passed EXIT 0.
+- NOT RUN: Follow with a real creator profile; Tip with a funded wallet; 1440 dark.
