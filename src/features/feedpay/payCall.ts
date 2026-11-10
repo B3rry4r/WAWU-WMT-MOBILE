@@ -49,8 +49,8 @@ export type PayOutcome<T> =
   | { kind: 'insufficient_funds'; balanceKobo: number; totalKobo: number; shortfallKobo: number }
   /** `409 quote_changed`: the price moved; this is the quote as it stands now (null when the Hub sent none). */
   | { kind: 'quote_changed'; quote: PaymentQuote | null }
-  /** `409 payment_in_progress`: a payment for this is already being confirmed. Never pay again. */
-  | { kind: 'in_progress' }
+  /** `409 payment_in_progress`: a payment for this is already being confirmed. Never pay again. `paymentId` is the open payment's id when the Hub names it (WEBAPP-09 W4). */
+  | { kind: 'in_progress'; paymentId?: string | null }
   /** No answer that proves anything (no connection, a timeout, a server fault, the same key still running): send the SAME key again. */
   | { kind: 'unanswered' }
   /** The approval was closed, or this phone or the Hub refused it (FIX-112): no request was taken, and the screen changes nothing it holds. */
@@ -70,6 +70,7 @@ type Reason = {
   totalKobo?: unknown;
   shortfallKobo?: unknown;
   paymentQuote?: unknown;
+  paymentId?: unknown;
 };
 
 /** The refusal's `reason`, read defensively: the Hub answers `{ statusCode, message, reason }`. */
@@ -132,7 +133,7 @@ export async function sendPayment<T>(
     case 'idempotency_in_progress':
       return { kind: 'unanswered' };
     case 'payment_in_progress':
-      return { kind: 'in_progress' };
+      return { kind: 'in_progress', paymentId: filled(reason.paymentId) ? reason.paymentId : null };
     case 'insufficient_funds':
       if (isKobo(reason.balanceKobo) && isKobo(reason.totalKobo) && isKobo(reason.shortfallKobo)) {
         return { kind: 'insufficient_funds', balanceKobo: reason.balanceKobo, totalKobo: reason.totalKobo, shortfallKobo: reason.shortfallKobo };

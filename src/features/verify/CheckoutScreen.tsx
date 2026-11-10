@@ -71,6 +71,10 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
     await buyer.buy(item, { replace, webKind: kind });
   };
 
+  // WEBAPP-09 W5: an upgrade on the web charges the difference, so the row shows the quote's total (as the button does), never the tier's full price; nothing until the quote has come.
+  const charge = useUpgradeCharge(tier?.id, kind === 'upgrade');
+  const rowPrice = (item: { price: string }) => (Platform.OS === 'web' && kind === 'upgrade' ? charge : item.price);
+
   let body;
   if (plans.isError && !plans.data) {
     body = (
@@ -91,10 +95,9 @@ export function CheckoutScreen({ kind, tierId, onBack, onPaid }: CheckoutScreenP
   } else if (!item) {
     body = <ErrorState testID="checkout-none" icon="TriangleAlert" title="That tier is not on sale" message="Your store does not have it right now. Choose a tier again." onRetry={onBack} />;
   } else {
-    body = <CheckoutReady tier={tier} price={item.price} kind={kind} said={buyer.said} buyer={buyer} />;
+    body = <CheckoutReady tier={tier} price={rowPrice(item)} kind={kind} said={buyer.said} buyer={buyer} />;
   }
 
-  const charge = useUpgradeCharge(tier?.id, kind === 'upgrade');
   const verb = kind === 'renew' ? 'Renew' : kind === 'upgrade' ? 'Upgrade' : 'Buy';
   const foot = item ? (
     <Button testID="checkout-pay" label={buyer.busy ? 'Buying...' : Platform.OS === 'web' && kind === 'upgrade' ? (charge ? `${verb} · ${charge}` : verb) : buyLabel(item, verb)} full loading={buyer.busy} disabled={buyer.busy} onPress={() => void buy()} />
@@ -119,7 +122,8 @@ export function CheckoutReady({
   buyer,
 }: {
   tier: PlanTier;
-  price: string;
+  /** Null: the price is not known yet (an upgrade's charge on the web waits for the Hub's quote). */
+  price: string | null;
   kind: CheckoutScreenProps['kind'];
   said: Said | null;
   buyer: Pick<StoreBuyer, 'restore' | 'restoring' | 'restoreLine' | 'busy'>;
@@ -132,9 +136,11 @@ export function CheckoutReady({
           <Text variant="secondary" tone="textMuted" testID="checkout-line" style={styles.summaryLine}>
             {tierLine(tier)}
           </Text>
-          <Text variant="body" testID="checkout-price" style={[font(700), styles.price]}>
-            {price}
-          </Text>
+          {price !== null ? (
+            <Text variant="body" testID="checkout-price" style={[font(700), styles.price]}>
+              {price}
+            </Text>
+          ) : null}
         </View>
       </Card>
       <Text variant="meta" tone="textMuted" testID="checkout-renews" style={styles.centre}>

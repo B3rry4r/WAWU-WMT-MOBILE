@@ -540,7 +540,7 @@ function NotMemberPanel({ room }: { room: RoomView }) {
       {isOpen ? (
         <>
           <Text variant="secondary" tone="textSecondary" style={styles.centered}>
-            Join to read and write here. Reading is free.
+            Join to read and write here. Joining is free, and so is reading.
           </Text>
           <Button
             label="Join"

@@ -24,7 +24,8 @@ export type WebBuySpec =
   | { kind: 'pass'; communityId: string };
 
 export type WebQuote = { title: string; payment: PaymentQuote };
-export type WebView = PaymentViewLike & { id: string };
+/** `totalPoints` is a paid points pack's lot as the Hub granted it: the pack's points plus the Founding Maker's bonus (WEBAPP-09 W3). Null for anything else, or until paid. */
+export type WebView = PaymentViewLike & { id: string; grantedPoints: number | null; /** What the purchase is for, as the Hub names it: its kind and its tier or pack. Null for a view that names none. */ forWhat: { kind: string; target: string | null } | null };
 
 /** A stable name for what is being paid, so a kept attempt is reused only for the same request. */
 export const scopeOf = (spec: WebBuySpec | null): string => (spec ? `webbuy:${spec.kind}:${JSON.stringify(spec)}` : 'webbuy:');
@@ -33,11 +34,13 @@ const STATUSES: readonly ViewStatus[] = ['pending', 'failed', 'reversed', 'refun
 
 /** A purchase as the flow reads it: a known status and the payment under it. */
 export function readView(value: unknown): WebView {
-  const v = value as { id?: unknown; status?: unknown; statusMessage?: unknown; payment?: { status?: unknown; delivered?: unknown; failureReason?: unknown } } | null;
+  const v = value as { id?: unknown; status?: unknown; statusMessage?: unknown; kind?: unknown; tierId?: unknown; packId?: unknown; grant?: { totalPoints?: unknown } | null; payment?: { status?: unknown; delivered?: unknown; failureReason?: unknown } } | null;
   const ok = v && typeof v === 'object' && filled(v.id) && STATUSES.includes(v.status as ViewStatus) && !!v.payment && filled(v.payment.status) && typeof v.payment.delivered === 'boolean';
   if (!ok) throw unreadable('purchase');
   return {
     id: v.id as string,
+    forWhat: filled(v.kind) ? { kind: v.kind, target: filled(v.tierId) ? v.tierId : filled(v.packId) ? v.packId : null } : null,
+    grantedPoints: v.grant && Number.isSafeInteger(v.grant.totalPoints) && (v.grant.totalPoints as number) >= 0 ? (v.grant.totalPoints as number) : null,
     status: v.status as ViewStatus,
     statusMessage: typeof v.statusMessage === 'string' ? v.statusMessage : null,
     payment: { status: v.payment!.status as string, delivered: v.payment!.delivered as boolean, failureReason: typeof v.payment!.failureReason === 'string' ? v.payment!.failureReason : null },
@@ -110,10 +113,27 @@ export async function readWebPurchase(spec: WebBuySpec, id: string): Promise<Web
       return readView(await readData(api.GET('/api/hub/credits/purchase/wallet/{id}', { params: { path: { id } } }), 'purchase'));
     case 'pass': {
       const pass = await fetchPass(spec.communityId);
-      return { id, status: pass.active ? 'paid' : 'pending', statusMessage: null, payment: { status: pass.active ? 'completed' : 'pending', delivered: pass.active, failureReason: null } };
+      return { id, grantedPoints: null, forWhat: null, status: pass.active ? 'paid' : 'pending', statusMessage: null, payment: { status: pass.active ? 'completed' : 'pending', delivered: pass.active, failureReason: null } };
     }
     default:
       return readView(await readData(api.GET('/api/hub/plans/purchases/{id}', { params: { path: { id } } }), 'purchase'));
+  }
+}
+
+/** The open payment the Hub named is this very purchase: same kind, same tier or pack. A view that names nothing is not taken for it. */
+export function isSamePurchase(spec: WebBuySpec | null, view: WebView): boolean {
+  if (!spec || !view.forWhat) return false;
+  switch (spec.kind) {
+    case 'tier':
+    case 'renew':
+    case 'upgrade':
+      return view.forWhat.kind === spec.kind && view.forWhat.target === spec.tierId;
+    case 'points_pack':
+      return view.forWhat.kind === 'points_pack' && view.forWhat.target === spec.packId;
+    case 'extra_products':
+      return view.forWhat.kind === 'extra_products';
+    default:
+      return false;
   }
 }
 

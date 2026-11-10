@@ -5,6 +5,7 @@ import { Stack, router as appRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { queryClient } from '@/api/query';
 import { useSession } from '@/api/session';
@@ -19,6 +20,7 @@ import { useTierOfferStep } from '@/features/tier-offer/offerStep';
 import { TierOfferBridge } from '@/features/tier-offer/TierOfferBridge';
 import { applyStoredTheme } from '@/features/settings/devicePrefs';
 import { useBonusStep } from '@/features/verify/bonusStep';
+import { StartHrefProvider, startHref } from '@/features/shell/startHref';
 import { WebFrame } from '@/lib/WebFrame';
 import { fontFiles, useWawu } from '@/theme';
 
@@ -29,6 +31,12 @@ SplashScreen.preventAutoHideAsync();
  * never a blank screen (WALLET-BLANK, SHARED-CHANGES WALLET-BLANK #1). Inside the tabs the tabs' own boundary catches first and keeps the tab bar.
  */
 export const ErrorBoundary = ErrorScreen;
+
+/**
+ * The tiers sheet (`/tiers`, VF5) on the web is drawn over the screen it was opened from, as the boards draw it, so that screen stays in view
+ * behind the scrim (WEBAPP-09 W2). A stack screen on the web hides the one below it; a transparent modal does not. The phone keeps its own.
+ */
+const TIERS_SHEET = Platform.OS === 'web' ? ({ presentation: 'transparentModal', animation: 'none', contentStyle: { backgroundColor: 'transparent' } } as const) : undefined;
 
 /** The longest the saved Theme is waited for before the first screen is drawn (SHARED-05 L1). */
 export const THEME_READ_LIMIT_MS = 3000;
@@ -138,6 +146,16 @@ export default function RootLayout() {
   const ready = themed && status !== 'restoring' && (!signedIn || (gate.phase === 'ready' && !tierOffer.holding));
   const inApp = signedIn && !gate.needsEmail && !gate.needsIdentity && !offer.visible && !tierOffer.visible && !bonus.visible;
 
+  // WEBAPP-09 W1: where a link that leads "home" goes for a person who has not finished signing up.
+  const start = startHref({
+    needsEmail: gate.needsEmail,
+    needsIdentity: gate.needsIdentity,
+    claimOffer: offer.visible,
+    tierOffer: tierOffer.visible,
+    bonus: bonus.visible,
+    setupStep: gate.setupStep,
+  });
+
   useEffect(() => {
     if (signedIn && gate.phase === 'idle') void refreshSignupGate();
     if (status === 'signedOut') resetSignupGate();
@@ -153,6 +171,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <WebFrame root>
+      <StartHrefProvider value={start}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surfacePage } }}>
         <Stack.Protected guard={signedIn && gate.needsEmail}>
           <Stack.Screen name="email-code" />
@@ -327,7 +346,7 @@ export default function RootLayout() {
           <Stack.Screen name="swap" />
           <Stack.Screen name="tgif" />
           <Stack.Screen name="tier-done" />
-          <Stack.Screen name="tiers" />
+          <Stack.Screen name="tiers" options={TIERS_SHEET} />
           <Stack.Screen name="transactions/[id]" />
           <Stack.Screen name="transactions/index" />
           <Stack.Screen name="verification" />
@@ -354,6 +373,7 @@ export default function RootLayout() {
         <Stack.Screen name="legal-documents/index" />
         <Stack.Screen name="legal-documents/[slug]" />
       </Stack>
+      </StartHrefProvider>
       <TierOfferBridge checkout={tierOffer.checkout} toTiers={tierOffer.toTiers} />
       <PushBridge live={inApp} />
       <PlaceBridge live={inApp} />
