@@ -77,4 +77,43 @@ describe('the web install gate', () => {
     await act(async () => undefined);
     expect(b.clipboard.writeText).toHaveBeenCalledWith('https://x.test/r/ABC123');
   });
+
+  const DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+  const offer = () => ({ preventDefault: jest.fn(), prompt: jest.fn().mockResolvedValue(undefined), userChoice: Promise.resolve({ outcome: 'dismissed' }) });
+
+  it('desktop Chrome with an offer shows the Install button', async () => {
+    jest.useFakeTimers();
+    const b = browser({ ua: DESKTOP });
+    await render(<Probe />);
+    expect(screen.queryByTestId('install-button')).toBeNull();
+    await act(async () => b.fire('beforeinstallprompt', offer()));
+    await act(async () => jest.advanceTimersByTime(mod.OFFER_WAIT_MS + 100));
+    expect(screen.getByTestId('install-button')).toBeTruthy();
+    jest.useRealTimers();
+  });
+
+  it('desktop Chrome with no offer after the wait steps aside (most often already installed)', async () => {
+    jest.useFakeTimers();
+    browser({ ua: DESKTOP });
+    await render(<Probe />);
+    expect(screen.queryByTestId('install-screen')).toBeNull();
+    await act(async () => jest.advanceTimersByTime(mod.OFFER_WAIT_MS + 100));
+    expect(screen.queryByTestId('install-waiting')).toBeNull();
+    expect(screen.queryByTestId('install-screen')).toBeNull();
+    jest.useRealTimers();
+  });
+
+  it('desktop Firefox shows no screen at all', async () => {
+    browser({ ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0' });
+    await render(<Probe />);
+    expect(screen.queryByTestId('install-screen')).toBeNull();
+    expect(screen.queryByTestId('install-waiting')).toBeNull();
+  });
+
+  it('Safari 17 or later on a Mac shows the Add to Dock steps', async () => {
+    browser({ ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15' });
+    await render(<Probe />);
+    expect(screen.getByText('Choose Add to Dock.')).toBeTruthy();
+  });
 });
+

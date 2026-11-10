@@ -6,7 +6,7 @@ import { Card } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { Text } from '@/components/Text';
 import type { IconName } from '@/components/icon';
-import { layout, radius, space, useWawu } from '@/theme';
+import { layout, space, useWawu } from '@/theme';
 
 import type { InstallContext } from './detect';
 
@@ -14,6 +14,8 @@ export type InstallViewProps = {
   context: InstallContext;
   /** The browser has offered its own install (`beforeinstallprompt`): the Install button is drawn. */
   canPrompt: boolean;
+  /** An iPad: its Share button is at the top of Safari. */
+  ipad?: boolean;
   /** The person accepted the browser's install, or the browser said the app was installed. */
   installed: boolean;
   /** "Link copied" is showing. */
@@ -32,6 +34,14 @@ export const IOS_STEPS: Step[] = [
   { icon: 'Smartphone', text: 'Tap Add. Who Made This now opens from your home screen.' },
 ];
 
+export const IPAD_SHARE = 'Tap Share, the square with an arrow, at the top of Safari.';
+
+export const DOCK_STEPS: Step[] = [
+  { icon: 'File', text: 'Choose File in the menu bar.' },
+  { icon: 'Plus', text: 'Choose Add to Dock.' },
+  { icon: 'CircleCheck', text: 'Click Add. Who Made This now opens from your Dock.' },
+];
+
 export const MENU_STEPS: Step[] = [
   { icon: 'Ellipsis', text: 'Open your browser menu, the three dots.' },
   { icon: 'Download', text: 'Tap Install app or Add to Home screen.' },
@@ -43,7 +53,7 @@ function inAppBrowser(context: Extract<InstallContext, { kind: 'inapp' }>): stri
 }
 
 /** What the screen says for each place the person opened it in (R-131). */
-export function copyFor(context: InstallContext, canPrompt: boolean, installed: boolean) {
+export function copyFor(context: InstallContext, canPrompt: boolean, installed: boolean, ipad = false) {
   if (installed) {
     return { title: 'Who Made This is on your device', body: 'Open it from its icon from now on. You can also carry on here.', steps: [] as Step[], copy: false };
   }
@@ -59,7 +69,14 @@ export function copyFor(context: InstallContext, canPrompt: boolean, installed: 
       };
     }
     case 'ios-safari':
-      return { title: 'Put Who Made This on your home screen', body: 'Open it from its own icon, like an app.', steps: IOS_STEPS, copy: false };
+      return {
+        title: 'Put Who Made This on your home screen',
+        body: 'Open it from its own icon, like an app.',
+        steps: ipad ? [{ ...IOS_STEPS[0], text: IPAD_SHARE }, ...IOS_STEPS.slice(1)] : IOS_STEPS,
+        copy: false,
+      };
+    case 'mac-safari':
+      return { title: 'Add Who Made This to your Dock', body: 'Open it from its own icon, like an app.', steps: DOCK_STEPS, copy: false };
     case 'ios-other':
       return {
         title: 'Open this link in Safari',
@@ -68,23 +85,19 @@ export function copyFor(context: InstallContext, canPrompt: boolean, installed: 
         copy: true,
       };
     case 'chromium':
-      return canPrompt
+      return canPrompt || context.os === 'desktop'
         ? { title: 'Install Who Made This', body: 'Open it from its own icon, like an app.', steps: [] as Step[], copy: false }
         : { title: 'Put Who Made This on your home screen', body: 'Open it from its own icon, like an app.', steps: MENU_STEPS, copy: false };
     default:
-      return {
-        title: 'Your browser cannot install apps',
-        body: 'To put Who Made This on your device, open this link in Chrome or Edge. Copy the link to paste it there.',
-        steps: [] as Step[],
-        copy: true,
-      };
+      // Standalone and a browser that cannot install never reach the screen (the gate steps aside).
+      return { title: 'Install Who Made This', body: 'Open it from its own icon, like an app.', steps: [] as Step[], copy: false };
   }
 }
 
 /** WEBAPP-11 (R-131): the install screen. No board draws it (design gap filed, R-29), so it is built from the shared parts. */
-export function InstallView({ context, canPrompt, installed, copied, onInstall, onCopy, onContinue }: InstallViewProps) {
+export function InstallView({ context, canPrompt, ipad, installed, copied, onInstall, onCopy, onContinue }: InstallViewProps) {
   const { colors } = useWawu();
-  const c = copyFor(context, canPrompt, installed);
+  const c = copyFor(context, canPrompt, installed, ipad);
   return (
     <ScrollView
       testID="install-screen"
@@ -104,7 +117,7 @@ export function InstallView({ context, canPrompt, installed, copied, onInstall, 
         </Text>
 
         {c.steps.length > 0 ? (
-          <Card style={styles.steps} testID="install-steps">
+          <Card padded style={styles.steps} testID="install-steps">
             {c.steps.map((s, i) => (
               <View key={s.text} style={styles.step}>
                 <IconTile icon={s.icon} tone="accent" shape="square" size={40} />
@@ -145,7 +158,7 @@ const styles = StyleSheet.create({
   brand: { alignItems: 'center', marginBottom: space.md },
   center: { textAlign: 'center' },
   body: { marginBottom: space.md },
-  steps: { padding: space.lg, gap: space.lg, borderRadius: radius.card },
+  steps: { gap: space.lg },
   step: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   stepText: { flex: 1, gap: space.xs },
   actions: { gap: space.md, marginTop: space.md },

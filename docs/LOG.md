@@ -1,4 +1,5 @@
 # Work log
+- 10 Nov 2026 · WEBAPP-11 · fix round 1: the steps card has its padding; on a computer Chrome and Edge show Install or step aside, Safari on a Mac shows Add to Dock, Firefox shows no screen; iPad Share is at the top (built, verifying)
 - 10 Nov 2026 · WEBAPP-11 · the web app is installable (manifest, any and maskable icons, Apple tags) and asks to be installed first in a browser tab (R-131): Install button, iPhone Safari steps, in-app browsers sent to Safari or Chrome with Copy link, Continue in the browser; never from the icon or on the phone; Chromium installability, real `beforeinstallprompt` and 35 pictures checked; real iPhone and in-app browsers NOT RUN (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)

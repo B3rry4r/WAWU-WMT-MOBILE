@@ -37,3 +37,14 @@ Findings:
 - L2 low: package.json `"pwa"` line is indented two spaces, inside scripts (works, `npm run pwa` runs).
 - L3 low (test-gap): no test pins the desktop wording or the steps card padding; a snapshot of the card style would kill M1.
 - Note: with the screen, /bills and /receipt paths were saved as the return path where the screen-skipped baseline run read none (it read localStorage only); both end at /welcome. Not a defect.
+
+## Builder round 1 (fix, 10 Nov 2026)
+
+Merged `wmt/WEBAPP-11-verify` 9a071ca first.
+- **M1 fixed:** the steps card is `<Card padded>` (the shared card's own padding, 16 all round); the earlier style override lost to the rows card's `paddingVertical: 2` on web. Measured: STEP 1 sits 16px under the card top at 390 and 1440, light and dark. Test: `installScreen` "M1".
+- **M2 fixed (R-131 computer rule):** `detect.ts` has a `mac-safari` kind (Safari 17 or later on a Mac, not Chrome); `InstallAsk.web.tsx` shows nothing for Firefox and other browsers that cannot install, waits `OFFER_WAIT_MS` (2.5 s, blank page colour meanwhile) for a computer's Chrome or Edge offer and then steps aside, shows the Install button on an offer, Add to Dock steps for Safari on a Mac; the "open in Chrome or Edge" screen is gone. No computer copy says home screen (test).
+- **Lows fixed:** iPad's Share step says "top of Safari" (`isIpad`, test); the `pwa` line in package.json indented.
+- **One assertion changed on purpose:** `installDetect` "iPadOS Safari ... a Mac does not" expected a Mac Safari to be `cannot`; the lead's new rule makes it `mac-safari`, so that line now expects it (commented in the test). Nothing else edited.
+- Tests added: Safari 16 and Chrome on a Mac, iPad vs iPhone, card padding, Dock steps, no "home screen" on computer states, and in `installAskWeb`: desktop Chrome with an offer, with no offer (steps aside), Firefox (no screen), Safari 17 on a Mac.
+- Pictures: 28 in /tmp/wmt-shots/webapp-11/round1/ (iPhone and iPad Safari, Mac Safari, Android menu steps, Chrome install on a computer, each 390 and 1440 light and dark; Firefox and Chrome-with-no-offer showing the app straight away), all looked at.
+

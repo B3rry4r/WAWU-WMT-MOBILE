@@ -2,7 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { InstallView, IOS_STEPS } from '@/features/install/InstallView';
+import { StyleSheet } from 'react-native';
+
+import { copyFor, InstallView, IOS_STEPS } from '@/features/install/InstallView';
 import { InstallAskScreen, useInstallAsk } from '@/features/install/InstallAsk';
 import type { InstallContext } from '@/features/install/detect';
 
@@ -56,6 +58,37 @@ describe('the install screen says the right thing for each place (R-131)', () =>
   it('no copy carries an em-dash', () => {
     const src = readFileSync(join(__dirname, '../features/install/InstallView.tsx'), 'utf8');
     expect(src.includes('—')).toBe(false);
+  });
+});
+
+describe('round 1', () => {
+  it('M1: the steps card has the shared card padding all round (not the rows card 2)', async () => {
+    await draw({ kind: 'ios-safari' });
+    const style = StyleSheet.flatten(screen.getByTestId('install-steps').props.style);
+    expect(style.padding).toBe(16);
+    expect(style.paddingVertical).toBeUndefined();
+  });
+  it('an iPad is told the Share button is at the top; an iPhone at the bottom', () => {
+    expect(copyFor({ kind: 'ios-safari' }, false, false, true).steps[0].text).toMatch(/top of Safari/);
+    expect(copyFor({ kind: 'ios-safari' }, false, false, false).steps[0].text).toMatch(/bottom of Safari/);
+  });
+  it('Safari on a Mac gets File, Add to Dock', async () => {
+    await draw({ kind: 'mac-safari' });
+    expect(screen.getByText('Choose File in the menu bar.')).toBeTruthy();
+    expect(screen.getByText('Choose Add to Dock.')).toBeTruthy();
+    expect(screen.getByTestId('install-continue')).toBeTruthy();
+  });
+  it('words on a computer never say home screen', () => {
+    const states: [InstallContext, boolean, boolean][] = [
+      [{ kind: 'chromium', os: 'desktop' }, true, false],
+      [{ kind: 'chromium', os: 'desktop' }, false, false],
+      [{ kind: 'chromium', os: 'desktop' }, true, true],
+      [{ kind: 'mac-safari' }, false, false],
+    ];
+    for (const [ctx, can, done] of states) {
+      const c = copyFor(ctx, can, done);
+      expect(JSON.stringify(c)).not.toMatch(/home screen/i);
+    }
   });
 });
 

@@ -10,6 +10,8 @@ export type InstallContext =
   | { kind: 'inapp'; app: InAppName; os: 'ios' | 'android' | 'other' }
   /** Safari on an iPhone or an iPad (iPadOS asks for a desktop page, so it is told by touch points): Share, then Add to Home Screen. */
   | { kind: 'ios-safari' }
+  /** Safari 17 or later on a Mac: File, Add to Dock. */
+  | { kind: 'mac-safari' }
   /** Chrome, Firefox or Edge on iOS: Add to Home Screen is Safari's, so the person is sent there. */
   | { kind: 'ios-other' }
   /** Chrome, Edge, Samsung Internet, Opera: the browser can install (the Install button when it offers the prompt, else its menu). */
@@ -51,6 +53,11 @@ export function isIos(ua: string, maxTouchPoints = 0): boolean {
   return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1);
 }
 
+/** An iPad (its Safari asks for a desktop page, so a Mac with touch points): its Share button is at the top of Safari, an iPhone's at the bottom. */
+export function isIpad(ua: string, maxTouchPoints = 0): boolean {
+  return /iPad/.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1);
+}
+
 export function detectInstallContext(s: Signals): InstallContext {
   if (s.displayModeStandalone || s.navigatorStandalone) return { kind: 'standalone' };
   const ua = s.userAgent ?? '';
@@ -60,6 +67,8 @@ export function detectInstallContext(s: Signals): InstallContext {
   if (app) return { kind: 'inapp', app, os: ios ? 'ios' : android ? 'android' : 'other' };
   if (ios) return /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua) ? { kind: 'ios-other' } : { kind: 'ios-safari' };
   if (/Firefox\//.test(ua) && !android) return { kind: 'cannot' };
+  const safari = /Macintosh/.test(ua) && /Version\/(\d+)/.exec(ua) && !/Chrome\/|Chromium\/|Edg\/|OPR\//.test(ua) ? Number(/Version\/(\d+)/.exec(ua)?.[1]) : 0;
+  if (safari >= 17) return { kind: 'mac-safari' };
   if (/Chrome\/|Chromium\/|Edg\/|SamsungBrowser\/|OPR\//.test(ua)) return { kind: 'chromium', os: android ? 'android' : 'desktop' };
   // Firefox on Android and anything unknown on a phone: its own menu may offer Add to Home screen.
   if (android) return { kind: 'chromium', os: 'android' };

@@ -1,4 +1,4 @@
-import { detectInstallContext, inAppName } from '@/features/install/detect';
+import { detectInstallContext, inAppName, isIpad } from '@/features/install/detect';
 
 /** WEBAPP-11 (R-131): each browser the install screen tells apart, from its real user agent. */
 const UA = {
@@ -26,7 +26,8 @@ describe('a person is told apart by where they opened the app', () => {
   });
   it('iPadOS Safari (asks for a desktop page, has touch) gets the Share steps; a Mac does not', () => {
     expect(detectInstallContext({ userAgent: UA.ipadSafari, maxTouchPoints: 5 })).toEqual({ kind: 'ios-safari' });
-    expect(detectInstallContext({ userAgent: UA.macSafari, maxTouchPoints: 0 })).toEqual({ kind: 'cannot' });
+    // Round 1 (lead rule for computers): Safari 17 or later on a Mac is told File, Add to Dock.
+    expect(detectInstallContext({ userAgent: UA.macSafari, maxTouchPoints: 0 })).toEqual({ kind: 'mac-safari' });
   });
   it('Chrome on an iPhone is sent to Safari', () => {
     expect(detectInstallContext({ userAgent: UA.iphoneChrome })).toEqual({ kind: 'ios-other' });
@@ -63,3 +64,17 @@ describe('a person is told apart by where they opened the app', () => {
     expect(detectInstallContext({ userAgent: UA.iphoneInstagram, displayModeStandalone: true })).toEqual({ kind: 'standalone' });
   });
 });
+
+describe('round 1: computers and iPad', () => {
+  it('Safari 16 on a Mac cannot install; Chrome on a Mac is Chromium, not Safari', () => {
+    expect(detectInstallContext({ userAgent: UA.macSafari.replace('Version/18.1', 'Version/16.6') })).toEqual({ kind: 'cannot' });
+    expect(detectInstallContext({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' })).toEqual({ kind: 'chromium', os: 'desktop' });
+  });
+  it('an iPad is told from an iPhone', () => {
+    expect(isIpad(UA.ipadSafari, 5)).toBe(true);
+    expect(isIpad('Mozilla/5.0 (iPad; CPU OS 18_1 like Mac OS X) AppleWebKit/605.1.15 Version/18.1 Mobile/15E148 Safari/604.1', 5)).toBe(true);
+    expect(isIpad(UA.iphoneSafari, 5)).toBe(false);
+    expect(isIpad(UA.macSafari, 0)).toBe(false);
+  });
+});
+

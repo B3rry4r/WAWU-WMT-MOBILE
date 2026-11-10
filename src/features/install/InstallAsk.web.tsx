@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { View } from 'react-native';
 
-import { detectInstallContext, type InstallContext } from './detect';
+import { useWawu } from '@/theme';
+
+import { detectInstallContext, isIpad, type InstallContext } from './detect';
 import { InstallView } from './InstallView';
 
 /** The browser's own install offer, held until the button is pressed. Typed here: the DOM lib has no `BeforeInstallPromptEvent`. */
@@ -11,6 +14,11 @@ const KEY = 'wmt.install.continued';
 let deferred: InstallPromptEvent | null = null;
 let installedNow = false;
 let continued = false;
+/** A computer's Chrome or Edge that was offered no install within the wait: most often the app is already installed, so the screen steps aside. */
+let noOffer = false;
+
+/** How long a computer's Chrome or Edge waits for the browser's offer before the screen steps aside. */
+export const OFFER_WAIT_MS = 2500;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -21,6 +29,8 @@ function remembered(): boolean {
     return continued;
   }
 }
+
+const isDesktopChromium = (c: InstallContext) => c.kind === 'chromium' && c.os === 'desktop';
 
 /** Read now, from the page itself: the standalone flags and the user agent. */
 export function readContext(): InstallContext {
@@ -64,7 +74,21 @@ const subscribe = (l: () => void) => {
 export function useInstallAsk(): boolean {
   const [context] = useState(readContext);
   const gone = useSyncExternalStore(subscribe, () => continued || remembered(), () => true);
-  return context.kind !== 'standalone' && !gone;
+  const skipped = useSyncExternalStore(subscribe, () => noOffer && deferred === null && !installedNow, () => true);
+  useEffect(() => {
+    if (!isDesktopChromium(context) || gone) return undefined;
+    const t = setTimeout(() => {
+      if (deferred === null && !installedNow) {
+        noOffer = true;
+        emit();
+      }
+    }, OFFER_WAIT_MS);
+    return () => clearTimeout(t);
+  }, [context, gone]);
+  // Standalone (from the icon) and a browser that cannot install (Firefox) show no screen; neither does a computer's Chrome with no offer.
+  if (context.kind === 'standalone' || context.kind === 'cannot') return false;
+  if (isDesktopChromium(context) && skipped) return false;
+  return !gone;
 }
 
 /** Test seam: forget what this tab did. */
@@ -72,6 +96,7 @@ export function resetInstallAsk(): void {
   deferred = null;
   installedNow = false;
   continued = false;
+  noOffer = false;
   try {
     sessionStorage.removeItem(KEY);
   } catch {
@@ -147,9 +172,14 @@ export function InstallAskScreen() {
     emit();
   }, []);
 
+  const { colors } = useWawu();
+  // A computer's Chrome or Edge shows nothing until the browser's offer arrives (or the wait ends and the screen steps aside).
+  if (isDesktopChromium(context) && prompt === null && !installed) return <View testID="install-waiting" style={{ flex: 1, backgroundColor: colors.surfacePage }} />;
+
   return (
     <InstallView
       context={context}
+      ipad={isIpad(navigator.userAgent, navigator.maxTouchPoints)}
       canPrompt={prompt !== null}
       installed={installed}
       copied={copied}
