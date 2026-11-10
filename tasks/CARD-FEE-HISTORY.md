@@ -28,7 +28,8 @@ As of 10 Nov 2026, built by a Sonnet builder (T2) on wawu-backend `wmt/CARD-FEE-
 - **USD label (finding, no change):** Nuvion's cards are USD cards funded from the naira account, converting at use (`docs/nuvion/DEV-RESULTS.md`, WALLET-31: "A USD card on a naira account", a EUR card refused with 400 `error_operation_invalid_for_state`; the stand-in answers `currency: USD`; the adapter reads the provider's `currency`, default USD). The Hub's "USD" is right. Fintava has no cards. Nothing changed.
 - **Backfill (proposed, NOT RUN):** cards made before the fix have no fee row. The count query and the script outline are in `tasks/history/CARD-FEE-HISTORY.md`; it needs the owner's word and a run on a copy first.
 - **Tests:** the Hub card, history and ledger specs, the protected routes (253 of 253 on main and on the branch), the stack proof and the gates are in `tasks/history/CARD-FEE-HISTORY.md`. NOT RUN: the whole `npm run test:contract` in one go (the machine's memory limit killed it, EXIT 137; folder by folder it matches main), the nightly reconcile, a real provider.
-- **Waits for:** the verifier, then the owner's word to merge.
+- **Verifier (T2, 10 Nov 2026): FIX.** Money path holds (history equals the provider's balance with both fees above zero, once-only on replay, parallel, webhook and reads, protected 253 of 253). One medium: the issuer row names the other side "WAWU's fee" though the provider takes it (R-10 naming: "Bank charge"). Full report in `tasks/history/CARD-FEE-HISTORY.md`.
+- **Waits for:** the lead's ruling on the words (M1), a patch, a re-check, then the owner's word to merge.
 
 ## Read first
 
