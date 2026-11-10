@@ -7,7 +7,7 @@ order: 377
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: building
 depends_on: []
 decisions: [R-131, R-47, R-86, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,14 +19,14 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026, branch `wmt/WEBAPP-11` (from `wmt/BATCH-1110`).
-- **Status:** verifying. Built by a Sonnet builder; checks and pictures below.
+- **Status:** building (verifier said FIX, 10 Nov 2026). Round 2: fix M1 (steps card padding, use `Card padded`) and M2 (desktop wording: no home screen on a computer); re-shoot 390 light and dark and 1440. Verifier report in history/WEBAPP-11.md.
 - **Done:** the web export now carries a manifest (`public/manifest.webmanifest`, content type `application/manifest+json`), icons at 192 and 512 in any and maskable plus a 180 Apple touch icon (`public/pwa/`), and the Apple tags and `theme-color` in `public/index.html`. All made by `npm run pwa` (`scripts/web/gen_pwa.js`) from the app icon (app.json `icon`) and the theme tokens (theme colour = accent, background = dark page); `src/__tests__/pwaManifest.test.ts` fails if they drift.
 - **Install screen** (`src/features/install/`): `detect.ts` (user agent and standalone flags), `InstallView.tsx` (the screen, shared parts only), `InstallAsk.web.tsx` beside the inert `InstallAsk.tsx`. The root layout draws it instead of the app, in a browser tab not opened from the icon, until "Continue in the browser" (remembered for the tab in sessionStorage, so a new tab or launch asks again). The router is not drawn meanwhile, so the opened address (invite, piece, payment return) is untouched and opens after the screen. States: Install button (browser offer caught as `beforeinstallprompt`, `prompt()` on press), menu steps (Chromium with no offer yet), iPhone and iPad Safari steps, in-app browser (Instagram, WhatsApp, Facebook, Messenger, X, TikTok, LinkedIn, Snapchat, Line, any bare web view): open in Safari (iOS) or Chrome with Copy link, Chrome/Firefox/Edge on iOS (open in Safari), a browser that cannot install (Firefox or Safari on a computer), installed.
 - **Decisions (agent, owner may override):** `display-mode` standalone, fullscreen or minimal-ui and `navigator.standalone` all count as opened from the icon; the screen shows on desktop browsers too (R-131 names Chrome and Edge on a computer); the "pictures" for the iOS steps are the app's own Share, Plus and phone glyphs, not a drawing of Safari (design gap G-WEBAPP-11-1, R-29).
 - **Fenced files:** SHARED-CHANGES WEBAPP-11 #1 (`src/app/_layout.tsx` three lines and one import; `package.json` one script). `vercel.json` unchanged: the CSP's `default-src 'self'` covers the manifest, `img-src 'self'` the icons.
 - **PHONE CHECK:** none; the phone files are untouched (inert `InstallAsk.tsx` returns false).
 - **NOT RUN:** real iPhone Safari and real Instagram or WhatsApp browsers (user agent and viewport only, in Chromium); the Android "opens from its icon" step on a real device (proved with Chromium's real installability, a real `beforeinstallprompt` and a Chrome `--app` window reporting `display-mode: standalone`); a piece link with real data (no Hub stack was started: the screen needs none; a `/content/<id>` link was proved to keep its address and be saved for return after sign-in); Lighthouse (Chromium's own `Page.getInstallabilityErrors` read instead: none).
-- **Next:** a verifier.
+- **Next:** the builder fixes M1 and M2, then a second verifier pass (pictures of the steps states only).
 
 ## Read first
 

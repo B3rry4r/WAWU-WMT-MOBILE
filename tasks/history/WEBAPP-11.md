@@ -13,3 +13,27 @@ Files: `public/manifest.webmanifest`, `public/index.html`, `public/pwa/*.png` (g
 
 ## Verifier report
 
+Verifier (T1, 10 Nov 2026), branch wmt/WEBAPP-11 4fe16e4. Export from a clean worktree (own TMPDIR) served by a node server that applies vercel.json's headers and SPA rewrite verbatim (CSP not changed at all: no hosts needed swapping; Chrome run with a resolver rule that blocks every host but 127.0.0.1, so nothing reached the live Hub). Evidence: /tmp/wmt-shots/webapp-11-verify/ (51 pictures: ua-*, state x 390 light/dark x 1440, install-button, installed, real-chrome) and scripts in /tmp/w11v/.
+
+VERDICT: FIX (two medium defects, both small).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | typecheck EXIT 0; lint EXIT 0 (0 errors, 10 warnings, none in this diff); jest -w 2: 510 suites passed, 17 failed under machine load 30 to 50 (2205 s, a shared box), all 17 re-run alone with -w 1 --onlyFailures: 17 passed, 561 tests (fxTabs, payoutAccountScreen, editEvent, unlockFlow, InboxScreen, ResetPinScreen, hostScreens, tipFlow, buyTickets, VisitorProfileScreen, RoomScreen, auth-welcome, LegalPayments, abroadFlow, roomModeration, slider, fxStrip); gates EXIT 0 (baseline 0, 63 unit tests OK); tasks EXIT 0 (522 tasks). Diff: no existing test changed, only 4 new ones; nothing weakened. |
+| V4 | passed | Real Chrome 153: Page.getInstallabilityErrors [] and getAppManifest errors []; name "Who Made This?", start_url and scope "/", display standalone, theme #9411C9 = accent token, background #0B0A0D = surfacePage token; 4 icons + apple-touch load 200 image/png at 192, 512, 192, 512, 180 exact; manifest served application/manifest+json; maskable artwork sits inside the 80 percent safe zone (looked at); zero CSP console errors; beforeinstallprompt fired once, Install pressed calls prompt() once. `npm run pwa` rewrites byte-identical files. |
+| V5 | passed with findings | pictures looked at one by one (list above); see M1, M2. No board draws it (G-WEBAPP-11-1), built from shared parts, tokens only, no em-dashes (grep). |
+| V6 | passed | every state reached by its real cause (user agent, real beforeinstallprompt, appinstalled event): Install, menu steps, iOS Safari steps, in-app iOS and Android, iOS other, cannot, installed. |
+| V7 | passed | Continue from Android Chrome, iPhone Safari, Instagram iOS (same run): /r/ABC123?x=1 ends /welcome with wmt.referral.pending=ABC123 (identical with the screen skipped); /content/abc123, /receipt/xyz, /join, /bills keep their address while the screen is up and are saved as return path after it; reload in the same tab: no screen; a new tab: screen again. Chrome crashed under the load for a few remaining combinations (WhatsApp Android, iOS Chrome, desktop Firefox, desktop Chrome Continue not walked; their states were proved by detection) : NOT RUN for those Continue clicks. Standalone: a real Chrome --app window reports display-mode standalone and shows /welcome, no screen; emulated fullscreen, minimal-ui, standalone: no screen. |
+| V9 | NOT RUN | no Hub needed; the screen touches no endpoint. |
+
+Detection (24 user agents, headless at 390): Android Chrome, Samsung, desktop Chrome, desktop Edge, Firefox on Android: Chromium state (menu steps or Install when offered); iPhone Safari, iPad Safari, iPad desktop-mode UA (Macintosh + touch points): iOS Safari steps; iOS Chrome, Firefox, Edge: open in Safari; Instagram, WhatsApp, Facebook, TikTok, X on iOS: open in Safari; the same on Android: open in Chrome; desktop Firefox and Safari: cannot install. All correct; no wrong state.
+
+Phone unchanged: diff touches no app.json, eas.json, ios or android file; InstallAsk.tsx imports nothing and returns false/null; platformPairs and installScreen passed in the full run; an Android-platform render of the root layout was not run separately (NOT RUN, the full suite renders it as before).
+
+Findings:
+- M1 defect (medium): in every state with steps (iOS Safari, menu steps, desktop Chrome) the steps card has no vertical padding: "STEP 1" sits against the card's top edge and the last line against the bottom, at 390 light and dark and at 1440 (ios-safari-390-dark.png, ios-safari-1440-light.png, desktop-chrome-menu-1440-light.png). Cause: `Card` without `padded` sets paddingVertical 2 and that beats the `padding: space.lg` passed in `styles.steps` on web. Fix: use `<Card padded>` (or paddingVertical in the style). The builder changed this area after its pictures.
+- M2 defect (medium): on a computer (desktop Chrome and Edge with no offer) the screen says "Put Who Made This on your home screen" and step 3 "Open Who Made This from your home screen" (desktop-chrome-menu-*.png). A computer has no home screen. R-131 names Chrome and Edge on a computer. Fix: desktop wording (for example "Install Who Made This" and "Open it from your apps"), steps for the address-bar install icon.
+- L1 low: iPad Safari has Share at the top, the step says "at the bottom of Safari".
+- L2 low: package.json `"pwa"` line is indented two spaces, inside scripts (works, `npm run pwa` runs).
+- L3 low (test-gap): no test pins the desktop wording or the steps card padding; a snapshot of the card style would kill M1.
+- Note: with the screen, /bills and /receipt paths were saved as the return path where the screen-skipped baseline run read none (it read localStorage only); both end at /welcome. Not a defect.
