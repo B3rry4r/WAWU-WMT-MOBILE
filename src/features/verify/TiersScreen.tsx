@@ -100,7 +100,15 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
   } else if (choices.length === 0) {
     // A person on the highest tier has nothing to move up to; a store with no tier on sale has nothing to sell: nothing is offered.
     body = held ? (
-      <ErrorState testID="tiers-none" icon="TriangleAlert" title="You are on the highest tier" message="There is no tier above yours to move up to." />
+      Platform.OS === 'web' ? (
+        // WEBAPP-09 W2: the sheet has a way out on the web as the dollar person's has.
+        <View testID="tiers-none-top" style={styles.list}>
+          <ErrorState testID="tiers-none" icon="TriangleAlert" title="You are on the highest tier" message="There is no tier above yours to move up to." />
+          <Button testID="tiers-close" label="Close" variant="secondary" full onPress={onClose} />
+        </View>
+      ) : (
+        <ErrorState testID="tiers-none" icon="TriangleAlert" title="You are on the highest tier" message="There is no tier above yours to move up to." />
+      )
     ) : Platform.OS === 'web' ? (
       // WEBAPP-08 F4: the web sells in naira only, so a person billed in dollars lands here: the sheet keeps its title and a way out (R-94).
       <View testID="tiers-none-web" style={styles.list}>

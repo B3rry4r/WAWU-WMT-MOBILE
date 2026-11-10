@@ -433,6 +433,13 @@ function ReplyComposer({ busy, onSend, onPlus }: { busy: boolean; onSend: (text:
     if (!hasWords || busy) return;
     if (await onSend(value)) setValue('');
   };
+  // WEBAPP-09 W6: in a browser Enter sends and Shift+Enter makes a new line, as the room and chat boxes do (not while an input method is composing).
+  const sendOnEnter = (e: { nativeEvent: { key?: string; shiftKey?: boolean; isComposing?: boolean }; preventDefault?: () => void }) => {
+    const k = e.nativeEvent;
+    if (k.key !== 'Enter' || k.shiftKey || k.isComposing) return;
+    e.preventDefault?.();
+    void press();
+  };
   return (
     <View testID="paid-composer" style={[styles.composer, { backgroundColor: colors.surfaceChrome, borderTopColor: colors.borderHairline, paddingBottom: Math.max(insets.bottom, space.lg) }]}>
       {onPlus ? (
@@ -458,6 +465,7 @@ function ReplyComposer({ busy, onSend, onPlus }: { busy: boolean; onSend: (text:
         numberOfLines={Platform.OS === 'web' ? 1 : undefined}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
+        onKeyPress={Platform.OS === 'web' ? sendOnEnter : undefined}
         style={[
           styles.field,
           Platform.OS === 'web' ? browserOutlineOff : null,

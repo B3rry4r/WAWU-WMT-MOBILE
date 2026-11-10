@@ -622,6 +622,8 @@ describe('a person who is not in the room', () => {
     await renderRoom();
     expect(await rtl.screen.findByTestId('room-not-member')).toBeTruthy();
     expect(rtl.screen.getByText('Freelancers in Lagos.')).toBeTruthy();
+    // WEBAPP-09 W7: the Hub lets only members read a room (its 403 above), so the page says to join first and that both are free.
+    expect(rtl.screen.getByText('Join to read and write here. Joining is free, and so is reading.')).toBeTruthy();
     expect(rtl.screen.queryByTestId('composer')).toBeNull();
     await rtl.fireEvent.press(rtl.screen.getByTestId('room-join'));
     expect(await rtl.screen.findByText('welcome in')).toBeTruthy();
