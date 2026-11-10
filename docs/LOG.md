@@ -1,4 +1,5 @@
 # Work log
+- 10 Nov 2026 · CARD-FEE-HISTORY · the virtual card's fee is a row in the wallet history (Hub `wmt/CARD-FEE-HISTORY` `ef56ba3`: issuer fee row written with the card, WAWU fee its own row; no migration; protected 253 of 253 both sides; stack proof 550,100 to 484,328 and the list adds up); built, verifying
 - 10 Nov 2026 · WEBAPP-09 · second web walk fixes W1 to W7 built (mid-sign-up links lead on, /tiers always closes, points sheet shows the Hub grant, two-tab payment shows paid, upgrade row, Enter sends a paid reply, room join words); checks EXIT 0
 - 9 Nov 2026 · WEBAPP-08 · web walk fixes F1 to F15 built (live purchase hook in the export, wss in the CSP, dollars offer, sign-up draft, wallet words, Enter sends); checks EXIT 0
 - 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)
