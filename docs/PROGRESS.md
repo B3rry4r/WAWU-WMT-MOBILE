@@ -7,7 +7,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 39 | 0 | 0 | 0 |
+| todo | 41 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 47 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
