@@ -98,3 +98,27 @@ Hub 2cd4425 on top of 02c0344. 1 MEDIUM web upload at publish: `settleSlowUpload
 2 LOW cool-down: a key that failed 3 times is tried again after 30 minutes, then gets 3 more tries; a file that cannot be read after 6 hours; a file not in the bucket yet (NotFound) costs no try. Spec with a mocked clock. 3 LOW WebM: 1,500 ms planning budget and at most 1,000 element reads; spec with slow reads gives up (Unreadable) in under 4 s.
 Checks: new and affected specs 41 tests EXIT 0 (video-privacy, -stored, -ffmpeg, -pending, settle-slow-video-clean); eslint on changed files EXIT 0; gates EXIT 0, baseline EXIT 0; `NODE_OPTIONS=--max-old-space-size=4096 npx tsc --noEmit` EXIT 0 on try 1. Stack down, vp database dropped, stand-in stopped.
 NOT RUN: the pending sweep on a stack (specs only); real phone files; live Hub and bucket; sweep `apply`.
+
+## Verifier report
+
+Round 2 re-check (T1 verifier, 10 Nov 2026), Hub head 2cd4425, stack `vpv` on 16100-16109, storage stand-in 16115. Verdict: **MERGE** (nothing medium or worse; lows below).
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| 1 pending rows | passed | web-style (presign + PUT, no confirm, row `pending`, tagged before): mp4 and mov to content/full with a preview, then `POST /content` 201: full and preview read back clean, row still `pending`. Reconcile: a pending row aged 40 min settled by an owner's `GET /uploads/usage` becomes `confirmed` and is clean 1.5 s later. Sweep: a never-published pending row was clean within one tick (under 10 min). A released row and a row being removed stayed dirty (never touched). Another person naming a pending file in `POST /content` got 400 and the file stayed dirty. |
+| 2 the spec edit | passed | `settle-slow-video-clean.spec.ts` was added by the builder in round 1 (02c0344, `git log --diff-filter=A`), not on main; round 2 drops `status: 'confirmed'` and asserts `not.toHaveProperty('status')`, which matches the new query (own, not released, not removing, any status). It checks the query shape only; the behaviour is the stack run above. |
+| 3 cool-down, WebM budget | passed | clock moved on a dead bucket: 3 tries, then 0 requests, still 0 at 29 min, one try at 31 min, then a good bucket cleans; an unreadable file: 0 requests at 1 h and 5.9 h, looks again at 6.1 h; a file not in the bucket yet: 5 calls, each only a HEAD, no try counted, cleans the moment it lands. WebM: 2,000,000-element loop with 0 ms reads stops at 1,002 reads; with 3 ms reads leaves at 1,510 ms ("planning took too long", 452 reads); a normal tagged WebM with 3 ms reads plans in 35 ms. |
+| 4 no regression | passed | cpu.mp4, huge stco, co64, stsc, 20,000-deep nest, 500,000 small boxes, WebM loop and WebM huge element, 8 at once through the real confirm: all `confirmed` in 70 to 1,804 ms (the WebM loop), /health polled 12 times: 1.4 to 58 ms. iphone_start.mov and xmp_android_end.mp4 through the route: read back raw 0, tags 0, decode EXIT 0. |
+| 5 checks | passed | tsc --noEmit EXIT 0 (4 GB, alone); eslint on changed files EXIT 0; gates EXIT 0 (9 gates, 2230 files, 0 fail, 139 warn); check_baseline EXIT 0; new and affected specs (video-privacy x4, settle-slow-video-clean) 5 suites, 41 tests EXIT 0; contract run on src/storage + src/content-piece: 44 suites, 5 fail (all content-piece suites that also fail on main on my unseeded database, same test names, none in storage). |
+
+Findings
+- **low: a long WebM on a slow bucket is left.** The 1.5 s budget counts as unreadable (6 hour wait). At 50 ms per read only about 30 elements are walked; a browser recording has no Tags, but one with Tags after hundreds of clusters would stay tagged. Not a regression of a phone file (phones write MP4/MOV).
+- **low: a web piece is cleaned at publish, but a file over 100 MiB is cleaned in the background** (as stated in round 1): unchanged.
+- **low: window from the pre-write HEAD to the commit of the PUT** overwrites a replacement (stated).
+
+NOT RUN: a real iPhone or Android file and Apple players; the web app's own upload screen (the web flow was driven by hand with presign + PUT, no confirm); the full 699-spec contract run (CI's); a real bucket's If-Match behaviour; the sweep script `apply` this round (round 0 result stands, code unchanged).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/VIDEO-PRIVACY.md](history/VIDEO-PRIVACY.md).
+

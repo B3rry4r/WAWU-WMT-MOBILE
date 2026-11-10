@@ -8,9 +8,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 38 | 0 | 0 | 0 |
-| building | 8 | 0 | 0 | 0 |
+| building | 7 | 0 | 0 | 0 |
 | verifying | 44 | 0 | 0 | 0 |
-| review | 248 | 0 | 0 | 0 |
+| review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -262,6 +262,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-07](../tasks/WEBAPP-07.md) The whole web app walked as every kind of user (You)
 - [TIER-UPGRADE-FIX](../tasks/TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for (You)
 - [WEBAPP-08](../tasks/WEBAPP-08.md) The web walk's fixes (Phase 1 fix batch) (You)
+- [VIDEO-PRIVACY](../tasks/VIDEO-PRIVACY.md) A video someone uploads carries no location or device data (You)
 - [WEBAPP-09](../tasks/WEBAPP-09.md) The second web walk's fixes (Phase 1, last batch) (You)
 
 ## Being verified
@@ -320,7 +321,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 - [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
 - [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
-- [VIDEO-PRIVACY](../tasks/VIDEO-PRIVACY.md) A video someone uploads carries no location or device data (You)
 
 ## Done
 

@@ -7,7 +7,7 @@ order: 372
 priority: after-launch
 repo: wawu-backend
 type: flow
-status: building
+status: review
 depends_on: []
 decisions: [R-127]
 passes: [V1, V3, V4, V6, V7, V9]
@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** building (round 1 re-check found one medium: a web upload that stays `pending` is not cleaned at publish). Hub `wmt/VIDEO-PRIVACY` head 02c0344 (no merge, a Hub merge deploys). Mobile: this file only. Round 0 verifier report and round 1 builder report are in `tasks/history/VIDEO-PRIVACY.md`.
+- **Status:** review (round 2 verifier: MERGE, no medium or worse; lows in the report). Hub `wmt/VIDEO-PRIVACY` head 2cd4425 (no merge, a Hub merge deploys). Mobile: this file only. Round 0 verifier report and round 1 builder report are in `tasks/history/VIDEO-PRIVACY.md`.
 - **Method (no ffmpeg, no re-encode, no offset rewrite):** every change keeps the size of the bytes it replaces, so each chunk offset stays valid.
   - MP4 and MOV: `udta`, `meta`, XMP boxes under `moov`, each `trak` and at the top become `free` with zeroed bodies; creation and modification times in `mvhd`, `tkhd`, `mdhd` are zero; `free` and `skip` bodies are zeroed (inside `moov` and at the top); EVERY top-level `uuid` becomes `free`; bytes after the last box (a phone maker's trailer) are zeroed; a timed-metadata track (`meta`, `mebx`, `gpmd`, `camm`) becomes `free` and its samples are zeroed (not in a fragmented file).
   - Kept on purpose: `ftyp`, `styp`, `moov`, `mdat`, `moof`, `sidx`, `mfra` and the other structure boxes; non-XMP `uuid` boxes inside `moov` (they can carry stream setup or DRM); handler names and encoder strings (they name no device; the Vorbis/Opus comment header in a WebM keeps `encoder=Lavc...`). Top-level boxes of unknown type are left.
@@ -31,7 +31,7 @@ As of 10 Nov 2026.
 - **Sweep for videos already stored (NOT RUN):** wawu-backend `scripts/sweep-stored-videos.ts` (`count`, `plan`, `apply` with `VIDEO_SWEEP_OWNER_OK=yes` on the owner's word). Worst case 2x the stored video bytes plus about 1 MB of reads per file; 1,000 videos of 60 MB is about 120 GB and 50 minutes at 20 MB/s, 2 at once.
 - **Round 2:** a web upload is never confirmed by the app, so its row is `pending` at publish. The publish and edit check now cleans every named key that is the caller's own and not released or being removed, whatever its status; the reconcile that settles a stale pending row cleans it (in the background); `confirmUpload` and `settleUpload` already did; the sweep reads the last 2 hours of pending rows too (20 per tick). A key that failed 3 times is tried again after 30 minutes (an unreadable file after 6 hours); a file not in the bucket yet costs no try. The WebM walk has the MP4 walk's 1.5 s planning budget and at most 1,000 reads.
 - **Waits for:** the verifier, then the owner's word to merge.
-- **Next:** builder cleans the caller's own named keys at publish whatever the row status, expires the give-up count, then verify again (see the round 1 verifier report in history).
+- **Next:** the owner's word to merge Hub `wmt/VIDEO-PRIVACY` 2cd4425 (a Hub merge deploys); the sweep of videos already stored stays NOT RUN until the owner's word.
 
 ## Read first
 
