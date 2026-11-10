@@ -4,7 +4,7 @@ title: The web app is installable and asks to be installed on launch
 owner: YOU
 area: WEB
 order: 377
-priority: launch
+priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
 status: todo

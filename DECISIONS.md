@@ -984,3 +984,7 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 - Web only: the phone app never shows it.
 **Carried out by:** WEBAPP-11 (Who Made This); VOICES bundle J (V-41 in the VOICES repo).
 
+### R-132 · Renew shows only when a tier is ending or has ended
+*Owner, 10 Nov 2026 ("a user is already on a plan, why are we still showing them the renew button?").* Your tier draws Renew only when the Hub says the tier is `ending` (its last days, the Hub's own window, an admin setting: a week today) or `ended`. A person whose tier is `active` sees Upgrade when a higher tier exists and no buy button at all on the highest tier. Phone and web alike.
+**Carried out by:** TIER-RENEW.
+

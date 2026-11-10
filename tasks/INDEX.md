@@ -419,7 +419,6 @@ Builder and verifier are always different sessions.
 401. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
 402. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
 403. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
-404. [WEBAPP-11](WEBAPP-11.md) The web app is installable and asks to be installed on launch
 
 ## You · after launch
 
@@ -496,6 +495,9 @@ Builder and verifier are always different sessions.
 71. [CARD-FEE-HISTORY](CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history
 72. [UPLOAD-WORDS](UPLOAD-WORDS.md) Every screen states the upload places the tier gives
 73. [HUB-TICK-PLACES](HUB-TICK-PLACES.md) A tick that starts after the cut-off adds no upload places
+74. [WEBAPP-11](WEBAPP-11.md) The web app is installable and asks to be installed on launch
+75. [TIER-RENEW](TIER-RENEW.md) Renew shows only when a tier is ending or has ended
+76. [WEBAPP-12](WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web
 
 ## Developer
 
