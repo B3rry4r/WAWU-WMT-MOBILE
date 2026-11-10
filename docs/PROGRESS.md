@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 38 | 0 | 0 | 0 |
-| building | 7 | 0 | 0 | 0 |
-| verifying | 45 | 0 | 0 | 0 |
+| building | 8 | 0 | 0 | 0 |
+| verifying | 44 | 0 | 0 | 0 |
 | review | 248 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -310,7 +310,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-02](../tasks/WEBAPP-02.md) On a laptop the app shows at phone width, centred (You)
 - [WEBAPP-03](../tasks/WEBAPP-03.md) The web app's small seams work in a browser (You)
 - [WEBAPP-04](../tasks/WEBAPP-04.md) Photos and voices uploaded from a browser are safe and play everywhere (You)
-- [VIDEO-PRIVACY](../tasks/VIDEO-PRIVACY.md) A video someone uploads carries no location or device data (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -321,6 +320,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 - [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
 - [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
+- [VIDEO-PRIVACY](../tasks/VIDEO-PRIVACY.md) A video someone uploads carries no location or device data (You)
 
 ## Done
 

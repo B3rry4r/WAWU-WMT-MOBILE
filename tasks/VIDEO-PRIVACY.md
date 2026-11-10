@@ -7,7 +7,7 @@ order: 372
 priority: after-launch
 repo: wawu-backend
 type: flow
-status: verifying
+status: building
 depends_on: []
 decisions: [R-127]
 passes: [V1, V3, V4, V6, V7, V9]
@@ -32,7 +32,7 @@ As of 10 Nov 2026.
 - **Stays:** photos are WEBAPP-04 (redrawn on the device). Creation times are zero in the file; the handler names and encoder strings (`VideoHandler`, `Lavc...`) stay, they name no device.
 - **Sweep for videos already stored (NOT RUN):** wawu-backend `scripts/sweep-stored-videos.ts`, modes `count` (database only), `plan` (ranged reads, no writes), `apply` (needs `VIDEO_SWEEP_OWNER_OK=yes`, set only on the owner's word). Worst case it moves 2x the stored video bytes plus about 1 MB of reads per file; at 20 MB/s per file and 2 at once, 1,000 videos of 60 MB is about 120 GB and 50 minutes. `count` on the live database gives the real figure. Detail in the history file.
 - **Waits for:** the verifier, then the owner's word to merge. The sweep of videos already stored waits for the owner's word (below).
-- **Next:** verifier on wawu-backend `wmt/VIDEO-PRIVACY`.
+- **Next:** builder fixes the verifier's high (bounded sample walk in clean-mp4.ts) and the two mediums (text left in uuid/free/tail; changed-object guard), then verify again.
 
 ## Read first
 
