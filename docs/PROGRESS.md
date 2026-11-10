@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 446.**
+**Launch tasks done: 176 of 447.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 36 | 0 | 0 | 0 |
+| todo | 37 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 47 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
@@ -510,7 +510,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
+- **You:** [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks, [WEBAPP-11](../tasks/WEBAPP-11.md) The web app is installable and asks to be installed on launch
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked

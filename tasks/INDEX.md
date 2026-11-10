@@ -419,6 +419,7 @@ Builder and verifier are always different sessions.
 401. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
 402. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
 403. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+404. [WEBAPP-11](WEBAPP-11.md) The web app is installable and asks to be installed on launch
 
 ## You · after launch
 

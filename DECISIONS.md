@@ -975,3 +975,12 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 1. A creator can take any of their own pieces down, live or in review, from My uploads and from the piece's own page (CREATOR-TAKEDOWN), and the place is freed at once.
 2. Everyone who paid for the piece before it came down keeps it in My purchases, on the phone and the web, for as long as they would have had it; it is gone from the creator's profile, search, feeds and sale.
 **Carried out by:** CREATOR-TAKEDOWN (app; the Hub where buyers' access needs it).
+
+### R-131 · The web app asks to be installed on the home screen before it is used
+*Owner, 10 Nov 2026 ("on launch of it, they are prompted to install it first", for Who Made This and VOICES alike).*
+1. **Installable.** The web app is an installable web app: a manifest with its name, short name, the app icon (any and maskable, 192 and 512), its colours, `display: standalone` and a start address, plus the Apple home-screen tags, so it opens from its own icon like an app.
+2. **Asked first.** Opened in a browser tab (not from the icon), the app first shows an install screen before anything else: on a browser that can install (Chrome, Edge, Samsung Internet on Android and on a computer) an Install button that opens the browser's own install; on an iPhone or iPad the steps with pictures (Share, then Add to Home Screen); inside another app's browser (Instagram, WhatsApp, Facebook, X, TikTok) the step to open the link in Safari or Chrome first, with a copy-link button. Opened from the icon, it never shows.
+3. **Never stuck (lead default, owner may override).** A small "Continue in the browser" stays at the foot of the screen, so a person whose browser cannot install still gets in; the screen comes back on the next launch in a browser. A link the person opened (an invite, a piece, a payment return) is kept and opened after the install screen.
+- Web only: the phone app never shows it.
+**Carried out by:** WEBAPP-11 (Who Made This); VOICES bundle J (V-41 in the VOICES repo).
+
