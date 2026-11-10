@@ -493,6 +493,11 @@ Builder and verifier are always different sessions.
 69. [VIDEO-PRIVACY](VIDEO-PRIVACY.md) A video someone uploads carries no location or device data
 70. [WEBAPP-09](WEBAPP-09.md) The second web walk's fixes (Phase 1, last batch)
 71. [CARD-FEE-HISTORY](CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history
+72. [UPLOAD-WORDS](UPLOAD-WORDS.md) Every screen states the upload places the tier gives
+73. [HUB-TICK-PLACES](HUB-TICK-PLACES.md) A tick that starts after the cut-off adds no upload places
+74. [WEBAPP-11](WEBAPP-11.md) The web app is installable and asks to be installed on launch
+75. [TIER-RENEW](TIER-RENEW.md) Renew shows only when a tier is ending or has ended
+76. [WEBAPP-12](WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web
 
 ## Developer
 

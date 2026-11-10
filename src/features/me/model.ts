@@ -320,8 +320,31 @@ export function headerBadgeOf(tier: MyTier | null | undefined, personBadge: Prof
 /** The meter under the counts (M1): products used of what the tier allows, and the tier (its name, state and end day) for the chip and "Until 30 Oct 2027". Null with no running tier or no allowance. */
 export type ProductsMeterView = { used: number; allowed: number; tier: MeterTier };
 
-export function productsMeterOf(tier: MyTier | null | undefined): ProductsMeterView | null {
+/** The Hub's own count of upload places (`GET /uploads/allowance`): the one number every screen states (R-129). */
+export type PlacesRead = { uploads: { used: number; allowed: number } };
+
+/**
+ * Used and allowed upload places for a person with a running tier. The Hub's `uploads.allowed` (what its publishing gate enforces) wins once it
+ * has answered; the tier read's own count stands in until then. The tier read supplies the name, the state and the end day, never the number
+ * a person is told when the two differ (R-129).
+ */
+export function placesOf(tier: MyTier, allowance: PlacesRead | null | undefined): { used: number; allowed: number } {
+  if (allowance && allowance.uploads.allowed > 0) return { used: allowance.uploads.used, allowed: allowance.uploads.allowed };
+  return { used: tier.productsUsed, allowed: tier.productsAllowed };
+}
+
+/**
+ * Whether every upload place the Hub allows is used (R-129): the Hub's `uploads.allowed` above 0 and `used` at or above it, whatever gives the
+ * places (a tier, a tick from before tiers, extra products). Until the allowance has answered, a running tier's own count stands in.
+ */
+export function atPlacesLimit(tier: MyTier | null | undefined, allowance: PlacesRead | null | undefined): boolean {
+  if (allowance) return allowance.uploads.allowed > 0 && allowance.uploads.used >= allowance.uploads.allowed;
+  const held = runningTier(tier);
+  return held !== null && held.productsAllowed > 0 && held.productsUsed >= held.productsAllowed;
+}
+
+export function productsMeterOf(tier: MyTier | null | undefined, allowance?: PlacesRead | null): ProductsMeterView | null {
   const held = runningTier(tier);
   if (!held || !(held.productsAllowed > 0)) return null;
-  return { used: held.productsUsed, allowed: held.productsAllowed, tier: { name: held.tier?.name, state: held.state, endsAt: held.activeUntil } };
+  return { ...placesOf(held, allowance), tier: { name: held.tier?.name, state: held.state, endsAt: held.activeUntil } };
 }

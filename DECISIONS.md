@@ -960,3 +960,31 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 2. The phone app is unchanged: the stores, as R-86 and R-101 say.
 3. A person without a wallet meets the open-wallet step first, as for any wallet payment (R-6).
 **Carried out by:** WEBAPP-06.
+
+### R-129 · Upload places come from the tier; a tick is the badge
+*Lead ruling, owner delegated, 10 Nov 2026 ("whatever is the right solution ... you decide and you put it proper"). Found by the second web walk: the verification page told a Founding Maker "Up to 25 uploads, 10 GB" (a tick, R-7) while the same account's Create and My content said "4 of 15" (its tier, TIER-02).*
+1. **One source.** How many pieces a person may publish comes from their tier (Verify, Verify Plus, Founding Maker, plus extra products bought), as the Hub already enforces (`PublishingAllowanceService`, TIER-02). A tick is verification and reach, not upload places.
+2. **Nobody loses what they paid for.** A tick bought before tiers keeps the 25 uploads and 10 GB R-7 gave it until that tick ends; the Hub already gives "whichever is more" and keeps doing so. No new tick adds upload places.
+3. **Every screen says the same number.** Wherever the app states upload places (the verification page, Create, My content, the limit sheet, the tiers list), it reads the Hub's `uploads.allowed` and the tier list; the verification page never promises "Up to 25 uploads" to a person who holds no such tick.
+- Amends R-7's upload figures for everyone who has no tick from before tiers. R-7's storage figures stand where the Hub applies them.
+- **When "before tiers" ends (lead, 10 Nov 2026, from UPLOAD-WORDS's finding that a tick bought today still raises the Hub's places):** the app promised "Up to 25 uploads" with every tick until UPLOAD-WORDS reaches phones and the web, so a tick that started before that day keeps 25 uploads until it ends, whenever it was bought. Only a tick that starts after it adds no places. The Hub sets the cut-off when the update ships (HUB-TICK-PLACES).
+**Carried out by:** UPLOAD-WORDS (app); HUB-TICK-PLACES (Hub, after the app update reaches phones).
+
+### R-130 · A piece taken down stays with the people who bought it
+*Owner, 10 Nov 2026 ("of course, buyers keep it").*
+1. A creator can take any of their own pieces down, live or in review, from My uploads and from the piece's own page (CREATOR-TAKEDOWN), and the place is freed at once.
+2. Everyone who paid for the piece before it came down keeps it in My purchases, on the phone and the web, for as long as they would have had it; it is gone from the creator's profile, search, feeds and sale.
+**Carried out by:** CREATOR-TAKEDOWN (app; the Hub where buyers' access needs it).
+
+### R-131 · The web app asks to be installed on the home screen before it is used
+*Owner, 10 Nov 2026 ("on launch of it, they are prompted to install it first", for Who Made This and VOICES alike).*
+1. **Installable.** The web app is an installable web app: a manifest with its name, short name, the app icon (any and maskable, 192 and 512), its colours, `display: standalone` and a start address, plus the Apple home-screen tags, so it opens from its own icon like an app.
+2. **Asked first.** Opened in a browser tab (not from the icon), the app first shows an install screen before anything else: on a browser that can install (Chrome, Edge, Samsung Internet on Android and on a computer) an Install button that opens the browser's own install; on an iPhone or iPad the steps with pictures (Share, then Add to Home Screen); inside another app's browser (Instagram, WhatsApp, Facebook, X, TikTok) the step to open the link in Safari or Chrome first, with a copy-link button. Opened from the icon, it never shows.
+3. **Never stuck (lead default, owner may override).** A small "Continue in the browser" stays at the foot of the screen, so a person whose browser cannot install still gets in; the screen comes back on the next launch in a browser. A link the person opened (an invite, a piece, a payment return) is kept and opened after the install screen.
+- Web only: the phone app never shows it.
+**Carried out by:** WEBAPP-11 (Who Made This); VOICES bundle J (V-41 in the VOICES repo).
+
+### R-132 · Renew shows only when a tier is ending or has ended
+*Owner, 10 Nov 2026 ("a user is already on a plan, why are we still showing them the renew button?").* Your tier draws Renew only when the Hub says the tier is `ending` (its last days, the Hub's own window, an admin setting: a week today) or `ended`. A person whose tier is `active` sees Upgrade when a higher tier exists and no buy button at all on the highest tier. Phone and web alike.
+**Carried out by:** TIER-RENEW.
+

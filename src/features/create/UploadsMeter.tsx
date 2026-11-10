@@ -20,7 +20,7 @@ const meterMetrics = { padV: 14, padH: space.lg, between: 10, bar: 8, barGap: sp
 
 /** The words under the bars: the way up when there is one, else what the account has. Both figures are the Hub's. */
 export function meterLine(a: Allowance): string {
-  return a.tickHeld ? `Verified · up to ${a.uploads.allowed} uploads.` : `Get verified for up to ${a.withTick.uploads} uploads and more reach.`;
+  return a.tickHeld ? `Verified · up to ${a.uploads.allowed} uploads.` : 'Get verified for a tick beside your name and more reach.';
 }
 
 /** Whether the Hub allows this account no upload at all (no tier and no tick, R-43). There is nothing to count, so no meter and no "used" note is drawn for it. */
@@ -52,7 +52,7 @@ export function SlotsFullNotice({ allowance, onOpenLibrary, onGetVerified }: { a
   // A person who holds a tier is never told to "Get verified" (RELEASE-02 second pass, M-3): the Hub's tier read decides, as it does for the Create tile.
   const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
   const holdsTier = runningTier(tier.data) !== null;
-  const { uploads, withTick } = allowance;
+  const { uploads } = allowance;
   const tickHeld = allowance.tickHeld || holdsTier;
   if (noAllowance(allowance)) return null;
   return (
@@ -62,7 +62,7 @@ export function SlotsFullNotice({ allowance, onOpenLibrary, onGetVerified }: { a
       </View>
       <View style={styles.noticeText}>
         <Text variant="kvValue">{`Your ${uploads.allowed} ${onFreeAllowance(allowance) ? 'free ' : ''}uploads are used`}</Text>
-        <Text variant="bannerBody">{tickHeld ? 'Take something down to make room for a new one.' : `Get verified for up to ${withTick.uploads} uploads, or take something down.`}</Text>
+        <Text variant="bannerBody">{tickHeld ? 'Take something down to make room for a new one.' : 'Take something down to make room for a new one, or get verified for more reach.'}</Text>
         {onOpenLibrary || (!tickHeld && onGetVerified) ? (
           <View style={styles.noticeButtons}>
             {!tickHeld && onGetVerified ? <Button testID="create-get-verified" label="Get verified" size="sm" onPress={onGetVerified} /> : null}
@@ -85,7 +85,7 @@ export function AllowanceMeter() {
   // A person who holds a tier is shown the tier's own count and name ("3 of 3 products", the tier chip and "Until 26 Nov", R-110), as Create and Me show it, and
   // never the free level's "Get verified" line (RELEASE-02 second pass, L-p2-12). The Hub's tier read is the one that decides.
   const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
-  const products = productsMeterOf(tier.data);
+  const products = productsMeterOf(tier.data, allowance.data);
   if (products) return <ProductsMeter used={products.used} allowed={products.allowed} tier={products.tier} testID="meter-products" />;
   if (tier.isPending) return <Skeleton testID="meter-loading" height={96} radius={radius.card} />;
   if (allowance.data) return <UploadsMeter allowance={allowance.data} />;

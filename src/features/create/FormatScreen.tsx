@@ -8,8 +8,6 @@ import { GroupedList } from '@/components/Card';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
-import { fetchMyTier, tierKey } from '@/features/me/api';
-import { runningTier } from '@/features/me/model';
 import { radius, space } from '@/theme';
 
 import { allowanceKey, fetchAllowance, fetchFormats, formatsKey } from './api';
@@ -47,17 +45,15 @@ export function FormatScreen({ onBack, onContinue, onOpenLibrary, onProductsFull
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance });
   const { format } = useDraft();
   const full = allowance.data ? slotsFull(allowance.data) : false;
-  // The tier is the Hub's own read: a person who holds one is offered the sheet, never "Get verified".
-  const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
-  const holdsTier = runningTier(tier.data) !== null;
+  // The sheet follows the Hub's places alone (R-129): a tier or a tick from before tiers, it is the same full list.
   const opened = useRef(false);
   const open = onProductsFull;
   useEffect(() => {
-    if (full && holdsTier && open && !opened.current) {
+    if (full && open && !opened.current) {
       opened.current = true;
       open();
     }
-  }, [full, holdsTier, open]);
+  }, [full, open]);
 
   const foot = <Button testID="create-continue" label="Continue" full disabled={full || !format || !formats.data} onPress={() => format && onContinue(format)} />;
 

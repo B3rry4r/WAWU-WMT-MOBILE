@@ -9662,6 +9662,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hub/waitlist/tiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The plans /join sells (R-125): Verify, Verify Plus and Founding Maker, each
+         *     with its price in kobo, days, products, bonus points, event pass, badge and
+         *     pack bonus, read live from the same plan settings the app's own plans read
+         *     uses. `best` marks the one the page preselects. Public.
+         */
+        get: operations["WaitlistPublicController_tiers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hub/waitlist/referral-codes/{code}": {
         parameters: {
             query?: never;
@@ -9674,7 +9696,10 @@ export interface paths {
          *     pay. Never the limit, the count or the community. A code we do not have
          *     is a 404 `referral_unknown`. Advice only: the registration decides again.
          *     An address that has tried too many codes we do not have is asked to wait
-         *     (429 `referral_attempts_limited`).
+         *     (429 `referral_attempts_limited`). With `?tier=verify|plus|founding`
+         *     (R-125) the answer is for that tier: its price, and a code that prices
+         *     another tier answers `applies` false, `reason` `other_tier`, with a
+         *     sentence in `message`. Without `?tier=` it answers exactly as before.
          */
         get: operations["WaitlistPublicController_referralCheck"];
         put?: never;
@@ -11389,6 +11414,136 @@ export interface components {
             /** @description Why, in a few plain words; kept on the audit row. */
             reason: string;
         };
+        AdminMoneyBalanceView: {
+            availableKobo: number;
+            bookedKobo: number;
+            /** @enum {string} */
+            source: "provider";
+            asOf: string;
+        };
+        AdminMoneyWalletView: {
+            wawuId: string;
+            handle: string | null;
+            displayName: string | null;
+            provider: string;
+            openedAt: string;
+            /** @enum {string} */
+            status: "open";
+            accountLast4: string;
+            balance?: components["schemas"]["AdminMoneyBalanceView"] | null;
+            balanceUnavailable?: string | null;
+        };
+        AdminMoneyWalletPage: {
+            items: components["schemas"]["AdminMoneyWalletView"][];
+            nextCursor: string | null;
+        };
+        AdminMoneyLedgerRowView: {
+            id: string;
+            /** @enum {string} */
+            direction: "in" | "out";
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "reversed";
+            category: string;
+            amountKobo: number;
+            feeKobo: number;
+            totalKobo: number;
+            counterpartyName: string | null;
+            linkKind: string | null;
+            linkTitle: string | null;
+            reference: string | null;
+            occurredAt: string;
+        };
+        AdminMoneyWalletDetailView: {
+            wallet: components["schemas"]["AdminMoneyWalletView"];
+            recordsNote: string;
+            records: components["schemas"]["AdminMoneyLedgerRowView"][];
+            nextCursor: string | null;
+        };
+        AdminMoneyHeldByKindView: {
+            kind: string;
+            count: number;
+            heldKobo: number;
+            payeeShareKobo: number;
+            wawuShareKobo: number;
+        };
+        AdminMoneyHeldView: {
+            id: string;
+            kind: string;
+            title: string;
+            payerWawuId: string | null;
+            payerHandle: string | null;
+            payeeWawuId: string | null;
+            payeeHandle: string | null;
+            amountKobo: number;
+            payeeShareKobo: number;
+            wawuShareKobo: number;
+            heldAt: string;
+            waiting: string | null;
+            inReview: boolean;
+        };
+        AdminMoneyMerchantView: {
+            provider: string;
+            account: {
+                accountLast4: string;
+                accountName: string;
+                balance: components["schemas"]["AdminMoneyBalanceView"];
+            } | null;
+            balanceUnavailable?: string | null;
+            recordsNote: string;
+            heldByKind: components["schemas"]["AdminMoneyHeldByKindView"][];
+            holds: components["schemas"]["AdminMoneyHeldView"][];
+            nextCursor: string | null;
+        };
+        AdminMoneyBasisView: {
+            basis: string;
+            label: string;
+            count: number;
+            grossKobo: number;
+        };
+        AdminMoneyForeignChargeView: {
+            currency: string;
+            count: number;
+            amountMinor: number;
+        };
+        AdminMoneyBreakdownView: {
+            key: string;
+            label: string;
+            count: number;
+            grossKobo: number;
+            unpricedCount: number;
+            bases?: components["schemas"]["AdminMoneyBasisView"][] | null;
+        };
+        AdminMoneyStreamView: {
+            key: string;
+            label: string;
+            rail: string;
+            source: string;
+            statuses: string[];
+            count: number;
+            grossKobo: number;
+            unpricedCount: number;
+            grossBasis: string;
+            wawuKobo: number | null;
+            creatorsKobo: number | null;
+            refundedKobo: number | null;
+            keptKobo: number;
+            bases?: components["schemas"]["AdminMoneyBasisView"][] | null;
+            foreignCharges?: components["schemas"]["AdminMoneyForeignChargeView"][] | null;
+            breakdown?: components["schemas"]["AdminMoneyBreakdownView"][] | null;
+        };
+        AdminMoneyRevenueView: {
+            period: {
+                from: string;
+                to: string;
+                window: string;
+            };
+            split: {
+                creatorsPercent: number;
+                wawuPercent: number;
+            };
+            streams: components["schemas"]["AdminMoneyStreamView"][];
+            note: string;
+        };
         OpenFxAccountDto: {
             /** @enum {string} */
             currency: "USD" | "EUR" | "GBP" | "CAD" | "AED" | "GHS" | "USDT" | "USDC" | "RLUSD";
@@ -12910,6 +13065,14 @@ export interface components {
              *     `referral` says the code was not applied.
              */
             referralCode?: string;
+            /**
+             * @description The tier the person is buying (optional, R-125): an id from
+             *     `GET /waitlist/tiers` (verify, plus, founding). Leave it out, as an older
+             *     page does, and the registration is exactly what it was before tiers: the
+             *     offer's price and the offer's tier (Verify). An id the plans file does not
+             *     sell is refused (`tier_invalid`).
+             */
+            tier?: string;
         };
         VerifyWaitlistRegistrationDto: {
             /** @description The reference POST /waitlist/registrations gave. */
@@ -12936,6 +13099,12 @@ export interface components {
             community: string;
             /** @description Whether the code works. Defaults to true. */
             active?: boolean;
+            /**
+             * @description The one tier the code prices (R-125), for example `verify`. The price
+             *     ceiling is that tier's price. Leave out for the old rule (the offer's
+             *     tier, Verify, at the offer's price).
+             */
+            tier?: string;
         };
         UpdateReferralCodeDto: {
             priceKobo?: number;
@@ -12943,6 +13112,8 @@ export interface components {
             limit?: number | null;
             community?: string;
             active?: boolean;
+            /** @description The one tier the code prices; the price is checked against that tier's price. */
+            tier?: string;
         };
         CapitalReserveDto: {
             /** @description Kobo to invest: the principal of a fixed return, or the spend on a share offering. */
@@ -15099,6 +15270,8 @@ export interface components {
             rejectionReason: string | null;
             /** Format: date-time */
             rejectedAt: string | null;
+            /** @enum {string|null} */
+            waitingFor: "wallet" | null;
         };
         MyContentCounts: {
             all: number;
@@ -18449,6 +18622,7 @@ export interface components {
             planMinor: number;
             bumpMinor: number;
             bumpPoints: number;
+            newActiveUntil: string | null;
             /** @enum {string} */
             paymentKind: "tier" | "tier_bump";
             payment: components["schemas"]["PaymentQuoteView"];
@@ -19409,12 +19583,20 @@ export interface components {
             createdAt: string;
             referralCode: string | null;
             referralCommunity: string | null;
+            tier: string | null;
+            claimedVia: string | null;
         };
         AdminWaitlistSplitRowView: {
             code: string | null;
             community: string | null;
             people: number;
             kobo: number;
+        };
+        AdminWaitlistTierRowView: {
+            tier: string | null;
+            people: number;
+            kobo: number;
+            claimed: number;
         };
         AdminWaitlistSummaryView: {
             offerId: string | null;
@@ -19428,6 +19610,7 @@ export interface components {
             };
             unpaid: number;
             split: components["schemas"]["AdminWaitlistSplitRowView"][];
+            byTier: components["schemas"]["AdminWaitlistTierRowView"][];
             generatedAt: string;
         };
         AdminWaitlistExportView: {
@@ -19456,6 +19639,7 @@ export interface components {
             paidCount: number;
             heldCount: number;
             paidKobo: number;
+            tier: string | null;
             createdAt: string;
             updatedAt: string;
         };
@@ -19468,12 +19652,41 @@ export interface components {
             days: number;
             closesAt: string | null;
         };
+        WaitlistTierView: {
+            id: string;
+            name: string;
+            priceKobo: number;
+            days: number;
+            products: number;
+            bonusPoints: number;
+            eventPass: {
+                id: string;
+                name: string;
+                benefits?: string[] | null;
+            };
+            badge: {
+                id: string;
+                numbered: boolean;
+            };
+            packBonusPercent: number;
+            firstVoiceIntroIncluded: boolean;
+            best: boolean;
+        };
+        WaitlistTiersView: {
+            /** @enum {string} */
+            currency: "NGN";
+            tiers: components["schemas"]["WaitlistTierView"][];
+            bestTier: string | null;
+        };
         WaitlistReferralCheckView: {
             code: string;
             applies: boolean;
             /** @enum {string|null} */
-            reason?: "full" | "inactive" | null;
+            reason?: "full" | "inactive" | "other_tier" | null;
             priceKobo: number;
+            tier?: string | null;
+            forTier?: string | null;
+            message?: string | null;
         };
         WaitlistCheckoutView: {
             publicKey: string;
@@ -19495,7 +19708,7 @@ export interface components {
             code: string;
             applied: boolean;
             /** @enum {string|null} */
-            reason?: "full" | "inactive" | null;
+            reason?: "full" | "inactive" | "other_tier" | null;
         };
         WaitlistRegistrationStartView: {
             reference: string;
@@ -19504,6 +19717,7 @@ export interface components {
             flutterwaveConfig?: components["schemas"]["WaitlistCheckoutView"];
             completed?: components["schemas"]["WaitlistRegistrationCompletedView"];
             referral?: components["schemas"]["WaitlistReferralOutcomeView"];
+            tier?: string | null;
         };
         WaitlistRegistrationStatusView: {
             reference: string;
@@ -38746,9 +38960,30 @@ export interface operations {
             };
         };
     };
-    WaitlistPublicController_referralCheck: {
+    WaitlistPublicController_tiers: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistTiersView"];
+                };
+            };
+        };
+    };
+    WaitlistPublicController_referralCheck: {
+        parameters: {
+            query?: {
+                tier?: string;
+            };
             header?: never;
             path: {
                 code: string;
@@ -38803,7 +39038,7 @@ export interface operations {
                     "application/json": components["schemas"]["WaitlistRegistrationStartView"];
                 };
             };
-            /** @description `reason.code` `phone_invalid`, `email_invalid`, `name_invalid` or `consent_required`; a malformed body has no `reason`. */
+            /** @description `reason.code` `phone_invalid`, `email_invalid`, `name_invalid`, `consent_required` or `tier_invalid` (a tier the plans do not sell); a malformed body has no `reason`. */
             400: {
                 headers: {
                     [name: string]: unknown;

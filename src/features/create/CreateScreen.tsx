@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { Text } from '@/components/Text';
 import { Toast, toastMetrics } from '@/components/Toast';
 import { fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
-import { productsMeterOf } from '@/features/me/model';
+import { atPlacesLimit, productsMeterOf } from '@/features/me/model';
 import { SERVICES_DOOR_NOTICE_MS, type ServicesDoor } from '@/features/pro-listing/useListServicesDoor';
 import { StudioRow } from '@/features/points/StudioRow';
 import { font, radius, space, useWawu } from '@/theme';
@@ -74,7 +74,8 @@ export function CreateScreen({ onClose, onContent, onEvent, onCommunity, onServi
   // The tier is the Hub's: the products meter (M19) and, at the limit of a running tier's products, Content opening VF13 in place of a piece the Hub would refuse.
   const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false });
   const running = tier.data ? tier.data.state === 'active' || tier.data.state === 'ending' : false;
-  const atLimit = Boolean(onProductsFull) && running && tier.data !== undefined && tier.data.productsAllowed > 0 && tier.data.productsUsed >= tier.data.productsAllowed;
+  // The limit follows the Hub's places alone (R-129): a person whose 25 come from a tick bought before tiers, with no running tier, is shown VF13 too.
+  const atLimit = Boolean(onProductsFull) && atPlacesLimit(tier.data, allowance.data);
   const tiles: Tile[] = [
     { id: 'content', icon: 'Clapperboard', title: 'Content', sub: 'Video, course, audio, PDF, image or template', onPress: atLimit && onProductsFull ? onProductsFull : onContent, disabled: full && !atLimit },
     // "Needs an active tier" is M19's note for a person with none: once a tier is held (the state the meter below reads) the note is gone.
@@ -126,7 +127,7 @@ type AllowanceQuery = UseQueryResult<Allowance>;
  * its own loading state, and the count's failure says so with Try again.
  */
 function Meter({ tier, allowance, onGetVerified }: { tier: TierQuery; allowance: AllowanceQuery; onGetVerified?: () => void }) {
-  const products = productsMeterOf(tier.data);
+  const products = productsMeterOf(tier.data, allowance.data);
   if (products) return <ProductsMeter used={products.used} allowed={products.allowed} tier={products.tier} testID="create-products" />;
   if (tier.isPending) return <ProductsMeter loading used={0} allowed={0} testID="create-meter-loading" />;
   // No running tier (or none readable): a tier that ended or never was draws no products meter.

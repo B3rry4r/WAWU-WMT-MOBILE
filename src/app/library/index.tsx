@@ -20,5 +20,7 @@ export default function LibraryRoute() {
   if (status !== 'signedIn') return <Redirect href="/welcome" />;
   if (gate !== 'creator') return gate === 'checking' ? null : <Redirect href="/" />;
 
-  return <LibraryScreen onBack={leave} onCreate={() => router.push('/create')} onSeeWhy={(id) => router.push({ pathname: '/library/[id]', params: { id } })} />;
+  return <LibraryScreen onBack={leave} onCreate={() => router.push('/create')} onSeeWhy={(id) => router.push({ pathname: '/library/[id]', params: { id } })}
+      onOpenPiece={(id) => router.push({ pathname: '/content/[id]', params: { id } })}
+    />;
 }

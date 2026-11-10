@@ -103,5 +103,23 @@
       "^lucide-react-native/icons/(.*)$": "<rootDir>/node_modules/lucide-react-native/dist/cjs/icons/$1.js"
     },
     "testTimeout": 20000
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo",
+        "expo-asset",
+        "expo-constants",
+        "expo-dev-client",
+        "expo-image-manipulator",
+        "expo-image-picker",
+        "expo-media-library",
+        "expo-notifications",
+        "expo-router",
+        "expo-sharing",
+        "expo-splash-screen",
+        "expo-updates"
+      ]
+    }
   }
 }
