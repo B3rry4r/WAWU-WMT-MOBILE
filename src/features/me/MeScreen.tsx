@@ -10,6 +10,7 @@ import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Toast } from '@/components/Toast';
 import { Banner } from '@/components/Banner';
 import { ProductsMeter } from '@/components/ProductsMeter';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
 import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
@@ -48,6 +49,7 @@ import {
   openableLink,
   paidMessagesOf,
   productsMeterOf,
+  runningTier,
   profileShareText,
   roleLinesOf,
   socialLinksOf,
@@ -365,9 +367,11 @@ type DraftsQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchDra
  * (`productsMeterOf` is null); a failed read is a note with a retry, never "no tier".
  */
 function TierMeter({ tier }: { tier: TierQuery }) {
+  const cache = useCache();
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, enabled: runningTier(tier.data) !== null }, cache);
   if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" retryLabel="Try loading your tier again" onRetry={() => void tier.refetch()} />;
   if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
-  const meter = productsMeterOf(tier.data);
+  const meter = productsMeterOf(tier.data, allowance.data);
   return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} tier={meter.tier} testID="me-products" /> : null;
 }
 

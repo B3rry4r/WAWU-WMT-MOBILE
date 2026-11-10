@@ -101,7 +101,7 @@ describe('M28 · My content', () => {
     hub.answers[`GET ${TIER}`] = ok({ state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null });
     await open();
     expect(await screen.findByText('4 of 5 used')).toBeTruthy();
-    expect(screen.getByText('Get verified for up to 25 uploads and more reach.')).toBeTruthy();
+    expect(screen.getByText('Get verified for a tick beside your name and more reach.')).toBeTruthy();
   });
 
   it('draws no "0 of 0" meter for an account the Hub allows nothing, and still lists its pieces', async () => {

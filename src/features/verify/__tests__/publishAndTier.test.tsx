@@ -57,6 +57,8 @@ const pinClock = (iso: string) => jest.setSystemTime(new Date(iso));
 /** The Hub's own sentence for a paused identity check (`403 identity_paused`, S7 round 2). */
 const HUB_PAUSE = 'Publishing is paused until your identity check passes. Your wallet is not finished opening. Send the documents the bank asked for.';
 const hub = {
+  /** Places the Hub allows from a tick bought before tiers (R-129); 0: the Hub's allowance read is not answered. */
+  tickPlaces: 0,
   tier: 'active' as 'none' | 'active' | 'ending' | 'ended',
   /** The Hub fails the tier read this many more times (a real failure, FIX-68 F-2). */
   tierFails: 0,
@@ -109,6 +111,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     const tier = (id: string, name: string, price: number, products = 3) => ({ id, name, days: 30, products, bonusPoints: 100, bonusPointsExpireDays: 365, priceMinor: price, eventPass: { id: 'p', name: 'Pass' }, badge: { id: 'verified', numbered: false }, packBonusPercent: 0, firstVoiceIntroIncluded: true, preselected: false });
     return ok({ currency: 'NGN', currencyFixed: false, tiers: [tier('verify', 'Verify', 100_000), tier('founding', 'Founding Maker', 500_000, 10)], extraProducts: { count: 5, priceMinor: 150_000 }, packs: [], checkoutBump: { points: 1000, priceMinor: 80_000 }, actions: [], caps: {} });
   }
+  if (path === '/uploads/allowance' && hub.tickPlaces > 0) return ok({ tickHeld: true, uploads: { used: 3, allowed: hub.tickPlaces, remaining: hub.tickPlaces - 3 }, storage: { usedBytes: 0, limitBytes: 10_737_418_240, remainingBytes: 10_737_418_240 }, free: { uploads: 0, storageBytes: 1_073_741_824 }, withTick: { uploads: 25, storageBytes: 10_737_418_240 } });
   if (path === '/uploads/formats') return ok({ formats: FORMATS });
   if (path === '/money/wallet') {
     hub.walletReads += 1;
@@ -217,7 +220,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   pinClock(TODAY);
-  Object.assign(hub, { tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], kind: 'pdf', access: 'paid', publishFails: 0, releases: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false, quoted: 0 });
+  Object.assign(hub, { tickPlaces: 0, tier: 'active', tierFails: 0, tierReads: 0, until: null, used: 2, allowed: 3, heldTier: 'verify', wallet: 'open', walletReads: 0, openAfter: 0, category: null, publishes: [], kind: 'pdf', access: 'paid', publishFails: 0, releases: [], patches: [], buys: [], full: false, paused: false, lostFirstBuy: false, quoted: 0 });
   queryClient.clear();
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, gcTime: 0 } });
   mockVault.clear();
@@ -285,6 +288,15 @@ describe('VF12 · publish your first product', () => {
     expect(screen.queryByTestId('publish-submit')).toBeNull();
     await fireEvent.press(screen.getByText('Try again'));
     expect(await screen.findByTestId('where')).toHaveTextContent(/\/tiers/);
+  });
+
+  it('R-129: a person with no tier whose tick from before tiers still gives 25 places is not told publishing needs a tier', async () => {
+    hub.tier = 'none';
+    hub.tickPlaces = 25;
+    await renderRouter(routes, { initialUrl: '/publish?id=d1' });
+    expect(await screen.findByTestId('publish-draft-title')).toBeTruthy();
+    expect(screen.queryByTestId('publish-no-tier')).toBeNull();
+    expect(screen.queryByText('Publishing needs a tier. Drafts stay free.')).toBeNull();
   });
 
   it('a person whose identity check is not through sees uploads paused with the Hub’s reason and cannot publish; Try again opens Open your wallet', async () => {
@@ -679,6 +691,15 @@ describe('VF14 · your tier', () => {
     hub.tier = 'none';
     await renderRouter(routes, { initialUrl: '/your-tier' });
     expect(await screen.findByTestId('your-tier-none')).toBeTruthy();
+  });
+
+  it('R-129: a person with no tier whose tick still gives 25 places is told so on Your tier, never that they cannot publish', async () => {
+    hub.tier = 'none';
+    hub.tickPlaces = 25;
+    await renderRouter(routes, { initialUrl: '/your-tier' });
+    expect(await screen.findByText('Your tick still gives you 25 places to publish until it ends. See tiers for what a tier gives.')).toBeTruthy();
+    expect(screen.queryByText(/Make it official to publish/)).toBeNull();
+    expect(screen.getByText('See tiers')).toBeTruthy();
   });
 
   it('no tier is not an error: no alert, no "Try again", and the one button says what it does and opens the tiers (FIX-68 F-2)', async () => {

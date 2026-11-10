@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { Toast } from '@/components/Toast';
-import { fetchFormats, formatsKey } from '@/features/create/api';
+import { allowanceKey, fetchAllowance, fetchFormats, formatsKey } from '@/features/create/api';
 import type { ChosenFile } from '@/features/create/chosen';
 import { refusalFor } from '@/features/create/chosen';
 import { CoverChoice } from '@/features/create/CoverChoice';
@@ -29,6 +29,7 @@ import { smallCopyOf } from '@/features/create/previewCopy';
 import { UPLOAD_CANCELLED, uploadFile } from '@/features/create/upload';
 import { useFirstTap } from '@/features/create/parts';
 import { fetchMyTier, tierKey, draftsKey } from '@/features/me/api';
+import { placesOf } from '@/features/me/model';
 import { fetchOpeningProgress, openingProgressQuery } from '@/features/open-wallet/api/review';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
@@ -86,6 +87,7 @@ export function PublishScreen(props: PublishScreenProps) {
   const entry = useOpenWalletEntry();
   const draft = useQuery({ queryKey: draftKey(props.draftId), queryFn: () => fetchDraft(props.draftId), retry: false }, queryClient);
   const tier = useQuery({ queryKey: tierKey, queryFn: fetchMyTier, staleTime: 0, retry: false }, queryClient);
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
   const formats = useQuery({ queryKey: formatsKey, queryFn: fetchFormats }, queryClient);
   const [watched, setWatched] = useState(false);
   const progress = useQuery(
@@ -310,7 +312,9 @@ export function PublishScreen(props: PublishScreenProps) {
   };
 
   const failed = (draft.isError && !draft.data) || (tier.isError && !tier.data) || (formats.isError && !formats.data) || (progress.isError && !progress.data);
-  const loading = !draft.data || !tier.data || !formats.data || !progress.data;
+  // Publishing follows the Hub's places, not the tier alone (R-129): a tick bought before tiers keeps its places until it ends.
+  const mayPublish = running || (allowance.data?.uploads.allowed ?? 0) > 0;
+  const loading = !draft.data || !tier.data || !formats.data || !progress.data || (!running && allowance.isPending);
 
   let body;
   let foot;
@@ -340,7 +344,7 @@ export function PublishScreen(props: PublishScreenProps) {
         <Skeleton height={64} radius={radius.card} />
       </View>
     );
-  } else if (!running) {
+  } else if (!mayPublish) {
     const ended = tier.data?.state === 'ended';
     body = (
       <ErrorState
@@ -390,14 +394,15 @@ export function PublishScreen(props: PublishScreenProps) {
     foot = <Button testID="publish-done" label="Done" full onPress={props.onBack} />;
   } else {
     const d = draft.data as ProductDraft;
-    const count = tier.data ? `${tier.data.productsUsed} of ${tier.data.productsAllowed}` : null;
+    const places = tier.data ? placesOf(tier.data, allowance.data) : null;
+    const count = places ? `${places.used} of ${places.allowed}` : null;
     const link = published ? productLink(published) : null;
     body = (
       <>
         <Text variant="secondary" tone="textMuted" testID="publish-draft-title" numberOfLines={1}>
           {d.title}
         </Text>
-        {tier.data ? <ProductsMeter testID="publish-meter" used={tier.data.productsUsed} allowed={tier.data.productsAllowed} tier={{ name: tier.data.tier?.name, state: tier.data.state, endsAt: tier.data.activeUntil }} /> : null}
+        {tier.data ? <ProductsMeter testID="publish-meter" used={places!.used} allowed={places!.allowed} tier={{ name: tier.data.tier?.name, state: tier.data.state, endsAt: tier.data.activeUntil }} /> : null}
         {needsCategory && published === null ? (
           <View style={styles.group}>
             <Text variant="secondary" tone="textSecondary">

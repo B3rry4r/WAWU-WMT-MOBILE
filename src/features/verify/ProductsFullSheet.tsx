@@ -11,7 +11,9 @@ import { IconTile } from '@/components/IconTile';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
 import { fetchMyTier, tierKey } from '@/features/me/api';
+import { placesOf } from '@/features/me/model';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { buyLabel } from '@/features/store/model';
 import { SaidBanner, StoreUnready } from '@/features/store/StoreParts';
@@ -52,8 +54,10 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
   const plans = useQuery(plansQuery(owner), queryClient);
   const store = useStoreCatalog(['extra_products']);
   const buyer = useStoreBuyer(store.catalog);
-  const used = mine.data?.productsUsed ?? null;
-  const allowed = mine.data?.productsAllowed ?? null;
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
+  const places = mine.data ? placesOf(mine.data, allowance.data) : null;
+  const used = places?.used ?? null;
+  const allowed = places?.allowed ?? null;
   // What the person could publish when the store sheet opened, so the result never says a count from before the grant.
   const [before, setBefore] = useState<number | null>(null);
   const pack = store.state.kind === 'ready' ? (store.state.items[0] ?? null) : null;

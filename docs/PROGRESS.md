@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 40 | 0 | 0 | 0 |
+| todo | 39 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 44 | 0 | 0 | 0 |
+| verifying | 45 | 0 | 0 | 0 |
 | review | 248 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -310,6 +310,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-02](../tasks/WEBAPP-02.md) On a laptop the app shows at phone width, centred (You)
 - [WEBAPP-03](../tasks/WEBAPP-03.md) The web app's small seams work in a browser (You)
 - [WEBAPP-04](../tasks/WEBAPP-04.md) Photos and voices uploaded from a browser are safe and play everywhere (You)
+- [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -515,6 +516,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
+- 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
 - 10 Nov 2026 · WEBAPP-09 · second web walk fixes W1 to W7 built (mid-sign-up links lead on, /tiers always closes, points sheet shows the Hub grant, two-tab payment shows paid, upgrade row, Enter sends a paid reply, room join words); checks EXIT 0
 - 9 Nov 2026 · WEBAPP-08 · web walk fixes F1 to F15 built (live purchase hook in the export, wss in the CSP, dollars offer, sign-up draft, wallet words, Enter sends); checks EXIT 0
 - 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)
@@ -528,5 +531,3 @@ From `docs/LOG.md`, newest first.
 - 9 Nov 2026 · WEBAPP (lead): walk restart 20:11 UTC. The brief's lock line (`flock` around `stack.sh up`) was held by the stack's servers for as long as walker C's stack stood, so walkers A and B waited about 25 minutes with nothing walked (A handed back FAIL, NOT RUN). Corrected to `flock -o` on a new lock (b228084); the lead stopped B's waiting flock. Walker C found an export from hard-linked node_modules (`STACK_NM_MOBILE`) bundles React twice and draws a blank page, while a symlinked node_modules works. Because Vercel builds with a plain `npm ci`, walker A now builds the export exactly as Vercel will (fresh clone, `npm ci`, `npm run web:export`), checks it has one React and draws, and walks from it behind vercel.json's headers. B uses a symlinked node_modules.
 - 9 Nov 2026 · WEBAPP (lead): WEBAPP-07 full walk started 19:45 UTC on batch `wmt/BATCH-WEBAPP1` ffdc271 with Hub main 7dd5b22 (brief `docs/release/WALK-WEB.md`): three fresh Sonnet walkers, A arriving (guest, new user through the real WAWU ID, no wallet, the hosted selfie), B money (every wallet purchase on the web and every V8 attack, checked on the ledger and the stand-in), C making (creator, verified, uploads read back from storage). 390 and 1440, light and dark, cold start and refresh, and one path per user through the real site's headers (CSP). Stacks walka, walkb, walkc on 16020-16079, built one at a time under a lock. The hosted selfie on the web is walked for the first time (WEBAPP-05 left it NOT RUN on a stack).
 - 9 Nov 2026 · WEBAPP (lead): batch `wmt/BATCH-WEBAPP1` green: `npm run check` EXIT 0 on a5a63da (typecheck, lint, 513 of 513 suites, 7,700 passed and 6 skipped, gates 0 fail and 0 accepted, task check). Two batch fixes on the way: WEBAPP-06 web wallet hook split into `useWebBuy.web.tsx` and an inert phone `useWebBuy.ts` (phone code as before, R-86; 174 phone tests had failed); WEBAPP-03/04 gate findings fixed by a comment rewrite and a rename (`VoiceTakeUpload`), no gate touched. WEB-DEPLOY.md: WAWU ID's `ALLOWED_ORIGINS` confirmed from B3rry4r/WAWU-ID main 7e7abf8 (ffdc271). Next: WEBAPP-07, the full walk on this batch head, after the VOICES load measurement (it needs the machine to itself).
-- 9 Nov 2026 · WEBAPP (lead): batch `wmt/BATCH-WEBAPP1` 13337fb (plan + WEBAPP-01, 02, 05, CHECK-GREEN, TIER-UPGRADE-FIX records; generated files regenerated; one import conflict in PassScreen.tsx joined; SHARED-CHANGES keeps both rows). `npm run check`: typecheck, lint and task check pass; jest 174 failed in 7 suites (content-detail, FeedScreen, ProfessionalMessage, askFlow, askerMenu, tipFlow, unlockFlow), 7526 passed. Cause: WEBAPP-06's useWebBuy() calls useRouter() on every platform through useStoreBuyer (phone code now runs web hooks, against R-86); the suites mock expo-router without useRouter. Sent back to the WEBAPP-05 builder: the web wallet path only in the web build, no test or mock changed, full npm test on the batch to prove it. WEBAPP-05/06 F2 accepted on the lead's diff read (18 lines; a fresh account's bills link lands on the tier offer, picture looked at).
-- 9 Nov 2026 · lead: TIER-UPGRADE-FIX verified, MERGE (T2; mobile `wmt/TIER-UPGRADE-FIX-verify` b661a14, Hub `wmt/TIER-UPGRADE-FIX` 691acd1): renew then upgrade keeps the held end (quote, grant and /me/tier agree to the millisecond), every refusal as before, one debit per key under replays and races, ledger equals the stand-in, protected suite 244/244 on main and branch; the website's Flutterwave path gets the fix too (same service). Lows to SWEEP-MONEY. Waits for the owner's word: a Hub merge deploys the live server. CHECK-GREEN accepted on the lead's diff read (`wmt/CHECK-GREEN` b754bf1: DASH-B building, JOIN-TIERS and WEB-HOLD verifying, each from its own Current state; the four walletSettingsFlow tests on a fixed clock with no assertion changed); one other test (fxStrip "ends in a plain + Add") failed once in the full run and passes alone: the batch check decides. Pre-existing on Hub main: tier-badge-views contract spec, 5 tests 404 on profile-fields.

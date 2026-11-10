@@ -103,16 +103,25 @@ export const STILL_CONFIRMING_BODY = "Don't pay again. Check back in a minute.";
 export const gbWords = (bytes: number): string => `${Math.max(1, Math.round(bytes / 1024 ** 3))} GB`;
 
 /**
- * M16 and M17's "Every tick gives you": the four rows the board draws. The uploads and the library space are the Hub's own figures
- * (`GET /uploads/allowance`: the tick's level and the free level); a row whose figure the Hub did not give is not drawn (R-47). The
- * reach and the tick beside the name carry no figure, so they are the board's own words.
+ * M16 and M17's "Every tick gives you": the four rows the board draws. Upload places are the Hub's `uploads.allowed` for this person, the
+ * one number every screen states (R-129): the row is drawn only to a person whose tick still gives them (a tick from before tiers, which
+ * lifts the Hub's allowance to the tick level), and never as a promise to anyone else; a tier's places are named by the tiers list. The
+ * library space is the Hub's own level for a tick or a tier, with the free level beside it (R-7); a row whose figure the Hub did not give is
+ * not drawn (R-47). The reach and the tick beside the name carry no figure, so they are the board's own words.
  */
 export type GiveRow = { id: 'uploads' | 'space' | 'reach' | 'tick'; title: string; line: string | null };
 
-export function givesOf(allowance: { free: { uploads: number; storageBytes?: number }; withTick: { uploads: number; storageBytes?: number } } | null): GiveRow[] {
+type GivesAllowance = {
+  tickHeld: boolean;
+  uploads: { allowed: number };
+  free: { storageBytes?: number };
+  withTick: { uploads: number; storageBytes?: number };
+};
+
+export function givesOf(allowance: GivesAllowance | null): GiveRow[] {
   const rows: GiveRow[] = [];
-  if (allowance && allowance.withTick.uploads > 0) {
-    rows.push({ id: 'uploads', title: `Up to ${allowance.withTick.uploads} uploads`, line: allowance.free.uploads > 0 ? `Free accounts get ${allowance.free.uploads}` : null });
+  if (allowance && allowance.tickHeld && allowance.withTick.uploads > 0 && allowance.uploads.allowed >= allowance.withTick.uploads) {
+    rows.push({ id: 'uploads', title: `Up to ${allowance.uploads.allowed} uploads`, line: null });
   }
   if (allowance?.withTick.storageBytes) {
     rows.push({ id: 'space', title: `${gbWords(allowance.withTick.storageBytes)} library space`, line: allowance.free.storageBytes ? `Free accounts get ${gbWords(allowance.free.storageBytes)}` : null });
