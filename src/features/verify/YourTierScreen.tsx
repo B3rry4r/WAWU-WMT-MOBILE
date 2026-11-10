@@ -79,6 +79,8 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
   const store = useStoreCatalog(['tier']);
   const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
   const tier = mine.data;
+  // A tick bought before tiers keeps its places (R-129): say so, never that the person cannot publish.
+  const places = allowance.data?.uploads.allowed ?? 0;
   const held = tier && tier.state !== 'none' && tier.tier ? tier.tier : null;
 
   let body;
@@ -111,7 +113,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
         testID="your-tier-none"
         icon="BadgeCheck"
         title="You have no tier yet"
-        message="Make it official to publish, upload files and unlock your points."
+        message={places > 0 ? `Your tick still gives you ${places} places to publish until it ends. See tiers for what a tier gives.` : 'Make it official to publish, upload files and unlock your points.'}
         action={{ label: 'See tiers', onPress: onSeeTiers }}
       />
     );

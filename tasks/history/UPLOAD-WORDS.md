@@ -12,3 +12,13 @@ Gaps filed: none.
 
 ## Verifier report
 
+
+
+## Round 1 (builder, 10 Nov 2026)
+Fix for the verifier's defects (the lead's list): a person whose places come from a tick bought before tiers (no running tier, Hub allows 25).
+- `src/features/me/model.ts`: new `atPlacesLimit(tier, allowance)`: allowed above 0 and used at or above it; a running tier's own count only until the allowance has answered. `CreateScreen.tsx` uses it for the Content tile; `FormatScreen.tsx` opens VF13 whenever the Hub says every place is used (no longer only for a person with a running tier; its tier read and imports are removed).
+- `PublishScreen.tsx`: `mayPublish = running || uploads.allowed > 0`; while the allowance is still loading and no tier runs, the skeleton shows (not "Make it official"). `YourTierScreen.tsx`: no tier and `uploads.allowed` above 0 says "Your tick still gives you N places to publish until it ends. See tiers for what a tier gives." with See tiers; with none it says what it said.
+- The 402 handlers in UploadScreen and LessonsScreen already open VF13 on `product_limit_reached`, with no tier test.
+- Tests changed: `entries.test.tsx` "a person with no tier is not sent the sheet" now says the opposite by this ruling (the sheet follows the places alone), plus one "places left" test. Full `npx jest -w 2`: 518 of 521 suites passed, 7740 tests; `entries` (the test above, fixed), and `dubbingFlow` and `bankSendFlow` (failed to run or timed out under load) passed re-run alone with -w 1. Tests added: `create.test.tsx` (tick-only person 25 of 25 pressing Content opens the sheet with `Platform.OS` android; 24 of 25 starts a piece), `publishAndTier.test.tsx` (the publish screen is open for a tick-only person; Your tier's words). No existing assertion changed.
+- Web export (same stack recipe, plus the storage stand-in on 16055 and its address added to my page's connect-src and img-src, stack only; ticks set by SQL in the stack's two databases): a person with a tick and no tier (a) published one piece through the app's own "Send for review" ("Sent for review", "1 of 25 used", the piece is pending in the Hub); (b) at 25 of 25 (the places set by SQL on the stack's CreatorState) pressing Content opens "You have used 25 of 25" with Open library; (c) Your tier and the publish screen read as above. Pictures: `/tmp/wmt-shots/upload-words/round1-390-light.png` (Your tier, Publish, limit sheet, Sent for review), `round1-390-dark.png`, `round1-1440-light.png` (Your tier and Publish), plus the single files beside them.
+- A one-page PDF piece is refused for its preview by the Hub's own rule (not this task).

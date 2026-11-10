@@ -729,3 +729,37 @@ describe('the Create routes are for creator accounts', () => {
     expect(hub.sent.some((x) => x.path === ME)).toBe(false);
   });
 });
+
+describe('R-129 · the limit sheet follows the Hub places alone', () => {
+  const TIER = '/api/hub/me/tier';
+  const none = { state: 'none', tier: null, activeFrom: null, activeUntil: null, productsAllowed: 0, productsUsed: 0, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
+  const { Platform } = require('react-native') as typeof import('react-native');
+
+  it('a person whose 25 places come from a tick bought before tiers (no tier) at 25 of 25 is routed to the limit sheet, on a phone', async () => {
+    const was = Platform.OS;
+    Platform.OS = 'android';
+    try {
+      hub.answers[`GET ${TIER}`] = ok(none);
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(25, 25, true));
+      const calls = { close: jest.fn(), content: jest.fn(), event: jest.fn(), service: jest.fn(), full: jest.fn() };
+      await renderFrame(<CreateScreen onClose={calls.close} onContent={calls.content} onEvent={calls.event} onService={calls.service} onProductsFull={calls.full} />);
+      await screen.findByText('25 of 25 used');
+      await fireEvent.press(screen.getByTestId('create-tile-content'));
+      expect(calls.full).toHaveBeenCalledTimes(1);
+      expect(calls.content).not.toHaveBeenCalled();
+    } finally {
+      Platform.OS = was;
+    }
+  });
+
+  it('with places left the same person starts a piece, not the sheet', async () => {
+    hub.answers[`GET ${TIER}`] = ok(none);
+    hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(24, 25, true));
+    const calls = { close: jest.fn(), content: jest.fn(), event: jest.fn(), service: jest.fn(), full: jest.fn() };
+    await renderFrame(<CreateScreen onClose={calls.close} onContent={calls.content} onEvent={calls.event} onService={calls.service} onProductsFull={calls.full} />);
+    await screen.findByText('24 of 25 used');
+    await fireEvent.press(screen.getByTestId('create-tile-content'));
+    expect(calls.content).toHaveBeenCalledTimes(1);
+    expect(calls.full).not.toHaveBeenCalled();
+  });
+});

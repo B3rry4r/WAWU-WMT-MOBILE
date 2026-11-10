@@ -312,7 +312,9 @@ export function PublishScreen(props: PublishScreenProps) {
   };
 
   const failed = (draft.isError && !draft.data) || (tier.isError && !tier.data) || (formats.isError && !formats.data) || (progress.isError && !progress.data);
-  const loading = !draft.data || !tier.data || !formats.data || !progress.data;
+  // Publishing follows the Hub's places, not the tier alone (R-129): a tick bought before tiers keeps its places until it ends.
+  const mayPublish = running || (allowance.data?.uploads.allowed ?? 0) > 0;
+  const loading = !draft.data || !tier.data || !formats.data || !progress.data || (!running && allowance.isPending);
 
   let body;
   let foot;
@@ -342,7 +344,7 @@ export function PublishScreen(props: PublishScreenProps) {
         <Skeleton height={64} radius={radius.card} />
       </View>
     );
-  } else if (!running) {
+  } else if (!mayPublish) {
     const ended = tier.data?.state === 'ended';
     body = (
       <ErrorState

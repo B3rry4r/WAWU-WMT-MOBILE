@@ -333,6 +333,16 @@ export function placesOf(tier: MyTier, allowance: PlacesRead | null | undefined)
   return { used: tier.productsUsed, allowed: tier.productsAllowed };
 }
 
+/**
+ * Whether every upload place the Hub allows is used (R-129): the Hub's `uploads.allowed` above 0 and `used` at or above it, whatever gives the
+ * places (a tier, a tick from before tiers, extra products). Until the allowance has answered, a running tier's own count stands in.
+ */
+export function atPlacesLimit(tier: MyTier | null | undefined, allowance: PlacesRead | null | undefined): boolean {
+  if (allowance) return allowance.uploads.allowed > 0 && allowance.uploads.used >= allowance.uploads.allowed;
+  const held = runningTier(tier);
+  return held !== null && held.productsAllowed > 0 && held.productsUsed >= held.productsAllowed;
+}
+
 export function productsMeterOf(tier: MyTier | null | undefined, allowance?: PlacesRead | null): ProductsMeterView | null {
   const held = runningTier(tier);
   if (!held || !(held.productsAllowed > 0)) return null;
