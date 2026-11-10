@@ -85,7 +85,7 @@ describe('M19 · Create', () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 5));
     await open();
     expect(await screen.findByText('4 of 5 used')).toBeTruthy();
-    expect(screen.getByText('Get verified for up to 25 uploads and more reach.')).toBeTruthy();
+    expect(screen.getByText('Get verified for a tick beside your name and more reach.')).toBeTruthy();
   });
 
   // DV2-04 (R-43, M19): the products meter of a person with a tier, "Needs an active tier" on Event.
@@ -125,6 +125,22 @@ describe('M19 · Create', () => {
       expect(await screen.findByText('5 of 8')).toBeTruthy();
       // An ending tier says when it ends, not that it renews.
       expect(screen.getByText(/^Ends /)).toBeTruthy();
+    });
+
+    it('R-129: a Founding Maker whose tier read says 15 but whose Hub allowance says 25 sees 25 on the meter, the one number', async () => {
+      hub.answers[`GET ${TIER}`] = ok(running('active', 4, 15));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 25, true));
+      await open();
+      expect(await screen.findByText('4 of 25')).toBeTruthy();
+      expect(screen.queryByText('4 of 15')).toBeNull();
+    });
+
+    it('R-129: with the Hub allowance and the tier agreeing at 15, the meter says 4 of 15 and no 25 is stated anywhere', async () => {
+      hub.answers[`GET ${TIER}`] = ok(running('active', 4, 15));
+      hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(4, 15, false));
+      await open();
+      expect(await screen.findByText('4 of 15')).toBeTruthy();
+      expect(screen.queryByText(/25/)).toBeNull();
     });
 
     it('a person with no tier gets no products meter; a live tick keeps its uploads count', async () => {
@@ -270,7 +286,7 @@ describe('M19 · Create at "5 of 5 used"', () => {
     hub.answers[`GET ${ALLOWANCE}`] = ok(allowance(5, 5));
     const calls = await open();
     expect(await screen.findByText('Your 5 free uploads are used')).toBeTruthy();
-    expect(screen.getByText('Get verified for up to 25 uploads, or take something down.')).toBeTruthy();
+    expect(screen.getByText('Take something down to make room for a new one, or get verified for more reach.')).toBeTruthy();
     expect(screen.getByTestId('create-meter-count').props.children).toBe('5 of 5 used');
     await fireEvent.press(screen.getByTestId('create-tile-content'));
     expect(calls.content).not.toHaveBeenCalled();

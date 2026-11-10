@@ -12,7 +12,9 @@ import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TierBadge } from '@/components/TierBadge';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
 import { fetchMyTier, tierKey, type MyTier } from '@/features/me/api';
+import { placesOf } from '@/features/me/model';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
 import { PointsFrame } from '@/features/points/PointsFrame';
 import { tierItemOf } from '@/features/store/model';
@@ -75,6 +77,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
   const plans = useQuery(plansQuery(owner), queryClient);
   // Renew is bought in the store sheet, so the price on it is the store's own (IAP-03, R-86); none is drawn until the store has answered.
   const store = useStoreCatalog(['tier']);
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false }, queryClient);
   const tier = mine.data;
   const held = tier && tier.state !== 'none' && tier.tier ? tier.tier : null;
 
@@ -157,7 +160,7 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
           </View>
         ) : null}
         <GroupedList testID="your-tier-rows">
-          <KeyValueRow testID="your-tier-products" label="Products" value={`${tier.productsUsed} of ${tier.productsAllowed}`} />
+          <KeyValueRow testID="your-tier-products" label="Products" value={`${placesOf(tier, allowance.data).used} of ${placesOf(tier, allowance.data).allowed}`} />
           {tier.pointsIncluded > 0 ? <KeyValueRow testID="your-tier-points" label="Points included" value={formatPointsCount(tier.pointsIncluded)} /> : null}
           {tier.eventPass ? <KeyValueRow testID="your-tier-pass" label="Event pass" value={tier.eventPass.name} /> : null}
         </GroupedList>
