@@ -36,8 +36,14 @@ jest.mock('expo-secure-store', () => ({
   }),
 }));
 
-const stand = (testID: string) => () => <View testID={testID} />;
+const stand = (testID: string) => {
+  const Stand = () => <View testID={testID} />;
+  return Stand;
+};
 const BillsPage = withBillsGuard(stand('bills-page'));
+function TabsStandIn() {
+  return <Slot />;
+}
 const routes = {
   _layout: RootLayout,
   welcome: WelcomeRoute,
@@ -46,7 +52,7 @@ const routes = {
   'bills/index': BillsPage,
   interests: stand('interests'),
   'people-to-follow': stand('follows'),
-  '(tabs)/_layout': () => <Slot />,
+  '(tabs)/_layout': TabsStandIn,
   '(tabs)/index': stand('home'),
 };
 

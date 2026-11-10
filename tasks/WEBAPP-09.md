@@ -7,7 +7,7 @@ order: 373
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: [WEBAPP-08]
 decisions: [R-127, R-128, R-47, R-86, R-94]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,9 +19,11 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** todo. Cut by the lead from the second web walk on 60958fc (walkers A, B and C all PASS, no SERIOUS; reports appended to `tasks/history/WEBAPP-07.md`).
-- **Next:** a builder on `wmt/WEBAPP-09` from `wmt/BATCH-WEBAPP1`; then a T1 verifier who walks every touched path on the web export; then the batch check and the PR to main.
-- **Carried elsewhere, not here:** the card fee missing from the wallet history (Hub, `CARD-FEE-HISTORY`); "You can edit it while it waits" with no edit (CREATOR-TAKEDOWN); the verification page's "Up to 25 uploads" against the tiers' 4, 8 and 15 (an owner question: which limit applies to whom).
+- **Status:** verifying. Built on `wmt/WEBAPP-09` from `wmt/BATCH-WEBAPP1` f6d0e4a. W1 to W7 all done or ruled (below); `npm run check` EXIT 0 (521 suites, gates 0 fail). Each row walked on the web export behind vercel.json's headers on stack fix09 (ports 16020 to 16031); pictures in /tmp/wmt-shots/webapp-09/ (390 and 1440, light and dark, boards in boards/).
+- **Next:** a T1 verifier walks every touched path on the web export (/r/<code>, /join, /bills, an unknown address mid-sign-up; /tiers cold and in-app for a dollar person and a highest-tier person; points pack in one tab and in two; an upgrade's checkout row; a paid-question reply with Enter; an open room before Join); then the batch check and the PR to main.
+- **Fenced file touched:** `src/app/_layout.tsx` (a start-step provider around the Stack, and a web-only transparent-modal option on `tiers`), row WEBAPP-09 #1 in SHARED-CHANGES.md.
+- **Phone-visible changes:** the open-room not-member line now reads "Join to read and write here. Joining is free, and so is reading." (W7, shared screen). Nothing else: W2's Close on the highest tier, the transparent tiers sheet, W3, W4, W5 are web only; W1 reads the sign-up step the phone's guards already hold and a phone cannot reach the unknown-address case with a step open that it did not already handle.
+- **Carried elsewhere, not here:** the card fee missing from the wallet history (Hub, `CARD-FEE-HISTORY`); "You can edit it while it waits" with no edit (CREATOR-TAKEDOWN); the verification page's "Up to 25 uploads" against the tiers' 4, 8 and 15 (an owner question).
 
 ## Read first
 
@@ -57,8 +59,8 @@ The proof for anything web-only is the web export in a browser, as in WEBAPP-08,
 - [ ] A buyer of a points pack sees the points they really got; a buyer who paid in two tabs sees it paid in both.
 - [ ] Every screen this batch touches has pictures at 390 light and dark beside its board, and at 1440.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-09.md](history/WEBAPP-09.md).
 
 ## Owner sign-off
