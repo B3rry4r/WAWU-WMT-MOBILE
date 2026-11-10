@@ -84,4 +84,22 @@ Findings:
 
 NOT RUN: Android jest of the touched screens; every picture individually looked at (only a subset); a phone.
 
+## Verifier report (round 1, 5657e9c)
+
+Verdict: MERGE. No defect of medium or worse.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | typecheck EXIT 0; lint EXIT 0 (no file edited); jest -w 2 EXIT 0 (521 of 521 suites, 7770 tests, 5 skipped, no suite needed a rerun); gates EXIT 0; tasks EXIT 0 |
+| V4/V9 | passed | web export behind vercel.json (unchanged by the branch, no --disable-web-security), Hub CORS_ORIGIN set to the export's origin, real sign-in, 0 CSP and 0 CORS violations in all runs |
+| V5 | passed | /tmp/wmt-shots/upload-words-verify2/ : legacy tick person, free person and Founding Maker, 390 light and dark and 1440 light, for Create, the limit sheet (from Create), the format screen with the sheet, Publish, Your tier and My content, beside boards (board-vs-*.png); the legacy sheet, Publish and Your tier pairs, the free Publish pair, the legacy format screen, the Founding Maker sheet at 1440 and the free Your tier at 1440 were looked at; the rest were taken, not each looked at |
+| V6/V7 | passed | below |
+
+Test edits: the one rewritten assertion (entries.test.tsx) now expects the sheet for a no-tier person at 25 of 25 with a tick (R-129 wants the sheet from the Hub's places alone); the old fixture (5 of 5, no tier, no tick) is no longer tested, though the Hub gives such a person 0 places and `atPlacesLimit` needs allowed above 0, so a free person is never sent to the sheet (walked: free person's Content goes to the format screen, no sheet, Publish closed with "Make it official to publish. Publishing needs a tier. Drafts stay free."). All other changed tests are additions (two Create tests, one on android, two format tests, two Publish and Your tier tests).
+
+Walk (Hub numbers equal the screens): legacy tick person (no tier, wallet opened): at 24 of 25 Create says "24 of 25 used" and Content goes on to the format screen, not the sheet; Publish opens ("24 of 25"); at 25 of 25 Create's Content opens the sheet "You have used 25 of 25", the format screen opens it by itself, Publish shows "25 of 25"; Your tier says "Your tick still gives you 25 places to publish until it ends. See tiers for what a tier gives."; the Hub's 402 is not reached from the app (one more by API: 402). Founding Maker at 15 of 15: sheet unchanged ("You have used 15 of 15", Add 5 more products).
+
+Findings: low: the "free 5 of 5, no tier, no tick" case is no longer covered by a test and would now get the sheet if the Hub ever gave a free person places again (it gives 0). Low: the Founding Maker's Publish and Your tier were walked at 15 of 15 only.
+NOT RUN: publishing a piece through the Publish button (it needs a file picked and sent to storage; the stack has no storage stand-in, so the 25th piece was made by POST /content); a phone; the legacy person's wallet was opened through the stand-in and the profile and tick rows were made by SQL.
+
 ## Owner sign-off
