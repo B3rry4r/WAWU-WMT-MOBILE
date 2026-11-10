@@ -49,3 +49,6 @@ Verdict: FIX. The landing, Like/Save and SHARED-CHANGES fixes hold; the Rate on 
 ## Builder fix round 2 (10 Nov 2026)
 Medium from verify2: no Rate and no Report/More on a kept piece; see Current state 'Fix round 2'. Check parts below.
 Check parts on the round 2 head: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (523 suites, 7774 passed, 6 skipped), gates EXIT 0, `npm run tasks -- --write` EXIT 0.
+
+## Hub fix (10 Nov 2026)
+PR #260 shard 1: `rollback-stop-on-error.spec` (FIX-96) was red on 582b8dd because the rollback.sql lacked `\set ON_ERROR_STOP on` as its first line. Added it (Hub 59ec539); guard untouched. `psql -f` on a scratch database: refuses with a marked piece (column kept), runs once the marks are cleared (column dropped). `src/migration-rollbacks` EXIT 0 (3 tests, red before) and `creator-takedown` EXIT 0 (9 tests); run in one jest call the rollback spec mutates the shared database first, so they were run one after the other on a fresh database.
