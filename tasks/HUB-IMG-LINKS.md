@@ -23,7 +23,8 @@ As of 10 Nov 2026.
 - **Built:** one helper (`src/storage/read-link.ts`) signs every picture, preview, cover and avatar read link (`StorageService.readUrlFor`, so `freshUrlFor`, `coverUrlFor`, profile pictures, chat and AI media links; `CoverLinkService`) with `signingDate` rounded down to the start of the UTC day and `ResponseCacheControl: private, max-age=31536000, immutable`. Window: one UTC day (01:00 in Lagos). Default link signed for 7 days (the SigV4 maximum): **shortest life 6 days and 1 second** (at the last second of a window). A request for a life of one day or less (a chat attachment, 900 s) is signed at the second with no cache header, as before.
 - **Avatar bug:** `GET /creators` (creator-discovery) signs the stored avatar through the shared `freshOwnImage` (`src/storage/own-image.ts`, also now used by Explore). A stored value that is not the creator's own key is returned as stored, as before (`photo-position.contract.spec.ts` holds it).
 - **Not changed:** `presignUpload` (proved byte-identical to main for three uploads at a fixed clock), `signedReadUrl` (KYC, 900 s), `downloadUrlFor` (a saved file), the bucket probe.
-- **Next:** verifier.
+- **Verifier (10 Nov 2026):** MERGE, no blocker, high or medium; three lows in [history/HUB-IMG-LINKS.md](history/HUB-IMG-LINKS.md).
+- **Next:** lead merges the Hub branch.
 
 ## Read first
 
