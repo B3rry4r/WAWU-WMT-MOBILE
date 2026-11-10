@@ -178,6 +178,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (hub.loadFails && rest === '') return refuse(500, 'Something went wrong');
   if (!hold) throw new Error(`no piece ${id}`);
   if (rest === '' && method === 'GET') return ok(hold.piece);
+  if (rest === '' && method === 'DELETE') return new Response(null, { status: 204 });
   if (rest === '/detail') return ok({ ...hold.detail, rating: { ...hub.rating, canRate: hub.bought || hold.piece.accessType === 'free', cannotRateReason: hub.bought || hold.piece.accessType === 'free' ? null : 'not_purchased' } });
   if (rest === '/engagement') return ok({ ...hub.engagement, commentCount: hold.piece.commentCount });
   if (rest === '/media') return ok({ contentId: id, contentType: hold.piece.contentType, durationLabel: hold.piece.durationLabel, pageCount: hold.piece.pageCount, frameCount: 0, frames: [] });
@@ -654,6 +655,38 @@ describe('H25: the creator edits their own course (FIX-111)', () => {
     hub.ownCourse = true;
     const { screen } = await boot(COURSE);
     expect(screen.queryByRole('button', { name: 'Edit lessons' })).toBeNull();
+  });
+});
+
+describe('CREATOR-TAKEDOWN: the creator takes their own piece down from its page', () => {
+  it('the owner\'s More menu offers Take this down, never Report; a confirm comes first; Take down sends one DELETE and the page leaves', async () => {
+    hub.ownCourse = true;
+    const { screen, onBack } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByTestId('detail-menu'));
+    expect(screen.queryByTestId('detail-menu-report')).toBeNull();
+    await rtl.fireEvent.press(await screen.findByTestId('detail-menu-takedown'));
+    expect(await screen.findByText('Take this down?')).toBeTruthy();
+    expect(hub.writes.filter((w) => w.startsWith('DELETE'))).toEqual([]);
+    await rtl.fireEvent.press(screen.getByTestId('detail-takedown-confirm'));
+    await rtl.waitFor(() => expect(onBack).toHaveBeenCalledTimes(1));
+    expect(hub.writes.filter((w) => w.startsWith('DELETE'))).toEqual(['DELETE /content/course-1']);
+  });
+
+  it('Keep it closes the confirm and sends nothing', async () => {
+    hub.ownCourse = true;
+    const { screen, onBack } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByTestId('detail-menu'));
+    await rtl.fireEvent.press(await screen.findByTestId('detail-menu-takedown'));
+    await rtl.fireEvent.press(await screen.findByTestId('detail-takedown-keep'));
+    expect(hub.writes.filter((w) => w.startsWith('DELETE'))).toEqual([]);
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it('somebody else\'s piece offers Report and no take-down', async () => {
+    const { screen } = await boot(PDF);
+    await rtl.fireEvent.press(screen.getByTestId('detail-menu'));
+    expect(await screen.findByTestId('detail-menu-report')).toBeTruthy();
+    expect(screen.queryByTestId('detail-menu-takedown')).toBeNull();
   });
 });
 

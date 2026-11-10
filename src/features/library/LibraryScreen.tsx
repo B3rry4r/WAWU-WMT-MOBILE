@@ -22,9 +22,10 @@ import { font, space, useWawu } from '@/theme';
 
 import { countsKey, fetchCounts, fetchLibraryPage, listKey, type LibraryFilter, type LibraryPiece } from './api';
 import { EMPTY, chipsOf, pillOf, rowLine } from './model';
+import { TakeDownSheet, useTakeDown } from './takeDown';
 
 /** design/_gen/me.js line 96, `libRow`: 13 between the picture and the words, 12 above and below, a 52 square picture with 12 corners; the title 15 / 600, the line 12.5, 3 under it. */
-const rowMetrics = { between: 13, partsBetween: 14, padV: 12, thumb: 52, corner: 12, title: 15, line: 12.5, lineGap: 3, mark: 22 } as const;
+const rowMetrics = { takeDown: 36, between: 13, partsBetween: 14, padV: 12, thumb: 52, corner: 12, title: 15, line: 12.5, lineGap: 3, mark: 22 } as const;
 
 export type LibraryScreenProps = {
   onBack: () => void;
@@ -32,17 +33,20 @@ export type LibraryScreenProps = {
   onCreate: () => void;
   /** "see why" on a turned-down piece opens M26. */
   onSeeWhy: (id: string) => void;
+  /** A live piece or one in review opens its own page (where its owner can take it down too). */
+  onOpenPiece: (id: string) => void;
 };
 
 /**
  * M28 · My content. The person's own pieces, live, in review and turned down, each with its kind, price and sales (all from `GET
  * /content/mine/library`), the uploads meter from the Hub's own count (`GET /uploads/allowance`) and the chips with the Hub's counts
- * (`GET /content/mine/library/counts`). A turned-down piece opens M26 ("see why"). A live piece has no page of its own to open yet
- * (the content detail is HOME-03's) and a piece in review has no screen drawn, so those rows are not pressed (G-ME-07-1). The meter's
+ * (`GET /content/mine/library/counts`). A turned-down piece opens M26 ("see why"). A live piece and a piece in review open their
+ * own page, and each carries a take-down with a confirm (CREATOR-TAKEDOWN, R-130). The meter's
  * "Get verified" is added by ME-12 (R-47).
  */
-export function LibraryScreen({ onBack, onCreate, onSeeWhy }: LibraryScreenProps) {
+export function LibraryScreen({ onBack, onCreate, onSeeWhy, onOpenPiece }: LibraryScreenProps) {
   const [filter, setFilter] = useState<LibraryFilter>('all');
+  const takeDown = useTakeDown();
   const counts = useQuery({ queryKey: countsKey, queryFn: fetchCounts, staleTime: 0 });
   const list = useInfiniteQuery({
     queryKey: listKey(filter),
@@ -98,7 +102,13 @@ export function LibraryScreen({ onBack, onCreate, onSeeWhy }: LibraryScreenProps
       ) : (
         <View testID="library-list">
           {pieces.map((piece) => (
-            <PieceRow key={piece.id} piece={piece} line={rowLine(piece, now)} onSeeWhy={() => onSeeWhy(piece.id)} />
+            <PieceRow
+              key={piece.id}
+              piece={piece}
+              line={rowLine(piece, now)}
+              onOpen={() => (piece.status === 'rejected' ? onSeeWhy(piece.id) : onOpenPiece(piece.id))}
+              onTakeDown={() => takeDown.ask({ id: piece.id, title: piece.title, status: piece.status })}
+            />
           ))}
           {isFetchingNextPage ? <SkeletonRows count={1} testID="library-more-loading" /> : null}
           {list.isFetchNextPageError && !isFetchingNextPage ? (
@@ -108,17 +118,18 @@ export function LibraryScreen({ onBack, onCreate, onSeeWhy }: LibraryScreenProps
           ) : null}
         </View>
       )}
+      <TakeDownSheet takeDown={takeDown} testID="library-takedown" />
     </CreateFrame>
   );
 }
 
-function PieceRow({ piece, line, onSeeWhy }: { piece: LibraryPiece; line: string; onSeeWhy: () => void }) {
+function PieceRow({ piece, line, onOpen, onTakeDown }: { piece: LibraryPiece; line: string; onOpen: () => void; onTakeDown: () => void }) {
   const { colors } = useWawu();
   const ring = useFocusRing();
   const pill = pillOf(piece.status);
-  // Only a turned-down piece opens something (M26). A live piece's own page is HOME-03's and a piece in review has no screen drawn, so
-  // neither row is pressed (R-47, G-ME-07-1).
-  const opens = piece.status === 'rejected';
+  // A turned-down piece opens M26, a live piece or one in review opens its own page. A live piece or one in review also carries the
+  // take-down (CREATOR-TAKEDOWN); a turned-down piece is deleted from M26.
+  const canTakeDown = piece.status === 'live' || piece.status === 'pending';
   // The creator's cover first (R-114), then the preview when it is a picture.
   const { uri: still, onError: stillFailed } = usePicture(pictureCandidates(piece, piece.previewAssetUrl));
   const body = (
@@ -149,19 +160,19 @@ function PieceRow({ piece, line, onSeeWhy }: { piece: LibraryPiece; line: string
   );
   const row = [styles.row, { borderBottomColor: colors.borderHairline }];
   const label = [piece.title, line, pill?.label].filter(Boolean).join(', ');
-  return opens ? (
-    <Pressable testID={`library-row-${piece.id}`} accessibilityRole="button" accessibilityLabel={label} onPress={onSeeWhy} {...ring.handlers} style={[...row, ring.style]}>
-      {body}
-    </Pressable>
-  ) : (
-    <View testID={`library-row-${piece.id}`} accessible accessibilityLabel={label} style={row}>
-      {body}
+  return (
+    <View testID={`library-item-${piece.id}`} style={row}>
+      <Pressable testID={`library-row-${piece.id}`} accessibilityRole="button" accessibilityLabel={label} onPress={onOpen} {...ring.handlers} style={[styles.rowOpen, ring.style]}>
+        {body}
+      </Pressable>
+      {canTakeDown ? <IconButton icon="Trash2" label={`Take down ${piece.title}`} size={rowMetrics.takeDown} onPress={onTakeDown} testID={`library-takedown-${piece.id}`} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between, paddingVertical: rowMetrics.padV, borderBottomWidth: StyleSheet.hairlineWidth },
+  rowOpen: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: rowMetrics.between, minWidth: 0 },
   thumb: { width: rowMetrics.thumb, height: rowMetrics.thumb, borderRadius: rowMetrics.corner, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   words: { flex: 1, minWidth: 0 },
   // The pill centres on the row, as the board draws it (a StatusPill sits at the top of its parent unless told otherwise).

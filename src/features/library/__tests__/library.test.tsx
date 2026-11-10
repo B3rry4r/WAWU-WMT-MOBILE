@@ -48,8 +48,8 @@ const byStatus = (sent: Sent) => {
 };
 
 const open = async () => {
-  const handlers = { back: jest.fn(), create: jest.fn(), seeWhy: jest.fn() };
-  const view = await renderFrame(<LibraryScreen onBack={handlers.back} onCreate={handlers.create} onSeeWhy={handlers.seeWhy} />);
+  const handlers = { back: jest.fn(), create: jest.fn(), seeWhy: jest.fn(), openPiece: jest.fn() };
+  const view = await renderFrame(<LibraryScreen onBack={handlers.back} onCreate={handlers.create} onSeeWhy={handlers.seeWhy} onOpenPiece={handlers.openPiece} />);
   return { ...handlers, ...view };
 };
 
@@ -78,12 +78,17 @@ describe('M28 · My content', () => {
     expect(screen.getByText('All · 6')).toBeTruthy();
   });
 
-  it('draws no Get verified link and no row it cannot open (R-47)', async () => {
-    await open();
+  it('draws no Get verified link; a live piece and one in review open their page and carry a take-down, a turned-down piece opens "see why" (CREATOR-TAKEDOWN)', async () => {
+    const handlers = await open();
     await screen.findByText('How I light a night shoot');
     expect(screen.queryByText('Get verified')).toBeNull();
-    // Only the turned-down piece opens anything.
-    expect(within(screen.getByTestId('library-list')).getAllByRole('button').map((b) => b.props.testID)).toEqual(['library-row-r1']);
+    const buttons = within(screen.getByTestId('library-list')).getAllByRole('button').map((b) => b.props.testID);
+    expect(buttons).toEqual([
+      'library-row-w1', 'library-takedown-w1', 'library-row-c1', 'library-takedown-c1', 'library-row-w3', 'library-takedown-w3',
+      'library-row-w5', 'library-takedown-w5', 'library-row-e2', 'library-takedown-e2', 'library-row-r1',
+    ]);
+    await fireEvent.press(screen.getByTestId('library-row-e2'));
+    expect(handlers.openPiece).toHaveBeenCalledWith('e2');
   });
 
   it('a person who holds a tier is shown the tier\u2019s own count and name, never "Get verified" (RELEASE-02 second pass, L-p2-12)', async () => {

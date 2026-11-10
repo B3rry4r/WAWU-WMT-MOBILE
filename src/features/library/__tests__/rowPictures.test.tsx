@@ -53,7 +53,7 @@ const row = (id: string) => within(screen.getByTestId(`library-row-${id}`));
 
 describe('M28 · My content (Android)', () => {
   it('a user sees a picture on a photo and on a template with a picture cover, and the kind mark on everything else', async () => {
-    await renderFrame(<LibraryScreen onBack={jest.fn()} onCreate={jest.fn()} onSeeWhy={jest.fn()} />);
+    await renderFrame(<LibraryScreen onBack={jest.fn()} onCreate={jest.fn()} onSeeWhy={jest.fn()} onOpenPiece={jest.fn()} />);
     await screen.findByText('A clip');
     for (const [id, uri] of [['tplpic', 'https://cdn.test/previews/cover.png?sig=1'], ['photo', 'https://cdn.test/previews/shoot.jpg?sig=1']] as const) {
       expect(row(id).getByTestId('library-thumb-image').props.source).toEqual([{ uri }]);
@@ -69,7 +69,7 @@ describe('M28 · My content (Android)', () => {
   });
 
   it('a template cover that will not load gives way to the template mark', async () => {
-    await renderFrame(<LibraryScreen onBack={jest.fn()} onCreate={jest.fn()} onSeeWhy={jest.fn()} />);
+    await renderFrame(<LibraryScreen onBack={jest.fn()} onCreate={jest.fn()} onSeeWhy={jest.fn()} onOpenPiece={jest.fn()} />);
     await screen.findByText('A deck');
     await fireEvent(row('tplpic').getByTestId('library-thumb-image'), 'error', { nativeEvent: { error: 'not an image' } });
     expect(row('tplpic').queryByTestId('library-thumb-image')).toBeNull();
@@ -107,7 +107,7 @@ describe('M28 and M26 · covers (R-114, Android)', () => {
       piece({ id: 'cv', title: 'Covered video', contentType: 'video', previewAssetUrl: 'https://cdn.test/previews/clip.mp4?sig=1', coverUrl: 'https://cdn.test/covers/v.jpg?sig=1' }),
       piece({ id: 'ct', title: 'Covered deck', contentType: 'template', previewAssetUrl: 'https://cdn.test/previews/cover.png?sig=1', coverUrl: 'https://cdn.test/covers/t.png?sig=1' }),
     ]);
-    await renderFrame(<LibraryScreen onBack={jest.fn()} onCreate={jest.fn()} onSeeWhy={jest.fn()} />);
+    await renderFrame(<LibraryScreen onBack={jest.fn()} onCreate={jest.fn()} onSeeWhy={jest.fn()} onOpenPiece={jest.fn()} />);
     await screen.findByText('Covered video');
     expect(row('cv').getByTestId('library-thumb-image').props.source).toEqual([{ uri: 'https://cdn.test/covers/v.jpg?sig=1' }]);
     await fireEvent(row('ct').getByTestId('library-thumb-image'), 'error', { nativeEvent: { error: 'gone' } });
