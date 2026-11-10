@@ -19,19 +19,13 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** verifying. Built on wawu-backend `wmt/HUB-IMG-LINKS` (`fad6147`).
-- **Built:** one helper (`src/storage/read-link.ts`) signs every picture, preview, cover and avatar read link (`StorageService.readUrlFor`, so `freshUrlFor`, `coverUrlFor`, profile pictures, chat and AI media links; `CoverLinkService`) with `signingDate` rounded down to the start of the UTC day and `ResponseCacheControl: private, max-age=31536000, immutable`. Window: one UTC day (01:00 in Lagos). Default link signed for 7 days (the SigV4 maximum): **shortest life 6 days and 1 second** (at the last second of a window). A request for a life of one day or less (a chat attachment, 900 s) is signed at the second with no cache header, as before.
+- **Status:** round 1 built, back to verifying. Fix round 1 on wawu-wmt `wmt/HUB-IMG-LINKS` (`966c637`). GitHub's full run failed on `fad6147` in 3 suites (16 tests); both causes are fixed without editing any existing test.
+- **Built:** one helper (`src/storage/read-link.ts`) signs every picture, preview, cover and avatar read link (`StorageService.readUrlFor`, so `freshUrlFor`, `coverUrlFor`, profile pictures, chat and AI media links; `CoverLinkService`) with `signingDate` rounded down to the start of the UTC day. **No `ResponseCacheControl` any more** (lead decision, 10 Nov): every read link has exactly the length and query parameter names it has on main; only the X-Amz-Date, X-Amz-Expires (same digit count) and X-Amz-Signature values differ. Default link signed for 7 days (the SigV4 maximum): shortest life 6 days and 1 second. A request for a life of one day or less (a chat attachment, 900 s), or whose lengthened expiry would have more digits (86401 to 99999 s, no caller asks), is signed at the second, as before.
+- **Community message media (FIX-71)** are signed at the current second as on main: `readUrlFor`/`freshUrlFor` take an explicit `{ atCurrentSecond: true }`, set only by `withFreshMedia` (`src/community-message/message-media.ts`).
 - **Avatar bug:** `GET /creators` (creator-discovery) signs the stored avatar through the shared `freshOwnImage` (`src/storage/own-image.ts`, also now used by Explore). A stored value that is not the creator's own key is returned as stored, as before (`photo-position.contract.spec.ts` holds it).
-- **Not changed:** `presignUpload` (proved byte-identical to main for three uploads at a fixed clock), `signedReadUrl` (KYC, 900 s), `downloadUrlFor` (a saved file), the bucket probe.
-- **Verifier (10 Nov 2026):** MERGE, no blocker, high or medium; three lows in [history/HUB-IMG-LINKS.md](history/HUB-IMG-LINKS.md).
-- **Next:** lead merges the Hub branch.
-
-## Read first
-
-- `docs/WORKFLOW.md`
-- `docs/roles/BUILDER.md` or `docs/roles/VERIFIER.md`, whichever your prompt names
-- `docs/people/YOU.md`
-- `tasks/WEBAPP-12.md` and `tasks/history/WEBAPP-12.md` (on `wmt/WEBAPP-12`): the numbers and the line references
+- **Not changed:** `presignUpload` (byte-identical to main), `signedReadUrl` (KYC, 900 s), `downloadUrlFor`, the bucket probe.
+- **Verifier (10 Nov 2026, on `fad6147`):** MERGE, no blocker, high or medium; three lows in [history/HUB-IMG-LINKS.md](history/HUB-IMG-LINKS.md). Low 2 and 3 (`immutable` on paid files and on the in-place video clean) are gone with the cache header.
+- **Next:** verifier re-checks round 1 (all suites named in history), then the lead merges.
 
 ## Goal
 
@@ -40,7 +34,7 @@ The same picture has the same link for a day, the browser is told it may keep it
 ## Scope
 
 - Sign picture and preview read links with a signing time rounded down to a fixed window (the AWS SDK's `signingDate`), with an expiry that still leaves every link valid for at least as long as today (state the window and the shortest life a link can have).
-- Ask the bucket to answer with a long private cache (`ResponseCacheControl` on the signed GET, never on the upload: a changed upload signature would break the phones' uploads in the field).
+- ~~Ask the bucket to answer with a long private cache (`ResponseCacheControl`)~~ dropped in round 1 (lead decision, 10 Nov): it made every read link about 70 characters longer. The stable link alone lets the browser revalidate.
 - `creator-discovery.service.ts:187` signs the avatar like `explore.service.ts:173`.
 - Additive: no route or response shape changes; every protected route behaves as before.
 
