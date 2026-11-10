@@ -21,6 +21,17 @@ jest.mock('expo-secure-store', () => ({
     mockVault.delete(key);
   }),
 }));
+jest.mock('@/features/verify/DraftFormScreen', () => ({
+  // The draft form's own screen is not under test: a Publish button that hands the draft id to the route, as the form's does.
+  DraftFormScreen: ({ onPublish }: { onPublish: (id: string) => void }) => {
+    const { Pressable, Text: T } = require('react-native') as typeof import('react-native');
+    return (
+      <Pressable testID="draft-publish" onPress={() => onPublish('d1')}>
+        <T>Publish the draft</T>
+      </Pressable>
+    );
+  },
+}));
 jest.mock('@/features/create/pickFile', () => ({
   canPickFile: true,
   // The full file is picked with the format's own types; a cover is picked with a second argument (how it is read), as `pickCover` does.
@@ -297,6 +308,36 @@ describe('VF12 · publish your first product', () => {
     expect(await screen.findByTestId('publish-draft-title')).toBeTruthy();
     expect(screen.queryByTestId('publish-no-tier')).toBeNull();
     expect(screen.queryByText('Publishing needs a tier. Drafts stay free.')).toBeNull();
+  });
+
+  describe('R-129 · Publish on a product draft follows the Hub places (shop-product)', () => {
+    const real = () => {
+      routes['shop-product'] = page('@/app/shop-product');
+    };
+    it('a person with no tier whose tick bought before tiers gives 25 places goes on to the Publish screen, on a phone', async () => {
+      const was = Platform.OS;
+      Platform.OS = 'android';
+      try {
+        real();
+        hub.tier = 'none';
+        hub.tickPlaces = 25;
+        await renderRouter(routes, { initialUrl: '/shop-product?id=d1' });
+        await fireEvent.press(await screen.findByTestId('draft-publish'));
+        expect(await screen.findByTestId('publish-draft-title')).toBeTruthy();
+        expect(screen.queryByText('Tiers')).toBeNull();
+      } finally {
+        Platform.OS = was;
+      }
+    });
+
+    it('a person the Hub gives no places (no tier, no tick) is still sent to the tiers', async () => {
+      real();
+      hub.tier = 'none';
+      hub.tickPlaces = 0;
+      await renderRouter(routes, { initialUrl: '/shop-product?id=d1' });
+      await fireEvent.press(await screen.findByTestId('draft-publish'));
+      expect(await screen.findByText('Tiers')).toBeTruthy();
+    });
   });
 
   it('a person whose identity check is not through sees uploads paused with the Hub’s reason and cannot publish; Try again opens Open your wallet', async () => {

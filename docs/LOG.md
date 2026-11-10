@@ -1,4 +1,5 @@
 # Work log
+- 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
 - 10 Nov 2026 · CREATOR-TAKEDOWN · a creator takes a live or in-review piece down from My uploads and from the piece's page (confirm, place freed at once); buyers keep it (Hub: one nullable column, R-130); review sentence matches; Hub and jest checks run, web walk and pictures NOT RUN

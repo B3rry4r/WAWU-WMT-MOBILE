@@ -12,6 +12,7 @@ import { SkeletonRows } from '@/components/Skeleton';
 import { StatusPill } from '@/components/StatusPill';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
+import { allowanceKey, fetchAllowance } from '@/features/create/api';
 import { fetchMyTier, tierKey } from '@/features/me/api';
 import { font, space, useWawu } from '@/theme';
 
@@ -70,7 +71,9 @@ export type CreatorSetupScreenProps = {
 };
 
 /** The first card's words for what the person's tier lets them do (R-43). `undefined`: the tier is not known, so uploading is not mentioned. */
-export function uploadingCard(state: 'none' | 'active' | 'ending' | 'ended' | undefined): { title: string; line?: string } {
+export function uploadingCard(state: 'none' | 'active' | 'ending' | 'ended' | undefined, places = 0): { title: string; line?: string } {
+  // The Hub's places decide (R-129): a tick bought before tiers keeps its places with no tier.
+  if (places > 0 && (state === 'none' || state === 'ended')) return { title: 'Uploading is open', line: 'Your earnings wait until you open your wallet' };
   if (state === 'active' || state === 'ending') return { title: 'Uploading is open', line: 'Your earnings wait until you open your wallet' };
   if (state === 'none' || state === 'ended') return { title: 'Uploading needs a tier', line: 'Drafts are free. Pick a tier when you are ready to publish.' };
   return { title: 'Your earnings wait until you open your wallet' };
@@ -101,7 +104,8 @@ export function CreatorSetupScreen({ onLater, laterBusy, laterFailed, onOpen }: 
       void refetchTier();
     }, [refetchTier]),
   );
-  const top = uploadingCard(tier.data?.state);
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, staleTime: 0, retry: false });
+  const top = uploadingCard(tier.data?.state, allowance.data?.uploads.allowed ?? 0);
   const rows = rowsOf(state.data);
   const known = state.data !== undefined && !state.data.failed;
   const doneCount = rows.filter((r) => r.done === true).length;
