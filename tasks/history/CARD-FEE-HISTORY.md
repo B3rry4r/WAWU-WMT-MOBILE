@@ -22,7 +22,7 @@ SELECT count(*) AS cards, coalesce(sum(c."providerFeeKobo"),0) AS kobo
    AND NOT EXISTS (SELECT 1 FROM "FintavaLedgerReference" r WHERE r."accountNumber" = w."accountNumber"
                     AND r.direction = 'out' AND r.value = c.reference || '-issuer');
 ```
-The same query with `c."wawuFeeKobo" > 0 AND c."feeCollectedAt" IS NOT NULL` and `'-wawu'` counts the WAWU rows. Script (one run, owner's word first, on a copy of production first): for each such card call `LedgerService.record` with `recordIssuerFeeRow` (and `recordCardFeeRow` for the WAWU row, amount `wawuFeeKobo`), `occurredAt` = the card's `createdAt`, in a transaction per card; it is idempotent because the ledger keeps one row per (account, direction, reference). Caveat to decide before running: a card made while the fee in force differed from `providerFeeKobo` is shown at the amount it was claimed with; the nightly reconcile should be run after to see no new finding.
+The same query with `c."wawuFeeKobo" > 0 AND c."feeCollectedAt" IS NOT NULL` and `'-wawu'` counts the WAWU rows. Script (one run, owner's word first, on a copy of production first): for each such card call `LedgerService.record` with `recordIssuerFeeRow` (named "Bank charge") and `recordCardFeeRow` for the WAWU row at the amount the live row holds: the amount moved plus the provider's charge on that transfer (the walletToWallet receipt's `amountKobo` + `feeKobo`; `feeLegKobo(wawuFeeKobo)` plus the configured wallet-to-wallet charge when the receipt is gone), not `wawuFeeKobo` itself, `occurredAt` = the card's `createdAt`, in a transaction per card; it is idempotent because the ledger keeps one row per (account, direction, reference). Caveat to decide before running: a card made while the fee in force differed from `providerFeeKobo` is shown at the amount it was claimed with; the nightly reconcile should be run after to see no new finding.
 
 ## Verifier report
 
@@ -49,3 +49,11 @@ The same query with `c."wawuFeeKobo" > 0 AND c."feeCollectedAt" IS NOT NULL` and
 - **L5 (backfill note).** The outline writes the `-wawu` row at `wawuFeeKobo`; the live row is the amount moved plus the provider's charge. Use the same figure, and the L1 caveat applies.
 
 **NOT RUN:** the whole `npm run test:contract` in one go; the Nuvion and money folders beyond those named (the builder reported the same failures on main); a failure switch on the stand-in (refusal, provider failure, lost answer) beyond the specs; a non-zero book-transfer charge on the `-wawu` row; the backfill; any real provider. I edited rows in the throwaway stack database by SQL to build attacks 4 and 7; the stack is down and the databases dropped.
+
+
+## Fix round 1 (builder, 10 Nov 2026, Hub `6cb7775`)
+
+Answers to the verifier's M1, L1 to L5 (see Current state for the behaviour). Proof:
+- **Specs:** `src/money/cards` 64 of 64 (5 new: M1 words with both fees; L2 late-made adoption once and a refused card not adopted; L2 ledger failure leaves "being confirmed", the replay is the same answer, the next read adopts once; L3 no second debit and the bound; L4 wait then final), EXIT 0. History, ledger, wallet-provider and the nuvion cards folders: main 216 of 216, branch 216 of 216. Protected suite (seeded, mock WAWU ID, `PROTECTED_ROUTES_ALLOW_DB` set): 253 of 253 on the branch (main 253 of 253 in the first pass, unchanged). tsc (`--max-old-space-size=4096`, alone) EXIT 0, eslint on `src/money/cards` and the handler EXIT 0, `scripts/gates/run.py` EXIT 0, `check_baseline.py` EXIT 0.
+- **Stack** (`cf`, ports 16120 to 16139, Nuvion stand-in, `WAWU_FEE_CARD_KOBO` 10,000, fee 65,772): funded 550,100; one card through `POST /money/cards` (201, replay the same card). History: out 65,772 "Bank charge" (`-issuer`), out 10,000 "WAWU's fee" (`-wawu`), in 550,100: net 474,328, equal to the Hub balance and the stand-in's. Stack down, databases dropped.
+- **Limits:** the retry bound and the late-adoption path are proved in specs against the fake, not driven on the stack. The retry count is kept in the process (no migration), so a restart clears it.
