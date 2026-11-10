@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** review (verifier: MERGE, lows only). Built on `wmt/WEBAPP-10` (from `wmt/BATCH-WEBAPP1` 392eb3b), design only. History: [history/WEBAPP-10.md](history/WEBAPP-10.md).
+- **Status:** review (verifier: MERGE, lows only; report merged from `wmt/WEBAPP-10-verify` 3e4f56c). The three drawing defects it found are fixed: D9 and D9n (the cover is blurred while locked, so no title shows behind "Preview ended"), D20 (the list shows only the bank matching "gu"), D35 (no Inbox badge and no Paid DMs count on an empty inbox). Re-rendered, all 98 images copied again. Built on `wmt/WEBAPP-10` (from `wmt/BATCH-WEBAPP1` 392eb3b), design only. History: [history/WEBAPP-10.md](history/WEBAPP-10.md).
 - **Board:** `design/Desktop Flow.dc.html` (+ `.sections.json`, source `design/_gen/desktop.js`, built with `_gen/build.js`). 49 artboards, each dark on top and light underneath: D1 to D40 at 1440 x 900, and D1n, D7n, D9n, D15n, D17n, D22n, D26n, D27n, D29n at 1024 x 768. Start here map (the shell with 10 numbered spots and a legend), journeys left to right with the click on each arrow, Starts from / Then chips, an Other states row and an At 1024 row.
 - **Also in the canvas:** WAWU Dark and WAWU Light now carry it as flow 16, "Desktop (web)" (`_gen/buildAll.js` FLOWS gained one entry; the 61 existing sections are unchanged except "Flow N of 15" now reads "of 16"). The logo is the R-37 brand pack, copied to `design/brand/` (`<layout>-dark.png` = white or sticker art, `-light.png` = ink art); no WAWU logo image is used.
 - **Drawn:** shell (sidebar, header with search, bell, avatar), Home Today and For you with a side rail, account menu, notifications panel, search results, Me, Explore, Categories, content detail (locked, unlocked), unlock, PIN, tip and share dialogs, Inbox with list and conversation (chat, paid DM), Wallet with the history table, Add money, Send (bank, bank picker, amount, review, PIN, receipt), transaction detail panel, My content table, Settings in two columns, theme picker, sign in, sign up, phone code; states: hover, keyboard focus, loading, Inbox empty, new wallet, wallet can't reach the account, feed didn't load, wrong password, amount over balance.
@@ -42,9 +42,18 @@ As of 10 Nov 2026.
 12. Hover: a card lifts with an accent outline, rows and sidebar items take a fill. Keyboard focus: a 2 px accent ring with a 2 px gap; no focus token exists yet, so the build adds one. "Skip to content" is the first Tab stop.
 13. New lines not on any phone screen: "Pick a conversation" / "Your messages, paid questions and communities open here."; "No transactions yet" / "Add money by bank transfer to your account number. It shows here the moment it lands."; "Kemi gets 85% of the price." and "of your tip."; "It is in My purchases, on the phone and on the web."; "The full 84 pages are one click away."; "System follows your computer"; "Everything you publish, with its price, sales and review."
 14. Screens not drawn here (Create, Withdraw, Cards, points, tiers, events, schools, community rooms, the reader and player, Me's other tabs) keep the phone layout, centred inside the shell, until a later board draws them.
+15. The browser frame with a "usewmt.com" address bar around every artboard is presentation only: it shows the address each screen lives at and is not part of the app.
+16. My content at 1024 drops the Sales and Updated columns (D26n).
+17. Settings opens on Notifications, the first row, so the right column is never empty on a wide window (D27).
+18. On a content page the sidebar keeps Home lit, the place the piece was opened from (D9 to D14).
+19. The profile shows its pieces four across at 1440 and three at 1024 (D6).
+20. The Wallet page is split: the card, Points, Passes, the quick actions and the card row in a left column, the history table on the right (D17).
+21. The first Tab stop, "Skip to content", appears over the logo at the top of the sidebar (D33).
+
+**Owner question (nothing changed):** the fee rows say "WAWU's fee" and receipt references start "WAW-" (D22, D24, D25), as the phone's pay sheet does today with the label from the Hub. R-37 keeps WAWU out of the app's name and lists "WAWU's fee" among the names that stay; the "WAW-" prefix is not on that list. Keep both on the web and the phone, or rename one or both?
 
 ### Next
-A verifier (lean, T1): the board opens, every artboard renders in both themes at both sizes, nothing drawn that is not built or ruled (R-47), no bills, no WAWU logo, no em-dash, Naira only. Then the owner reviews the board and the 14 decisions.
+The owner reviews the board (`design/Desktop Flow.dc.html`, or flow 16 of WAWU Dark and Light), the 21 decisions and the question, then the lead merges. The lows the verifier listed beyond the three fixed go to the area's sweep.
 
 ## Read first
 

@@ -41,3 +41,12 @@ Verifier (lean, T1), 10 Nov 2026, on `wmt/WEBAPP-10-verify` (head 60d4eb0). Buil
 
 **NOT RUN:** Claude Design's own viewer (the board was opened through the repo's renderer and a local browser only); a picture of the WAWU Dark compilation in a browser (its sections json was compared byte for byte instead).
 
+## Builder fix round (10 Nov 2026)
+
+Merged `wmt/WEBAPP-10-verify` 3e4f56c (a merge commit), then fixed the three drawing defects the verifier found, in `design/_gen/desktop.js`, rebuilt with `_gen/build.js` and `_gen/buildAll.js` (flow 16 of WAWU Dark and Light re-appended; sections 0 to 60 untouched).
+- D9, D9n: while locked the cover is blurred and dimmed, so no title text sits behind "Preview ended" (dark and light, both sizes).
+- D20: the bank list under the search box shows only the match for "gu" (Guaranty Trust Bank, picked).
+- D35: an empty inbox shows no badge on Inbox in the sidebar and a plain "Paid DMs" chip.
+- Task file: decisions 15 to 21 added (the verifier's designer choices) and the "WAWU's fee" / "WAW-" owner question, with nothing changed.
+- Pictures: `render_design.py --flow Desktop` EXIT 0, 98 images; D9, D9n, D20 and D35 looked at in both themes; all 98 copied again to `/tmp/wmt-shots/webapp-10/` with fresh contact sheets.
+
