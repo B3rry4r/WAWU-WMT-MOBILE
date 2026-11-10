@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 39 | 0 | 0 | 0 |
+| todo | 38 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 47 | 0 | 0 | 0 |
+| verifying | 48 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -314,6 +314,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
+- [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -519,6 +520,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
@@ -533,4 +535,3 @@ From `docs/LOG.md`, newest first.
 - 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)
 - 9 Nov 2026 · WEBAPP-05, WEBAPP-06 · The PIN and amount keypads take a laptop keyboard, the hosted selfie opens in the same tab and returns to the web app, tiers, points, credits, the upload pack and community passes are paid from the wallet on the web, and the web draws no Bills entry (verifying)
 - 10 Nov 2026 · WEBAPP (lead): 04:58 UTC. WEBAPP-10's lean verifier MERGE (`wmt/WEBAPP-10-verify` 3e4f56c; all 98 renders looked at; the board rebuilds identical; the 61 existing sections unchanged but the flow count; no bills, no WAWU logo, no em-dash, Naira only). Three drawing lows fixed by the designer (`wmt/WEBAPP-10` d370a17: D9 cover behind "Preview ended", D20 bank search, D35 counts on an empty Inbox); seven more designer choices added as owner decisions 15 to 21, and one owner question (the "WAW-" receipt prefix; R-37 keeps "WAWU's fee"). Review page republished. Status: waiting for the owner's review before the desktop build is cut.
-- 10 Nov 2026 · WEBAPP (lead): 04:28 UTC. WEBAPP-09 merged into the batch (verifier MERGE: W1 to W7 on the export, 41 mid sign-up opens all led on, every purchase charged once); batch `npm run check` EXIT 0 (521 suites, 7,760 passed); the lead's plan records merged in (392eb3b). PR #25 opened, `wmt/BATCH-WEBAPP1` into main: GitHub CI stops at `npx expo-doctor` (12 Expo patch releases newer than the pins; main red since 3 Nov); one comment on the PR says so; the owner chooses: merge with the pins kept (lead suggestion, an exclude with the reason) or update and rebuild. WEBAPP-10 drawn (Opus, `wmt/WEBAPP-10` 60d4eb0): `design/Desktop Flow.dc.html`, 49 artboards (D1 to D40 at 1440, nine at 1024), 14 owner decisions in its task file; a review page for the owner at https://claude.ai/artifact/PkXNMpKkMVYhQ9iATdaXDT; a lean verifier is checking it. Two container restarts in the night (about 01:15 and before 03:39 UTC) stopped work in flight once; every agent was resumed and nothing pushed was affected.
