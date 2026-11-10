@@ -35,3 +35,13 @@ Heads: mobile 710ffac, Hub 582b8dd on 7dd5b22. Stack ctv: Hub branch with the mi
 ## Builder fix round 1 (10 Nov 2026)
 Items 1 to 4 of the verifier's FIX: see Current state, 'Fix round 1'. Review screen pictures, direct-link landing picture and the jest tests are the proof; check parts below.
 Check parts on the fix-round head: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (523 suites, 7772 passed, 6 skipped, none re-run), gates EXIT 0, `npm run tasks -- --write` EXIT 0.
+
+## Verifier report, round 1 re-check (T1, 10 Nov 2026, mobile f415ba1, Hub 582b8dd)
+
+Verdict: FIX. The landing, Like/Save and SHARED-CHANGES fixes hold; the Rate on a kept piece does not work.
+- Landing (web export, Hub branch, vercel.json headers applied by a small server with the CSP connect-src widened to this stack's two localhost origins, since the shipped CSP blocks localhost): from a direct link, an in-review piece and a live sold piece both land on /library with the count dropped (5, 4 in light; 2, 1 in dark); opened from My uploads it goes back to /library (3). Pictures r1-landing-* at 390 light and dark.
+- Buyer of a taken-down piece (390 light, dark, 1440): no Like, no Save, Comments and Rate drawn, no error on load; a live piece the buyer bought still shows Like and Save. BUT Rate fails: the app sends PUT /content/:id/rating, which the Hub answers 404 for a removed piece (`ContentDetailService.rate` needs status live), so submitting shows "Content not found" (r1-buyer-rate-submit-390-light.png). Comments work (POST 201 for the buyer). The Hub is unchanged at 582b8dd, so the fix is either the Hub rate route (let a buyer rate a kept piece, as `POST /content/:id/rate` already does) or not drawing Rate. Medium.
+- SHARED-CHANGES row #1 now describes the refusing rollback: pass.
+- Diff 84e8729..f415ba1: tests only added (takeDownLanding.test, a kept-piece case and a `kept` factory flag in contentDetail.test); no assertion changed or removed. Note the added kept-piece test asserts no like/save and comments, and nothing about Rate.
+- Checks on f415ba1: typecheck EXIT 0, lint EXIT 0, gates EXIT 0, tasks EXIT 0, jest -w 2 523 suites 7772 passed EXIT 0.
+- Still low: POST /content/:id/view 404s for the buyer of a kept piece (no UI effect).
