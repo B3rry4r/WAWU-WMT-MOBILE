@@ -702,6 +702,31 @@ describe('CREATOR-TAKEDOWN: the buyer of a piece its creator took down', () => {
     expect(screen.queryByTestId('detail-like')).toBeNull();
     expect(screen.queryByTestId('detail-save')).toBeNull();
     expect(screen.getByTestId('detail-comments')).toBeTruthy();
+    // The Hub refuses a rating and a report for a removed piece, so neither is drawn (the More menu held only Report).
+    expect(screen.queryByTestId('detail-rate')).toBeNull();
+    expect(screen.queryByTestId('detail-menu')).toBeNull();
+  });
+
+  it('a live bought piece still offers Like, Save, Rate and More', async () => {
+    hub.bought = true;
+    const { screen } = await boot(PDF);
+    for (const id of ['detail-like', 'detail-save', 'detail-rate', 'detail-menu']) expect(screen.getByTestId(id)).toBeTruthy();
+  });
+
+  it('proves the same on a phone (Platform.OS android)', async () => {
+    const { Platform } = require('react-native') as typeof import('react-native');
+    const real = Platform.OS;
+    Platform.OS = 'android';
+    try {
+      hub.bought = true;
+      hub.kept = true;
+      const { screen } = await boot(PDF);
+      expect(screen.queryByTestId('detail-rate')).toBeNull();
+      expect(screen.queryByTestId('detail-like')).toBeNull();
+      expect(screen.getByTestId('detail-open')).toBeTruthy();
+    } finally {
+      Platform.OS = real;
+    }
   });
 });
 

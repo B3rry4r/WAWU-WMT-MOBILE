@@ -229,14 +229,16 @@ export function ContentDetailScreen({ id, onBack, onTakenDown, pay, onOpenCourse
   };
 
   // A piece its creator took down stays with the people who bought it, but it takes no new like or save (the Hub answers 404), so
-  // those two controls are not drawn for the buyer of such a piece (CREATOR-TAKEDOWN, R-130).
+  // those two controls are not drawn for the buyer of such a piece (CREATOR-TAKEDOWN, R-130). Rate (PUT /rating) and Report (the More
+  // menu's only row for a buyer) are refused for a removed piece too, so they are not drawn either. The view and share counts are fire
+  // and forget and say nothing when the Hub refuses them.
   const kept = p.status === 'removed' && !own;
   const actions: Action[] = [
     ...(kept ? [] : [{ key: 'like', icon: 'Heart', label: likeLabel(p.ratingPct, e.likes), on: e.likedByMe, hint: e.likedByMe ? 'Unlike' : 'Like', onPress: () => page.like.mutate(!e.likedByMe), testID: 'detail-like' } as Action]),
     { key: 'comments', icon: 'MessageCircle', label: compactCount(count), hint: commentLine, onPress: () => setCommentsOpen(true), testID: 'detail-comments' },
     { key: 'share', icon: 'Share', label: 'Share', onPress: () => setShareOpen(true), testID: 'detail-share-action' },
     ...(kept ? [] : [{ key: 'save', icon: 'Bookmark', label: e.savedByMe ? 'Saved' : 'Save', on: e.savedByMe, onPress: () => page.save.mutate(!e.savedByMe), testID: 'detail-save' } as Action]),
-    ...(own ? [] : [{ key: 'rate', icon: 'Star' as const, label: rateLabel(rating.myRating), on: rating.myRating !== null, onPress: onRate, testID: 'detail-rate' }]),
+    ...(own || kept ? [] : [{ key: 'rate', icon: 'Star' as const, label: rateLabel(rating.myRating), on: rating.myRating !== null, onPress: onRate, testID: 'detail-rate' }]),
   ];
 
   const lessons = d.lessons;
@@ -248,7 +250,7 @@ export function ContentDetailScreen({ id, onBack, onTakenDown, pay, onOpenCourse
 
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="content-detail">
-      <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} onMore={() => setMenuOpen(true)} />
+      <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} onMore={kept ? undefined : () => setMenuOpen(true)} />
       <ScrollView testID="detail-scroll" contentContainerStyle={[styles.body, { paddingBottom: footed ? footHeight + space.lg : m.bottom + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <Media piece={item} tag={mediaTag(p, d)} by={by} signal={open} lesson={playing} onLessonEnded={lessonEnded} />
         <View style={styles.title}>
