@@ -491,6 +491,8 @@ Builder and verifier are always different sessions.
 67. [WEBAPP-10](WEBAPP-10.md) Desktop screens drawn for the web app
 68. [CREATOR-TAKEDOWN](CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down
 69. [VIDEO-PRIVACY](VIDEO-PRIVACY.md) A video someone uploads carries no location or device data
+70. [WEBAPP-09](WEBAPP-09.md) The second web walk's fixes (Phase 1, last batch)
+71. [CARD-FEE-HISTORY](CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history
 
 ## Developer
 

@@ -234,3 +234,65 @@ Same on the phone by code (R-47 comments), listed because the web has no other d
 - My first video upload stored 0 bytes: the Playwright route I used to add the bucket's CORS headers (route.fetch) drops a File request body. I replaced it with a small CORS proxy (127.0.0.1:16073, headers as WEB-DEPLOY step 3 asks) and re-ran; the stored video is byte-identical to the source. Earlier image/voice readbacks were valid (non-empty, decoded).
 - Concurrent runs on one saved session consumed its rotating refresh token once and signed the creator out; I signed back in through the real sign-in screen.
 - Tokens were read from my own scratch only to call the Hub's tier purchase and the seed tool for the buyer's funded wallet (nuvion-tool seed with the buyer's real sign-in token); never typed into the app.
+
+---
+
+# Walk 2 (after WEBAPP-08), 9 to 10 Nov 2026, on 60958fc: all three PASS (no SERIOUS). Fixes: WEBAPP-09.
+
+---
+
+# WEBAPP-07 walk 2, walker A (arriving). Mobile 60958fc (fresh clone, npm ci, own TMPDIR export), Hub main 7dd5b22
+Verdict: PASS (0 SERIOUS, 2 MEDIUM, 4 LOW).
+Pictures: /tmp/wmt-shots/walk2-web-a/ (235 taken; ~215 looked at through ~40 contact sheets and singles; 390 beside boards A1 A3 A4 A12 A13 A22 A26 A27 A30 A31 A6 A7 H1 X1 X6 E2 W1 VF5a).
+
+Harness: fresh clone, npm ci, `npm run web:export` (TMPDIR own, EXPO_PUBLIC_API_URL/ID_URL = localhost:16020/16021) under the lock. Bundle: ONE react (react.production.js x1), "nothing to buy" and "See the tiers" present, stack hosts baked, api.wawuafrica.com / id.wawuafrica.com absent, no "wss://" in the bundle (it is in vercel.json: connect-src has wss://api.wawuafrica.com). Served over https :16022 with vercel.json headers (CSP: https api -> http://localhost:16020, wss api -> ws://localhost:16020, id -> http://localhost:16021). Hub restarted (my own pid) with CORS_ORIGIN=http://localhost:16020,https://localhost:16022 and NUVION_LIVENESS_REDIRECT_ORIGINS=https://localhost:16022/selfie. Hosted selfie host mapped by TLS proxy :16032. Chromium LocalNetworkAccessChecks off, fake camera/mic. Demo seed (3 people, 3 pieces, 1 community) + one event by SQL.
+
+## MEDIUM
+M1. Blank white page: a signed-in person who has NOT finished onboarding opens /r/<code> or /join (or /r/<bad>).
+ Steps: sign up (e.g. via /r/ADA), stop at /interests, open https://<site>/r/ADA or /join. Seen: empty body, URL stays /r/ADA, never leaves (10 s+); pictures rj-join-p-l.png, rj-r_ADA-p-l.png, tr-4-r-blank-p-l.png. A finished account goes to Home (OK).
+ Expected: send on (R-127: no dead end). Cause likely Redirect to "/" meeting the onboarding gate (src/app/r/[code].tsx returns null until done).
+M2. /tiers opened cold (refresh or deep link, no history): "Close" does nothing (dollar person, "Buying is not open yet").
+ Steps: sign in as a +1/US person, open /tiers, refresh, tap Close: stays. From /your-tier "See tiers" then Close works (back). tr-3-cold-tiers-after-close-p-l.png. Browser Back still leaves, so passable. Related: for dollar people both the offer and the sheet only say "Buying is not open yet"; board VF5a draws $3/$9/$15 (R-94 says "what is open"; WEBAPP-08 rounds accepted this, noting only).
+
+## LOW
+L1. Wallet opening: after "Selfie done > Continue" the screen says "Your account number is being made. This can take up to 30 minutes" with only Close; on the stack it advanced to the account number by itself after ~55 s (checked on a fresh account), but a reload at that moment was needed once earlier in the first account (it was already open). Copy "30 minutes" scares; no progress signal.
+L2. Console noise for a person without a wallet: 409 on /money/wallet/balance, /money/cards, /money/abroad/corridors; 403 x4 on GET communities/<id>/messages before joining a community. No user effect.
+L3. Sign-up form default phone chip is +1 / United States (browser en-US); Nigerian must change it. After the F5 restore the phone field reads "+234 803 111 0005" beside a +234 chip (known cosmetic, WEBAPP-08 r2).
+L4. Welcome screen is the new logo screen, board A1 still draws "Get paid for what you know" with the wawu mark (board older than the rename; owner's call).
+(Also seen, stack only: seeded media on storage.seed.local is blocked by media-src; images/video from the real bucket not provable here; Studio shows VoiceOver "Not available right now" because the voice stand-in is not run.)
+
+## WEBAPP-08 rows re-checked (area A)
+F2 PASS: ws://localhost:16020/api/hub/live connects behind the headers, no CSP violation; ada3 sent in the Founders room, ada1 (other browser) saw it with no refresh.
+F3: media-src has no amazonaws (img-src does); unproven, not reachable here (NOT RUN).
+F4 PASS with M2: US person: tier offer "Buying is not open yet" + "See the tiers", sheet with Close; X on the offer leads on to interests.
+F5 PASS: refresh on the code step resumes and the mailed code works; Back + refresh keeps +234/Nigeria and the POST sends countryCode NG; password never in sessionStorage/localStorage; the 30 s cooldown after refresh shows "A code was just sent... enter the one we sent" with "Enter the code we sent" link.
+F6 as ruled (not re-tested). F7, F8 are walker B's. F9 not walked (no tier bought). F10 PASS: cold /interests, /people-to-follow, /content link land on the page asked after the offer is closed; sign-in from a shared link lands back on the piece; signing back in from /wallet lands on /wallet (Home text first in DOM is the tab navigator, the picture is the Wallet).
+F11 PASS (room: Enter sends). F13/F14 as ruled; the music button still sits over the right edge of a card row at 390 (Home "Who Made This?", Wallet card row), nothing unreachable.
+
+## Paths walked (each at 390 and 1440, light and dark, cold and refresh unless noted)
+Guest: / /explore /content /profile /u/handle /community /events/<id> /events /search /inbox /wallet /me /settings /r/<code> /join /send/abroad/new: ALL go to /welcome, same after refresh; /terms /privacy-policy open signed out (4 modes).
+Sign-up through WAWU ID (mailed code typed on the keyboard) x4 people (NG at 390 light; NG at 1440 dark; US at 390 light; refresh variants), claim-offer, tier offer (shown once per session, not on refresh; returns in a new session until onboarding done), interests, people to follow (follow persists), Home.
+Signed in: Home Explore piece profile community (join, send with Enter, live arrival) event events inbox me search (results, none, recent after refresh); Settings and 12 sub pages (7 notification switches PATCH and persist after refresh, TGIF/Music switches, invite page, invite card has only Share, rules, legal chat, tgif, blocked, password, access code, your tier, wallet settings); Share on piece (sheet, Copy link, "Copied", clipboard right), profile ("Link copied"), invite card, event, TGIF.
+Wallet: /send/abroad/new, /add-money, /wallet without a wallet -> Open your wallet (NG: BVN/NIN; US: Where do you live); full opening with ID photos (file chooser), address proof, hosted selfie leaves in the SAME tab (pages 1 -> 1) and returns to /selfie, "Selfie done", account number, PIN typed on keyboard twice (no input element, PIN not in text/HTML), Wallet tab after, accounts, add money, transactions, send, cards, wallet settings. Sign out (one tap, session cleared, back/refresh stay on welcome), deep link to every tab signed out -> welcome, wrong password message, sign back in lands on the deep link.
+/r/ADA signed out kept the code and sign-up claimed it (PersonReferral row written); signed-in finished account -> Home.
+CSP: no violation other than seed media; no request left the stack (OFFHOST/BLOCKED logs empty).
+
+## NOT RUN
+Share on a receipt (no transaction: walker B). Studio subtitles row (Studio shows only VoiceOver, not available on this stack). Real S3/Spaces media (F3). Safari/Firefox, real phone for the hosted selfie. Brief's 401s seen in events.log are my reused stale storage_state (refresh-token rotation), not app faults.
+
+---
+
+# WEBAPP-07 walk 2, walker B (money). Code mobile 60958fc, Hub 7dd5b22, stack walk2b ports 16040-16051.
+Verdict FAIL-free: no SERIOUS. 3 MEDIUM, lows below. See hand-back message for steps and ledger.
+MEDIUM-1 card issue fee (N657.72) leaves the wallet (Hub and Nuvion balances agree) but no row in Transactions.
+MEDIUM-2 Points pack success sheet says "2,750 points added" while Hub grants 3,025 (2,750 + 275 Founding bonus; Your points list shows +3,025).
+MEDIUM-3 (carry-over, not fixed) tab 2 paying for what tab 1 already paid: "still being confirmed" (Hub 409) although granted.
+LOW: unknown/bills paths blank page mid-onboarding; /tiers highest tier sheet has no close; card shows USD label; 409 console error on post-upgrade quote refetch; open room messages GET 403 before Join.
+
+---
+
+# WEBAPP-07 walk 2, walker C (making). Mobile 60958fc, Hub 7dd5b22, stack walk2c (16060-16073)
+Verdict: PASS (0 SERIOUS, 2 MEDIUM, several LOW). Pictures /tmp/wmt-shots/walk2-web-c/ (133 files), all looked at (contact sheets, 390 L/D, 1440 L/D).
+MEDIUM-1 /verification says "Up to 25 uploads, 10 GB library space" to a Founding Maker (the tick), but the same account's library and Create say "4 of 15" and tiers list 4/8/15 products (R-7 says 25).
+MEDIUM-2 In-review rows in My content do nothing when tapped, and the review screen says "You can edit it while it waits" (no screen offers it; only a rejected piece opens). Also "Take something down to make room" at the limit (carried CREATOR-TAKEDOWN).
+LOWs: paid-message Save gives no confirmation; Enter does not send in the paid-question reply box (F11 covered room and chat only); host sees "You're out of credits" banner in own room; 409 on /plans/purchases/quote (extra_products at limit; upgrade after buying) and 404 after delete show as red console lines; checkout row shows full tier price N9,999 on an upgrade while pay sheet charges N7,000; cold deep link /wallet with setup checklist lands on /verify-bonus then wallet only after a second step; /tiers at highest tier is a sheet over a blank page.
