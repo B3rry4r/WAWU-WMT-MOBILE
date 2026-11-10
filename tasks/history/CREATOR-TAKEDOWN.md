@@ -12,3 +12,8 @@ NOT RUN: the web-export walk of the three capability checks with a real buyer an
 
 ## Verifier report
 
+
+
+## Builder round 2 (10 Nov 2026)
+Hub `582b8dd`: admin removal of an owner-removed piece (clears the mark, no second place, buyers shut out); spec added; admin content-review, admin ops and protected suites 361 passed 0 failed with the mock WAWU ID on :4001 (the earlier 52 "protected failures" were that mock missing on this machine, not the code); eslint and tsc (NODE_OPTIONS=--max-old-space-size=3072) EXIT 0. Web-export walk and pictures: see Current state. Mobile check parts: see the end of this section.
+Mobile on head 84e8729 plus this task-file commit, run as parts: typecheck EXIT 0, lint EXIT 0, `npx jest -w 2` EXIT 0 (522 suites passed, 7769 tests passed, 6 skipped), gates EXIT 0, tasks EXIT 0.
