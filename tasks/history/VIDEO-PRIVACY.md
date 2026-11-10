@@ -91,3 +91,10 @@ NOT RUN: the publish of a web-uploaded piece on the stack (needs a ticked creato
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/VIDEO-PRIVACY.md](history/VIDEO-PRIVACY.md).
 
+
+## Builder report (fix round 2)
+
+Hub 2cd4425 on top of 02c0344. 1 MEDIUM web upload at publish: `settleSlowUploads` cleans every named key that is the caller's own and not released or being removed, whatever its status (my round 1 spec asserted `status: 'confirmed'`; that assertion was the regression, so it now asserts there is no status filter). The reconcile that settles a stale pending row cleans it in the background; confirmUpload and settleUpload already did; `sweepVideoPrivacy` reads confirmed rows of the last 2 hours and pending rows created in the last 2 hours, 20 per tick. Specs: pending row through confirmUpload, through the reconcile, through the sweep query, through the publish check (video-privacy-pending.spec, settle-slow-video-clean.spec). Stack proof (vp, 16100-16110, storage stand-in 16115): the seeded creator-pro made a tick holder by SQL (`UserProfile.creator_verified_at = now()`); presign content/full, PUT, no confirm (row `pending`, stored object had the text), `POST /content` publishes (200): object read back has no text, same size 59444, decode errors 0.
+2 LOW cool-down: a key that failed 3 times is tried again after 30 minutes, then gets 3 more tries; a file that cannot be read after 6 hours; a file not in the bucket yet (NotFound) costs no try. Spec with a mocked clock. 3 LOW WebM: 1,500 ms planning budget and at most 1,000 element reads; spec with slow reads gives up (Unreadable) in under 4 s.
+Checks: new and affected specs 41 tests EXIT 0 (video-privacy, -stored, -ffmpeg, -pending, settle-slow-video-clean); eslint on changed files EXIT 0; gates EXIT 0, baseline EXIT 0; `NODE_OPTIONS=--max-old-space-size=4096 npx tsc --noEmit` EXIT 0 on try 1. Stack down, vp database dropped, stand-in stopped.
+NOT RUN: the pending sweep on a stack (specs only); real phone files; live Hub and bucket; sweep `apply`.
