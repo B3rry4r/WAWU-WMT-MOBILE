@@ -967,7 +967,8 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 2. **Nobody loses what they paid for.** A tick bought before tiers keeps the 25 uploads and 10 GB R-7 gave it until that tick ends; the Hub already gives "whichever is more" and keeps doing so. No new tick adds upload places.
 3. **Every screen says the same number.** Wherever the app states upload places (the verification page, Create, My content, the limit sheet, the tiers list), it reads the Hub's `uploads.allowed` and the tier list; the verification page never promises "Up to 25 uploads" to a person who holds no such tick.
 - Amends R-7's upload figures for everyone who has no tick from before tiers. R-7's storage figures stand where the Hub applies them.
-**Carried out by:** UPLOAD-WORDS (app; the Hub only if a new tick still raises places).
+- **When "before tiers" ends (lead, 10 Nov 2026, from UPLOAD-WORDS's finding that a tick bought today still raises the Hub's places):** the app promised "Up to 25 uploads" with every tick until UPLOAD-WORDS reaches phones and the web, so a tick that started before that day keeps 25 uploads until it ends, whenever it was bought. Only a tick that starts after it adds no places. The Hub sets the cut-off when the update ships (HUB-TICK-PLACES).
+**Carried out by:** UPLOAD-WORDS (app); HUB-TICK-PLACES (Hub, after the app update reaches phones).
 
 ### R-130 · A piece taken down stays with the people who bought it
 *Owner, 10 Nov 2026 ("of course, buyers keep it").*
