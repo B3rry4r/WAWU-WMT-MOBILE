@@ -11,6 +11,7 @@ import { Toast } from '@/components/Toast';
 import { Banner } from '@/components/Banner';
 import { ProductsMeter } from '@/components/ProductsMeter';
 import { allowanceKey, fetchAllowance } from '@/features/create/api';
+import { UploadsMeter, noAllowance } from '@/features/create/UploadsMeter';
 import { CreateEntry, useFloatingRoom } from '@/features/create/CreateEntry';
 import { fetchFields, fetchMe, fieldsKey, meKey } from '@/features/profile-edit/api';
 import { fetchVoiceIntro, voiceIntroKey } from '@/features/verify/voiceApi';
@@ -49,7 +50,6 @@ import {
   openableLink,
   paidMessagesOf,
   productsMeterOf,
-  runningTier,
   profileShareText,
   roleLinesOf,
   socialLinksOf,
@@ -259,7 +259,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
               ) : null}
               <SocialChips links={socialLinksOf(ready.profile, ready.details)} onOpen={(link: SocialLink) => void open(link.url, 'That link')} />
               <Counts counts={countsOf(ready.counts)} />
-              <TierMeter tier={tier} />
+              <TierMeter tier={tier} creator={creator} />
               <ProfileTabs value={tab} onChange={setTab} />
               {tab === 'content' ? <ContentBody query={grid} drafts={drafts} creator={creator} onOpenShop={onOpenShop} onOpenPiece={onOpenPiece} /> : null}
               {tab === 'services' ? <ServicesBody creator={ready.profile.accountType === 'creator'} onOpenListings={onOpenListings} onOpenPaid={onOpenPaid} /> : null}
@@ -366,13 +366,15 @@ type DraftsQuery = ReturnType<typeof useQuery<Awaited<ReturnType<typeof fetchDra
  * The products meter under the counts. Loading is a block the meter's size; a person with no running tier sees nothing here
  * (`productsMeterOf` is null); a failed read is a note with a retry, never "no tier".
  */
-function TierMeter({ tier }: { tier: TierQuery }) {
+function TierMeter({ tier, creator }: { tier: TierQuery; creator: boolean }) {
   const cache = useCache();
-  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, enabled: runningTier(tier.data) !== null }, cache);
+  const allowance = useQuery({ queryKey: allowanceKey, queryFn: fetchAllowance, enabled: creator && Boolean(tier.data) }, cache);
   if (tier.isError && !tier.data) return <RetryNote testID="me-tier-error" title="Your tier did not load" retryLabel="Try loading your tier again" onRetry={() => void tier.refetch()} />;
   if (!tier.data) return <ProductsMeter loading used={0} allowed={0} testID="me-products-loading" />;
   const meter = productsMeterOf(tier.data, allowance.data);
-  return meter ? <ProductsMeter used={meter.used} allowed={meter.allowed} tier={meter.tier} testID="me-products" /> : null;
+  if (meter) return <ProductsMeter used={meter.used} allowed={meter.allowed} tier={meter.tier} testID="me-products" />;
+  // No running tier but the Hub still gives places (a tick bought before tiers, R-129): the same count, from the Hub's own read.
+  return allowance.data && !noAllowance(allowance.data) ? <UploadsMeter allowance={allowance.data} /> : null;
 }
 
 function ContentBody({ query, drafts, creator, onOpenShop, onOpenPiece }: { query: GridQuery; drafts: DraftsQuery; creator: boolean; onOpenShop?: () => void; onOpenPiece?: (id: string) => void }) {

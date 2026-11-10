@@ -19,13 +19,14 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** verifying (fix round 1 built). Rounds: `tasks/history/UPLOAD-WORDS.md`.
+- **Status:** verifying (fix round 2 built). Rounds: `tasks/history/UPLOAD-WORDS.md`.
 - **Done (R-129):** one number for upload places. Every meter and line that states them reads the Hub's `uploads.allowed` (`GET /uploads/allowance`): Create, My content, the dashboard, the Me meter, Your tier, the publish screen and the limit sheet (VF13). The verification page's "Up to N uploads" row is drawn only for a tick that still lifts the Hub's allowance to 25 (N the Hub's number); nobody else is promised 25. Library space keeps R-7's figures.
 - **Round 1 (verifier finding, lead):** the limit and the publish gate follow the Hub's places alone, not the tier. `atPlacesLimit` (me/model.ts) routes Create's Content tile, and the format screen, to VF13 at used >= allowed whatever gives the places; the publish screen is open when `uploads.allowed` is above 0; Your tier says "Your tick still gives you N places to publish until it ends. See tiers for what a tier gives." for a person with no tier and such a tick.
 - **Me page "0 pieces" beside "15 of 15":** left as is. "pieces" is the profile's live count (`postCount`); the meter counts places, which pieces in review also hold. Different things, each true.
 - **Hub follow-up (not made, no Hub changes here):** buying a tick today still raises `uploads.allowed`: `src/plans/publishing-allowance.service.ts` lines 76 to 78 (`tickAllowed = tickHeld ? TICK_UPLOADS : 0`, `Math.max(tierAllowed, tickAllowed)`) and line 96 (storage); `uploadAllowanceFor` in `src/common/creator-allowance.ts` is flat too. R-129 says it must not: count a tick's 25 only for a tick dated before tiers went live. The app needs no change.
 - **NOT RUN:** a phone (no phone-only path touched; the Create routing is proven in jest with `Platform.OS` android); the limit sheet for a tier holder on the web export.
-- **Next:** the verifier again.
+- **Round 2 (batch walk, lead):** every tier-only gate in front of creating or publishing now follows the Hub's places (`uploads.allowed` above 0). Gates found by grep and fixed: `src/app/shop-product.tsx` Publish routing (no tier went to /tiers before the Publish screen could open: HIGH), `PublishScreen` gate (round 1), `CreateScreen` Content tile and `FormatScreen` (round 1), `CreatorSetupScreen` first card ("Uploading needs a tier" now "Uploading is open" with places), `MeScreen` places meter (the tick-only creator now sees "N of 25 used", from the Hub). Left as the Hub's own rule, not a places gate: Event hosting (`hostTier.ts`, Hub 403 `tier_required` on `POST /events`) and the Create Event tile's "Needs an active tier"; the voice intro (`voiceModel.ts`, a tier benefit); the 402 `tier_required` handlers in Upload and Lessons (the Hub's own refusal sends to /tiers). A person the Hub allows 0 places (free) still goes to /tiers.
+- **Next:** the verifier (round 2 was the last builder round).
 
 ## Read first
 

@@ -344,6 +344,15 @@ describe('SWEEP-FLOWS B6 · the checklist says what is true of the person\'s tie
     expect(screen.queryByText('Uploading is open')).toBeNull();
   });
 
+  it('R-129: with no tier but 25 places from a tick bought before tiers, it says uploading is open', async () => {
+    rest();
+    answers['GET /api/hub/me/tier'] = tier('none');
+    answers['GET /api/hub/uploads/allowance'] = ok({ tickHeld: true, uploads: { used: 0, allowed: 25, remaining: 25 }, storage: { usedBytes: 0, limitBytes: 10, remainingBytes: 10 }, free: { uploads: 0, storageBytes: 1 }, withTick: { uploads: 25, storageBytes: 10 } });
+    await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
+    expect(await screen.findByText('Uploading is open')).toBeTruthy();
+    expect(screen.queryByText('Uploading needs a tier')).toBeNull();
+  });
+
   it('with a tier that cannot be read, it claims nothing about uploading', async () => {
     rest();
     await render(frame(<CreatorSetupScreen onOpen={jest.fn()} onLater={jest.fn()} />));
