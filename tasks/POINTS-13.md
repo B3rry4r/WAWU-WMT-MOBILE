@@ -18,6 +18,8 @@ tier: T1
 
 ## Current state
 
+- **Fix round 1 (10 Nov 2026, STUDIO-1110, builder; verifier finding: the More pop-over clipped, medium).** `StudioPopover.tsx`: a list that fits neither above nor below its control now takes the whole safe screen (window minus the status and home bars, 16 clear) and covers the tile, hanging as low as the tile's foot allows; only a list taller than the whole safe screen scrolls, and then a down chevron stays on the panel's foot until the last row is reached. Shared pop-over kept, no new component, no fenced file. Tests: `studioPopover.test.ts` (3 new or changed cases fail on `6ac4d7d`, pass now), `studioHome.test.tsx` (the old drops-below case now asserts the new place). Pictures at 375x667, 390x844 and 1440x900, light and dark: `/tmp/wmt-shots/studio-1110/fix1/` (all 12 rows visible at 390x844 and 1440x900; at 375x667 the list scrolls with the chevron showing). Checks: typecheck EXIT 0, lint EXIT 0 (existing warnings only), gates EXIT 0, tasks EXIT 0, full jest -w 2: 530 of 534 suites, 7925 of 7933 tests passed; 3 suites (resetPasswordRoute, unread, library) did not run under memory and passed at `-w 1` with the points suites (27 suites, 441 tests), the fourth (studioHome) was the changed case, fixed. Phone check line for the More menu still needs a real phone.
+
 - Rebased onto today's line (10 Nov 2026, STUDIO-1110): merged `wmt/BATCH-1110` `7a6f585` into `wmt/STUDIO-HOME`; see STUDIO-HOME and POINTS-12 Current state for the conflicts and the one fit fix. Status verifying.
 
 **Patch round 1 (30 Oct 2026, S2-APP-1 builder, on top of `a17686fb`; verifier said MERGE, lead's three points; same branch).**

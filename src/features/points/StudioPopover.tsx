@@ -2,6 +2,7 @@ import { useCallback, useState, type ReactNode, type RefObject } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Icon } from '@/components/icon';
 import { radius, space, useWawu } from '@/theme';
 
 /** Where the control the pop-over hangs from sits in the window. */
@@ -61,9 +62,17 @@ export function placePanel({ anchor, win, insets, align, content }: PlaceInput):
   const roomAbove = Math.max(0, anchor.y - PANEL.away - topEdge);
   const roomBelow = Math.max(0, bottomEdge - (anchor.y + anchor.height) - PANEL.away);
   const needs = content === null ? null : content + PANEL.pad * 2;
-  const above = needs === null ? anchor.y > PANEL.flip : needs <= roomAbove || roomAbove >= roomBelow;
   const left = align === 'left' ? anchor.x : anchor.x + anchor.width - width;
   const place = { left: Math.max(PANEL.side, Math.min(left, win.width - PANEL.side - width)) };
+  if (needs !== null && needs > roomAbove && needs > roomBelow) {
+    // Fits on neither side of its control: it grows to the whole safe screen and covers the control (the list is the point, the tile can wait),
+    // hanging as low as the control's foot lets it. Only a list taller than the whole screen scrolls.
+    const full = Math.max(0, bottomEdge - topEdge);
+    const height = Math.min(needs, full);
+    const foot = Math.min(bottomEdge, Math.max(topEdge + height, anchor.y + anchor.height));
+    return { above: true, maxHeight: full, bottom: win.height - foot, ...place };
+  }
+  const above = needs === null ? anchor.y > PANEL.flip : needs <= roomAbove || roomAbove >= roomBelow;
   return above
     ? { above, maxHeight: roomAbove, bottom: win.height - anchor.y + PANEL.away, ...place }
     : { above, maxHeight: roomBelow, top: anchor.y + anchor.height + PANEL.away, ...place };
@@ -91,8 +100,11 @@ export function Popover({ visible, onClose, anchor, align, label, children, test
   const win = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [content, setContent] = useState<number | null>(null);
+  const [atEnd, setAtEnd] = useState(false);
   const width = Math.min(PANEL.maxWidth, win.width - PANEL.side * 2);
   const { above, maxHeight, left, top, bottom } = placePanel({ anchor, win, insets, align, content });
+  // More rows than the panel can show: a down chevron stays on its foot until the last row has been scrolled to.
+  const cut = content !== null && content > maxHeight - PANEL.pad * 2 + 1;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root}>
@@ -105,9 +117,20 @@ export function Popover({ visible, onClose, anchor, align, label, children, test
           accessibilityLabel={label}
           style={[styles.panel, { width, maxHeight, left, backgroundColor: colors.surfaceElevated, boxShadow: [...shadows.float, { offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, color: colors.borderHairline, inset: true }] }, above ? { bottom } : { top }]}
         >
-          <ScrollView testID={testID ? `${testID}-rows` : 'popover-rows'} style={styles.rows} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator onContentSizeChange={(_w, h) => setContent(h)}>
+          <ScrollView testID={testID ? `${testID}-rows` : 'popover-rows'} style={styles.rows} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator onContentSizeChange={(_w, h) => setContent(h)}
+            scrollEventThrottle={32}
+            onScroll={(e) => {
+              const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+              setAtEnd(contentOffset.y + layoutMeasurement.height >= contentSize.height - 4);
+            }}
+          >
             {children}
           </ScrollView>
+          {cut && !atEnd ? (
+            <View testID={testID ? `${testID}-more-below` : 'popover-more-below'} pointerEvents="none" style={[styles.cue, { backgroundColor: colors.surfaceElevated }]}>
+              <Icon name="ChevronDown" size={18} color={colors.textMuted} />
+            </View>
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -119,4 +142,5 @@ const styles = StyleSheet.create({
   panel: { position: 'absolute', borderRadius: radius.card, padding: PANEL.pad },
   // Takes the rows' height up to the panel's cap, then scrolls.
   rows: { flexGrow: 0, flexShrink: 1 },
+  cue: { position: 'absolute', left: PANEL.pad, right: PANEL.pad, bottom: 0, height: 24, alignItems: 'center', justifyContent: 'center', borderBottomLeftRadius: radius.card, borderBottomRightRadius: radius.card, opacity: 0.94 },
 });

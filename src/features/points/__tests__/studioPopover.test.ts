@@ -21,9 +21,10 @@ const SHORT = 3 * 52 + 16;
 const more = (y: number): Anchor => ({ x: 292, y, width: 82, height: 107 });
 
 /** The panel's box when it is as tall as its cap lets it be (the worst case for fitting). */
-function box(p: ReturnType<typeof placePanel>, winHeight: number) {
-  const bottom = p.bottom !== undefined ? winHeight - p.bottom : (p.top as number) + p.maxHeight;
-  const top = p.top !== undefined ? p.top : bottom - p.maxHeight;
+function box(p: ReturnType<typeof placePanel>, winHeight: number, content: number | null = null) {
+  const h = content === null ? p.maxHeight : Math.min(p.maxHeight, content + 16);
+  const bottom = p.bottom !== undefined ? winHeight - p.bottom : (p.top as number) + h;
+  const top = p.top !== undefined ? p.top : bottom - h;
   return { top, bottom };
 }
 
@@ -35,10 +36,12 @@ describe('placePanel · the panel stays inside the screen', () => {
           for (const content of [null, SHORT, TALL]) {
             const anchor = more(y);
             const p = placePanel({ anchor, win, insets, align: 'right', content });
-            const { top, bottom } = box(p, win.height);
+            const { top, bottom } = box(p, win.height, content);
             expect(top).toBeGreaterThanOrEqual(insets.top + SIDE - 0.001);
             expect(bottom).toBeLessThanOrEqual(win.height - insets.bottom - SIDE + 0.001);
             // Clear of the control: above it ends before the control starts, below it starts after the control ends.
+            const covers = content !== null && content + 16 > Math.max(anchor.y - 8 - (insets.top + SIDE), win.height - insets.bottom - SIDE - (anchor.y + 107) - 8);
+            if (covers) continue;
             if (p.above) expect(bottom).toBeLessThanOrEqual(anchor.y + 0.001);
             else expect(top).toBeGreaterThanOrEqual(anchor.y + anchor.height - 0.001);
             expect(p.maxHeight).toBeGreaterThanOrEqual(0);
@@ -48,16 +51,26 @@ describe('placePanel · the panel stays inside the screen', () => {
     }
   });
 
-  it('a list too tall for either side opens on the side with more room and takes all of it', () => {
+  it('a list too tall for either side takes the whole safe screen over its control, so nothing is cut', () => {
     for (const win of WINDOWS) {
       for (let y = 0; y <= win.height - 107; y += 7) {
         const insets = { top: 47, bottom: 34 };
         const p = placePanel({ anchor: more(y), win, insets, align: 'right', content: TALL });
-        const roomAbove = y - 8 - (insets.top + SIDE);
-        const roomBelow = win.height - insets.bottom - SIDE - (y + 107) - 8;
-        expect(p.above).toBe(roomAbove >= roomBelow);
-        expect(p.maxHeight).toBeCloseTo(Math.max(roomAbove, roomBelow), 3);
+        const full = win.height - insets.bottom - SIDE - (insets.top + SIDE);
+        expect(p.maxHeight).toBeCloseTo(full, 3);
+        const { top, bottom } = box(p, win.height, TALL);
+        expect(top).toBeGreaterThanOrEqual(insets.top + SIDE - 0.001);
+        expect(bottom).toBeLessThanOrEqual(win.height - insets.bottom - SIDE + 0.001);
+        // Whenever the list is shorter than the safe screen, its whole height is available (no row hidden).
+        if (TALL + 16 <= full) expect(p.maxHeight).toBeGreaterThanOrEqual(TALL + 16);
       }
+    }
+  });
+
+  it('STUDIO-1110 round 1: at 390x844 and 1440x900 the 12-row More list is fully visible, not clipped at the control', () => {
+    for (const win of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+      const p = placePanel({ anchor: more(609), win, insets: { top: 47, bottom: 34 }, align: 'right', content: 650 });
+      expect(p.maxHeight).toBeGreaterThanOrEqual(650 + 16);
     }
   });
 
@@ -68,27 +81,20 @@ describe('placePanel · the panel stays inside the screen', () => {
     expect(p.bottom).toBe(844 - 366 + 8);
   });
 
-  it('a list that does not fit above drops below when there is more room there, and is capped to it', () => {
+  it('a list that does not fit above drops below when it fits there, and is capped to it', () => {
     const win = { width: 390, height: 844 };
     const insets = { top: 47, bottom: 34 };
-    const p = placePanel({ anchor: more(120), win, insets, align: 'right', content: TALL });
+    const p = placePanel({ anchor: more(120), win, insets, align: 'right', content: 400 });
     expect(p.above).toBe(false);
     expect(p.top).toBe(120 + 107 + 8);
     expect(p.maxHeight).toBe(844 - 34 - SIDE - (120 + 107) - 8);
-    expect(p.maxHeight).toBeLessThan(TALL);
   });
 
-  it('with the full list (about 650 tall) at 390x667 and 390x844 the panel is capped below its own height wherever the page was scrolled to', () => {
-    for (const win of [WINDOWS[0], WINDOWS[1]]) {
-      // The More tile unscrolled, and the page scrolled a thumb's worth (120) or more.
-      for (const y of [win.height - 130, win.height - 250, win.height - 370, 200]) {
-        const p = placePanel({ anchor: more(y), win, insets: { top: 47, bottom: 34 }, align: 'right', content: TALL });
-        expect(p.maxHeight).toBeLessThan(TALL);
-        const { top, bottom } = box(p, win.height);
-        expect(top).toBeGreaterThanOrEqual(47 + SIDE);
-        expect(bottom).toBeLessThanOrEqual(win.height - 34 - SIDE);
-      }
-    }
+  it('only a list taller than the whole safe screen is capped (and so scrolls)', () => {
+    const win = { width: 390, height: 667 };
+    const p = placePanel({ anchor: more(400), win, insets: { top: 24, bottom: 0 }, align: 'right', content: 700 });
+    expect(p.maxHeight).toBe(667 - SIDE - (24 + SIDE));
+    expect(p.maxHeight).toBeLessThan(716);
   });
 
   it('lines up with the control on the side it asks for and never leaves the sides of the window', () => {

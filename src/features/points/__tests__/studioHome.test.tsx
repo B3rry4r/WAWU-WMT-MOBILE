@@ -596,16 +596,17 @@ describe('STUDIO-HOME · the More pop-over stays inside the screen', () => {
     await close();
   });
 
-  it('a list too tall for the room above the tile drops below it once the rows are laid out, and still fits', async () => {
+  it('a list too tall for the room above or below the tile takes the room of the whole screen over the tile, so no row is cut (STUDIO-1110 round 1)', async () => {
     hub.listed = ALL.slice();
     await toHome();
     const { menu } = await checkFits(hub.listed, 844, 140);
     await fireEvent(screen.getByTestId('studio-more-menu-rows'), 'contentSizeChange', 288, 12 * ROW);
     const style = StyleSheet.flatten(screen.getByTestId('studio-more-menu').props.style) as { maxHeight: number; top?: number; bottom?: number };
     expect(menu).toBeTruthy();
-    expect(style.bottom).toBeUndefined();
-    expect(style.top).toBe(140 + 107 + 8);
-    expect(style.top! + style.maxHeight).toBeLessThanOrEqual(844 - SIDE);
+    expect(style.top).toBeUndefined();
+    expect(style.maxHeight).toBeGreaterThanOrEqual(12 * ROW);
+    expect(844 - style.bottom! - Math.min(style.maxHeight, 12 * ROW + 16)).toBeGreaterThanOrEqual(SIDE);
+    expect(style.bottom!).toBeGreaterThanOrEqual(SIDE);
     await close();
   });
 
