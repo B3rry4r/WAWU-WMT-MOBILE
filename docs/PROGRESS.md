@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 37 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 45 | 0 | 0 | 0 |
-| review | 248 | 0 | 0 | 0 |
+| verifying | 44 | 0 | 0 | 0 |
+| review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -262,6 +262,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-07](../tasks/WEBAPP-07.md) The whole web app walked as every kind of user (You)
 - [TIER-UPGRADE-FIX](../tasks/TIER-UPGRADE-FIX.md) Upgrading a tier after renewing it keeps the days already paid for (You)
 - [WEBAPP-08](../tasks/WEBAPP-08.md) The web walk's fixes (Phase 1 fix batch) (You)
+- [WEBAPP-10](../tasks/WEBAPP-10.md) Desktop screens drawn for the web app (You)
 - [WEBAPP-09](../tasks/WEBAPP-09.md) The second web walk's fixes (Phase 1, last batch) (You)
 
 ## Being verified
@@ -310,7 +311,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-02](../tasks/WEBAPP-02.md) On a laptop the app shows at phone width, centred (You)
 - [WEBAPP-03](../tasks/WEBAPP-03.md) The web app's small seams work in a browser (You)
 - [WEBAPP-04](../tasks/WEBAPP-04.md) Photos and voices uploaded from a browser are safe and play everywhere (You)
-- [WEBAPP-10](../tasks/WEBAPP-10.md) Desktop screens drawn for the web app (You)
 
 ## Being built (or fixing verifier findings)
 
