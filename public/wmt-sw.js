@@ -5,6 +5,9 @@
 // site that carry an S3 signature. If keeping a picture fails for any reason the picture is fetched as it would have been.
 const CACHE = 'wmt-pictures-v1';
 const MAX_PICTURES = 120;
+// A free piece's preview is the whole photo (about 4.7 MB), so a count alone could hold about 560 MB on someone's disk.
+const MAX_BYTES = 60 * 1024 * 1024;
+const BYTES_HEADER = 'x-wmt-bytes';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
@@ -35,9 +38,28 @@ async function answer(event, request, url) {
 
 async function keep(cache, key, response) {
   try {
-    await cache.put(key, response);
+    // The size is written onto the held copy, so the bound below can add up what is held without reading any picture again.
+    const blob = await response.blob();
+    if (blob.size > MAX_BYTES) return;
+    const headers = new Headers(response.headers);
+    headers.set(BYTES_HEADER, String(blob.size));
+    await cache.put(key, new Response(blob, { status: response.status, headers }));
+    // Oldest stored goes first (keys come back in the order they were put), until both bounds hold.
     const keys = await cache.keys();
-    for (let i = 0; i < keys.length - MAX_PICTURES; i += 1) await cache.delete(keys[i]);
+    const sizes = [];
+    let total = 0;
+    for (const k of keys) {
+      const held = await cache.match(k);
+      const n = held ? Number(held.headers.get(BYTES_HEADER)) || 0 : 0;
+      sizes.push(n);
+      total += n;
+    }
+    let count = keys.length;
+    for (let i = 0; i < keys.length - 1 && (count > MAX_PICTURES || total > MAX_BYTES); i += 1) {
+      await cache.delete(keys[i]);
+      total -= sizes[i];
+      count -= 1;
+    }
   } catch {
     // A full disk or a refused write leaves the picture uncached, and nothing else.
   }

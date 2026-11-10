@@ -18,13 +18,13 @@ tier: T1
 
 ## Current state
 
-As of 10 Nov 2026, after the T1 verifier (round 1).
-- **Status:** building. Verdict FIX: two mediums. Branch `wmt/WEBAPP-12` (ae5deff8); verifier branch `wmt/WEBAPP-12-verify` holds only the report.
-- **Holds (verifier re-measured):** first paint 11.7 to 8.5 s; first load 2,047 to about 1,490 KB brotli; second visit with the worker: every picture 0 bytes, first picture 1.6 to 1.8 s; cold pictures only 3 s better (bytes unchanged); 52 routes and 12 signed-out deep links open the same as the base; icons identical (182, regenerated file byte-identical); phone: android export builds one entry, worker does nothing on android and ios; typecheck, lint, gates, tasks EXIT 0; full jest 523 of 524, the killed suite re-run alone EXIT 0.
-- **To fix (builder, round 2):** (1) a tab open across a deploy shows "Something went wrong" on any route it had not opened (missing chunk answered with `index.html`): reload once on a failed chunk load, or keep old chunks, or pin versions, with a test; (2) the worker answers a held picture for any signature and nothing clears it at sign-out: delete `wmt-pictures-v1` at sign-out and on an account change, with a test; (3) low: a byte budget for the cache; the test-gap note in finding 5.
-- **Unclear for the lead or owner:** finding 4 (a creator mid sign-up opens "Set up your account" on the branch and Today on the base).
-- **NOT RUN:** the sign-in form (token injected), the real Vercel edge and Spaces CORS, a combined WEBAPP-11 plus WEBAPP-12 run, an iOS export, a real phone.
-- **Next:** builder round 2, then a verifier on findings 1 and 2 only.
+As of 10 Nov 2026, after builder fix round 1 (on the verifier's FIX).
+- **Status:** building, round 1 done, back to the verifier on findings 1 and 2 (and 3). Branch `wmt/WEBAPP-12`; verifier branch `wmt/WEBAPP-12-verify` is merged in.
+- **Fixed:** (1) a failed route-file load (`AsyncRequireError`) reloads the page once, keeping the address (`src/lib/staleChunk.ts`, called from `ErrorScreen`); a sessionStorage stamp allows one reload per 60 s, so a deploy that does not help shows the normal error screen. (2) the held pictures (`wmt-pictures-v1`) are deleted whenever a session ends (`onSessionEnd`: sign-out, a refused refresh, another account signing in), in `src/lib/pictureCache.ts`. (3) the cache is also bound at 60 MB, oldest stored first, and a picture over 60 MB is shown but not kept (`public/wmt-sw.js`); 120 pictures stays as the count bound.
+- **Browser proof (production export behind `vercel.json` headers, Chromium, ports 16241-16244, WAWU ID and Hub stand-ins):** loaded the app, rebuilt with a changed `about` chunk (new hash, new entry), replaced the files, opened `/about` from the open tab: the missing file came back as `index.html`, the page reloaded once, `/about` opened with the new code (loads at `/` then `/about`). With the new chunk removed too: one reload, then "Something went wrong", still one reload after 4 more seconds. Signed in as A through the form, 4 pictures held; Settings, Sign out: `caches.keys()` empty; signed in as B: empty.
+- **Finding 4 (explained):** `startHref` sends `creator_setup` to `/creator-setup`, and the route guard in `src/app/_layout.tsx` (line 203) opens it for that step, so the branch is the intended behaviour. The base opens Today because the start screen is picked before `GET /auth/signup/progress` answers (the `(tabs)` guard needs `setupStep === null`, and the step is null until the answer lands); the branch's smaller first load changes who wins that race. Not a defect of this branch; nothing changed.
+- **Still NOT RUN:** the real Vercel edge and Spaces CORS (the bucket answers usewmt.com and the Vercel address for GET, per the lead), a combined WEBAPP-11 plus WEBAPP-12 run, an iOS export, a real phone, the real Hub (stand-ins only).
+- **Next:** verifier on findings 1 and 2 only.
 
 ## Read first
 

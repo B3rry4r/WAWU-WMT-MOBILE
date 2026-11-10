@@ -41,3 +41,14 @@ Findings:
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-12.md](history/WEBAPP-12.md).
 
+
+## Builder report
+
+Round 1, 10 Nov 2026. Files: `src/lib/staleChunk.ts` (new), `src/components/ErrorScreen.tsx` (one effect), `src/lib/pictureCache.ts` (clear on session end), `public/wmt-sw.js` (60 MB bound), tests `staleChunk.test.ts`, `errorScreenStaleChunk.test.tsx`, `pictureCacheSignOut.test.ts` (new), `pictureCache.test.ts` (worker now run with real Responses; adds 403, non-image, 60 MB, 120 and cache-name tests). No fenced file touched (`src/api` only read). Tests that failed on ae5deff8: the sign-out and account-change test, the cache-name test, the 60 MB test (4 failed); the stale-chunk module did not exist. Browser proof: see Current state. Note 6 and the account-change limit: a closed tab that never saw the session end (site data cleared) leaves nothing to clear, since the cache lives in the same site data.
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEBAPP-12.md](history/WEBAPP-12.md).
+
+
+Builder note on verifier finding 4, round 1: a creator at step `creator_setup` lands on "Set up your account" on this branch because `startHref` (`src/features/shell/startHref.tsx`) and the guard in `src/app/_layout.tsx` agree on `/creator-setup`; the base opens Today because the start screen is picked before `GET /auth/signup/progress` answers (the `(tabs)` guard needs `setupStep === null`), a timing race the smaller first load changes, so the branch is the intended behaviour and nothing was changed.
