@@ -1,4 +1,5 @@
 # Work log
+- 10 Nov 2026 · VIDEO-PRIVACY · the Hub strips location, device and time tags from a stored mp4, mov or webm in place (no re-encode), on confirm, publish and a sweep; sweep for old videos written, not run (verifying)
 - 10 Nov 2026 · WEBAPP-09 · second web walk fixes W1 to W7 built (mid-sign-up links lead on, /tiers always closes, points sheet shows the Hub grant, two-tab payment shows paid, upgrade row, Enter sends a paid reply, room join words); checks EXIT 0
 - 9 Nov 2026 · WEBAPP-08 · web walk fixes F1 to F15 built (live purchase hook in the export, wss in the CSP, dollars offer, sign-up draft, wallet words, Enter sends); checks EXIT 0
 - 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)

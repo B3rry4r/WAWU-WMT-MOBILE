@@ -7,7 +7,7 @@ order: 372
 priority: after-launch
 repo: wawu-backend
 type: flow
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-127]
 passes: [V1, V3, V4, V6, V7, V9]
@@ -18,12 +18,21 @@ tier: T1
 
 ## Current state
 
-As of 9 Nov 2026.
-- **Status:** todo. Cut by the lead from the WEBAPP-07 walk (walker C, low) and WEBAPP-08 F16 (report only).
-- **Found:** photos are redrawn before upload on the phone and the web, so no Exif or GPS reaches storage (WEBAPP-04). A video goes up untouched on both: walker C's stored MP4 was byte-identical to the file picked and kept its `location` tag (`+06.4542+003.3925`). Anyone who can play the video can read where it was filmed.
-- **Smallest fix (WEBAPP-08 builder):** the Hub removes the metadata from a video after upload (the app cannot rewrite a video cheaply on a phone or in a browser).
-- **Waits for:** the owner's word to merge, as every Hub change does (a Hub merge deploys the live server). Videos already stored keep their tags until a one-off sweep, which this task also proposes with its cost.
-- **Next:** a builder on wawu-backend `wmt/VIDEO-PRIVACY`.
+As of 10 Nov 2026.
+- **Status:** verifying. Built on wawu-backend `wmt/VIDEO-PRIVACY` (one commit on origin/main 7dd5b22; no merge, a Hub merge deploys). Mobile: this file only.
+- **Method (no ffmpeg, no re-encode, no offset rewrite):** every change keeps the size of the bytes it replaces, so each chunk offset stays valid and the file plays as before.
+  - MP4 and MOV: `udta`, `meta` and XMP boxes (`XMP_`, or a `uuid` with the XMP id) under `moov`, under each `trak` and at the top of the file become `free` boxes with zeroed bodies; creation and modification times in `mvhd`, `tkhd`, `mdhd` are zeroed (version 0 and 1); `free`/`skip` bodies inside `moov` are zeroed; a timed-metadata track (handler `meta`, `mebx`, `gpmd`, `camm`: GPS and motion) becomes a `free` box and its samples are zeroed in `mdat` (not done for a fragmented file, which is logged).
+  - WebM: `Tags` and `Attachments` become `Void` elements of the same size; `DateUTC` is zeroed. Walk stops at a cluster of unknown size (a live recording, no tags after it).
+- **Video types the Hub accepts and what each gets:**
+  - `video/mp4` (`.mp4`), `video/quicktime` (`.mov`): the MP4 clean above. moov at the start or the end, 32 and 64-bit box sizes, fragmented (moov cleaned, moof not walked).
+  - `video/webm` (`.webm`): the WebM clean above.
+  - Folders that take them: `content/full` (all three), `content/preview` and `profile/work` (mp4), `community/message-video` and `ai/input-video` (all three). Any other file type is never touched.
+- **Where it runs (`StorageService.ensureVideoClean`, src/storage/video-privacy/):** `POST /uploads/confirm` (`settleUpload`, phone and web both call it), `confirmUpload` (chat, profile work, legal matter, preview cut), the content publish and edit check (`settleSlowUploads`), and a safety-net sweep every 10 minutes over videos confirmed in the last 2 hours. A file it cannot read, or that fails mid-write, is left as it is and logged (key and reason, never a tag value); the confirm never fails because of it.
+- **Cost on the live Hub:** ranged reads of the box headers and `moov` (a few small requests); when something must change the object is streamed through and put back at the same key, same type, same length (about 2x the file in transfer, never held in memory, at most 2 at once). A clean file is not rewritten.
+- **Stays:** photos are WEBAPP-04 (redrawn on the device). Creation times are zero in the file; the handler names and encoder strings (`VideoHandler`, `Lavc...`) stay, they name no device.
+- **Sweep for videos already stored (NOT RUN):** wawu-backend `scripts/sweep-stored-videos.ts`, modes `count` (database only), `plan` (ranged reads, no writes), `apply` (needs `VIDEO_SWEEP_OWNER_OK=yes`, set only on the owner's word). Worst case it moves 2x the stored video bytes plus about 1 MB of reads per file; at 20 MB/s per file and 2 at once, 1,000 videos of 60 MB is about 120 GB and 50 minutes. `count` on the live database gives the real figure. Detail in the history file.
+- **Waits for:** the verifier, then the owner's word to merge. The sweep of videos already stored waits for the owner's word (below).
+- **Next:** verifier on wawu-backend `wmt/VIDEO-PRIVACY`.
 
 ## Read first
 
@@ -47,8 +56,8 @@ No video a person uploads, from the phone or the web, keeps where it was filmed 
 - [ ] A person uploads a video filmed with location on, from the phone and from the web; the stored file has no location or device tags (read back from storage on the stack) and still plays.
 - [ ] Every protected route behaves as before (V3).
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/VIDEO-PRIVACY.md](history/VIDEO-PRIVACY.md).
 
 ## Owner sign-off
