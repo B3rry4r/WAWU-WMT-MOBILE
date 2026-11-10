@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 39 | 0 | 0 | 0 |
+| todo | 38 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 45 | 0 | 0 | 0 |
+| verifying | 46 | 0 | 0 | 0 |
 | review | 248 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -310,6 +310,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-02](../tasks/WEBAPP-02.md) On a laptop the app shows at phone width, centred (You)
 - [WEBAPP-03](../tasks/WEBAPP-03.md) The web app's small seams work in a browser (You)
 - [WEBAPP-04](../tasks/WEBAPP-04.md) Photos and voices uploaded from a browser are safe and play everywhere (You)
+- [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
 
 ## Being built (or fixing verifier findings)
@@ -518,6 +519,7 @@ From `docs/LOG.md`, newest first.
 
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
+- 10 Nov 2026 · CREATOR-TAKEDOWN · a creator takes a live or in-review piece down from My uploads and from the piece's page (confirm, place freed at once); buyers keep it (Hub: one nullable column, R-130); review sentence matches; Hub and jest checks run, web walk and pictures NOT RUN
 - 10 Nov 2026 · WEBAPP-09 · second web walk fixes W1 to W7 built (mid-sign-up links lead on, /tiers always closes, points sheet shows the Hub grant, two-tab payment shows paid, upgrade row, Enter sends a paid reply, room join words); checks EXIT 0
 - 9 Nov 2026 · WEBAPP-08 · web walk fixes F1 to F15 built (live purchase hook in the export, wss in the CSP, dollars offer, sign-up draft, wallet words, Enter sends); checks EXIT 0
 - 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)
@@ -530,4 +532,3 @@ From `docs/LOG.md`, newest first.
 - 9 Nov 2026 · WEBAPP (lead): WEBAPP-07 walker A (arriving) done 20:57 UTC, FAIL: 1 SERIOUS, 4 MEDIUM (report kept for SWEEP-WEB). S1: vercel.json `connect-src` lists `https://api.wawuafrica.com` but not `wss://api.wawuafrica.com`, so on usewmt.com the live socket (`src/features/inbox/live.ts`: inbox, chats, rooms, unread badges) never connects (proved in Chromium: an https entry does not allow wss). M1 a dollar-billed person sees "No tiers on sale ... Try again later" on the tier offer (R-94 expects the tiers sheet); M2 a refresh mid sign-up loses the code step and the 30 s cooldown blocks a restart; M3 a refresh inside Open your wallet loses the ID photos (a message, no crash); M4 `media-src` lacks `https://*.amazonaws.com` though `img-src` has it (unproven on the stack). Settled: the export built the Vercel way (fresh clone, `npm ci`, `npm run web:export`, its own Metro cache) has one React and draws every page; walker C's blank page came from hard-linked modules and a shared Metro cache (a build reusing /tmp's Metro cache can bake old API hosts: Vercel builds clean). Passed: sign-up through the real WAWU ID, sign-in return, `/r/<code>` and `/join`, tier offer once per session, Settings with no dead control, share, and the whole wallet opening with the hosted selfie leaving and returning in the same tab (the Hub needs an https return address: usewmt.com is). Gap: about 30 of 165 pictures looked at one by one; the fix batch's walk looks at every picture.
 - 9 Nov 2026 · WEBAPP (lead): walk restart 20:11 UTC. The brief's lock line (`flock` around `stack.sh up`) was held by the stack's servers for as long as walker C's stack stood, so walkers A and B waited about 25 minutes with nothing walked (A handed back FAIL, NOT RUN). Corrected to `flock -o` on a new lock (b228084); the lead stopped B's waiting flock. Walker C found an export from hard-linked node_modules (`STACK_NM_MOBILE`) bundles React twice and draws a blank page, while a symlinked node_modules works. Because Vercel builds with a plain `npm ci`, walker A now builds the export exactly as Vercel will (fresh clone, `npm ci`, `npm run web:export`), checks it has one React and draws, and walks from it behind vercel.json's headers. B uses a symlinked node_modules.
 - 9 Nov 2026 · WEBAPP (lead): WEBAPP-07 full walk started 19:45 UTC on batch `wmt/BATCH-WEBAPP1` ffdc271 with Hub main 7dd5b22 (brief `docs/release/WALK-WEB.md`): three fresh Sonnet walkers, A arriving (guest, new user through the real WAWU ID, no wallet, the hosted selfie), B money (every wallet purchase on the web and every V8 attack, checked on the ledger and the stand-in), C making (creator, verified, uploads read back from storage). 390 and 1440, light and dark, cold start and refresh, and one path per user through the real site's headers (CSP). Stacks walka, walkb, walkc on 16020-16079, built one at a time under a lock. The hosted selfie on the web is walked for the first time (WEBAPP-05 left it NOT RUN on a stack).
-- 9 Nov 2026 · WEBAPP (lead): batch `wmt/BATCH-WEBAPP1` green: `npm run check` EXIT 0 on a5a63da (typecheck, lint, 513 of 513 suites, 7,700 passed and 6 skipped, gates 0 fail and 0 accepted, task check). Two batch fixes on the way: WEBAPP-06 web wallet hook split into `useWebBuy.web.tsx` and an inert phone `useWebBuy.ts` (phone code as before, R-86; 174 phone tests had failed); WEBAPP-03/04 gate findings fixed by a comment rewrite and a rename (`VoiceTakeUpload`), no gate touched. WEB-DEPLOY.md: WAWU ID's `ALLOWED_ORIGINS` confirmed from B3rry4r/WAWU-ID main 7e7abf8 (ffdc271). Next: WEBAPP-07, the full walk on this batch head, after the VOICES load measurement (it needs the machine to itself).

@@ -1,6 +1,7 @@
 # Work log
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
+- 10 Nov 2026 · CREATOR-TAKEDOWN · a creator takes a live or in-review piece down from My uploads and from the piece's page (confirm, place freed at once); buyers keep it (Hub: one nullable column, R-130); review sentence matches; Hub and jest checks run, web walk and pictures NOT RUN
 - 10 Nov 2026 · WEBAPP-09 · second web walk fixes W1 to W7 built (mid-sign-up links lead on, /tiers always closes, points sheet shows the Hub grant, two-tab payment shows paid, upgrade row, Enter sends a paid reply, room join words); checks EXIT 0
 - 9 Nov 2026 · WEBAPP-08 · web walk fixes F1 to F15 built (live purchase hook in the export, wss in the CSP, dollars offer, sign-up draft, wallet words, Enter sends); checks EXIT 0
 - 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)

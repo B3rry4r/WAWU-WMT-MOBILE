@@ -295,7 +295,7 @@ describe('M25 · Sent for review', () => {
     expect(await screen.findByText('5 of 5 free used')).toBeTruthy();
     expect(screen.getByText("We'll tell you")).toBeTruthy();
     expect(screen.getByText('When it goes live')).toBeTruthy();
-    expect(screen.getByText('You can edit it while it waits. It goes live on its own once approved.')).toBeTruthy();
+    expect(screen.getByText('You can take it down while it waits. It goes live on its own once approved.')).toBeTruthy();
   });
 
   it('drops the word free once the account holds a tick, with the limit the Hub gives it', async () => {

@@ -58,6 +58,7 @@ import {
   unlockLabel,
 } from './model';
 import { usePage } from './usePage';
+import { TakeDownSheet, useTakeDown } from '@/features/library/takeDown';
 
 /** design/_gen/home.js lines 69 to 72: the lessons the course shows before See all, and the page's gap and foot. */
 const LESSONS_SHOWN = 4;
@@ -78,6 +79,8 @@ export type ContentDetailScreenProps = {
   /** The piece's id. */
   id: string;
   onBack: () => void;
+  /** Where the page goes after its owner takes the piece down (back when there is history, else My uploads). Defaults to `onBack`. */
+  onTakenDown?: () => void;
   /** Where the page's wallet payments (an unlock, a tip) lead when they need somewhere else: Open your wallet, a PIN to set, Forgot PIN, add money. */
   pay: FlowHandlers;
   /** The "From the course" row (H24) opens the course's own page. The row is not drawn without it. */
@@ -94,7 +97,7 @@ type Notice = { text: string; tone: ToastTone } | null;
  * price, the counts, the dates, the lessons, who made it and what the viewer has bought. A mark the Hub does not take is put back
  * and said so; a part that cannot be read says so on its own.
  */
-export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLessons }: ContentDetailScreenProps) {
+export function ContentDetailScreen({ id, onBack, onTakenDown, pay, onOpenCourse, onEditLessons }: ContentDetailScreenProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
   const [notice, setNotice] = useState<Notice>(null);
@@ -107,6 +110,8 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // CREATOR-TAKEDOWN: the owner takes their own piece down from here; the page leaves with it (the Hub answers it 404 from then on).
+  const takeDown = useTakeDown(() => (onTakenDown ?? onBack)());
   // REPORT-UGC: a piece (and a comment on it) the person reports is gone from their feed, search and comments; the page leaves.
   const reporting = useReporting((kind) => {
     void queryClient.invalidateQueries();
@@ -223,12 +228,17 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
     else if (rating.cannotRateReason === 'not_purchased') say(NOT_BOUGHT_LINE);
   };
 
+  // A piece its creator took down stays with the people who bought it, but it takes no new like or save (the Hub answers 404), so
+  // those two controls are not drawn for the buyer of such a piece (CREATOR-TAKEDOWN, R-130). Rate (PUT /rating) and Report (the More
+  // menu's only row for a buyer) are refused for a removed piece too, so they are not drawn either. The view and share counts are fire
+  // and forget and say nothing when the Hub refuses them.
+  const kept = p.status === 'removed' && !own;
   const actions: Action[] = [
-    { key: 'like', icon: 'Heart', label: likeLabel(p.ratingPct, e.likes), on: e.likedByMe, hint: e.likedByMe ? 'Unlike' : 'Like', onPress: () => page.like.mutate(!e.likedByMe), testID: 'detail-like' },
+    ...(kept ? [] : [{ key: 'like', icon: 'Heart', label: likeLabel(p.ratingPct, e.likes), on: e.likedByMe, hint: e.likedByMe ? 'Unlike' : 'Like', onPress: () => page.like.mutate(!e.likedByMe), testID: 'detail-like' } as Action]),
     { key: 'comments', icon: 'MessageCircle', label: compactCount(count), hint: commentLine, onPress: () => setCommentsOpen(true), testID: 'detail-comments' },
     { key: 'share', icon: 'Share', label: 'Share', onPress: () => setShareOpen(true), testID: 'detail-share-action' },
-    { key: 'save', icon: 'Bookmark', label: e.savedByMe ? 'Saved' : 'Save', on: e.savedByMe, onPress: () => page.save.mutate(!e.savedByMe), testID: 'detail-save' },
-    ...(own ? [] : [{ key: 'rate', icon: 'Star' as const, label: rateLabel(rating.myRating), on: rating.myRating !== null, onPress: onRate, testID: 'detail-rate' }]),
+    ...(kept ? [] : [{ key: 'save', icon: 'Bookmark', label: e.savedByMe ? 'Saved' : 'Save', on: e.savedByMe, onPress: () => page.save.mutate(!e.savedByMe), testID: 'detail-save' } as Action]),
+    ...(own || kept ? [] : [{ key: 'rate', icon: 'Star' as const, label: rateLabel(rating.myRating), on: rating.myRating !== null, onPress: onRate, testID: 'detail-rate' }]),
   ];
 
   const lessons = d.lessons;
@@ -240,7 +250,7 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
 
   return (
     <View style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]} testID="content-detail">
-      <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} onMore={own ? undefined : () => setMenuOpen(true)} />
+      <Header title={BAR_TITLE[kind]} onBack={onBack} onShare={() => setShareOpen(true)} onMore={kept ? undefined : () => setMenuOpen(true)} />
       <ScrollView testID="detail-scroll" contentContainerStyle={[styles.body, { paddingBottom: footed ? footHeight + space.lg : m.bottom + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <Media piece={item} tag={mediaTag(p, d)} by={by} signal={open} lesson={playing} onLessonEnded={lessonEnded} />
         <View style={styles.title}>
@@ -336,18 +346,31 @@ export function ContentDetailScreen({ id, onBack, pay, onOpenCourse, onEditLesso
       <CommentsSheet visible={commentsOpen} onClose={() => setCommentsOpen(false)} count={count} page={page} />
       <BottomSheet visible={menuOpen} onClose={() => setMenuOpen(false)} label="More" gap={space.md} testID="detail-menu-sheet">
         <GroupedList testID="detail-menu-list">
-          <ListRow
-            testID="detail-menu-report"
-            lead={<IconTile icon="Flag" />}
-            title="Report this piece"
-            onPress={() => {
-              setMenuOpen(false);
-              reporting.ask('piece', p.id);
-            }}
-          />
+          {own ? (
+            <ListRow
+              testID="detail-menu-takedown"
+              lead={<IconTile icon="Trash2" tone="danger" />}
+              title="Take this down"
+              onPress={() => {
+                setMenuOpen(false);
+                takeDown.ask({ id: p.id, title: p.title, status: p.status });
+              }}
+            />
+          ) : (
+            <ListRow
+              testID="detail-menu-report"
+              lead={<IconTile icon="Flag" />}
+              title="Report this piece"
+              onPress={() => {
+                setMenuOpen(false);
+                reporting.ask('piece', p.id);
+              }}
+            />
+          )}
         </GroupedList>
       </BottomSheet>
       {reporting.element}
+      <TakeDownSheet takeDown={takeDown} testID="detail-takedown" />
       <ShareSheet visible={shareOpen} onClose={() => setShareOpen(false)} piece={{ id: p.id, title: p.title, by }} onShared={() => page.shared.mutate()} />
       <RateSheet
         visible={rateOpen}

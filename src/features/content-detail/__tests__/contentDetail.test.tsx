@@ -47,7 +47,7 @@ const lessons = Array.from({ length: 12 }, (_, i) => ({ id: `l${i + 1}`, title: 
 
 const pieces = (): Record<string, Hold> => ({
   [PDF]: {
-    piece: { ...base, id: PDF, title: 'The Freelancer’s Pricing Playbook', creatorWawuId: KEMI, contentType: 'pdf', accessType: 'paid', price: 3000, durationLabel: null, pageCount: 84, previewAssetUrl: 'https://cdn.test/p.pdf', views: 2140, fullAssetUrl: hub.bought ? 'https://cdn.test/full.pdf' : null, fullAssetLocked: !hub.bought },
+    piece: { ...base, status: hub.kept ? 'removed' : base.status, id: PDF, title: 'The Freelancer’s Pricing Playbook', creatorWawuId: KEMI, contentType: 'pdf', accessType: 'paid', price: 3000, durationLabel: null, pageCount: 84, previewAssetUrl: 'https://cdn.test/p.pdf', views: 2140, fullAssetUrl: hub.bought ? 'https://cdn.test/full.pdf' : null, fullAssetLocked: !hub.bought },
     detail: { contentId: PDF, contentType: 'pdf', updatedAt: '2026-09-20T10:00:00Z', purchasedAt: hub.bought ? '2026-09-26T08:00:00Z' : null, buyerCount: 12, studentCount: null, freePreview: { pages: 4, seconds: null, lessons: null }, lessons: [], creator: maker(KEMI, 'Kemi Okafor', 'Business coach', 22000) },
   },
   [VIDEO]: {
@@ -97,6 +97,8 @@ const hub = {
   parentCourse: null as null | { id: string; title: string; lessonCount: number; price: number; previewAssetUrl: string | null },
   /** The viewer made the course (H25 then offers Edit lessons). */
   ownCourse: false,
+  /** CREATOR-TAKEDOWN: the viewer bought the PDF and its creator has taken it down. */
+  kept: false,
 };
 
 const FEE = 2325;
@@ -178,6 +180,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (hub.loadFails && rest === '') return refuse(500, 'Something went wrong');
   if (!hold) throw new Error(`no piece ${id}`);
   if (rest === '' && method === 'GET') return ok(hold.piece);
+  if (rest === '' && method === 'DELETE') return new Response(null, { status: 204 });
   if (rest === '/detail') return ok({ ...hold.detail, rating: { ...hub.rating, canRate: hub.bought || hold.piece.accessType === 'free', cannotRateReason: hub.bought || hold.piece.accessType === 'free' ? null : 'not_purchased' } });
   if (rest === '/engagement') return ok({ ...hub.engagement, commentCount: hold.piece.commentCount });
   if (rest === '/media') return ok({ contentId: id, contentType: hold.piece.contentType, durationLabel: hold.piece.durationLabel, pageCount: hold.piece.pageCount, frameCount: 0, frames: [] });
@@ -308,6 +311,7 @@ beforeEach(() => {
     lessonRefusal: 0,
     parentCourse: null,
     ownCourse: false,
+    kept: false,
   });
   mockPlayers.length = 0;
 });
@@ -654,6 +658,75 @@ describe('H25: the creator edits their own course (FIX-111)', () => {
     hub.ownCourse = true;
     const { screen } = await boot(COURSE);
     expect(screen.queryByRole('button', { name: 'Edit lessons' })).toBeNull();
+  });
+});
+
+describe('CREATOR-TAKEDOWN: the creator takes their own piece down from its page', () => {
+  it('the owner\'s More menu offers Take this down, never Report; a confirm comes first; Take down sends one DELETE and the page leaves', async () => {
+    hub.ownCourse = true;
+    const { screen, onBack } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByTestId('detail-menu'));
+    expect(screen.queryByTestId('detail-menu-report')).toBeNull();
+    await rtl.fireEvent.press(await screen.findByTestId('detail-menu-takedown'));
+    expect(await screen.findByText('Take this down?')).toBeTruthy();
+    expect(hub.writes.filter((w) => w.startsWith('DELETE'))).toEqual([]);
+    await rtl.fireEvent.press(screen.getByTestId('detail-takedown-confirm'));
+    await rtl.waitFor(() => expect(onBack).toHaveBeenCalledTimes(1));
+    expect(hub.writes.filter((w) => w.startsWith('DELETE'))).toEqual(['DELETE /content/course-1']);
+  });
+
+  it('Keep it closes the confirm and sends nothing', async () => {
+    hub.ownCourse = true;
+    const { screen, onBack } = await boot(COURSE);
+    await rtl.fireEvent.press(screen.getByTestId('detail-menu'));
+    await rtl.fireEvent.press(await screen.findByTestId('detail-menu-takedown'));
+    await rtl.fireEvent.press(await screen.findByTestId('detail-takedown-keep'));
+    expect(hub.writes.filter((w) => w.startsWith('DELETE'))).toEqual([]);
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it('somebody else\'s piece offers Report and no take-down', async () => {
+    const { screen } = await boot(PDF);
+    await rtl.fireEvent.press(screen.getByTestId('detail-menu'));
+    expect(await screen.findByTestId('detail-menu-report')).toBeTruthy();
+    expect(screen.queryByTestId('detail-menu-takedown')).toBeNull();
+  });
+});
+
+describe('CREATOR-TAKEDOWN: the buyer of a piece its creator took down', () => {
+  it('still opens it, and is offered no like or save (the Hub would answer 404), so no error can follow', async () => {
+    hub.bought = true;
+    hub.kept = true;
+    const { screen } = await boot(PDF);
+    expect(screen.getByTestId('detail-open')).toBeTruthy();
+    expect(screen.queryByTestId('detail-like')).toBeNull();
+    expect(screen.queryByTestId('detail-save')).toBeNull();
+    expect(screen.getByTestId('detail-comments')).toBeTruthy();
+    // The Hub refuses a rating and a report for a removed piece, so neither is drawn (the More menu held only Report).
+    expect(screen.queryByTestId('detail-rate')).toBeNull();
+    expect(screen.queryByTestId('detail-menu')).toBeNull();
+  });
+
+  it('a live bought piece still offers Like, Save, Rate and More', async () => {
+    hub.bought = true;
+    const { screen } = await boot(PDF);
+    for (const id of ['detail-like', 'detail-save', 'detail-rate', 'detail-menu']) expect(screen.getByTestId(id)).toBeTruthy();
+  });
+
+  it('proves the same on a phone (Platform.OS android)', async () => {
+    const { Platform } = require('react-native') as typeof import('react-native');
+    const real = Platform.OS;
+    Platform.OS = 'android';
+    try {
+      hub.bought = true;
+      hub.kept = true;
+      const { screen } = await boot(PDF);
+      expect(screen.queryByTestId('detail-rate')).toBeNull();
+      expect(screen.queryByTestId('detail-like')).toBeNull();
+      expect(screen.getByTestId('detail-open')).toBeTruthy();
+    } finally {
+      Platform.OS = real;
+    }
   });
 });
 

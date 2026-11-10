@@ -77,7 +77,7 @@ export function ReviewScreen({ title, onDone, onOpenLibrary }: ReviewScreenProps
           <KeyValueRow testID="review-notify" label="We'll tell you" value="When it goes live" />
         </GroupedList>
         <Text variant="muted" testID="review-note" style={styles.note}>
-          You can edit it while it waits. It goes live on its own once approved.
+          You can take it down while it waits. It goes live on its own once approved.
         </Text>
       </ScrollView>
       <View style={[styles.foot, { backgroundColor: colors.surfacePage, paddingBottom: footMetrics.bottom + insets.bottom, paddingLeft: layout.gutter + insets.left, paddingRight: layout.gutter + insets.right }]}>
