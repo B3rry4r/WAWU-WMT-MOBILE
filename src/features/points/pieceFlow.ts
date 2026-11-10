@@ -1,5 +1,6 @@
-import { abandonDraft, getDraft, setFormat, setFull } from '@/features/create/draft';
+import { abandonDraft, getDraft, setFormat, setFull, setSmallCopy } from '@/features/create/draft';
 import { setDetails } from '@/features/create/details';
+import { smallCopyOf } from '@/features/create/previewCopy';
 
 import type { AiPiece } from './mediaToolApi';
 
@@ -13,6 +14,23 @@ export function putPieceInDraft(piece: AiPiece, previewUri?: string): void {
   setFormat(piece.format);
   setFull({ name: piece.full.name, bytes: piece.full.bytes, contentType: piece.full.contentType, key: piece.full.key, fileUrl: piece.full.fileUrl, ...(previewUri && piece.format === 'image' ? { previewUri } : {}) });
   if (piece.suggestedTitle) setDetails({ title: piece.suggestedTitle });
+}
+
+/**
+ * R-118: a PAID picture piece is previewed by a smaller copy the phone makes of the picture, held in the draft until Send uploads it (Create's
+ * upload step makes it when the person chooses the file). A Studio picture arrives already up, so the copy is made here from its link, after the
+ * draft holds it. If the draft has moved on to another piece meanwhile the copy is dropped; if the phone cannot make it the draft holds none
+ * and Create's own sentence (`COPY_GONE`) is what a paid Send says. A free picture needs none.
+ */
+export async function holdPictureCopy(piece: AiPiece, from: string = piece.full.fileUrl): Promise<void> {
+  if (piece.format !== 'image') return;
+  const copy = await smallCopyOf({ previewUri: from });
+  if (!copy) return;
+  if (!draftHolds(piece.full.key)) {
+    copy.discard?.();
+    return;
+  }
+  setSmallCopy(copy);
 }
 
 /** True when the draft already holds this very upload (the person came back from Create to the result and tapped again): there is nothing to copy twice. */

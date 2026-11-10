@@ -40,7 +40,7 @@ import { BOOK_WORDS, DIALOGUE_WORDS, FILE_STEP_WORDS, isFlatFileTool, linkProble
 import { LengthRow, PhotoRow, ShapeRow, VoiceRow as SpeechRow } from './MediaInputs';
 import { defaultShape, isTalking, lengthsOf, MEDIA_WORDS, shapesOf, thingOf, workingTitleFor } from './mediaToolModel';
 import type { AiPiece } from './mediaToolApi';
-import { putPieceInDraft } from './pieceFlow';
+import { holdPictureCopy, putPieceInDraft } from './pieceFlow';
 import { DoneCard, ResultMedia } from './ResultView';
 import { useMediaInputs } from './useMediaInputs';
 import { useJobCheck } from './JobCheck';
@@ -773,6 +773,7 @@ export function Tool({ owner, tool, balance, onBack, onBuyPoints, onLeave, openJ
   /** "Make it a piece": the file is in the draft and Create's preview step opens; Back there returns to this result. */
   const openPiece = (piece: AiPiece, previewUri?: string) => {
     putPieceInDraft(piece, previewUri);
+    void holdPictureCopy(piece);
     router.push('/create-preview');
   };
 
