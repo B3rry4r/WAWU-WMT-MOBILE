@@ -18,6 +18,8 @@ tier: T1
 
 ## Current state
 
+- Rebased onto today's line (10 Nov 2026, STUDIO-1110): merged `wmt/BATCH-1110` `7a6f585` into `wmt/STUDIO-HOME`; see STUDIO-HOME and POINTS-12 Current state for the conflicts and the one fit fix. Status verifying.
+
 **Patch round 1 (30 Oct 2026, S2-APP-1 builder, on top of `a17686fb`; verifier said MERGE, lead's three points; same branch).**
 - **Copy.** The working title names what is made, not the tool's verb phrase: "Making your image", "Editing your photo", "Making your video", "Making your talking photo" (`workingTitleFor` in `mediaToolModel.ts`); the older tools keep the board's "Making your {name}" (their names are nouns: VoiceOver, Quick voice, Sound effect, Music track, Captions, Clean audio, Dubbing; their tests pin it and are untouched). The piece row reads "Into Create, as a video piece", "an audio piece", "an image piece". The screen-reader labels read "Download your image", "Your image. View larger", "Play your video" (`thingOf`); the nav title stays the tool's own name. Changed assertion: `mediaToolsFlow.test.tsx` "a creator sees Make it a piece first and largest ..." (the piece row's accessible name is now "Make it a piece. Into Create, as an image piece"). Added assertions in the same file: the four working titles, "Your image. View larger", "Download your image". No older test changed.
 - **R-109** is in `DECISIONS.md`, word for word from `origin/wmt/S2-HUB-1-rec` (before R-110), so `check_tasks` passes here.
@@ -130,3 +132,8 @@ None yet. Reports go to tasks/history/POINTS-13.md. NOT RUN is a valid result; l
 ## Owner sign-off
 
 _Owner: date, and "screenshots, PHONE CHECK list and evidence pack reviewed"._
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-13.md](history/POINTS-13.md).
+

@@ -18,6 +18,8 @@ tier: T1
 
 ## Current state
 
+- **Rebased onto today's line (10 Nov 2026, STUDIO-1110, `wmt/STUDIO-1110` = `wmt/STUDIO-HOME` `c88ba067` + a merge of `wmt/BATCH-1110` `7a6f585`; status verifying, not merged, not sent).** Conflicts: `PointsFrame.tsx` (kept both: today's `FieldScroll` and `useFootBottom` from R-117, and this branch's `scrollRef` and `scrollTopKey`); `DECISIONS.md` (R-109 and R-113 are the same text on both sides, today's file taken, so R-111, R-112, R-114 onward stay); `BACKEND_GAPS.md`, `SHARED-CHANGES.md` (both sides kept); contract, `schema.generated.ts`, `docs/PROGRESS.md`, `tasks/INDEX.md` regenerated (`npm run api` from Hub `8285e1b`, `npm run tasks -- --write`), not hand-merged. No product choice between the two sides arose. One fit fix: a Studio picture made a piece had no smaller copy for Create's paid preview (R-118 moved that to the phone), so a paid Send said "Choose your picture again"; `holdPictureCopy` (`pieceFlow.ts`) now makes it from the result's link (test `pieceCopy.test.ts`). Smoke against Hub main with the provider stand-in: 19 tools listed, Make an image, Clean audio, Audiobook and the Receptionist chat run on the web export with points held then kept; image and audiobook go into Create's step 3. Pictures: `/tmp/wmt-shots/studio-1110/`.
+
 **Built 30 Oct 2026 (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `origin/wmt/S2-APP-2` `43abe9a1`; app only, HELD: not merged into `wmt/STORE-BUY-APP` or main, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying).** R-113 (lead, from the owner's ElevenLabs screenshot, 30 Oct 2026): the Studio tab is a studio home.
 
 | # | Before (`origin/wmt/S2-APP-2`) | After |
@@ -65,3 +67,8 @@ tier: T1
 ## History
 
 None yet. Reports go to tasks/history/STUDIO-HOME.md. NOT RUN is a valid result; leaving it out is not (CLAUDE.md rule 9).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/STUDIO-HOME.md](history/STUDIO-HOME.md).
+

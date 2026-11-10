@@ -18,6 +18,8 @@ tier: T1
 
 ## Current state
 
+- Rebased onto today's line (10 Nov 2026, STUDIO-1110): merged `wmt/BATCH-1110` `7a6f585` into `wmt/STUDIO-HOME`; see STUDIO-HOME and POINTS-12 Current state for the conflicts and the one fit fix. Status verifying.
+
 **Built 30 Oct 2026 (S2-APP-2, Sonnet builder, T1; mobile `wmt/S2-APP-2` on `origin/wmt/S2-APP-1` `91be8d5c`, contract from backend `origin/wmt/S2-HUB-3` `483a27d` (`npm run api`, main plus part 3); app only, HELD: not merged into `wmt/STORE-BUY-APP`, not sent; no native change, `package.json` and `app.json` untouched, fingerprints equal the base tree's: Android `c2474bd9`, iOS `240378f1`; status verifying).**
 - **Patch round 1 (30 Oct 2026, verifier F1, F2): the Audiobook and the Podcast maker fold their input into one row once Run is pressed.** The text box (Audiobook) and the form (Podcast) become one `RunSummary` row at the top in the chosen-file row's card style ("Your text" and "25,200 characters"; "Your text" or "From your link", then "Two hosts. Standard"); the working, done and failed views sit right under it and the page scrolls to the top on Run. No action while it works; "Edit" on done and failed unfolds the input again with the result kept below, and any change is a new run. Measured at 390 x 844 over the stubbed Hub: working at 144 px, "Make it a piece" card at 214 px, failure at 150 px below the top for a 26,399 character book and a two-host podcast (was 13,630 and 943). The Android back button is proven in jest (`studio2PatchFlow.test.tsx`, Platform.OS android, the router's own listener): input, working (job kept, reopening finds it), done, failed. Pictures: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2app2-p/pics/beside/` and `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2app2-p/pics/shots/`.
 - **Pictures (owner hard rule 1), 390 px dark and light, each beside its nearest artboard** (PT1, PT2, PT2a, PT2b, PT2c, PT3 rendered with `render_design.py`; no board draws these tools, so every picture is "PT2 pattern"): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2app2-b/pics/beside/` (pairs) and `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2app2-b/pics/shots/` (the app alone), 49 screens in both themes, taken from the dev web export over a stubbed Hub (no real host: every non-local address is stopped). Studio with the eight new tiles; for each tool the empty and filled input, working, done, failed, and the PT3 short-balance sheet (Dialogue, Receptionist). The tools stay switched off in production: the gallery (`/dev/studio`, `__DEV__` only) is extended with the new tools, and a production `expo export` has 0 files carrying its canned text ("preview.test", "WAWU-PREVIEW", "Warm and clear", "Say it again in another voice") where the dev export has 1; the screens' own code ("Make it a piece", `scene-add`, `receptionist-setup`) is in both.
@@ -112,3 +114,8 @@ None yet. Reports go to tasks/history/POINTS-18.md. NOT RUN is a valid result; l
 ## Owner sign-off
 
 _Owner: date, and "screenshots, PHONE CHECK list and evidence pack reviewed"._
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-18.md](history/POINTS-18.md).
+

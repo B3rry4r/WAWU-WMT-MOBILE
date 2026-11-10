@@ -18,6 +18,8 @@ tier: T1
 
 ## Current state
 
+- Rebased onto today's line (10 Nov 2026, STUDIO-1110): merged `wmt/BATCH-1110` `7a6f585` into `wmt/STUDIO-HOME`; see STUDIO-HOME and POINTS-12 Current state for the conflicts and the one fit fix. Status verifying.
+
 **Built 30 Oct 2026 (S2-APP-1, Sonnet builder, T1; mobile `wmt/S2-APP-1` on `origin/wmt/STORE-BUY-APP` `a77f50bb`, contract from backend `origin/main` `8e39c48` (`npm run api`); app only, HELD: not merged into `wmt/STORE-BUY-APP`, not sent; no native change, `package.json` and `app.json` untouched, fingerprint of this tree equals the base tree's on both platforms (`@expo/fingerprint`, Android `c2474bd9`, iOS `240378f1` as the lead keeps them); status verifying).**
 - **Pictures (owner hard rule 1), 390 px dark and light, beside the nearest artboard** (PT1, PT2, PT2a, PT2b, PT2c, M22 rendered with `render_design.py`), taken from the dev web export through `/dev/studio` (a `__DEV__` gallery with canned data, tools switched off) and the real Studio and Create routes over a stubbed Hub: `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2-app-1-b/beside/` (pairs) and `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2-app-1-b/shots/` (the app alone): studio, image-input-empty, image-input-filled, image-working, image-done-creator, image-done-buyer, image-failed, photo-edit-input-empty, photo-edit-photo-chosen, video-input-filled, video-working, video-done-creator, talking-voice-choices, talking-input-ready, talking-done-creator, voiceover-done-creator, create-step3. Create's step 3 opens as "New Image, Step 3 of 5" with the file in; its upload-rules list shows its error state in that picture only because the picture script's stub of `GET /uploads/formats` is not whole (the screen is Create's own, untouched).
 - **Production bundle:** `expo export --platform web` of this tree (no `--dev`): the gallery's canned text ("Describe a picture and see it.", "preview.test", "WAWU-PREVIEW") is in 0 files of the release export and in 1 file of the dev export; a control string ("Make it a piece") is in both. `app/dev/studio.tsx` requires `Gallery.tsx` only under `if (__DEV__)`; `route-guard.test.tsx` has the `dev/studio` row.
@@ -115,3 +117,8 @@ None yet. Reports go to tasks/history/POINTS-14.md. NOT RUN is a valid result; l
 ## Owner sign-off
 
 _Owner: date, and "screenshots, PHONE CHECK list and evidence pack reviewed"._
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-14.md](history/POINTS-14.md).
+

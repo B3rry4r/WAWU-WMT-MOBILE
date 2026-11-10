@@ -18,6 +18,8 @@ tier: T1
 
 ## Current state
 
+- Rebased onto today's line (10 Nov 2026, STUDIO-1110): merged `wmt/BATCH-1110` `7a6f585` into `wmt/STUDIO-HOME`; see STUDIO-HOME and POINTS-12 Current state for the conflicts and the one fit fix. Status verifying.
+
 **Built 30 Oct 2026 (S2-APP-2, Sonnet builder, T1; mobile `wmt/S2-APP-2` on `origin/wmt/S2-APP-1` `91be8d5c`, contract from backend `origin/wmt/S2-HUB-3` `483a27d` (`npm run api`, main plus part 3); app only, HELD: not merged into `wmt/STORE-BUY-APP`, not sent; no native change, `package.json` and `app.json` untouched, fingerprints equal the base tree's: Android `c2474bd9`, iOS `240378f1`; status verifying).**
 - **Pictures (owner hard rule 1), 390 px dark and light, each beside its nearest artboard** (PT1, PT2, PT2a, PT2b, PT2c, PT3 rendered with `render_design.py`; no board draws these tools, so every picture is "PT2 pattern"): `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2app2-b/pics/beside/` (pairs) and `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/s2app2-b/pics/shots/` (the app alone), 49 screens in both themes, taken from the dev web export over a stubbed Hub (no real host: every non-local address is stopped). Studio with the eight new tiles; for each tool the empty and filled input, working, done, failed, and the PT3 short-balance sheet (Dialogue, Receptionist). The tools stay switched off in production: the gallery (`/dev/studio`, `__DEV__` only) is extended with the new tools, and a production `expo export` has 0 files carrying its canned text ("preview.test", "WAWU-PREVIEW", "Warm and clear", "Say it again in another voice") where the dev export has 1; the screens' own code ("Make it a piece", `scene-add`, `receptionist-setup`) is in both.
 - **POINTS-17 done.** Music for a video and Split a song (icons Video, SlidersHorizontal) are file tools that list only their one kind of file (`only`). Music for a video: a video from the library, checked before upload against the Hub's bytes and, when the phone says how long it is (`ChosenFile.seconds`), its longest in seconds; an optional mood box with its counter; a big upload shows progress and a Cancel that stops it and holds nothing; the done view is the player and one line that the music is separate from the video. Split a song: a Parts row (the Hub's 2 and 6), and a parts list (`PartsList.tsx`): each part a play button (one plays at a time), the Hub's name and its own "Make it a piece" (the `outputIndex` of that part, `usePieceMaker` extracted from the piece row); the single card row is not drawn for it. A flat price (one use, one track) takes its units from the Hub's quote and the length line says how long the Hub read the file to be.
@@ -108,3 +110,8 @@ None yet. Reports go to tasks/history/POINTS-17.md. NOT RUN is a valid result; l
 ## Owner sign-off
 
 _Owner: date, and "screenshots, PHONE CHECK list and evidence pack reviewed"._
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/POINTS-17.md](history/POINTS-17.md).
+
