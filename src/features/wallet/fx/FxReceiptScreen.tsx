@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -105,7 +106,7 @@ export function FxReceiptScreen({ kind, id, onDone }: FxReceiptProps) {
     setNotice(null);
     const rows = kind === 'swap' ? swapRows(op as FxSwap) : sendRows(op as FxSend);
     try {
-      await Share.share({ message: [kind === 'swap' ? 'Swap receipt' : 'Crypto send receipt', ...rows.map((r) => `${r.label}: ${r.value}`)].join('\n') });
+      await shareOut({ message: [kind === 'swap' ? 'Swap receipt' : 'Crypto send receipt', ...rows.map((r) => `${r.label}: ${r.value}`)].join('\n') });
     } catch {
       setNotice('Sharing isn’t available on this device.');
     }

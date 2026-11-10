@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { billsOffered } from '@/features/bills/offered';
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
 import { onSessionEnd } from '@/api/session';
@@ -352,7 +353,7 @@ function builtActions(router: ReturnType<typeof useRouter>): WalletAction[] {
     { key: 'send', icon: 'ArrowUpRight', label: 'Send', onPress: () => router.push('/send') },
     { key: 'withdraw', icon: 'Landmark', label: 'Withdraw', onPress: () => router.push('/withdraw') },
     { key: 'buy-points', icon: 'Sparkles', label: 'Buy points', onPress: () => router.push('/points-buy') },
-    { key: 'bills', icon: 'Receipt', label: 'Bills', onPress: () => router.push('/bills') },
+    ...(billsOffered() ? [{ key: 'bills' as const, icon: 'Receipt' as const, label: 'Bills', onPress: () => router.push('/bills') }] : []),
   ];
 }
 

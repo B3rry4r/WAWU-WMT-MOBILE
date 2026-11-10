@@ -3,14 +3,14 @@ id: DASH-B
 title: The dashboard shows the app's real money (wallets, merchant wallet, revenue)
 owner: YOU
 area: DASHBOARD
-order: 295
+order: 254
 priority: launch
 repo: wawu-backend, wawu-dashboard
 type: money-path
-status: doing
-depends_on: [DASH-A, NUV-01, STORE-BUY-HUB, JOIN-TIERS]
+status: building
+depends_on: [NUV-01, STORE-BUY-HUB, JOIN-TIERS]
 decisions: [R-1, R-5, R-19, R-39, R-101, R-125]
-passes: [V1, V2, V3, V4]
+passes: [V1, V2, V3, V4, V6, V7, V8, V9]
 artboards: []
 ---
 # DASH-B · An operator sees the app's money, not the website's
@@ -41,3 +41,10 @@ The balance rule: a balance is the wallet provider's own answer through `WALLET_
 - Show nothing the Hub does not answer: a row with `balanceUnavailable` shows the reason, never 0.
 - Draw the merchant `holds` and `heldByKind` as records beside the provider balance, never as a balance.
 - The three held-money lines (paid DMs, tickets, bills) plus school fees are the kinds in `heldByKind`.
+
+## Capability checks
+
+- [ ] A finance or superadmin operator can see each open wallet with the balance the wallet provider reports, and a wallet the provider does not answer for shows its reason and no figure.
+- [ ] A finance or superadmin operator can see WAWU's merchant wallet balance beside the held-money records (paid DMs, tickets, bills, school fees) as records, never as a balance.
+- [ ] A finance or superadmin operator can see revenue per stream for a chosen period, with the 85/15 split, refunds and the rail each stream ran on.
+- [ ] A support or reviewer admin cannot open any of the money pages or routes.

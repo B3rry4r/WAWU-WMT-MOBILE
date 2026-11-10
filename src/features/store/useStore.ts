@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -12,6 +12,8 @@ import * as iap from './iap';
 import type { LadderSpec, PayWith } from './ladder/api';
 import { restoredLine, waitingLine, type StoreItem, type StoreState } from './model';
 import { said, type Said } from './words';
+import { loadWebCatalog, specOf } from './webwallet/catalog';
+import { useWebBuy } from './webwallet/useWebBuy';
 
 /**
  * The store's side of a buy screen (IAP-02, R-86). `useStoreCatalog` asks the Hub what is on sale in this phone's store and the store for
@@ -61,7 +63,17 @@ export function useStoreCatalog(kinds: readonly StoreKind[]): StoreCatalogResult
     },
     queryClient,
   );
-  const refetch = useCallback(() => void query.refetch(), [query]);
+  // The web has no store sheet: its items are the Hub's list prices, paid from the wallet (WEBAPP-06, R-128).
+  const onWeb = Platform.OS === 'web';
+  const webQuery = useQuery({ queryKey: ['store', 'web-catalog', owner ?? ''], queryFn: loadWebCatalog, enabled: onWeb && os === null && Boolean(owner), staleTime: 0, retry: false }, queryClient);
+  const refetch = useCallback(() => void (onWeb && os === null ? webQuery.refetch() : query.refetch()), [query, webQuery, onWeb, os]);
+  if (onWeb && os === null) {
+    if (webQuery.isError && !webQuery.data) {
+      return { state: { kind: 'error', message: isApiError(webQuery.error) && webQuery.error.message ? webQuery.error.message : 'Check your connection and try again.' }, catalog: null, refetch, os };
+    }
+    if (!webQuery.data) return { state: { kind: 'loading' }, catalog: null, refetch, os };
+    return { state: { kind: 'ready', items: webQuery.data.filter((i) => kinds.includes(i.product.kind)) }, catalog: null, refetch, os };
+  }
   if (os === null) return { state: { kind: 'store_unavailable', web: true }, catalog: null, refetch, os };
   if (query.isError && !query.data) {
     return { state: { kind: 'error', message: isApiError(query.error) && query.error.message ? query.error.message : 'Check your connection and try again.' }, catalog: null, refetch, os };
@@ -100,7 +112,9 @@ export type StoreBuyer = {
   recovered: StorePurchaseView[];
   restoring: boolean;
   restoreLine: string | null;
-  buy: (item: StoreItem, options?: Pick<BuyOptions, 'communityId' | 'replace'>) => Promise<PurchaseResult | null>;
+  buy: (item: StoreItem, options?: Pick<BuyOptions, 'communityId' | 'replace'> & { webKind?: 'tier' | 'renew' | 'upgrade' }) => Promise<PurchaseResult | null>;
+  /** The web's pay sheet and PIN sheet (WEBAPP-06, R-128): a screen that buys draws it once. Null on a phone. */
+  sheets: React.ReactNode;
   /**
    * R-101: a piece, a tip, a community pass or a paid question on the price ladder. The intent is made first; the store sheet opens (or, with
    * `credit`, a credit is spent and there is no store sheet); only a 201 finishes the store transaction.
@@ -156,6 +170,8 @@ function recoverShared(key: string, run: () => Promise<Recovery>): Promise<Recov
 export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
   const owner = useSessionAccount(undefined);
   const os = iap.storeOs();
+  const web = useWebBuy();
+  const onWeb = Platform.OS === 'web' && os === null;
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<Said | null>(null);
   const [granted, setGranted] = useState<StorePurchaseView | null>(null);
@@ -194,6 +210,11 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
 
   const buy = useCallback<StoreBuyer['buy']>(
     async (item, options) => {
+      if (onWeb) {
+        const spec = specOf(item, options?.webKind);
+        if (spec) web.begin(spec, item.product.title, item.product.grants);
+        return null;
+      }
       if (running.current || !os) return null;
       running.current = true;
       setBusy(true);
@@ -216,7 +237,7 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
         if (alive.current) setBusy(false);
       }
     },
-    [os, token],
+    [os, token, onWeb, web],
   );
 
   const buyLadder = useCallback<StoreBuyer['buyLadder']>(
@@ -274,11 +295,14 @@ export function useStoreBuyer(catalog: StoreCatalog | null): StoreBuyer {
     }
   }, [os, products, token]);
 
+  const { clear: clearWeb } = web;
   const clear = useCallback(() => {
     setLine(null);
     setGranted(null);
     setRestoreLine(null);
-  }, []);
+    clearWeb();
+  }, [clearWeb]);
 
-  return { busy, said: line, granted, recovered, restoring, restoreLine, buy, buyLadder, restore, clear };
+  if (onWeb) return { busy: web.busy, said: web.said, granted: web.granted, recovered: [], restoring: false, restoreLine: null, buy, buyLadder, restore, clear, sheets: web.sheets };
+  return { busy, said: line, granted, recovered, restoring, restoreLine, buy, buyLadder, restore, clear, sheets: null };
 }

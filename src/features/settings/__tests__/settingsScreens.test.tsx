@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import { ActivityIndicator, Animated, Appearance, Image, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Appearance, Image, Platform, Pressable, ScrollView, Text as NativeText, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockStore = new Map<string, string>();
@@ -597,6 +597,19 @@ describe('Z2 · Settings', () => {
     await screen.findByTestId('settings-header-retry');
     await act(async () => fireEvent.press(screen.getByTestId('settings-header-retry')));
     expect(await screen.findByText('Lennox Emmanuel')).toBeTruthy();
+  });
+
+  it('on the web the Alert sound row is not drawn (a browser gets no push), and the rest of the list is', async () => {
+    const web = jest.replaceProperty(Platform, 'OS', 'web');
+    try {
+      serve();
+      await boot();
+      await screen.findByTestId('settings-music');
+      expect(screen.queryByTestId('settings-sound')).toBeNull();
+      expect(screen.getByTestId('settings-notifications')).toBeTruthy();
+    } finally {
+      web.restore();
+    }
   });
 
   it('a user can switch Sound on, and it is kept on the phone, not sent anywhere', async () => {

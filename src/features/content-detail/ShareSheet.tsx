@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { Linking, Pressable, Share, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 
 import { Avatar } from '@/components/Avatar';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -88,7 +89,7 @@ function ShareBody({ piece, onShared }: Pick<ShareSheetProps, 'piece' | 'onShare
   const more = async () => {
     setNote(null);
     try {
-      const result = await Share.share({ message: words });
+      const result = await shareOut({ message: words });
       if (result.action === Share.sharedAction) onShared();
     } catch {
       setNote({ tone: 'problem', text: COULD_NOT_SHARE });

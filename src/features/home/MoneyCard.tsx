@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { billsOffered } from '@/features/bills/offered';
 import { Button } from '@/components/Button';
 import { useFocusRing } from '@/components/focusRing';
 import { Icon, type IconName } from '@/components/icon';
@@ -115,7 +116,7 @@ export function MoneyCard({ state, masked, onToggleMask, onOpenWallet, onRetryWa
       <View style={styles.actions}>
         <CardAction testID="today-action-send" icon="ArrowUpRight" label="Send" accent onPress={onSend} />
         <CardAction testID="today-action-add" icon="Plus" label="Add" onPress={onAdd} />
-        <CardAction testID="today-action-bills" icon="Receipt" label="Bills" onPress={onOpenBills} />
+        {billsOffered() ? <CardAction testID="today-action-bills" icon="Receipt" label="Bills" onPress={onOpenBills} /> : null}
       </View>
     </View>
   );

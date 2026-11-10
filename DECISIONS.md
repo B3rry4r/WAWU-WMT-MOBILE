@@ -943,3 +943,20 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 5. **Moderators.** The admin queue no longer lists held pieces (nothing waits on a human); `GET /admin/content/queue?held=only` lists exactly those.
 - Amends R-11's wording only for the web-flow pieces: earning needs the piece to be public, so earnings from a web-flow piece start when the wallet opens. R-11 itself (earnings wait for a wallet) is unchanged. R-48 (the site is join-only) is unchanged: opening the upload pages on the site is the WEB-UPLOAD task.
 **Carried out by:** WEB-HOLD (Hub), WEB-UPLOAD (web), A1 (the app's library shows the held word, later; R-47: drawn only once built).
+
+### R-127 · Who Made This on the web at usewmt.com, built from the app itself
+*Owner, 9 Nov 2026 ("who made this is usewmt.com ... proceed"; the client's web app: the full app by Wednesday 11 Nov with the phone layout centred on a laptop, the designed desktop as an update after it).* The lead's defaults below are his; the owner may override any.
+1. **One code line.** The web app is this repo's own web export (Expo Router, react-native-web, `web.output: single`), not a second app and not the wawuafrica web. Every screen, rule and ruling of the app holds on the web (R-44 already says payments are the same). A web-only difference lives in a `*.web.ts(x)` file beside the native one.
+2. **Phase 1 (due 11 Nov).** Every built screen works in a phone or computer browser. Wider than a phone, the app shows at phone width, centred, set in one place (the root layout) until Phase 2. What a browser cannot do degrades to what it can (a file picker for the camera, for example) or is not drawn on the web (R-47); never a dead button.
+3. **Phase 2 (after Phase 1 is live).** A desktop layout, drawn first as artboards (the shell and the main screens) and reviewed, then built and shipped as an update.
+4. **Address and deploy.** https://usewmt.com. The Hub's `CORS_ORIGIN` (src/hub-app-config.ts reads it) adds `https://usewmt.com`: a server setting, no code. WAWU ID allows the origin. Email links that name a web page stay as they are until the owner says (lead default). Hosting is Vercel, and deployment is the owner's (owner, 9 Nov: "Vercel please... allow me worry about deployment things"): the repo carries a `vercel.json` (build command, output folder, every path served by the app so a refresh works on any page) and the owner connects the repo, the address and the settings. Deploy steps are tracked apart from the coding tasks.
+5. **Same workflow.** Tiers, bundles, a separate verifier, at most two fix rounds, the batch full check, then a full walk of the web app as every user type at 390 and 1440 on the exact code before it goes live (owner hard rules 5 and 6 hold for a web release as for a build).
+- wawuafrica.com is unchanged (R-48, R-126).
+**Carried out by:** WEBAPP-00 (readiness check), the WEBAPP tasks cut from it, the web walk, then the deploy items.
+
+### R-128 · On the web app, what the phone sells through the stores is paid from the wallet
+*Lead default (9 Nov 2026), from R-44, R-86 and R-101; the owner may override.* R-86 routes points, ticks, tiers, WAWU Credits packs and community passes to Apple and Google because of the stores' rules, and says the website keeps its own payments; R-101 says the website keeps the wallet. The stores' rules do not reach a web page, and usewmt.com cannot open a store sheet (WEBAPP-00 found every store screen saying "Buy in the app").
+1. On the web build (`Platform.OS === 'web'`), those purchases are paid from the person's wallet through the Hub's wallet routes, the same routes the website uses (R-44), at the list price with no store cut, with the PIN and `Idempotency-Key` like every wallet payment. The creator's 85% is worked out on the list price.
+2. The phone app is unchanged: the stores, as R-86 and R-101 say.
+3. A person without a wallet meets the open-wallet step first, as for any wallet payment (R-6).
+**Carried out by:** WEBAPP-06.

@@ -70,7 +70,7 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
             {added > 0 ? `${creditCount(added)} credits added` : 'Credits added'}
           </Text>
           <Text variant="muted" style={styles.centre} testID="credits-added-line">
-            {addedLine(balance.data?.creditBalance ?? null)}
+            {addedLine(balance.isFetching ? null : (balance.data?.creditBalance ?? null))}
           </Text>
         </View>
         <Button label={doneLabel} full onPress={close} testID="credits-added-done" />
@@ -79,6 +79,7 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
   }
 
   return (
+    <>
     <BottomSheet visible={visible} onClose={close} label={SHEET_TITLE} gap={SHEET_GAP} dismissible={!buyer.busy} testID="credits-sheet">
       <View style={styles.head}>
         <Text variant="sheetTitleSm">{SHEET_TITLE}</Text>
@@ -114,6 +115,8 @@ export function BuyCreditsSheet(props: BuyCreditsSheetProps) {
         />
       ) : null}
     </BottomSheet>
+    {visible ? buyer.sheets : null}
+    </>
   );
 }
 

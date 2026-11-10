@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { isApiError } from '@/api/errors';
 import { queryClient } from '@/api/query';
@@ -20,6 +20,7 @@ import { useStoreCatalog } from '@/features/store/useStore';
 import { font, radius, space, useWawu } from '@/theme';
 
 import { plansQuery, type PlanTier } from './purchaseApi';
+import { useUpgradeCharge } from '@/features/store/webwallet/useUpgradeCharge';
 import { dayOf, periodOf, tierItems, TIER_WORDS } from './purchaseModel';
 import { Radio } from './planParts';
 
@@ -99,7 +100,24 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
   } else if (choices.length === 0) {
     // A person on the highest tier has nothing to move up to; a store with no tier on sale has nothing to sell: nothing is offered.
     body = held ? (
-      <ErrorState testID="tiers-none" icon="TriangleAlert" title="You are on the highest tier" message="There is no tier above yours to move up to." />
+      Platform.OS === 'web' ? (
+        // WEBAPP-09 W2: the sheet has a way out on the web as the dollar person's has.
+        <View testID="tiers-none-top" style={styles.list}>
+          <ErrorState testID="tiers-none" icon="TriangleAlert" title="You are on the highest tier" message="There is no tier above yours to move up to." />
+          <Button testID="tiers-close" label="Close" variant="secondary" full onPress={onClose} />
+        </View>
+      ) : (
+        <ErrorState testID="tiers-none" icon="TriangleAlert" title="You are on the highest tier" message="There is no tier above yours to move up to." />
+      )
+    ) : Platform.OS === 'web' ? (
+      // WEBAPP-08 F4: the web sells in naira only, so a person billed in dollars lands here: the sheet keeps its title and a way out (R-94).
+      <View testID="tiers-none-web" style={styles.list}>
+        <Text variant="display" accessibilityRole="header" testID="tiers-title" style={{ fontSize: HEAD.title, letterSpacing: HEAD.tracking * HEAD.title }}>
+          {TIER_WORDS.title}
+        </Text>
+        <StoreUnready state={{ kind: 'not_open', why: 'not_configured' }} onRetry={store.refetch} testID="tiers-none" />
+        <Button testID="tiers-close" label="Close" variant="secondary" full onPress={onClose} />
+      </View>
     ) : (
       <StoreUnready state={{ kind: 'not_open', why: 'not_configured' }} onRetry={store.refetch} testID="tiers-none" />
     );
@@ -113,7 +131,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
             {held ? TIER_WORDS.upgradeTitle : TIER_WORDS.title}
           </Text>
           <Text variant="body" tone="textSecondary" testID="tiers-blurb" style={styles.blurb}>
-            {held ? `You're on ${heldName}${until ? ` until ${until}` : ''}. The store works out what moving up costs.` : TIER_WORDS.blurb}
+            {held ? `You're on ${heldName}${until ? ` until ${until}` : ''}. ${Platform.OS === 'web' ? 'You pay the difference from your wallet.' : 'The store works out what moving up costs.'}` : TIER_WORDS.blurb}
           </Text>
         </View>
         <View accessibilityRole="radiogroup" testID="tiers-list" style={styles.list}>
@@ -126,6 +144,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
     );
   }
 
+  const charge = useUpgradeCharge(selected?.tier.id, held !== null);
   const ready = !failed && !waiting && store.state.kind === 'ready' && selected !== null;
   return (
     <View testID="tiers-screen" style={styles.page}>
@@ -134,7 +153,7 @@ export function TiersScreen({ open = true, onClose, onContinue }: TiersScreenPro
         {ready && selected ? (
           <Button
             testID="tiers-continue"
-            label={held ? `Upgrade to ${selected.tier.name} · ${selected.item.price}` : `Continue with ${selected.tier.name}`}
+            label={held ? (Platform.OS === 'web' ? (charge ? `Upgrade to ${selected.tier.name} · ${charge}` : `Upgrade to ${selected.tier.name}`) : `Upgrade to ${selected.tier.name} · ${selected.item.price}`) : `Continue with ${selected.tier.name}`}
             full
             onPress={() => onContinue(held ? 'upgrade' : 'tier', selected.tier.id)}
           />

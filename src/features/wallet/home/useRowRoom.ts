@@ -1,4 +1,4 @@
-import { useWindowDimensions } from 'react-native';
+import { useFrameWidth } from '@/lib/useFrameWidth';
 
 import { layout } from '@/theme';
 
@@ -8,6 +8,6 @@ import { layout } from '@/theme';
  * themselves from this one number, so the two agree at every phone width (COMPLETE-05 round 2, defect 1).
  */
 export function useRowRoom(): number {
-  const { width } = useWindowDimensions();
+  const width = useFrameWidth();
   return Math.max(0, width - 2 * layout.gutter);
 }

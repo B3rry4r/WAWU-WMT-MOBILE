@@ -596,3 +596,41 @@ describe('entries', () => {
     expect(rtl.screen.queryByText(/Paid DMs/)).toBeNull();
   });
 });
+
+describe('WEBAPP-09 W6 · Enter sends a reply in a browser', () => {
+  const key = (name: string, shiftKey = false, isComposing = false) => ({ nativeEvent: { key: name, shiftKey, isComposing }, preventDefault: jest.fn() });
+  const draft = async (text: string) => {
+    hub.thread.questions = [question()];
+    await draw(<PaidThreadScreen wawuId="fan-bisi" focusQuestion="q1" onBack={jest.fn()} onOpenChat={jest.fn()} />);
+    await rtl.waitFor(() => expect(rtl.screen.getByTestId('paid-composer-input')).toBeTruthy());
+    await rtl.fireEvent.changeText(rtl.screen.getByTestId('paid-composer-input'), text);
+  };
+
+  it('Enter sends the reply once and holds the line break back; Shift+Enter and an input method\'s Enter send nothing', async () => {
+    const os = jest.replaceProperty(Platform, 'OS', 'web');
+    await draft('Price the use, not the file.');
+    const input = () => rtl.screen.getByTestId('paid-composer-input');
+    await rtl.act(async () => input().props.onKeyPress(key('Enter', true)));
+    await rtl.act(async () => input().props.onKeyPress(key('Enter', false, true)));
+    await rtl.act(async () => input().props.onKeyPress(key('a')));
+    expect(hub.replies).toEqual([]);
+    const enter = key('Enter');
+    await rtl.act(async () => input().props.onKeyPress(enter));
+    expect(enter.preventDefault).toHaveBeenCalled();
+    await rtl.waitFor(() => expect(hub.replies).toEqual([{ id: 'q1', text: 'Price the use, not the file.' }]));
+    os.restore();
+  });
+
+  it('Enter on an empty box sends nothing', async () => {
+    const os = jest.replaceProperty(Platform, 'OS', 'web');
+    await draft('   ');
+    await rtl.act(async () => rtl.screen.getByTestId('paid-composer-input').props.onKeyPress(key('Enter')));
+    expect(hub.replies).toEqual([]);
+    os.restore();
+  });
+
+  it('a phone gets no key handler', async () => {
+    await draft('Hello');
+    expect(rtl.screen.getByTestId('paid-composer-input').props.onKeyPress).toBeUndefined();
+  });
+});

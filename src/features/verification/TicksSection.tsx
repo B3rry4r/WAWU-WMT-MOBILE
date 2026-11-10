@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import type { IconName } from '@/components/icon';
@@ -24,7 +26,7 @@ const GIVE_ICONS: Record<GiveRow['id'], IconName> = { uploads: 'Upload', space: 
 export function getTickOf(plans: Plans | null, heldId: string | null, store: StoreState): { title: string; line: string; button: string } | null {
   if (!plans || plans.tiers.length === 0) return null;
   if (heldId) {
-    return higherTiers(plans.tiers, heldId).length > 0 ? { title: 'Move up a tier', line: 'The store works out what moving up costs', button: 'Upgrade' } : null;
+    return higherTiers(plans.tiers, heldId).length > 0 ? { title: 'Move up a tier', line: Platform.OS === 'web' ? 'You pay the difference from your wallet' : 'The store works out what moving up costs', button: 'Upgrade' } : null;
   }
   const byPrice = [...plans.tiers].sort((a, b) => a.priceMinor - b.priceMinor);
   const cheapest = byPrice.find((t) => tierItemOf(store, t.id) !== null) ?? byPrice[0];

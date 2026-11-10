@@ -95,6 +95,7 @@ export function BuyScreen(props: BuyScreenProps) {
       <PointsFrame title="" onBack={props.onBack} gap={BODY_GAP} foot={foot} testID="buy-screen">
         {body}
       </PointsFrame>
+      {buyer.sheets}
       {buyer.granted ? <Added added={buyer.granted.grant.points ?? 0} balance={points.data?.balance ?? null} label={props.doneLabel ?? BUY_WORDS.done} onDone={props.onDone} /> : null}
     </>
   );
@@ -126,7 +127,7 @@ function PackRow({ item, on, chip, disabled, onPress }: { item: StoreItem; on: b
         <PointsFigure count={count} size="row" />
         {chip ? (
           <View style={styles.chip}>
-            <StatusPill label={chip} tone="accent" />
+            <StatusPill label={chip} tone="accentReadable" />
           </View>
         ) : null}
       </View>

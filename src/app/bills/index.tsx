@@ -1,3 +1,4 @@
+import { withBillsGuard } from '@/features/bills/webGuard';
 import { Redirect, useRouter } from 'expo-router';
 
 import { useSession } from '@/api/session';
@@ -10,7 +11,7 @@ import { useSystemBack } from '@/features/professionals/parts';
  * every screen behind the tabs. Back goes to where it was opened from, or to Home when it was opened on its own; Android's back button
  * does the same.
  */
-export default function BillsRoute() {
+function BillsRoute() {
   const router = useRouter();
   const { status } = useSession();
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -20,3 +21,5 @@ export default function BillsRoute() {
 
   return <BillsScreen onBack={leave} onOpen={(kind) => router.push(kindInfo(kind).path)} onOpenBill={(id) => router.push({ pathname: '/bills/receipt/[id]', params: { id } })} />;
 }
+
+export default withBillsGuard(BillsRoute);

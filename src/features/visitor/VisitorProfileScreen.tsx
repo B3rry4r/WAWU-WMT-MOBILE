@@ -1,6 +1,7 @@
 import { QueryClientContext, useInfiniteQuery, useMutation, useQuery, type QueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ScrollView, Share, StyleSheet, View, Linking, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { AccessibilityInfo, ScrollView, StyleSheet, View, Linking, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/query';
@@ -222,7 +223,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
     if (!view) return;
     setNotice(null);
     try {
-      await Share.share({ message: profileShareText(name, view.profile.handle) });
+      await shareOut({ message: profileShareText(name, view.profile.handle) });
     } catch {
       setNotice('Sharing is not available on this device.');
       AccessibilityInfo.announceForAccessibility('Sharing is not available on this device.');

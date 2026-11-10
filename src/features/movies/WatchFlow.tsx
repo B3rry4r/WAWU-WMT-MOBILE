@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Linking, Modal, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Linking, StyleSheet, View } from 'react-native';
+import { FrameModal } from '@/lib/FrameModal';
 import Svg, { Circle } from 'react-native-svg';
 
 import { isApiError } from '@/api/errors';
@@ -171,7 +172,7 @@ export function WatchFlow({ movieId, title, mustAgreeTerms, visible, onClose, on
           </Text>
         ) : null}
       </BottomSheet>
-      <Modal visible={visible && opening} transparent={false} animationType="fade" onRequestClose={cancel} statusBarTranslucent>
+      <FrameModal visible={visible && opening} transparent={false} animationType="fade" onRequestClose={cancel} statusBarTranslucent>
         <View testID="flix-opening" style={[styles.opening, { backgroundColor: colors.surfacePage }]}>
           <OpeningRing />
           <Text variant="sheetTitle" accessibilityRole="header">
@@ -185,7 +186,7 @@ export function WatchFlow({ movieId, title, mustAgreeTerms, visible, onClose, on
             </Text>
           </View>
         </View>
-      </Modal>
+      </FrameModal>
     </>
   );
 }

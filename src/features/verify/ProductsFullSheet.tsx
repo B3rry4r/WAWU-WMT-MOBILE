@@ -205,9 +205,12 @@ export function ProductsFullSheet({ onClose, onUpgrade, onOpenLibrary }: Product
   }
 
   return (
-    <BottomSheet visible onClose={onClose} label="All products used" dismissible={!buyer.busy}>
-      {body}
-    </BottomSheet>
+    <>
+      <BottomSheet visible onClose={onClose} label="All products used" dismissible={!buyer.busy}>
+        {body}
+      </BottomSheet>
+      {buyer.sheets}
+    </>
   );
 }
 

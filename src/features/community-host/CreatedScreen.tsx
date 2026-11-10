@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { shareOut } from '@/lib/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/errors';
@@ -152,7 +153,7 @@ export function CreatedScreen({ id, onOpenRoom, onBack }: CreatedScreenProps) {
       </View>
       <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>
         <View style={styles.flex}>
-          <Button label="Share link" variant="secondary" icon="Share" full onPress={() => void Share.share({ message: link }).catch(() => undefined)} testID="created-share" />
+          <Button label="Share link" variant="secondary" icon="Share" full onPress={() => void shareOut({ message: link }).catch(() => undefined)} testID="created-share" />
         </View>
         <View style={styles.flex}>
           <Button label="Open room" full onPress={onOpenRoom} testID="created-open" />

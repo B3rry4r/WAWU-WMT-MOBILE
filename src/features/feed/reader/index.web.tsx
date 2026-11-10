@@ -1,4 +1,5 @@
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { FrameModal } from '@/lib/FrameModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -17,7 +18,7 @@ export type { ReaderProps } from './types';
 export function PdfReader({ uri, title, visible, onClose, testID }: ReaderProps) {
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
+    <FrameModal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
       <View testID={testID} style={[styles.page, { paddingTop: Math.max(insets.top, metrics.tabsGap) }]}>
         <View style={styles.head}>
           <Text numberOfLines={1} style={[words.offerTitle, styles.title]}>
@@ -27,7 +28,7 @@ export function PdfReader({ uri, title, visible, onClose, testID }: ReaderProps)
         </View>
         {visible ? <iframe title={title} src={uri} data-testid={testID ? `${testID}-pages` : undefined} style={frame} /> : null}
       </View>
-    </Modal>
+    </FrameModal>
   );
 }
 

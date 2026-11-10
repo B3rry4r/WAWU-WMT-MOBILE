@@ -40,8 +40,8 @@ const PAIR_GAP = 10;
 
 export type AddWorkScreenProps = {
   onBack: () => void;
-  /** After the work is saved. The route decides where to go: back to where the person came from. */
-  onSaved: () => void;
+  /** After the work is saved. The route decides where to go: back to where the person came from, or, with nowhere to go back to (opened cold), to the person's own works (`wawuId`). */
+  onSaved: (wawuId?: string) => void;
   /** Opens M34 for the person's own works, where a work's Remove makes room when the profile is full. */
   onOpenWorks: (wawuId: string) => void;
 };
@@ -79,7 +79,7 @@ export function AddWorkScreen({ onBack, onSaved, onOpenWorks }: AddWorkScreenPro
       void queryClient.invalidateQueries({ queryKey: worksRoot });
       void queryClient.invalidateQueries({ queryKey: ['profile'] });
       AccessibilityInfo.announceForAccessibility('Work added');
-      onSaved();
+      onSaved(mine.data?.owner.wawuId);
     },
     onError: (error) => {
       const next = saveFailure(error);
