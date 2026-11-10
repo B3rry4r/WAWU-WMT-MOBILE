@@ -960,3 +960,17 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 2. The phone app is unchanged: the stores, as R-86 and R-101 say.
 3. A person without a wallet meets the open-wallet step first, as for any wallet payment (R-6).
 **Carried out by:** WEBAPP-06.
+
+### R-129 · Upload places come from the tier; a tick is the badge
+*Lead ruling, owner delegated, 10 Nov 2026 ("whatever is the right solution ... you decide and you put it proper"). Found by the second web walk: the verification page told a Founding Maker "Up to 25 uploads, 10 GB" (a tick, R-7) while the same account's Create and My content said "4 of 15" (its tier, TIER-02).*
+1. **One source.** How many pieces a person may publish comes from their tier (Verify, Verify Plus, Founding Maker, plus extra products bought), as the Hub already enforces (`PublishingAllowanceService`, TIER-02). A tick is verification and reach, not upload places.
+2. **Nobody loses what they paid for.** A tick bought before tiers keeps the 25 uploads and 10 GB R-7 gave it until that tick ends; the Hub already gives "whichever is more" and keeps doing so. No new tick adds upload places.
+3. **Every screen says the same number.** Wherever the app states upload places (the verification page, Create, My content, the limit sheet, the tiers list), it reads the Hub's `uploads.allowed` and the tier list; the verification page never promises "Up to 25 uploads" to a person who holds no such tick.
+- Amends R-7's upload figures for everyone who has no tick from before tiers. R-7's storage figures stand where the Hub applies them.
+**Carried out by:** UPLOAD-WORDS (app; the Hub only if a new tick still raises places).
+
+### R-130 · A piece taken down stays with the people who bought it
+*Owner, 10 Nov 2026 ("of course, buyers keep it").*
+1. A creator can take any of their own pieces down, live or in review, from My uploads and from the piece's own page (CREATOR-TAKEDOWN), and the place is freed at once.
+2. Everyone who paid for the piece before it came down keeps it in My purchases, on the phone and the web, for as long as they would have had it; it is gone from the creator's profile, search, feeds and sale.
+**Carried out by:** CREATOR-TAKEDOWN (app; the Hub where buyers' access needs it).
