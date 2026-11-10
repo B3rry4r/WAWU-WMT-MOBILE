@@ -3,12 +3,15 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { useWawu } from '@/theme';
 
+import { registerPictureCache } from './pictureCache';
 import { captureLandingPath, useReturnAfterSignIn } from './returnPath';
 import { ShareNote } from './shareNote';
 import { FRAME_WIDTH, useIsFramed } from './useFrameWidth';
 
 // The address the browser opened on is read before the router moves a signed-out visitor to the welcome screen (WEBAPP-03).
 captureLandingPath();
+// WEBAPP-12: keep pictures under their own address on the web build (a phone does nothing).
+registerPictureCache();
 
 type WebFrameProps = {
   children: ReactNode;

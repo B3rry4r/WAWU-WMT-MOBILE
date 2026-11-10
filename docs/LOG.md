@@ -1,4 +1,5 @@
 # Work log
+- 10 Nov 2026 · WEBAPP-12 · web pictures and files load faster: first paint 11.7 to 8.5 s (route chunks, one import per icon, 2,047 to 1,490 KB), a picture worker keeps a re-signed picture under its stable address (second visit 3 to 8 MB and 7 to 45 s become 0 bytes and about 1.5 s); the phone is unchanged; Hub follow-ups (stable links, thumbnails, unsigned avatar link) named in the task (verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
