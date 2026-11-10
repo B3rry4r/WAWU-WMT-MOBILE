@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 38 | 0 | 0 | 0 |
-| building | 7 | 0 | 0 | 0 |
-| verifying | 48 | 0 | 0 | 0 |
+| building | 8 | 0 | 0 | 0 |
+| verifying | 47 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -314,7 +314,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
-- [WEBAPP-12](../tasks/WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -325,6 +324,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 - [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
 - [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
+- [WEBAPP-12](../tasks/WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web (You)
 
 ## Done
 

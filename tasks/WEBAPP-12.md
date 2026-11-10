@@ -7,7 +7,7 @@ order: 379
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: building
 depends_on: []
 decisions: [R-47, R-86]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -18,16 +18,13 @@ tier: T1
 
 ## Current state
 
-As of 10 Nov 2026.
-- **Status:** verifying. Branch `wmt/WEBAPP-12` (from `wmt/BATCH-1110`), pushed. Builder done; a verifier has not looked.
-- **Built (web only, a phone build is unchanged):** (1) the export's first load is 2,047 to about 1,490 KB brotli (route chunks, `asyncRoutes` web production, SHARED-CHANGES WEBAPP-12 #2; every Lucide icon in its own file instead of the package index, #3: bundle 8.9 to 6.9 MB raw); (2) a picture worker `public/wmt-sw.js` (registered by `src/lib/pictureCache.ts`) that keeps a picture under its stable object address, so a picture the Hub signs again is not downloaded again; (3) `vercel.json` no-cache rule for the worker (#1). The hashed-file rules were already immutable and right.
-- **Result (390 wide, 1.6 Mbps down, 150 ms, cold cache):** first paint 11.7 to 8.5 s; second visit pictures: 3 to 8 MB and 7 to 45 s before, 0 bytes and 1.5 to 2 s after (worker warm). Cold pictures are unchanged: they are bound by the picture bytes the Hub serves (see Hub follow-ups).
-- **Phone-visible changes:** none. `registerPictureCache` returns at once on android and ios (jest, `src/__tests__/pictureCache.test.ts`, Platform.OS android and ios); `asyncRoutes` `production` is web-only; the icon files are the same components. PHONE CHECK: none needed.
-- **Open findings:** none graded yet (verifier). Known low: the worker keeps up to 120 pictures after sign-out on the same browser (they are the same pictures the page showed; a clear on sign-out is a follow-up in `src/api`, a fenced file).
-- **Checks:** typecheck EXIT 0; lint EXIT 0 (16 warnings, 0 errors); gates EXIT 0 (0 fail, 17 warn); `npm run tasks -- --write` EXIT 0; affected jest (`src/components`, brand, lists, webFrame, pictureCache, Icon) 15 suites 208 tests EXIT 0. **The full `npx jest -w 2` was NOT RUN to its end**: on the shared machine it ran about 5 suites a minute of 524, and 13 suites died of load (timeouts) before I stopped it (EXIT killed by builder); the verifier or CI should run it.
-- **Pictures:** 36 in `/tmp/wmt-shots/webapp-12/` (6 screens x 390 light, 390 dark, 1440 x loading, loaded) plus 6 contact sheets, all looked at. Loading = placeholder surfaces, loaded = pictures, layout unchanged. In the 390 dark loading shot of Today the app had not painted yet at 12 s (its code was still arriving).
-- **NOT RUN:** the real Vercel edge (headers read from the live site and `vercel.json`, served locally with the same headers); the real Spaces bucket (a local stand-in with Last-Modified, ETag and CORS, no `Cache-Control`, like Spaces); Vercel Image Optimization (needs the deployed project, cost and a stable link first); a real phone.
-- **Next:** verifier V1, V4, V5, V6, V7, V9; then the Hub follow-ups below as their own task.
+As of 10 Nov 2026, after the T1 verifier (round 1).
+- **Status:** building. Verdict FIX: two mediums. Branch `wmt/WEBAPP-12` (ae5deff8); verifier branch `wmt/WEBAPP-12-verify` holds only the report.
+- **Holds (verifier re-measured):** first paint 11.7 to 8.5 s; first load 2,047 to about 1,490 KB brotli; second visit with the worker: every picture 0 bytes, first picture 1.6 to 1.8 s; cold pictures only 3 s better (bytes unchanged); 52 routes and 12 signed-out deep links open the same as the base; icons identical (182, regenerated file byte-identical); phone: android export builds one entry, worker does nothing on android and ios; typecheck, lint, gates, tasks EXIT 0; full jest 523 of 524, the killed suite re-run alone EXIT 0.
+- **To fix (builder, round 2):** (1) a tab open across a deploy shows "Something went wrong" on any route it had not opened (missing chunk answered with `index.html`): reload once on a failed chunk load, or keep old chunks, or pin versions, with a test; (2) the worker answers a held picture for any signature and nothing clears it at sign-out: delete `wmt-pictures-v1` at sign-out and on an account change, with a test; (3) low: a byte budget for the cache; the test-gap note in finding 5.
+- **Unclear for the lead or owner:** finding 4 (a creator mid sign-up opens "Set up your account" on the branch and Today on the base).
+- **NOT RUN:** the sign-in form (token injected), the real Vercel edge and Spaces CORS, a combined WEBAPP-11 plus WEBAPP-12 run, an iOS export, a real phone.
+- **Next:** builder round 2, then a verifier on findings 1 and 2 only.
 
 ## Read first
 
