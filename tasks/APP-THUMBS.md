@@ -7,7 +7,7 @@ order: 382
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: [HUB-THUMBS]
 decisions: [R-47, R-118]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,10 +19,14 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** todo. Cut by the lead from HUB-THUMBS (the Hub half), so the speed-up reaches the web app and the phones.
-- **Found (live check, 11 Nov, after HUB-IMG-LINKS went live):** a creator's profile photo served to Explore is 1.6 MB, drawn at 44 px. WEBAPP-12 measured Today at 3.2 MB and For you at 5.2 MB of pictures on a cold visit at 1.6 Mbps.
-- **The Hub half (HUB-THUMBS):** 96 px and 640 px WebP copies of avatars, profile covers, content covers and picture previews. Served as optional `avatarThumbs`, `coverThumbs`, `thumbnailThumbs` and `previewThumbs` (`{ w96, w640 }`) only to requests with `X-Wawu-Client: app`, which `src/api/client.ts` sends on every request, on phones and on the web build alike. The contract carries them (SHARED-CHANGES HUB-THUMBS #1).
-- **Next:** a builder, once HUB-THUMBS is merged and live; regenerate the API types with `npm run api`.
+- **Status:** verifying. Built by a Sonnet builder on mobile `wmt/APP-THUMBS`, contract from Hub main `bf3f4a3b` (HUB-THUMBS merged). Types regenerated with `npm run api`; nothing hand-written.
+- **Helper:** `src/lib/thumbs.ts`. `copyFor`: w96 up to 96 device px, w640 up to 640, else the full picture; device px = drawn size times `PixelRatio.get()` (44 on 3x = 132 = w640). Size unknown: w640. The copy keeps the `#wmt-pos` position (R-96) of the full link. `useCopy`: copy first, full picture on the first failure, no loop.
+- **Changed (copy drawn):** `Avatar` (prop `thumbs`), `MediaCard` (prop `imageThumbs`), `PositionedImage` (props `thumbs`, `drawn`); `pictureCandidates(.., small)` for rows. Callers: feed rail avatar, creator-card work tiles, Explore `CreatorCard`, Today `CreatorRail`, profile `NameBlock` (own and visitor), after-signup `FollowScreen`, content-detail maker row, Me grid tiles, search content rows.
+- **Left full, by design:** a piece's own page and its media (`content-detail/Media`), `PictureViewer` zoom, feed posts and cards that fill the screen (`TemplatePost`, `PhotoSetPost`, `FeedCreatorCard`/`FeedProfessionalCard` portraits), profile covers (full width), photo-position and edit screens.
+- **Left full, no field in the contract:** search people rows, known-follower faces, Saved and Purchases tiles, chat and community avatars, professionals directory, send payees (BACKEND_GAPS: the Hub serves no `*Thumbs` there, or declares none in the contract).
+- **Proof:** tests `src/lib/__tests__/thumbs.test.tsx` and `src/components/__tests__/thumbsDrawn.test.tsx` (web, android, ios; pixel ratio, missing, null, failure fallback). tsc EXIT 0, lint EXIT 0, gates EXIT 0. Unique string in the export: `avatarThumbs` (5 chunks in this build, 0 in main's).
+- **Stack run (own Postgres on 16529, Hub bf3f4a3b, storage stand-in 16528):** 7 avatars of about 5 MB uploaded, copies made. Creators were made by SQL and their piece pictures went up through the avatars folder, because a content upload needs a tier (402). Measurements and pictures: see the last section of `tasks/history/APP-THUMBS.md`.
+- **Open:** none graded. Phones get this with the next update, on the owner's word.
 
 ## Read first
 

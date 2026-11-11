@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 36 | 0 | 0 | 0 |
+| todo | 35 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 54 | 0 | 0 | 0 |
+| verifying | 55 | 0 | 0 | 0 |
 | review | 261 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -333,6 +333,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
+- [APP-THUMBS](../tasks/APP-THUMBS.md) The app draws the small copy of a picture where it draws a small picture (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -538,6 +539,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Nov 2026 · APP-THUMBS · avatars, cards, grids and rows draw the Hub's 96 or 640 px copy for the size drawn times the pixel ratio, the full picture when there is none or the copy fails (once); pieces' own pages, zooms and full-width covers stay full (mobile `wmt/APP-THUMBS`, contract from Hub `bf3f4a3b`; built, verifying)
 - 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
 - 10 Nov 2026 · STUDIO-1110 · the Studio line of 30 Oct (POINTS-12 to 18, STUDIO-HOME: twelve new tools, the studio home) merged with today's line `7a6f585`, contract from Hub `8285e1b`; a Studio picture made a piece now gets its paid preview copy (R-118); smoke on the web export with the provider stand-in: 19 tools listed, four kinds run with points held then kept (built, verifying)
 - 30 Oct 2026 · STUDIO-HOME patch round 1 (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `d831d6fa`, HELD; app only, no native change, fingerprints android `c2474bd9` and ios `240378f1` unchanged): the verifier's findings. The More pop-over is capped to the room between its tile and the screen's safe edge with its rows scrolling inside it (it rises above the tile, or drops below when its rows fit better there); with a file in the box only Edit a photo and Music for a video (when the Hub lists its mood line) show the words box, every other file chip hides it (R-47: no dead control) and sends no words; a More row's description may take two lines. 24 new tests (7 pure, 17 on the real router including Android at 390x667 and the full 12-row list); no assertion changed. Pictures before / ElevenLabs / after / PT1, dark and light, in tasks/STUDIO-HOME.md.
@@ -552,4 +554,3 @@ From `docs/LOG.md`, newest first.
 - 10 Nov 2026 · WEBAPP-11 · fix round 1: the steps card has its padding; on a computer Chrome and Edge show Install or step aside, Safari on a Mac shows Add to Dock, Firefox shows no screen; iPad Share is at the top (built, verifying)
 - 10 Nov 2026 · WEBAPP-11 · the web app is installable (manifest, any and maskable icons, Apple tags) and asks to be installed first in a browser tab (R-131): Install button, iPhone Safari steps, in-app browsers sent to Safari or Chrome with Copy link, Continue in the browser; never from the icon or on the phone; Chromium installability, real `beforeinstallprompt` and 35 pictures checked; real iPhone and in-app browsers NOT RUN (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
-- 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
