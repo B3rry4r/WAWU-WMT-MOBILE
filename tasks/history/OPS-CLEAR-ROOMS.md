@@ -1,0 +1,15 @@
+# OPS-CLEAR-ROOMS · round history
+
+Moved out of [tasks/OPS-CLEAR-ROOMS.md](../OPS-CLEAR-ROOMS.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+- **Files (Hub, `wmt/OPS-CLEAR-ROOMS`):** `scripts/ops/clear-communities.ts` (the command), `scripts/ops/room-money-rows.ts` (the room's real-money rules, its own file so OPS-DEL-TEST's `real-money-rows.ts` and `delete-test-account.ts` are untouched; it reuses `proveTestProvider` and the `RealMoneyRow` shape), `src/community/tests/ops-clear-communities.contract.spec.ts`. No migration, no schema change.
+- **Per room, one transaction, room row locked first, money check run again inside:** deletes the host's landed earning settlements for credits spent there (their link to the spend is RESTRICT); notifications that only open the room (`community_messages`, `community_join_approved`, `community_pass_ending`) with their target and notice rows; the notice retry row; the moderation log; then the Community row, so the database cascades memberships, messages and keys, read markers, mutes, link, pass price, passes, credit spends and their earning rows.
+- **Left on purpose:** settled refunds, wallet payments and their settlements, store rows, `community_join_declined` and `community_pass_refunded` notices (the notifications read already drops a missing room's target), search history, UGC reports, price-move rows, cover images and message media in storage (dry run counts covers). No Redis cache exists; the popular-searches answer is held per process for 60 s and refreshes itself.
+- **Choices recorded:** a spend with no earning row (before the earning ledger) carries no money record and does not keep its room; the dry run counts them. Host handle comes from the Hub profile, so `WAWU_ID_DATABASE_URL` is not used. `Deps.onlyIds` is a test hook the command line cannot set (the shared test database holds other specs' rooms).
+- **Capability checks:** dry run writes nothing and lists everything (spec: row counts equal before and after); wrong or missing phrase refused (exit 1); live keys keep every room with a pass or wallet credits; apply clears exactly the listed rooms and keeps Flutterwave credits, another provider's pass, a pending refund, a pending pass payment and an unlanded earning; second run finds nothing; inbox, unread, my rooms, the community list, notifications, Me earnings and sales, and popular search answer for a member of a cleared room.
+- **Ran (exit):** new spec 6/6 (0); OPS-DEL-TEST spec 12/12 (0); 99 specs that grep community, inbox, search-history, me-earnings, credit spend: after seeding my own database and starting `mock-wawu-id` on 4001, 97 pass, 2 fail only for `sharp` (NOT RUN, above); `npx tsc --noEmit` (only the two `sharp` errors); eslint on my three files (0); `python3 scripts/gates/run.py` (0, 0 fail); `check_baseline.py` (0). Hub specs ran through a scratch jest config that maps `sharp` to a stub, not committed.
+- **Gaps / shared changes:** none filed.
+
+## Verifier report
