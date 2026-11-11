@@ -19,6 +19,7 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
+- **Merged (lead, 11 Nov 2026):** Hub PR #265 merged as 4dd12e4c (all 18 checks green on c5800e01); on the server since 13:18 UTC (health 200). The owner runs the command while Nuvion is on test keys.
 - **Status:** `review`. Verifier round 2 (T2, the re-check of M1 and L5) says **MERGE**: no blocker, no high, no medium. Hub `wmt/OPS-CLEAR-ROOMS` head c5800e01, checked as built; nothing was run against any real database or provider.
 - **M1 closed, L5 closed** (report in history). Lows L1 to L4 stay as disclosed; one new test-gap note (a share of 0 kobo is not in the spec).
 - **Owner commands** (on the server, after the deploy builds `dist/scripts/ops/clear-communities.js`): dry run `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a; node dist/scripts/ops/clear-communities.js`; apply: the same with `--apply --confirm "CLEAR <n> COMMUNITIES"`, the phrase the dry run printed. Run while the wallet provider is still on its test keys; on live keys every pass and wallet-bought credit is real money and those rooms are kept. A host share the sweep has not made yet keeps its room until it has (the sweep's start is read from the same `EARNINGS_SWEEP_START`).

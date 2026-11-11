@@ -19,7 +19,8 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** review. Verifier round 1 (T1): verdict MERGE, no defect, three lows (below). wawuafrica branch `wmt/WEB-STRIP` at 040dad1b on `origin/main` bd72412; nothing merged or deployed.
+- **Merged (lead, 11 Nov 2026):** wawuafrica PR #47 merged as 03d02177; live on wawuafrica.com since 11:43 UTC. Lead live check: join, activate, forgot and reset password open; sign in, a profile link and a piece link land on the same page on usewmt.com. The PR's gates check was red with the same 17 findings main has carried since #44 (not this task's).
+- **Status:** review. Verifier round 1 (T1): verdict MERGE, no defect, three lows (below). wawuafrica branch `wmt/WEB-STRIP` at 040dad1b on `origin/main` bd72412; merged and live (above). The three open items are SWEEP-1111 rows W1 to W3.
 - **Open, not defects:** (1) the Android app's own intent filters still list `/activate` and `/reset-password` (phones are parked, R-134), so an Android phone with the app installed may open the app on those mails; unclear, owner word; (2) the join page still promises the app on the App Store and Google Play (`JoinLanding.tsx:143` and `:346`, `join-content.ts:55`, `page.tsx:20`); (3) `/payment/return` still answers 307 to /join (as on main).
 - **NOT RUN:** a real activation or reset against WAWU ID; a deployed preview (the verifier never calls a live service).
 

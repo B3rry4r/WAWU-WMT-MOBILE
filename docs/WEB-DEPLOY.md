@@ -34,9 +34,10 @@ The browser calls the servers directly, so each one must list `https://usewmt.co
 ## 4. Things to know
 
 - Links made on usewmt.com (invites, profiles, rooms, content, receipts, the selfie return) name usewmt.com. The phone app still sends wawuafrica.com links.
-- Emails (activation, forgot password, "Secure my account") still link to wawuafrica.com until you rule otherwise (R-127).
+- Emails (activation, forgot password, "Secure my account") link to wawuafrica.com, which keeps the activation and password pages (R-133, WEB-STRIP); every other app address there opens the same page on usewmt.com.
 - The theme song is still fetched from `https://wawuafrica.com/wawu-theme.mp3`. If wawuafrica.com is ever taken down, move the file and tell the lead.
 - Nobody is signed in on usewmt.com at first: it has its own storage, separate from wawuafrica.com.
 - The page's security rules (`Content-Security-Policy` in `vercel.json`) allow only: the app itself, the Hub (`https://api.wawuafrica.com` and its live connection `wss://api.wawuafrica.com`, which is what makes chats, rooms and badges update without a refresh), WAWU ID, DigitalOcean Spaces (the media bucket: pictures, video, audio) for pictures and video, Amazon S3 for pictures only (the movie partner's posters), `wawuafrica.com` for the song, and `fastly.jsdelivr.net` for the QR-scanner helper. If you move the bucket to another provider, the lead updates that file.
 - The Hub allows 20 calls a second and 200 a minute for each address. Many people on one shared network can see "too many requests".
 - A refresh or a pasted link on any page opens that page: `vercel.json` sends every path that is not a real file to the app.
+- Vercel builds only `main` (owner, 11 Nov 2026, "Build only main"): preview deployments are off for the project, so a branch push makes no deployment and branches no longer use up the free plan's 100 deployments a day. A batch is checked on a local web export before it merges, then on usewmt.com after the merge (R-134).

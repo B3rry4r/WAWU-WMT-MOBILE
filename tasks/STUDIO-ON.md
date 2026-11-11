@@ -7,7 +7,7 @@ order: 385
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: verifying
+status: review
 depends_on: []
 decisions: [R-109, R-135]
 passes: [V1, V2, V3, V4, V9]
@@ -19,7 +19,8 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** fix round 1 built, waiting for the lean re-check. Hub `wmt/STUDIO-ON` head `b690e171`: F1 (openapi.json regenerated, a second `contract:build` is clean), F2 (dead `PODCAST_PASS_MS` removed), F4 (clearing the stored row returns `ai.podcast_studio_api_ok` to -1; the Dashboard never types -1). See `tasks/history/STUDIO-ON.md`.
+- **Merged (lead, 11 Nov 2026):** fix round 1 (F1, contract regenerated) accepted on the lead's diff read. Hub PR #264 merged as 4ffc926c (all 18 checks green on b690e171); on the server since 12:21 UTC.
+- **Status:** review. Fix round 1 accepted on the lead's diff read (merged, above). Hub `wmt/STUDIO-ON` head `b690e171`: F1 (openapi.json regenerated, a second `contract:build` is clean), F2 (dead `PODCAST_PASS_MS` removed), F4 (clearing the stored row returns `ai.podcast_studio_api_ok` to -1; the Dashboard never types -1). See `tasks/history/STUDIO-ON.md`.
 
 ## Read first
 

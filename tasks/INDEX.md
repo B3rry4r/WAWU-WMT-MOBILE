@@ -514,13 +514,15 @@ Builder and verifier are always different sessions.
 75. [HUB-IMG-LINKS](HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it
 76. [HUB-THUMBS](HUB-THUMBS.md) Pictures are served at the size they are drawn
 77. [APP-THUMBS](APP-THUMBS.md) The app draws the small copy of a picture where it draws a small picture
-78. [ACCT-DEL-FLW](ACCT-DEL-FLW.md) Deleting an account waits until its Flutterwave wallet is empty too
-79. [STUDIO-ON](STUDIO-ON.md) Studio's tools are on by default from the Hub, with no Dashboard step
-80. [WEB-STRIP](WEB-STRIP.md) wawuafrica.com keeps only join and the password pages; app links go to usewmt.com
-81. [ID-LINKS](ID-LINKS.md) Every link WAWU ID mails has a host, even when a setting is missing
-82. [APP-RESET](APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code
-83. [OPS-CLEAR-ROOMS](OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word
-84. [LEGAL-ELEVEN](LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change
+78. [OPS-DEL-TEST](OPS-DEL-TEST.md) Delete one test account that holds test wallet money, on the owner's word
+79. [ACCT-DEL-FLW](ACCT-DEL-FLW.md) Deleting an account waits until its Flutterwave wallet is empty too
+80. [STUDIO-ON](STUDIO-ON.md) Studio's tools are on by default from the Hub, with no Dashboard step
+81. [WEB-STRIP](WEB-STRIP.md) wawuafrica.com keeps only join and the password pages; app links go to usewmt.com
+82. [ID-LINKS](ID-LINKS.md) Every link WAWU ID mails has a host, even when a setting is missing
+83. [APP-RESET](APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code
+84. [OPS-CLEAR-ROOMS](OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word
+85. [LEGAL-ELEVEN](LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change
+86. [SWEEP-1111](SWEEP-1111.md) Sweep of 11 Nov: the low findings of the day's Hub, WAWU ID and web tasks
 
 ## Developer
 

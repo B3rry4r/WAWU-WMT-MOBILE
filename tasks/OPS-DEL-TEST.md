@@ -7,7 +7,7 @@ order: 383
 priority: after-launch
 repo: wawu-backend
 type: ops
-status: building
+status: review
 depends_on: []
 decisions: [R-17, R-130]
 passes: [V1, V3, V4, V6, V7, V9]
@@ -19,9 +19,10 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** lead re-cut (M1, M2) built, waiting for the lead's diff read and a final check. Hub `wmt/OPS-DEL-TEST` at 2546bf13. Not run on the server.
+- **Merged (lead, 11 Nov 2026):** the lead's re-cut (M1 provider filter in the query, M2 a CAC application awaiting payment refuses) accepted on the lead's diff read (27 lines, WORKFLOW section 5). Hub PR #263 merged as ced17eb7 (contract regenerated for schema order; all 18 checks green on 7dfd5cf8); on the server since 12:46 UTC. The owner runs the command (two accounts).
+- **Status:** review. The lead's re-cut (M1, M2) was accepted on the lead's diff read (merged, above). Hub `wmt/OPS-DEL-TEST` at 2546bf13. Not run on the server.
 - **Closed:** M1 (the provider test is in the query, so `take` cannot hide a row of another provider) and M2 (a CAC application at `awaiting_payment` refuses). Both have a spec.
-- **Next:** merge and deploy, then the owner runs the commands. Full account and account-purge suites: NOT RUN here (GitHub's PR run).
+- **Next:** the owner runs the commands (two accounts). Full account and account-purge suites ran green in GitHub's PR run. The one low goes to SWEEP-1111 (D1).
 
 ## Read first
 
