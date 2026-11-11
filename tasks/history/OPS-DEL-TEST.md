@@ -171,3 +171,60 @@ Classification:
 Open for the verifier: wallet-provider tables with their own `provider` column (FintavaWallet, FintavaWalletOpening, EarningSettlement, EarningDeduction, SchoolSettlement and others) are listed as covered by the money service, not row-checked by provider here, as in round 1.
 
 Evidence (own database `odt_r2`, deleted after): `npm run test:contract -- src/account/tests/ops-` 2 suites, 18 tests, EXIT 0. The walk spec fails on 9f054474's list (68 unclassified models, shown by running it against that file with empty new lists) and passes on the new one. eslint on 3 files EXIT 0. `gates/run.py` EXIT 0, `check_baseline.py` EXIT 0. `tsc --noEmit` EXIT 2 only for `sharp` missing from the shared node_modules (`storage/thumbs`), nothing in changed files. The specs ran with `sharp` installed in scratch outside the repo (NODE_PATH), nothing in shared node_modules. Full account and account-purge suites: NOT RUN.
+
+
+## Round 2 Verifier report (11 Nov 2026, T2)
+
+T2 verifier, a different session from the builder. Hub `wmt/OPS-DEL-TEST` d4d76123 (round 2) against 9f054474 (round 1) and `origin/main` bf3f4a3b. Own database `odt_v3` (Postgres 127.0.0.1:14001, migrated), `sharp` installed in a scratch folder outside every repo (NODE_PATH). **Verdict: FIX** (2 findings of medium severity, both small; B1 of round 1 is closed for the tables it named).
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | tsc EXIT 2 only for `sharp` missing from the shared node_modules (2 lines, both `storage/thumbs`, nothing in changed files; same as the builder); eslint on the 3 changed files EXIT 0; `jest --runInBand src/account/tests/ops-` 2 suites, 18 tests, EXIT 0 |
+| V3 | failed | M1, M2 below |
+| V4 | passed | dry runs: row count of every public table (252 Hub tables) identical before and after; the WAWU ID gateway is not called (no schedule, no finalize) in any refusal or dry run |
+| V6, V7, V9 | passed for what the diff changes | sandbox proof, phrase, no waiver flag, rerun after a cut-off: unchanged code (`git diff 9f054474 d4d76123` is `real-money-rows.ts` and two specs only) and their cases pass |
+| gates | passed | `gates/run.py` EXIT 0 (0 fail, 139 warn, 88 accepted, 2243 files); `check_baseline.py` EXIT 0 (125 entries) |
+| account and account-purge suites | NOT RUN | shared machine; GitHub's PR run is the evidence |
+
+### Findings
+
+**M1 (medium, defect, blocks): the 100-row cap lets a row of the other provider slip through.** `scripts/ops/real-money-rows.ts:434` reads `take: 100`, and the provider test (`isRowOf`, line 450) runs in JS afterwards. For the `provider` class tables (round 2 moved `FintavaLedgerEntry`, the highest-volume one, into this class) a row of the other provider that is not among the first 100 rows read is never seen. Reproduced on `odt_v3`: an account with 3000 ledger rows of the running provider (fintava) and one row `provider = 'nuvion'` (once with `occurredAt` far future, once far past, once inserted last): the dry run prints `Real-money rows: none`, exit 0, so apply would go ahead. With 120 rows the odd row was found in all three variants, so the cut-off depends on the plan's row order; do not read 100 as a safe size. This breaks the rule the table is built on ("a row of any other provider refuses") on exactly the case the rule is for (a server that switched provider and an account with history on both). `FintavaLedgerEntry` is `OWNED`, so apply deletes those rows. Fix: put the provider test in the query (AND with `NOT` of `rowsOf(running)` from `src/wallet-provider/provider-rows.ts`, then `take` only to cap the printout), and add a spec with more than 100 running-provider rows and one other. Live-class tables are not affected (the first row already refuses).
+
+**M2 (medium, defect, blocks): a CAC application waiting for its Flutterwave payment is not refused.** `real-money-rows.ts:215-222` lists `ServiceApplication` only where `amountPaid` is not null. `service-application.service.ts:112-130` creates the application at `awaiting_payment` with `amountPaid: null` and starts the Flutterwave charge (tx_ref prefix plus the application id); `verifyCac` (line 190 on) and the webhook settle it later and only then write `amountPaid`. An account that has started and not finished (or just paid, before the webhook lands) shows `Real-money rows: none`; apply deletes the row and the charge lands on nothing. I seeded the shape (CAC application, `amountPaid` null): dry run clean, exit 0. Round 1's ruling is "pending or final". Fix: drop the `only`, or use `OR [{ amountPaid: not null }, { status: 'awaiting_payment' }]`; add the case to the Flutterwave spec. The other two new Flutterwave tables are fine on this point: `LegalRequest` gets its tx ref when the fee is booked (`legal.service.ts:469`, `:864`, `legal-fee-wallet.service.ts:299`), so pending and paid both refuse; a `consultationPaidAt` with no tx ref cannot be written (`legal.service.ts:508` requires the ref first).
+
+### B1 (round 1) closed
+
+Seeded on `odt_v3` one account per table, each its own spec case in a scratch copy of the builder's harness (real services, real database, Fintava double): `LegalRequest` with `consultationTxRef`; `LegalRequest` with `serviceTxRef` only; `WaitlistRegistration` claimed with `flutterwaveTxId` and `paidKobo`; `ServiceApplication` with `amountPaid`; `StorePurchase` environment `production`, buyer side and creator side; `StoreSubscription`; `CreditSpendEarning` (host side); `FintavaLedgerEntry` of provider nuvion, either side; `CreditsState` with 5 credits. In every case the dry run lists the row (table, id, status, kobo, why), apply with the right phrase exits 1 with `touch a real-money provider`, every public table's row count is identical before and after, and the WAWU ID gateway got no call. Controls that must not refuse also held: a `LegalRequest` with no payment fields; `ServiceApplication` with `amountPaid` null (see M2); a `WaitlistRegistration` claimed by another account or unclaimed under this account's email; `StorePurchase` `sandbox`; ledger rows of the running provider or with a null provider; `CreditsState` 0. The `only` filter change: a clean account X is not refused because account Y has a paid legal request (the extra filter is ANDed with the account columns, not replacing them). Round 1 had `only` on one table (`CreditsState`); `OR` of columns with a spread would have clobbered a filter that has its own `OR` (LegalRequest), which the AND fixes. The builder's own cases for round 1's tables (CreatorWallet, ledger, withdrawal, Purchase, BillPayment, CreditPurchase and CreditLot, the card of another provider, and the clean sandbox account that still deletes) pass.
+
+### The classification (read against the code that writes each row)
+
+- `StorePurchase`: right. `environment` is a non-null string the store sets; `not 'sandbox'` also refuses `Sandbox` (conservative). Buyer and creator columns both listed.
+- `StoreSubscription`: right and conservative (no environment on the row, so an account that ever held a sandbox subscription is refused for good; say so to the owner if it happens).
+- `StorePurchaseIntent`: right, not money (a quote with `listPriceKobo`; money moves only in a `StorePurchase`).
+- `FintavaLedgerEntry`: right class (provider column), see M1 for the read.
+- `WalletBill`, `SchoolEnrolment`: right, wallet-provider money. Paid through a `WalletPayment` and hold; the money check counts pending payments and open holds; no Flutterwave field.
+- `MoneyBeneficiary`: right, a saved payee (bank code and account number, no amount).
+- `KycSubmission`: right, an identity review; the payout bank is a destination.
+- `CreditSpendEarning`: right.
+- Spot-checked beyond those, all right: `PaymentWebhookReceipt` (Flutterwave delivery log keyed by tx_ref, no account column), `NuvionBookTransfer`, `MoneyRequest` (paid by a `WalletTransfer`, which is listed), `ReferralReward` (points only), `StoreProceedsEntry`, `ProductDraft`, `ReferralCode`, `AbroadRecipient`, `NuvionReconcileFinding`, `UserProfile`, `CreatorState`, `ContentPiece`, `Community`, `Notification`, `AccountDeletion`, `EmailRecipient`, `FxAccount`, `EarningDeduction`, `SchoolSettlement`, `FintavaWalletOpening`.
+
+### The builder's open question (wallet-provider tables with a `provider` column)
+
+No row of the other provider, and no live-key row, slips through apply on that path:
+- `FintavaWallet` of the other provider: `AccountDeletionMoneyService.check` throws unreachable (`account-deletion-money.service.ts:411-418`); the script refuses with "the wallet provider could not be read". Tested: wallet row `provider = 'nuvion'` on a fintava server, apply exit 1, tables unchanged.
+- `FintavaWalletOpening` of the other provider in `opening` or `unknown`: blocks as `wallet_opening` whatever the provider (tested). A finished opening holds no money.
+- `EarningSettlement`: a database trigger ties it to a payment of the same provider (a settlement with a mismatching payment is rejected by the database), and the check counts the payment or the credit earning with no provider filter, so an owed one always refuses. It is `COUNTERPARTY` in the purge map: kept, not deleted.
+- `EarningDeduction` is `COUNTERPARTY` (kept). `SchoolSettlement` has no account column (school and WAWU shares); no account purge touches it.
+- Live-key rows: no row carries an environment, so a final record from a live period cannot be told from a sandbox one (only the host is proven). A live wallet's balance read from the sandbox host fails and the script refuses. Final records only could be removed. This is the known limit already in the task file. Does not block.
+
+### The schema walk
+
+Fails on 9f054474's list and passes on d4d76123's: I ran the real spec with 9f054474's `real-money-rows.ts` plus two empty exports: 3 of 4 cases fail, the first with 68 unclassified models; on d4d76123 4 of 4 pass and none is unclassified. The pattern is `kobo|amount|price|fee|txref|tx_ref|flutterwave|payment|provider|balance|paid`. I walked the schema for the names the lead listed (`total`, `charge`, `cost`, `reference`, `ref`, `settled`, `payout`, plus `purchase`, `order`, `bill`, `pay`, `refund`, `cash`, `currency`) on the unclassified models: 33 hits, all read; none holds money: `EventPass` and `PersonBilling` (`purchaseRef`) and `PointLot` and `PointLedger` and `PointHold` (`sourceRef`, `reference`, points never naira, the cash-out is checked by the money service) are grants or records derived from a purchase table that is listed; `CommunityMessage.costInCredits` is a credit count; `FintavaWebhookEvent` and `NuvionWebhookEvent` are delivery logs; the rest are order/sort/tier/id names. Low, test gap: widen the pattern with `ref|purchase|payout|settled|cost|total|charge|currency` so a new table with only such a name is caught, and classify the six above.
+
+### Other
+
+- R-130: the new case passes (seller refused on dry run and apply, buyer refused on apply, `Purchase` and the piece unchanged, every table identical, no WAWU ID call). Together with the Hub's `sold-content-survives` spec this holds.
+- Unchanged, re-checked: the sandbox proof case; no waiver flag (`--allow-test-holds` is an unknown option); a missing or wrong phrase; the rerun after a cut-off run (WAWU ID down, then finished); dry run writes nothing; a refusal prints no `Audit:` line. `git diff 9f054474 d4d76123` shows only `real-money-rows.ts`, the ops spec and the new walk spec; `delete-test-account.ts` is untouched.
+- Low: the walk spec only reads names, so a field in a JSON column (a payment reference inside `Json`) is invisible to it.
+
+NOT RUN: the full account and account-purge suites (GitHub's PR run); the script on the server or against any provider.

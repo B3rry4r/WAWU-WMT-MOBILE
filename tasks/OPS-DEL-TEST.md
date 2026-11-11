@@ -19,9 +19,14 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** round 2 built (fix round 2 of 2), awaiting the T2 re-check. Hub branch `wmt/OPS-DEL-TEST` at d4d76123. Not run on the server.
-- **Done:** B1 closed: LegalRequest (paid), WaitlistRegistration (claimed), ServiceApplication (amountPaid), StorePurchase (not sandbox), StoreSubscription, CreditSpendEarning refuse; FintavaLedgerEntry is provider-scoped. Every other table with a money-looking field is on an explicit wallet-provider list or a not-money list with a reason. A spec walks `prisma/schema.prisma` and fails on an unclassified model. R-130 asserted. Full account and account-purge suites NOT RUN here (GitHub PR run).
-- **Next:** verifier re-check.
+- **Status:** building. Round 2 verifier (T2) says FIX: 2 medium findings, both small. Hub branch `wmt/OPS-DEL-TEST` at d4d76123 is the code checked. Not run on the server. Full report: [history](history/OPS-DEL-TEST.md), "Round 2 Verifier report".
+- **Closed:** round 1's B1. One account per Flutterwave table (LegalRequest, WaitlistRegistration, ServiceApplication with amountPaid), StorePurchase, StoreSubscription, CreditSpendEarning, ledger of another provider and CreditsState all list in the dry run and refuse in apply, with every table unchanged; R-130 holds (seller and buyer both refused); the schema walk fails on 9f054474's list (68 unclassified) and passes on d4d76123's; the classification of the 9 named tables is right; the wallet-provider tables with a `provider` column cannot let another provider's row through; sandbox proof, phrase, no waiver flag, rerun after a cut-off are unchanged.
+- **Open (both block):**
+  - **M1** `scripts/ops/real-money-rows.ts:434` `take: 100` then a JS provider test: with more than 100 rows of the running provider (3000 tried, `FintavaLedgerEntry`) and one of the other provider, the dry run says `Real-money rows: none`. Fix: provider test in the query (NOT `rowsOf(running)`), `take` only for the printout, spec with over 100 rows.
+  - **M2** `real-money-rows.ts:215-222` a CAC `ServiceApplication` at `awaiting_payment` has a Flutterwave charge started and `amountPaid` null, so it is not refused. Fix: `OR [amountPaid not null, status awaiting_payment]`, spec case.
+- **Lows (not a round):** widen the walk's name pattern (`ref|purchase|payout|settled|cost|total|charge|currency`) and classify EventPass, PersonBilling, PointLot, PointLedger, PointHold, CommunityMessage; any StoreSubscription refuses for good.
+- **NOT RUN:** full account and account-purge suites (GitHub's PR run).
+- **Next:** a builder fixes M1 and M2 (the lead decides whether that is a third round), then a short re-check of those two.
 
 ## Read first
 
