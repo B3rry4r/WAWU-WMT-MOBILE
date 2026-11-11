@@ -17,6 +17,7 @@ import { useShownPrice } from '@/features/store/ladder/usePrice';
 import { font, layout, space, useWawu } from '@/theme';
 import { compactCount, pictureCandidates, UNNAMED_CREATOR } from '@/features/feed/model';
 import { usePicture } from '@/features/feed/usePicture';
+import type { Copies } from '@/lib/thumbs';
 
 import type { Comment, PieceDetail } from './api';
 import { ago, commenterName, lessonLength, plural, type Thread } from './model';
@@ -72,6 +73,7 @@ export function MakerRow({
   name,
   hue,
   avatarUrl,
+  avatarThumbs,
   tick,
   line,
   following,
@@ -80,6 +82,7 @@ export function MakerRow({
   name: string | null;
   hue: AvatarHue;
   avatarUrl: string | null;
+  avatarThumbs?: Copies;
   tick: 'creator' | 'pro' | null;
   line: string;
   /** Null on the viewer's own piece: no button. */
@@ -88,7 +91,7 @@ export function MakerRow({
 }) {
   return (
     <View style={styles.maker} testID="detail-maker">
-      <Avatar name={name ?? undefined} hue={hue} source={avatarUrl ?? undefined} size={m.avatar} decorative />
+      <Avatar name={name ?? undefined} hue={hue} source={avatarUrl ?? undefined} thumbs={avatarThumbs} size={m.avatar} decorative />
       <View style={styles.makerWords}>
         <View style={styles.nameLine}>
           <Text variant="body" numberOfLines={1} style={[font(600), styles.makerName]}>

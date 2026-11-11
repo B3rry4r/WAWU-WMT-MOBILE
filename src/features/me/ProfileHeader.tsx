@@ -13,6 +13,7 @@ import { TierBadge, tierBadgeLabel } from '@/components/TierBadge';
 import { hueFor } from '@/features/feed/model';
 import { SOCIAL } from '@/features/profile-edit/social';
 import { SocialLogo, hasMark } from '@/features/profile-edit/SocialLogo';
+import type { Copies } from '@/lib/thumbs';
 import { canvasNormalLineHeight, font, layout, radius, space, useWawu } from '@/theme';
 
 import type { HeaderBadge, SocialLink } from './model';
@@ -104,6 +105,8 @@ export type NameBlockProps = {
   wawuId: string;
   name: string;
   avatarUrl: string | null;
+  /** The Hub's small copies of the photo (`avatarThumbs`, APP-THUMBS); missing or null, the full photo is drawn. */
+  avatarThumbs?: Copies;
   ticks: readonly ('creator' | 'pro')[];
   /** The tier pill after the ticks (M1): only for a person with a running tier, from the Hub. */
   badge?: HeaderBadge | null;
@@ -114,13 +117,13 @@ export type NameBlockProps = {
   onOpenTier?: () => void;
 };
 
-export function NameBlock({ wawuId, name, avatarUrl, ticks, badge, bio, onEditProfile, onOpenTier }: NameBlockProps) {
+export function NameBlock({ wawuId, name, avatarUrl, avatarThumbs, ticks, badge, bio, onEditProfile, onOpenTier }: NameBlockProps) {
   const { colors } = useWawu();
   return (
     <>
       <View style={styles.avatarRow}>
         <View style={[styles.avatarRing, { backgroundColor: colors.surfacePage }]}>
-          <Avatar name={name} hue={hueFor(wawuId)} size={headerMetrics.avatar} source={avatarUrl ?? undefined} testID="me-avatar" />
+          <Avatar name={name} hue={hueFor(wawuId)} size={headerMetrics.avatar} source={avatarUrl ?? undefined} thumbs={avatarThumbs} testID="me-avatar" />
         </View>
         {onEditProfile ? <Button label="Edit profile" variant="outline" size="profile" onPress={onEditProfile} testID="me-edit" /> : null}
       </View>

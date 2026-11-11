@@ -265,6 +265,7 @@ export function ContentDetailScreen({ id, onBack, onTakenDown, pay, onOpenCourse
           name={by}
           hue={hueFor(maker.wawuId)}
           avatarUrl={maker.avatarUrl}
+          avatarThumbs={maker.avatarThumbs}
           tick={tickKind(maker)}
           line={makerLine(maker)}
           following={own || !canFollow(p.creatorWawuId, page.me.data) ? null : e.followsCreator}

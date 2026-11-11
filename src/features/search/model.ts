@@ -1,5 +1,6 @@
 import { nairaToKobo } from '@/api/kobo';
 import { membersFull } from '@/features/communities/format';
+import type { Copies } from '@/lib/thumbs';
 
 import { MAX_PEOPLE, type SearchAnswer, type SearchCommunity, type SearchContent, type SearchCreator, type SearchPerson } from './api';
 
@@ -26,6 +27,9 @@ export type ContentRowModel = {
   thumb: string | null;
   /** The creator's own cover for the piece (R-114), or null: drawn before `thumb`. */
   cover?: string | null;
+  /** The Hub's small copies of `cover` and `thumb` (APP-THUMBS): missing or null, the full pictures are drawn. */
+  coverThumbs?: Copies;
+  thumbThumbs?: Copies;
   /** The kind of piece (`contentRows` always sets it): a row draws `thumb` only when its file is a picture, and the kind's mark otherwise. */
   kind?: SearchContent['contentType'];
   /** Paid and not bought: the picture is blurred and carries a lock. */
@@ -45,6 +49,8 @@ export function contentRows(items: readonly SearchContent[], people: ReadonlyMap
       thumb: piece.previewAssetUrl ? piece.previewAssetUrl : null,
       kind: piece.contentType,
       cover: piece.coverUrl ?? null,
+      coverThumbs: piece.coverThumbs,
+      thumbThumbs: piece.previewThumbs,
       locked: piece.fullAssetLocked,
       priceKobo: piece.accessType === 'paid' ? nairaToKobo(piece.price) : null,
     };

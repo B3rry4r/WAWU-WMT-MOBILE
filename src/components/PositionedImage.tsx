@@ -3,12 +3,17 @@ import { useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
 import { RATIO_MAX, RATIO_MIN, placement, splitPhotoLink, type Frame } from '@/lib/photoPosition';
+import { useCopy, type Copies } from '@/lib/thumbs';
 
 export type PositionedImageProps = {
   /** The picture's link as the Hub serves it, with the position it was placed at (R-96) after a `#`, if the person set one. */
   uri: string;
   /** The frame, when the caller knows its size (an avatar). Left out, it is measured from the parent that clips the picture. */
   frame?: Frame;
+  /** The Hub's small copies of this picture (APP-THUMBS). Left out, or missing or null, the full picture is drawn as always. */
+  thumbs?: Copies;
+  /** The longest side the picture is drawn at, in layout points, where it differs from the frame (a cover wider than it is tall). */
+  drawn?: number;
   blurRadius?: number;
   onError?: () => void;
   testID?: string;
@@ -26,20 +31,27 @@ const SHAPE_TOLERANCE = 0.03;
  * comment, the header and a card all show the same part of the photo. The parent clips (every caller's
  * frame already hides what overflows).
  */
-export function PositionedImage({ uri, frame, blurRadius, onError, testID, accessibilityLabel, accessible }: PositionedImageProps) {
-  const { uri: plain, position: declared } = splitPhotoLink(uri);
+export function PositionedImage({ uri: link, frame, thumbs, drawn, blurRadius, onError: onErrorOut, testID, accessibilityLabel, accessible }: PositionedImageProps) {
+  const { position: declared } = splitPhotoLink(link);
+  // The copy for the size drawn, with the full picture behind it (APP-THUMBS). A photo placed at a zoom is drawn that much larger than its frame.
+  const sizeDrawn = drawn ?? (frame ? Math.max(frame.width, frame.height) * (declared?.zoom ?? 1) : undefined);
+  const copy = useCopy(link, thumbs, sizeDrawn);
+  const { uri: plain } = splitPhotoLink(copy.uri);
+  const onError = () => {
+    if (copy.onError() === 'final') onErrorOut?.();
+  };
   const [measured, setMeasured] = useState<Frame | null>(null);
   // The shape of the photo as it loaded. A link that declares another shape (a hand-made one) is not believed: the photo is never stretched.
   const [real, setReal] = useState<{ uri: string; ratio: number } | null>(null);
   const actual = real && real.uri === plain ? real.ratio : null;
   const wrong = declared !== null && actual !== null && Math.abs(actual / declared.ratio - 1) > SHAPE_TOLERANCE;
   const position = declared && wrong ? (actual !== null && actual >= RATIO_MIN && actual <= RATIO_MAX ? { ...declared, ratio: actual } : null) : declared;
-  const onLoad = declared
-    ? (event: ImageLoadEventData) => {
-        const { width, height } = event.source;
-        if (width > 0 && height > 0) setReal((now) => (now && now.uri === plain && now.ratio === width / height ? now : { uri: plain, ratio: width / height }));
-      }
-    : undefined;
+  const onLoad = (event: ImageLoadEventData) => {
+    copy.onLoad();
+    if (!declared) return;
+    const { width, height } = event.source;
+    if (width > 0 && height > 0) setReal((now) => (now && now.uri === plain && now.ratio === width / height ? now : { uri: plain, ratio: width / height }));
+  };
 
   if (!position) {
     return (

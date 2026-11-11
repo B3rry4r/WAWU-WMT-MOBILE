@@ -36,6 +36,7 @@ function SuggestionCard({ item, onFollow, onOpen, busy }: { item: CreatorSuggest
       title={item.name}
       subtitle={suggestionLine(item, labelOf) ?? undefined}
       imageUrl={item.avatarUrl ?? undefined}
+      imageThumbs={item.avatarThumbs}
       placeholder={<PortraitTile hue={hueFor(item.wawuId)} testID={`today-creator-${item.wawuId}-portrait`} />}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={m.cardTick} /> : undefined}
       action={onFollow ? { label: item.following ? 'Following' : 'Follow', on: item.following, onPress: onFollow, loading: busy, testID: `today-follow-${item.wawuId}` } : undefined}
