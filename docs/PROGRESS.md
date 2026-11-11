@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
-| building | 7 | 0 | 0 | 0 |
-| verifying | 65 | 0 | 0 | 0 |
+| building | 8 | 0 | 0 | 0 |
+| verifying | 64 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -331,7 +331,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
 - [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
 - [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
-- [HUB-THUMBS](../tasks/HUB-THUMBS.md) Pictures are served at the size they are drawn (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -342,6 +341,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 - [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
 - [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
+- [HUB-THUMBS](../tasks/HUB-THUMBS.md) Pictures are served at the size they are drawn (You)
 
 ## Done
 
