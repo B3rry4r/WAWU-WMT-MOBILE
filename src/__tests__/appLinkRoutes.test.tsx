@@ -115,18 +115,22 @@ function signIn() {
 
 const open = (url: string) => renderRouter(routes, { initialUrl: url });
 
-describe('LINKS-01 round 2: https://wawuafrica.com/activate (the activation email)', () => {
-  it('signed out opens sign-in, whatever the address carries', async () => {
+describe('LINKS-01 round 2, changed by APP-RESET (R-133): the activation email opens the set-a-password form', () => {
+  // LINKS-01 sent the person to sign-in (signed out) or Home (signed in) and never read the token. The task APP-RESET replaces that:
+  // the link now asks for a first password (appResetRoutes.test.tsx walks the whole form, the refusals and Sign in).
+  it('signed out opens the form for the email in the link, not sign-in', async () => {
     await open('https://wawuafrica.com/activate?token=abc&email=a%40b.c');
-    expect(await screen.findByTestId('sign-in')).toBeTruthy();
-    await waitFor(() => expect(pathname()).toBe('/sign-in'));
+    expect(await screen.findByTestId('reset-password')).toBeTruthy();
+    expect(screen.queryByTestId('sign-in')).toBeNull();
+    await waitFor(() => expect(pathname()).toBe('/activate'));
   });
 
-  it('signed in opens Home', async () => {
+  it('signed in opens the same form (the token is the proof), not Home', async () => {
     signIn();
     await open('https://wawuafrica.com/activate?token=abc&email=a%40b.c');
-    expect(await screen.findByTestId('home')).toBeTruthy();
-    expect(pathname()).toBe('/');
+    expect(await screen.findByTestId('reset-password')).toBeTruthy();
+    expect(screen.queryByTestId('home')).toBeNull();
+    expect(pathname()).toBe('/activate');
   });
 });
 

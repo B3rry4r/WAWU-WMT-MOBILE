@@ -32,7 +32,9 @@ jobs:
         run: npm ci
 
       - name: Expo SDK health
-        run: npx expo-doctor
+        # Pinned: expo-doctor 1.21.7 (published 11 Nov 2026 09:48 UTC) fails to start ("Cannot find module
+        # '@expo/env'"); 1.21.6 is the version the last green main run used. Unpin when a fixed release ships.
+        run: npx --yes expo-doctor@1.21.6
 
       - name: Design tokens are generated, not hand-edited
         run: python3 scripts/design/gen_tokens.py --check

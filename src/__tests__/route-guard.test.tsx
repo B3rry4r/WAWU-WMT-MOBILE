@@ -88,7 +88,7 @@ const PUBLIC: Record<string, string> = {
   'legal-documents/[slug]': 'one of the nine, readable before sign-up, from the Legal list (LEGAL-DOCS)',
   'r/[code]': 'app link (LINKS-01): the invite, kept until sign-up, signed out goes to the welcome screen',
   selfie: 'app link (LINKS-01): the hosted selfie page, signed out goes to the welcome screen',
-  activate: 'app link (LINKS-01): the activation email, signed out goes to sign-in',
+  activate: 'app link (LINKS-01, APP-RESET): the activation email; open to everyone, signed in or out, because the token in the link is the proof',
   'reset-password': 'app link (RESET-APP, R-123): the Forgot password email; open to everyone, signed in or out, because the token in the link is the proof',
   'receipt/[code]': 'app link (LINKS-01): a receipt address, signed out goes to the welcome screen',
   'u/[handle]': 'app link (LINKS-01): a profile, signed out goes to the welcome screen',

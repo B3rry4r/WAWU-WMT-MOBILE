@@ -1,5 +1,5 @@
 import { identityBaseUrl } from './env';
-import { ApiError, failureOf, toApiError } from './errors';
+import { ApiError, failureOf, isApiError, toApiError } from './errors';
 import type { components, operations } from './identity.generated';
 
 /**
@@ -91,16 +91,19 @@ export async function refreshRequest(refreshToken: string): Promise<TokenPair> {
 /** What the reset-link request answers: how long the emailed link lasts, or null when the server does not say. */
 export type ResetLinkAnswer = { expiresInSeconds: number | null };
 
+/** How WAWU ID delivers the reset secret: `email` mails a link (only to a proven email); `sms` sends a 6-digit code to the account's proven phone. */
+export type ResetMethod = 'email' | 'sms';
+
 /**
- * Asks WAWU ID to email a reset link (`method: 'email'`; without it the server
- * sends a WhatsApp code instead). It answers the same whether or not an account
- * exists. The link opens the app's own New password screen when
- * the app is installed (RESET-APP, R-123) and the website's reset page when it is not. `expiresInSeconds` is the link's real lifetime; a server that
- * does not send it (BACKEND_GAPS.md G-26) gives null and the screen leaves the
- * figure out.
+ * Asks WAWU ID for a reset secret. `method: 'email'` (the default) mails a link, which opens the app's own New password screen
+ * (RESET-APP, R-123, and the web app's, R-133); WAWU ID mails nothing to an email that was never proven. `method: 'sms'` sends a
+ * 6-digit code to the account's proven phone instead (APP-RESET, R-133 point 4): `identifier` is then the account's email or its
+ * phone number, and the code is spent by `resetPasswordWithCodeRequest`. It answers the same whether or not an account exists.
+ * `expiresInSeconds` is the link's real lifetime (sent only for `email`); a server that does not send it (BACKEND_GAPS.md G-26)
+ * gives null and the screen leaves the figure out.
  */
-export async function forgotPasswordRequest(identifier: string): Promise<ResetLinkAnswer> {
-  const payload = await post<'forgotPassword'>('/auth/forgot-password', { identifier, method: 'email' });
+export async function forgotPasswordRequest(identifier: string, method: ResetMethod = 'email'): Promise<ResetLinkAnswer> {
+  const payload = await post<'forgotPassword'>('/auth/forgot-password', { identifier, method });
   const seconds: unknown = payload?.data?.expiresInSeconds;
   return { expiresInSeconds: typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0 ? seconds : null };
 }
@@ -115,6 +118,36 @@ export async function forgotPasswordRequest(identifier: string): Promise<ResetLi
  */
 export async function resetPasswordRequest(token: string, email: string, password: string): Promise<void> {
   await call<{ data: { message: string } }>('POST', '/auth/reset-password', { token, email, password });
+}
+
+/**
+ * POST /auth/reset-password, the phone-code path (APP-RESET, R-133 point 4): `{ identifier, code, newPassword }`, the code being the
+ * one `forgotPasswordRequest(identifier, 'sms')` sent. WAWU ID checks the code only here, so a wrong or expired code is the one 401
+ * ("Invalid or expired reset code"), and it ends every session of the account. It answers with a new session; the app does not keep
+ * it, the person signs in with the new password. Not in WAWU ID's published contract (BACKEND_GAPS G-RESET-APP-1), so the body is
+ * written to match its `ResetPasswordDto`.
+ */
+export async function resetPasswordWithCodeRequest(identifier: string, code: string, newPassword: string): Promise<void> {
+  await call<unknown>('POST', '/auth/reset-password', { identifier, code, newPassword });
+}
+
+/**
+ * POST /auth/activate (APP-RESET, R-133 points 1 and 4): the "Set My Password" link in the mail for an account an admin set up
+ * (`https://.../activate?token=...&email=...`) carries a one-time token; this sends it with the email and the first password. WAWU
+ * ID answers a 401 for a wrong or expired token, a 400 "Account already activated" when the password is already set, and
+ * otherwise a session, which the app does not keep. Not in WAWU ID's published contract (BACKEND_GAPS G-RESET-APP-1); the body
+ * matches its `ActivateDto` (`activationToken`, `email`, `password`, 8 to 128 characters).
+ */
+export async function activateRequest(token: string, email: string, password: string): Promise<void> {
+  try {
+    await call<unknown>('POST', '/auth/activate', { activationToken: token, email, password });
+  } catch (error) {
+    // "Account already activated" is a 400 beside the password-length 400s; to the person it is the same as a spent link.
+    if (isApiError(error) && error.kind === 'validation' && /already activated/i.test(error.message)) {
+      throw new ApiError('unauthorized', 401, error.message, error.code);
+    }
+    throw error;
+  }
 }
 
 /* ---- Sign-up (AUTH-04, over AUTH-03 and AUTH-05's routes) ---- */
