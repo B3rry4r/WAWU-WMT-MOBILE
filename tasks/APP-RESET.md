@@ -7,7 +7,7 @@ order: 388
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: []
 decisions: [R-127, R-133, R-134]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -19,14 +19,13 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** built, verifying. Mobile `wmt/APP-RESET`. Ships to usewmt.com only (R-134).
-- **Built:** Forgot password has "Send a code to my phone" (`method: 'sms'`; the field takes the email or a phone number, a Nigerian number is written +234) then the sign-up's six code boxes, then New password, then "Password changed". WAWU ID checks the code only with the password, so a wrong code (401) returns to fresh boxes with "That code isn't right". `/activate` reads `token` and `email` and sets a first password through `POST /auth/activate`; a spent token or an already-activated account gets one plain sentence and the way to Forgot password. `/activate` and `/reset-password` share one route body (`LinkPasswordRoute`). Reset link and Settings change password proved on the web export against stand-ins; nothing needed fixing.
-- **Decisions (no canvas draws a phone path or a New password board):** phone path follows the code screen (A4, A15) and A23's form; the success screen is the reset link's; after a code reset the session WAWU ID returns is not kept, the person signs in. Resend is open at once because WAWU ID names no wait (a too-early ask shows its 429 figure). Words say "a code to the phone", never "text" or "WhatsApp" (WAWU ID sends it by WhatsApp today).
-- **Gaps and shared changes:** SHARED-CHANGES APP-RESET #1 (`src/api/identity.ts`); BACKEND_GAPS G-RESET-APP-1 extended (reset by code and activate are not in WAWU ID's contract, bodies hand-typed).
-- **Pictures:** `audits/APP-RESET/` (390 px, dark and light, from the web export with WAWU ID faked by `page.route`), A23, A24, A4, A15 beside them as `artboard-*`.
-- **NOT RUN:** a real WAWU ID or Hub, a real phone (PHONE CHECK below), a Vercel build.
-- **PHONE CHECK (waits, R-134):** the phone-code boxes with the OS code offer (autofill from a message) and the Android back button inside the code flow (it leaves Forgot password, not one step back).
-- **Next:** a T1 verifier.
+- **Status:** verified, `review`. Verifier (T1) verdict **MERGE**: no blocker, high or medium finding. Mobile `wmt/APP-RESET` (7fcab4d8). Ships to usewmt.com only (R-134).
+- **Verified:** phone-code reset, the email path (`method: 'email'` unchanged), `/activate`, the reset link and Settings change password, on a fresh web export served on 3891 with WAWU ID and the Hub faked by `page.route`; every request body read off the wire and matched to wawu-id `origin/main` DTOs (see the report in `tasks/history/APP-RESET.md`).
+- **Pictures:** the builder's 28 in `audits/APP-RESET/`, the verifier's 30 in `audits/APP-RESET-verify/` (390 px, dark and light).
+- **Open lows (to SWEEP-AUTH, no round):** an expired code reads "That code isn't right" and only after the new password is typed; the phone-code New password step shows the full +234 number, not masked; Resend is open at once (recorded: WAWU ID names no wait).
+- **NOT RUN:** a live WAWU ID or Hub, a real phone (PHONE CHECK below, R-134), a Vercel build. `npm run check` did not exit 0 in two full runs on a loaded shared machine: run 1 one suite SIGKILLed by the OS (`pin-sheet/laptopKeys`), run 2 one timing failure (`library/entries`, "M27"); both suites pass alone (9 and 12 tests), typecheck, lint, gates (63 tests) and `npm run tasks` exit 0, 547 of 548 suites and 8138+ tests passed each time. The batch full check on a quiet machine is the gate.
+- **PHONE CHECK (waits, R-134):** the phone-code boxes with the OS code offer (autofill from a message) and the Android back button inside the code flow.
+- **Next:** merge into the web batch.
 
 ## Read first
 

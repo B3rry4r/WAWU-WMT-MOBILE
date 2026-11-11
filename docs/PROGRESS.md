@@ -9,8 +9,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 |---|---|---|---|---|
 | todo | 38 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 55 | 0 | 0 | 0 |
-| review | 263 | 0 | 0 | 0 |
+| verifying | 54 | 0 | 0 | 0 |
+| review | 264 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -278,6 +278,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
 - [HUB-THUMBS](../tasks/HUB-THUMBS.md) Pictures are served at the size they are drawn (You)
 - [APP-THUMBS](../tasks/APP-THUMBS.md) The app draws the small copy of a picture where it draws a small picture (You)
+- [APP-RESET](../tasks/APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code (You)
 
 ## Being verified
 
@@ -335,7 +336,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
-- [APP-RESET](../tasks/APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code (You)
 
 ## Being built (or fixing verifier findings)
 
