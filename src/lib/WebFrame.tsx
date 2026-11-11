@@ -3,12 +3,15 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { useWawu } from '@/theme';
 
+import { registerPictureCache, useHoldPictures } from './pictureCache';
 import { captureLandingPath, useReturnAfterSignIn } from './returnPath';
 import { ShareNote } from './shareNote';
 import { FRAME_WIDTH, useIsFramed } from './useFrameWidth';
 
 // The address the browser opened on is read before the router moves a signed-out visitor to the welcome screen (WEBAPP-03).
 captureLandingPath();
+// WEBAPP-12: keep pictures under their own address on the web build (a phone does nothing).
+registerPictureCache();
 
 type WebFrameProps = {
   children: ReactNode;
@@ -62,6 +65,7 @@ export function WebFrame({ children, root = false, fill = true, testID = 'web-fr
 /** What only the app's own frame carries (not a modal's): the share note, and the return to a link opened while signed out. */
 function RootExtras() {
   useReturnAfterSignIn();
+  useHoldPictures();
   return <ShareNote />;
 }
 

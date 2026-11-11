@@ -1,7 +1,8 @@
 import { router, type ErrorBoundaryProps } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { reloadForNewDeploy } from '@/lib/staleChunk';
 import { font, layout, radius, space, useWawu } from '@/theme';
 
 /**
@@ -25,6 +26,10 @@ export function errorDetails(error: unknown): string {
 export function ErrorScreen({ error, retry }: ErrorBoundaryProps) {
   const { colors } = useWawu();
   const [showing, setShowing] = useState(false);
+  // WEBAPP-12: a route file that is gone after a deploy is cured by one reload, not by Try again (which asks for the same file).
+  useEffect(() => {
+    reloadForNewDeploy(error);
+  }, [error]);
   return (
     <View testID="error-screen" style={[styles.root, { backgroundColor: colors.surfacePage }]}>
       <Text accessibilityRole="header" style={[font(700), styles.title, { color: colors.textPrimary }]}>
@@ -36,7 +41,10 @@ export function ErrorScreen({ error, retry }: ErrorBoundaryProps) {
           testID="error-retry"
           accessibilityRole="button"
           accessibilityLabel="Try again"
-          onPress={retry}
+          onPress={() => {
+            // A missing route file is cured by a reload once the person is online again; anything else, or a reload already tried, draws the screen again.
+            if (!reloadForNewDeploy(error)) retry();
+          }}
           style={[styles.button, { backgroundColor: colors.accent }]}
         >
           <Text style={[font(600), styles.buttonLabel, { color: colors.textOnAccent }]}>Try again</Text>
