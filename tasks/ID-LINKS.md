@@ -7,7 +7,7 @@ order: 387
 priority: after-launch
 repo: wawu-id
 type: backend-endpoint
-status: todo
+status: review
 depends_on: []
 decisions: [R-133]
 passes: [V1, V2, V3, V4, V9]
@@ -19,13 +19,14 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** todo. Cut by the lead from R-133 point 4.
+- **Merged (lead, 11 Nov 2026):** WAWU ID PR #28 merged as babfccf0; live since 11:25 UTC (the live service answers).
+- **Status:** built on wawu-id `wmt/ID-LINKS` (79dd2b7); T1 verifier round 1 says MERGE (11 Nov 2026), lows only. Was: todo. Cut by the lead from R-133 point 4.
 - **The gap** (wawu-id `origin/main` 7e7abf8):
   - the reset link is `${FRONTEND_URL ?? APP_URL ?? ''}/reset-password?token&email` (`src/auth/auth.service.ts` near 1248), so with neither setting it is a link with no host;
   - the "this was not me" link is `SECURITY_URL ?? (FRONTEND_URL ?? APP_URL)/forgot-password` (near 164), the same risk;
   - activation already falls back to `DEFAULT_APP_URL` `https://wawuafrica.com` (`src/provisioning/provisioning.service.ts`).
 - **Not known:** which of FRONTEND_URL, APP_URL and SECURITY_URL are set on the live server. The lead has asked the owner for a read-only look. This task does not depend on the answer.
-- **Next:** builder on wawu-id `wmt/ID-LINKS`, then a T1 verifier.
+- **Next:** none for this task; the three lows are SWEEP-1111 rows I1 to I3.
 
 ## Read first
 
@@ -49,6 +50,7 @@ Every link in every WAWU ID mail is a full address to a page that exists, whatev
 - [ ] With FRONTEND_URL set, the link uses it (today's behaviour kept).
 - [ ] The Builder report lists every mailed link and the page it opens.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/ID-LINKS.md](history/ID-LINKS.md).
+

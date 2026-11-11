@@ -19,10 +19,11 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
+- **Merged (lead, 11 Nov 2026):** mobile PR #29 merged as cb7ded79 (CI green on 2a469ccb with expo-doctor pinned to 1.21.6); live on usewmt.com since 13:30 UTC. Lead live check at 390 px: forgot password shows "Send a code to my phone"; /activate with no link shows "This link no longer works".
 - **Status:** verified, `review`. Verifier (T1) verdict **MERGE**: no blocker, high or medium finding. Mobile `wmt/APP-RESET` (7fcab4d8). Ships to usewmt.com only (R-134).
 - **Verified:** phone-code reset, the email path (`method: 'email'` unchanged), `/activate`, the reset link and Settings change password, on a fresh web export served on 3891 with WAWU ID and the Hub faked by `page.route`; every request body read off the wire and matched to wawu-id `origin/main` DTOs (see the report in `tasks/history/APP-RESET.md`).
 - **Pictures:** the builder's 28 in `audits/APP-RESET/`, the verifier's 30 in `audits/APP-RESET-verify/` (390 px, dark and light).
-- **Open lows (to SWEEP-AUTH, no round):** an expired code reads "That code isn't right" and only after the new password is typed; the phone-code New password step shows the full +234 number, not masked; Resend is open at once (recorded: WAWU ID names no wait).
+- **Open lows (SWEEP-1111 rows A1 to A4, no round):** an expired code reads "That code isn't right" and only after the new password is typed; the phone-code New password step shows the full +234 number, not masked; Resend is open at once (recorded: WAWU ID names no wait).
 - **NOT RUN:** a live WAWU ID or Hub, a real phone (PHONE CHECK below, R-134), a Vercel build. `npm run check` did not exit 0 in two full runs on a loaded shared machine: run 1 one suite SIGKILLed by the OS (`pin-sheet/laptopKeys`), run 2 one timing failure (`library/entries`, "M27"); both suites pass alone (9 and 12 tests), typecheck, lint, gates (63 tests) and `npm run tasks` exit 0, 547 of 548 suites and 8138+ tests passed each time. The batch full check on a quiet machine is the gate.
 - **PHONE CHECK (waits, R-134):** the phone-code boxes with the OS code offer (autofill from a message) and the Android back button inside the code flow.
 - **Next:** merge into the web batch.
