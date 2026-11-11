@@ -103,6 +103,54 @@ Mutants not run (budget).
 
 
 
+## Round 1 builder report (11 Nov 2026, Hub `9f054474` on `109213b5`)
+
+Files: `scripts/ops/delete-test-account.ts` (changed), `scripts/ops/real-money-rows.ts` (new, the table list), `src/account/tests/ops-delete-test-account.contract.spec.ts` (12 cases, was 8). No schema change, no new route, no fenced file.
+
+**B1 (lead ruling, 11 Nov).** The script refuses outright when the account has any row that touches a real-money provider, pending or final. The dry run prints every such row (table, id, status, amount in kobo, class and why); apply refuses with the same list; there is no flag. Whole-naira columns are shown as naira times 100. A table that cannot be read is listed as unreadable and refuses. The classification, with the provider of each table (unclear is live):
+
+| Table | Account columns | Rule | Provider and why |
+|---|---|---|---|
+| CreatorWallet | wawuUserId | refuse any row | Flutterwave (live, R-1) payout subaccount |
+| WalletLedgerEntry | wawuUserId | refuse any row | Flutterwave (live, R-1) wallet ledger |
+| WalletWithdrawal | wawuUserId | refuse any row | Flutterwave (live, R-1) payout withdrawal |
+| Purchase | buyerWawuId, creatorWawuId | refuse any row | Flutterwave (live, R-1) card payment, buyer or seller |
+| VerificationPurchase | wawuUserId | refuse any row | Flutterwave (live, R-1) tick payment |
+| DirectMessage | senderWawuId, creatorWawuId | refuse any row | Flutterwave (live, R-1) paid DM, either side |
+| CreditPurchase | userWawuId | refuse any row | Flutterwave (live, R-1) credits bought |
+| CreditLot | userWawuId | refuse any row | credits bought with money |
+| CreditSpend | userWawuId, creatorWawuId | refuse any row | credits spent; the host is owed a share of money paid on Flutterwave |
+| CreditsState | userWawuId | refuse any row | a credit balance bought with money |
+| PendingCharge | wawuUserId | refuse any row | Flutterwave (live, R-1) charge waiting for its answer |
+| BillPayment | buyerWawuId | refuse any row | Flutterwave (live, R-1) bill |
+| HealthSubscription | wawuUserId | refuse any row | Flutterwave (live, R-1) health plan |
+| EventOrder | buyerWawuId | refuse any row | Flutterwave (live, R-1) event tickets |
+| ShopOrder | buyerWawuId | refuse any row | Flutterwave (live, R-1) shop order |
+| MakerPurchase | wawuUserId | refuse any row | payment by reference; provider not stated in the schema (unclear is live) |
+| MakerExtraProducts | wawuUserId | refuse any row | payment by reference; provider not stated in the schema (unclear is live) |
+| PlanTransferOrder | wawuUserId | refuse any row | no provider column (unclear is live) |
+| MoneyPayoutAccount | wawuUserId | refuse any row | a bank account for payouts (provider not stated; unclear is live) |
+| StoreCredit | wawuUserId | refuse any row | store credit (provider not stated; unclear is live) |
+| CommunityPass | userWawuId | refuse any row | a pass bought with money (provider not stated; unclear is live) |
+| CommunityPassRefund | userWawuId, hostWawuId | refuse unless row.provider is the running provider | wallet provider refund, either side |
+| WalletCard | wawuUserId | refuse unless row.provider is the running provider | wallet provider card |
+| StoreEarning | payeeWawuUserId | refuse unless row.provider is the running provider | wallet provider earning |
+| StoreEarningPayout | payeeWawuUserId | refuse unless row.provider is the running provider | wallet provider payout |
+| PointConversion | wawuUserId | refuse unless row.provider is the running provider | wallet provider cash-out |
+| WalletTransfer | payerWawuUserId, recipientWawuUserId | refuse unless row.provider is the running provider | wallet provider transfer, either side |
+| AddMoneySession | wawuUserId | refuse unless row.provider is the running provider | wallet provider top-up |
+| EarningMove | payeeWawuUserId | refuse unless row.provider is the running provider | wallet provider earning move |
+
+The wallet provider's own tables (`FintavaWallet`, `WalletHold`, `WalletPayment`, `EarningSettlement`, `FxAccount`, Capital and the rest) are sandbox-only and stay under the existing money check. Not listed because they hold no money: `MoneyRequest`, `PriceListMove`.
+
+**M1.** `--allow-test-holds` is removed (an unknown option now refuses). Any open hold, waiting earning, payment in flight, cash-out or wallet opening always refuses, on either side, and the dry run says what to settle first.
+
+**Lows.** A refusal prints no `Audit:` line (and exit 2 prints none either; only a purge prints it). The server commands load the WAWU ID string inside a subshell. The 900 s token window is in the task file as a known limit. L5 (spaces around a stored email) fails closed and is left.
+
+**Tests that fail on `109213b5`** (5 of the 12 failed there, run against the old script): the verifier's seed (CreatorWallet, pending WalletLedgerEntry and WalletWithdrawal, pending Purchase, BillPayment, a WalletCard of another provider, CreditPurchase and CreditLot): the dry run lists each, apply exits 1, every table is unchanged; the payee side of an open hold refuses; `--allow-test-holds` is an error; a refusal prints no Audit line. And a clean sandbox-only account (a wallet with a balance and a WalletCard of the running provider) still deletes. The R-130 assertion moved out of this spec: a sale writes a Flutterwave `Purchase`, which the script now refuses; R-130 stays held by `sold-content-survives.contract.spec.ts`.
+
+**Checks:** tsc (alone, 4 GB) EXIT 0; eslint on the 3 changed files EXIT 0; gates EXIT 0; baseline EXIT 0; the spec 12 of 12 EXIT 0; account and account-purge suites on a fresh database, `--runInBand`: 29 suites, 392 tests, EXIT 0.
+
 ## Round 2 Builder report (11 Nov 2026)
 
 Hub `wmt/OPS-DEL-TEST` d4d76123 (on 9f054474). Changed: `scripts/ops/real-money-rows.ts` (exports and return shapes kept; the query now ANDs a table's `only` filter with its account columns, and three exports are added: `WALLET_PROVIDER_TABLES`, `NOT_MONEY_TABLES`, more `REAL_MONEY_TABLES` rows), the ops spec (R-130 test, a test seeding the three Flutterwave tables), a new `ops-real-money-schema-walk.contract.spec.ts`.
