@@ -13,3 +13,4 @@ Moved out of [tasks/OPS-CLEAR-ROOMS.md](../OPS-CLEAR-ROOMS.md) word for word, ol
 - **Gaps / shared changes:** none filed.
 
 ## Verifier report
+- **Round 1 merge (11 Nov):** merged Hub `origin/wmt/OPS-DEL-TEST` `d4d76123` (round 2) with a merge commit, no conflict; head 3685b50c. Schema-walk spec, OPS-DEL-TEST spec and my spec: 24/24 pass; tsc shows only the `sharp` errors; eslint and gates exit 0.

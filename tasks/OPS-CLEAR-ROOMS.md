@@ -19,7 +19,7 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** built, awaiting a T2 verifier. Hub branch `wmt/OPS-CLEAR-ROOMS` head 688d93e3 (from `wmt/OPS-DEL-TEST` 9f054474); nothing run against any real database.
+- **Status:** built, awaiting a T2 verifier. Hub branch `wmt/OPS-CLEAR-ROOMS` head 3685b50c (from `wmt/OPS-DEL-TEST` 9f054474, round 2 `d4d76123` merged); nothing run against any real database.
 - **Owner commands** (on the server, after the deploy builds `dist/scripts/ops/clear-communities.js`):
   - dry run: `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a; node dist/scripts/ops/clear-communities.js`
   - apply: the same, then `node dist/scripts/ops/clear-communities.js --apply --confirm "CLEAR <n> COMMUNITIES"` with the phrase the dry run printed (the count is in it).
@@ -48,7 +48,7 @@ Totals to clear: 4 memberships, 2 messages, 1 passes, 2 credit spends, 1 cover i
 Confirmation phrase: CLEAR 4 COMMUNITIES
 Dry run only. To clear: add --apply --confirm "<the phrase above>".
 ```
-- **Owner items:** none blocking. Decide for the kept rooms (the dry run lists each record) once their money settles; this command never clears them.
+- **Owner items:** run the command while the wallet provider is still on its test keys. Once live keys are in, every pass and wallet-bought credit counts as real money and those rooms are kept. Otherwise none blocking. Decide for the kept rooms (the dry run lists each record) once their money settles; this command never clears them.
 - **NOT RUN:** the full `npm run test:contract`; `src/storage/tests/thumbs.spec.ts` and `src/live/tests/live-hardening.contract.spec.ts` (the shared node_modules has no `sharp`); a deploy build of `dist/` (the repo's tsconfig compiles `scripts/` like `delete-test-account.ts`; `npx tsc --noEmit` shows only the two `sharp` type errors); anything against a real or remote database or provider.
 
 ## Read first
