@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-**Verifier round 1 (11 Nov 2026): FIX.** No blocker; F1 to F4 medium, F5 to F9 low. See tasks/history/FEE-01.md, "Verifier report, round 1".
+**Verifier round 2 re-check (11 Nov 2026): MERGE, with G1 (VAT lost when a reversed record reopens) and G2 (a wallet_to_wallet fee above 0 would 503 every wallet payment) to be owned. See "Verifier report, round 2 re-check".** Earlier: **Verifier round 1: FIX.** No blocker; F1 to F4 medium, F5 to F9 low. See tasks/history/FEE-01.md, "Verifier report, round 1".
 
 As of 11 Nov 2026.
 - **Status:** todo. Cut by the lead from R-139. Nuvion's go-live waits for this task, FEE-02 and FEE-03 (R-139 point 12).
