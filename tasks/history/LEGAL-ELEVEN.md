@@ -170,3 +170,11 @@ Round reports, verifier reports and lead notes, word for word, oldest first: [hi
 - **L3 low, note: a listed agent with no `created_at_unix_secs` sorts as oldest (0).** `listAgentsNamed` defaults a missing time to 0, so if the real list omitted it, the oldest-wins rule becomes id order. The docs example shows the field; harmless unless it is absent. Test that would kill it: a list without the field, two agents, expect a stable choice.
 
 NOT RUN: every call to the real provider (override acceptance, the real `search` semantics, ordering and `created_at_unix_secs`, whether `agent_response_complete` fires and when, real latency, real deletion timing); the admin dashboard's read of `generatedBy` (repo not on this machine); the whole `npm run test:contract` (CI); specs outside the folders named in the V1 row.
+
+## Builder report, fix round 2 (CI)
+
+Fix round 2. `LegalAiClient.pick()` (`src/legal-intake/ai/legal-ai.client.ts`) returns the ElevenLabs adapter only when `legal.ai_provider` is `elevenlabs` AND `ElevenLabsLegalAi.available()` (the agent client's `agentsConfigured`); otherwise the Gemini adapter, so a server without AI_VOICE keys behaves as main. New spec `legal-intake-provider-pick.contract.spec.ts`: no keys plus a Gemini stand-in gives the 201 brief on `POST /legal/intake/:id/complete` (Gemini called once, the voice stand-in untouched); with the keys it goes to the agent platform, text-only. The adapter spec gained the keys-unset picker case. The protected route suite was run locally exactly as CI does (`ci-check.sh`, base origin/main, fresh database).
+
+## Lead note, fix round 2 (11 Nov 2026)
+
+Hub PR #266's protected route suite (and shard 1 of the suite, same cause: 1 failed, 5859 passed) showed `POST /legal/intake/:id/complete` going 201 to 503 on a server with no `AI_VOICE_*` keys. Round 2 was the last builder round. The lead read the logic diff (11 lines in `legal-ai.client.ts`, plus `available()` in the adapter): ElevenLabs only when `legal.ai_provider` is `elevenlabs` (registry default `elevenlabs`) AND `agentsConfigured` (the Receptionist's own check); otherwise Gemini as main. Accepted on the lead's diff read (WORKFLOW section 5). All 18 checks green on a62f0f9c; merged as 158be141 at 13:40 UTC.
