@@ -104,4 +104,10 @@ Add `--allow-test-holds` to either only if the dry run lists a blocker other tha
 
 ## Verifier report
 
+T2 verifier, 11 Nov 2026. INTERIM (half-way push; final replaces this). Hub `109213b5` on main `bf3f4a3b`, local stack odv_test.
+
+**BLOCKER 1 (proven):** the script's money check is the app's `AccountDeletionMoneyService.check`, which knows only the Nuvion/Fintava wallet, holds, waiting earnings, FX and Capital. It never looks at the website's Flutterwave payout wallet (`CreatorWallet`), `WalletLedgerEntry`/`WalletWithdrawal` (a pending withdrawal is money in flight), pending card `Purchase`/`BillPayment`, `WalletCard`, `CreditPurchase`/`CreditLot` or `CommunityPassRefund`. Seeded one account with all of them: the dry run said `Blockers: none`, apply said `Outcome: purged`, and CreatorWallet, 2 WalletLedgerEntry (one a pending withdrawal), WalletWithdrawal, BillPayment, CreditPurchase, CreditLot, WalletCard and both Purchase rows (one pending) were deleted with no refusal. The sandbox proof covers only the Nuvion/Fintava host, so a real Flutterwave footprint passes silently.
+
+Proven so far: matching is `lower(email) = lower(trim(arg))` on `wawu_users`; plus-address, one-letter-off, and partial emails do not match; the sandbox proof refuses live, unknown, empty, uppercase, port, path, http hosts (a trailing slash or space is accepted, as the Hub itself does); dry run wrote nothing (only the running Hub's own CommunityNoticeCursor ticker moves).
+
 ## Owner sign-off
