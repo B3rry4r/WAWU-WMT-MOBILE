@@ -97,7 +97,7 @@ export function Rail({ item, liked, likes, saved, canFollow, onLike, onSave, onF
   return (
     <View onLayout={onLayout} style={[styles.rail, { bottom: fromPostBottom(metrics.railBottom) + (onTip ? 0 : metrics.tipSlot) }]} testID={`rail-${item.id}`}>
       <View style={styles.avatarRing}>
-        <Avatar name={name} hue={hueFor(item.creatorWawuId)} source={item.creator?.avatarUrl ?? undefined} size={metrics.avatar} />
+        <Avatar name={name} hue={hueFor(item.creatorWawuId)} source={item.creator?.avatarUrl ?? undefined} thumbs={item.creator?.avatarThumbs} size={metrics.avatar} />
         {canFollow ? (
           <Pressable
             testID={`follow-${item.id}`}

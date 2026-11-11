@@ -52018,6 +52018,21 @@
      "earnPerSaleKobo"
     ]
    },
+   "ThumbLinks": {
+    "type": "object",
+    "properties": {
+     "w96": {
+      "type": "string"
+     },
+     "w640": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "w96",
+     "w640"
+    ]
+   },
    "ContentPieceResponse": {
     "type": "object",
     "properties": {
@@ -52121,6 +52136,14 @@
      },
      "coverUrl": {
       "type": "string",
+      "nullable": true
+     },
+     "previewThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
       "nullable": true
      }
     },
@@ -52253,6 +52276,14 @@
      },
      "coverUrl": {
       "type": "string",
+      "nullable": true
+     },
+     "previewThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
       "nullable": true
      },
      "salesCount": {
@@ -52425,6 +52456,21 @@
      "followsCreator"
     ]
    },
+   "Thumbs": {
+    "type": "object",
+    "properties": {
+     "w96": {
+      "type": "string"
+     },
+     "w640": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "w96",
+     "w640"
+    ]
+   },
    "FeedCreator": {
     "type": "object",
     "properties": {
@@ -52441,6 +52487,10 @@
      },
      "avatarUrl": {
       "type": "string",
+      "nullable": true
+     },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
       "nullable": true
      },
      "verification": {
@@ -52616,6 +52666,14 @@
       "type": "string",
       "nullable": true
      },
+     "previewThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
+      "nullable": true
+     },
      "likedByMe": {
       "type": "boolean"
      },
@@ -52742,6 +52800,14 @@
       "type": "string",
       "nullable": true
      },
+     "thumbnailThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
+      "nullable": true
+     },
      "durationLabel": {
       "type": "string",
       "nullable": true
@@ -52796,6 +52862,14 @@
      },
      "coverUrl": {
       "type": "string",
+      "nullable": true
+     },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
       "nullable": true
      },
      "verification": {
@@ -52890,6 +52964,14 @@
      },
      "coverUrl": {
       "type": "string",
+      "nullable": true
+     },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
       "nullable": true
      },
      "verification": {
@@ -53108,6 +53190,10 @@
      },
      "avatarUrl": {
       "type": "string",
+      "nullable": true
+     },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
       "nullable": true
      },
      "verification": {
@@ -59864,6 +59950,10 @@
       "type": "string",
       "nullable": true
      },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
+      "nullable": true
+     },
      "field": {
       "type": "string",
       "nullable": true
@@ -61748,6 +61838,10 @@
       "type": "string",
       "nullable": true
      },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/Thumbs",
+      "nullable": true
+     },
      "field": {
       "type": "string",
       "nullable": true
@@ -62499,6 +62593,14 @@
       "items": {
        "$ref": "#/components/schemas/ProfileExperienceView"
       }
+     },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
+      "nullable": true
      }
     },
     "required": [
@@ -62734,6 +62836,14 @@
      },
      "coverUrl": {
       "type": "string",
+      "nullable": true
+     },
+     "avatarThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
+      "nullable": true
+     },
+     "coverThumbs": {
+      "$ref": "#/components/schemas/ThumbLinks",
       "nullable": true
      },
      "interests": {

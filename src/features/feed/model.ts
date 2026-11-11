@@ -3,6 +3,7 @@ import type { IconName } from '@/components/icon';
 
 import { nairaToKobo } from '@/api/kobo';
 import { formatMoney } from '@/components/Money';
+import { copyCandidates, type Copies } from '@/lib/thumbs';
 
 import type { CardWork, ContentDetail, CreatorCardData, FeedCreator, FeedEntry, FeedItem, ProfessionalCardData } from './api';
 
@@ -120,13 +121,32 @@ export function rowPicture(contentType: string | null | undefined, url: string |
  * request that carries `X-Wawu-Client: app`), then what `rowPicture` gives for the preview file (a photo, a file that is a picture).
  * A screen draws the first one that loads (`usePicture`) and the kind's mark when none does.
  */
-export function pictureCandidates(piece: { contentType?: string | null; coverUrl?: string | null }, previewUrl: string | null | undefined): string[] {
+export function pictureCandidates(
+  piece: { contentType?: string | null; coverUrl?: string | null; coverThumbs?: Copies },
+  previewUrl: string | null | undefined,
+  small?: SmallPicture,
+): string[] {
   const out: string[] = [];
-  if (piece.coverUrl) out.push(piece.coverUrl);
+  const add = (full: string, copies: Copies) => {
+    for (const link of copyCandidates(full, small ? copies : undefined, small?.drawn)) if (!out.includes(link)) out.push(link);
+  };
+  if (piece.coverUrl) add(piece.coverUrl, piece.coverThumbs);
   const preview = rowPicture(piece.contentType, previewUrl);
-  if (preview && preview !== piece.coverUrl) out.push(preview);
+  if (preview && preview !== piece.coverUrl) add(preview, small?.preview);
   return out;
 }
+
+/**
+ * APP-THUMBS: a screen that draws a piece's picture small passes this, so the Hub's small copy for the size drawn comes before the full picture
+ * (and the full picture is the next candidate if the copy will not load). A screen that shows the picture full (the piece's own page, a zoom)
+ * leaves it out and draws the full picture as always.
+ */
+export type SmallPicture = {
+  /** The small copies of the preview file (`previewThumbs` on a feed item, `thumbnailThumbs` on a creator card's work). */
+  preview?: Copies;
+  /** The longest side drawn, in layout points; left out, the 640 copy. */
+  drawn?: number;
+};
 
 /** Paid and not yet bought (or not the viewer's own): the full file is held back. */
 export function isLocked(item: Pick<FeedItem, 'accessType' | 'fullAssetLocked'>): boolean {

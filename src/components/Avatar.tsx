@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text as NativeText, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import type { Copies } from '@/lib/thumbs';
 import { font, useWawu, type ColorToken } from '@/theme';
 
 import { APP_NAME, BrandMark } from './BrandMark';
@@ -45,6 +46,8 @@ export type AvatarProps = {
   size?: number;
   /** A photo, as a URL or a bundled image. Without one the avatar shows the initials on its hue. */
   source?: string | number;
+  /** The Hub's small copies of `source` (`avatarThumbs`, APP-THUMBS): the one for this size is drawn; missing or null, the full photo is. */
+  thumbs?: Copies;
   /** Inside a row that already says the name, the avatar adds nothing for a screen reader. */
   decorative?: boolean;
   /** The app's own avatar (system messages, R-37): the submark on the sunken surface, no hue or initials. */
@@ -54,7 +57,7 @@ export type AvatarProps = {
 };
 
 /** A person's circle: their photo, or their initials on a hue (kit `Av`). */
-export function Avatar({ name, hue = 'lilac', size = defaultSize, source, decorative = false, brand = false, style, testID }: AvatarProps) {
+export function Avatar({ name, hue = 'lilac', size = defaultSize, source, thumbs, decorative = false, brand = false, style, testID }: AvatarProps) {
   const { colors } = useWawu();
   const fontSize = Math.round(size * initialsScale);
   const a11y = decorative
@@ -73,7 +76,7 @@ export function Avatar({ name, hue = 'lilac', size = defaultSize, source, decora
       ) : source ? (
         typeof source === 'string' ? (
           // The Hub's link may carry where the person placed the photo (R-96): every avatar, at any size, shows that part of it.
-          <PositionedImage testID={testID ? `${testID}-image` : undefined} uri={source} frame={{ width: size, height: size }} />
+          <PositionedImage testID={testID ? `${testID}-image` : undefined} uri={source} thumbs={thumbs} frame={{ width: size, height: size }} />
         ) : (
           <Image testID={testID ? `${testID}-image` : undefined} source={source} contentFit="cover" style={StyleSheet.absoluteFill} />
         )

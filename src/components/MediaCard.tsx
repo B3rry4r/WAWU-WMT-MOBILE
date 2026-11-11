@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type DimensionValue, type LayoutChangeEvent } from 'react-native';
 
+import type { Copies } from '@/lib/thumbs';
 import { font, radius, space, useWawu, type GradientToken } from '@/theme';
 
 import { Button } from './Button';
@@ -100,6 +101,8 @@ export type MediaCardProps = {
   byline?: string;
   /** The picture. Without one a quiet block holds its place, so a layout never jumps when it arrives. */
   imageUrl?: string;
+  /** The Hub's small copies of `imageUrl` (APP-THUMBS): the one for the size drawn is fetched; missing or null, the full picture is. */
+  imageThumbs?: Copies;
   /**
    * Drawn centred on the quiet block when there is no picture: a creator's initials on their hue
    * (`<Avatar name hue size={mediaMetrics.placeholderAvatar} decorative />`). On a stacked card it is centred in the
@@ -137,6 +140,7 @@ export function MediaCard({
   action,
   byline,
   imageUrl,
+  imageThumbs,
   placeholder,
   image,
   imageLabel,
@@ -210,6 +214,7 @@ export function MediaCard({
         <PositionedImage
           testID={testID ? `${testID}-image` : undefined}
           uri={src}
+          thumbs={imageThumbs}
           frame={typeof frame.width === 'number' && typeof frame.height === 'number' ? { width: frame.width, height: frame.height } : undefined}
           accessibilityLabel={imageLabel}
           accessible={Boolean(imageLabel)}

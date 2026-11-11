@@ -263,7 +263,7 @@ export function ContentRow({ row, testID, onPress }: { row: ContentRowModel; tes
   // The Hub gives the piece's public file, a clip, a sound or a PDF for most kinds: only a picture is drawn as one, and a picture that
   // will not load gives way to the kind's mark, so the square is never empty.
   // The creator's cover first (R-114), then the preview when it is a picture.
-  const { uri: picture, onError: pictureFailed } = usePicture(pictureCandidates({ contentType: row.kind, coverUrl: row.cover }, row.thumb));
+  const { uri: picture, onError: pictureFailed } = usePicture(pictureCandidates({ contentType: row.kind, coverUrl: row.cover, coverThumbs: row.coverThumbs }, row.thumb, { preview: row.thumbThumbs, drawn: rowMetrics.thumb }));
   const inner = (
     <>
       <View style={[styles.thumb, { backgroundColor: colors.surfaceSunken }]}>

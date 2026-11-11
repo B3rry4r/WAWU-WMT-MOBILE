@@ -246,6 +246,7 @@ export function MeScreen({ onEditProfile, onAddWork, onOpenWork, onOpenListings,
                 wawuId={ready.profile.wawuUserId}
                 name={nameOf(ready.profile)}
                 avatarUrl={ready.profile.avatarUrl}
+                avatarThumbs={ready.profile.avatarThumbs}
                 ticks={ticksOf(ready.profile)}
                 badge={headerBadgeOf(tier.data, ready.details.badge)}
                 bio={ready.profile.bio}
