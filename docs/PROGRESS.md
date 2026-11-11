@@ -8,9 +8,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 36 | 0 | 0 | 0 |
-| building | 9 | 0 | 0 | 0 |
-| verifying | 64 | 0 | 0 | 0 |
-| review | 249 | 0 | 0 | 0 |
+| building | 7 | 0 | 0 | 0 |
+| verifying | 54 | 0 | 0 | 0 |
+| review | 261 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -122,6 +122,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
 - [FIX-85](../tasks/FIX-85.md) A failed send that Nuvion then reverses counts the fee once and gives it back once (You)
 - [FIX-55](../tasks/FIX-55.md) Bank transfer only for a short wallet, and no pay sheet offers Add money until WALLET-05 (You)
+- [POINTS-13](../tasks/POINTS-13.md) Studio: every result goes into Create as a piece, Save, and a quiet Download (app) (You)
+- [POINTS-14](../tasks/POINTS-14.md) Studio: Make an image and Edit a photo (app) (You)
+- [POINTS-15](../tasks/POINTS-15.md) Studio: Make a video and Talking photo (app) (You)
+- [POINTS-16](../tasks/POINTS-16.md) Studio: Voice changer, Dialogue and Clone your own voice (app) (You)
+- [POINTS-17](../tasks/POINTS-17.md) Studio: Music for a video and Split a song (app) (You)
+- [POINTS-18](../tasks/POINTS-18.md) Studio: Audiobook and Podcast maker (app) (You)
+- [POINTS-12](../tasks/POINTS-12.md) Studio: Receptionist, set-up, knowledge and text chat (app) (You)
+- [STUDIO-HOME](../tasks/STUDIO-HOME.md) Studio home: one prompt box, chips, a tools grid with a More menu, and Recent (app) (You)
 - [FIX-51](../tasks/FIX-51.md) ID and address documents leave the app with their files in them (You)
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
@@ -264,6 +272,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-08](../tasks/WEBAPP-08.md) The web walk's fixes (Phase 1 fix batch) (You)
 - [VIDEO-PRIVACY](../tasks/VIDEO-PRIVACY.md) A video someone uploads carries no location or device data (You)
 - [WEBAPP-09](../tasks/WEBAPP-09.md) The second web walk's fixes (Phase 1, last batch) (You)
+- [WEBAPP-11](../tasks/WEBAPP-11.md) The web app is installable and asks to be installed on launch (You)
+- [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
+- [WEBAPP-12](../tasks/WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web (You)
+- [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
 
 ## Being verified
 
@@ -299,20 +311,12 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-R2](../tasks/SWEEP-R2.md) App sweep: three low rows from R2-MONEY and R2-AUTHME2 (beneficiary switch, tier checkout ring, selfie portrait guide) (You)
 - [TIER-OFFER](../tasks/TIER-OFFER.md) Right after sign-up a full screen offers the three tiers, once; it always has a way out (R-94) (You)
 - [AITOOLS-08](../tasks/AITOOLS-08.md) Studio media pipeline, the result into Create, and the listing gate (backend) (You)
-- [POINTS-13](../tasks/POINTS-13.md) Studio: every result goes into Create as a piece, Save, and a quiet Download (app) (You)
 - [AITOOLS-09](../tasks/AITOOLS-09.md) Make an image and Edit a photo (backend) (You)
 - [AITOOLS-10](../tasks/AITOOLS-10.md) Make a video and Talking photo (backend) (You)
-- [POINTS-14](../tasks/POINTS-14.md) Studio: Make an image and Edit a photo (app) (You)
-- [POINTS-15](../tasks/POINTS-15.md) Studio: Make a video and Talking photo (app) (You)
 - [AITOOLS-11](../tasks/AITOOLS-11.md) Voice changer, Dialogue and a saved clone of your own voice (backend) (You)
 - [AITOOLS-12](../tasks/AITOOLS-12.md) Music for a video and Split a song (backend) (You)
-- [POINTS-16](../tasks/POINTS-16.md) Studio: Voice changer, Dialogue and Clone your own voice (app) (You)
-- [POINTS-17](../tasks/POINTS-17.md) Studio: Music for a video and Split a song (app) (You)
 - [AITOOLS-13](../tasks/AITOOLS-13.md) Audiobook and Podcast maker (backend) (You)
 - [AITOOLS-06](../tasks/AITOOLS-06.md) Receptionist: a talking AI agent with the creator's own knowledge (backend) (You)
-- [POINTS-18](../tasks/POINTS-18.md) Studio: Audiobook and Podcast maker (app) (You)
-- [POINTS-12](../tasks/POINTS-12.md) Studio: Receptionist, set-up, knowledge and text chat (app) (You)
-- [STUDIO-HOME](../tasks/STUDIO-HOME.md) Studio home: one prompt box, chips, a tools grid with a More menu, and Recent (app) (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
@@ -329,8 +333,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
-- [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
-- [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -341,8 +343,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 - [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
 - [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
-- [WEBAPP-11](../tasks/WEBAPP-11.md) The web app is installable and asks to be installed on launch (You)
-- [WEBAPP-12](../tasks/WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web (You)
 
 ## Done
 

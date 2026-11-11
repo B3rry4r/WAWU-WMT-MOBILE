@@ -7,7 +7,7 @@ order: 379
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: building
+status: review
 depends_on: []
 decisions: [R-47, R-86]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026, after builder fix round 2 (the last allowed).
-- **Status:** building, round 2 done, back to the verifier on the offline reload and the second tab only.
+- **Status:** review (lead, 11 Nov 2026): verified MERGE in round 2 (`wmt/WEBAPP-12-verify` 808aa235), merged into `wmt/BATCH-1111` for main. Its lows are rows in SWEEP-WEB.
 - **Round 2 fixed:** (1) offline (`navigator.onLine === false`) a missing route file never reloads: the app's own error screen stays with Try again, and Try again reloads once when online (or draws the screen again if a reload was already tried). The address the person was going to is remembered (`pushState` and `replaceState`, 30 s) and put back before the reload, because the error screen resets it to `/`. (2) A session ending in one tab is broadcast (`BroadcastChannel` `wmt-session`; fallback: the `storage` event for the removed access token), and every other tab clears the picture cache and, 300 ms later, drops to signed out unless another account has signed in since (`src/lib/sessionBroadcast.ts`, `src/lib/pictureCache.ts`). The worker keeps a picture only while a marker entry (`https://wmt.invalid/session-open`) is in its cache: the page writes it while signed in (`useHoldPictures` in the root frame), deleting the cache deletes it, so between a session end and the next sign-in nothing is kept. Chosen over a message to the worker because the worker can be stopped by the browser at any time and loses memory; the cache survives.
 - **Browser proof (round 2):** `npx expo export -p web --clear`, the bundle holds `https://wmt.invalid/session-open` (the one string unique to this round, in the `__common` chunk and in `wmt-sw.js`). Offline (DevTools offline): one page load, no chrome-error, "Something went wrong" with Try again; back online, Try again: second load, `/about` opens. Two tabs: A in both, 2 pictures held; tab 1 signs out: both caches empty, tab 2 on the welcome screen; tab 2 redraws a picture: not kept; B signs in in tab 1: only the marker is in the cache.
 - **Known limits:** a direct switch of account in one tab (A to B with no sign-out, not reachable in the UI) clears the cache and holds nothing until the next reload. Two stale tabs reloading at once each reload once (the stamp is per tab). Error buttons at 1440 left as they are (the lead is filing it).

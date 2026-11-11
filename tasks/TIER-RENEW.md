@@ -7,7 +7,7 @@ order: 378
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: []
 decisions: [R-132, R-47]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** verifying. Built on `wmt/TIER-RENEW` from `wmt/BATCH-1110` (R-132).
+- **Status:** review (lead, 11 Nov 2026): verified MERGE with no findings (`wmt/TIER-RENEW-verify` df61324e), merged into `wmt/BATCH-1111` for main.
 - **Done:** `YourTierScreen.tsx` draws Renew only when the Hub's state is `ending` or `ended` (and the tier is sold). Upgrade is unchanged (drawn when a higher tier exists); an active highest tier (Founding Maker) has no buy button.
 - **Grep of every Renew offer:** `your-tier-renew` was the only button. `checkout.tsx` takes `kind=renew` only from that button; the tier offer, Me (the meter says "Until"/"Ends", never Renew), push routes (pass reminder only) and the web-wallet path (`webwallet/api.ts`, a spec for the checkout) draw no Renew for the held tier. Nothing else changed.
 - **Pictures:** /tmp/wmt-shots/tier-renew/ (verify-active, founding-active, ending, ended; 390 light and dark, 1440 light and dark), looked at; board `VF14a` rendered to build/design_shots/. Web export served behind vercel.json's headers (CSP's api, id and ws hosts swapped for the stack's, CORS headers added by the browser harness), against stack `tr` with wawu-id. The tier end dates were set by SQL in my own `tr` database (+300 days, +3 days, -3 days); the Hub computed the states.

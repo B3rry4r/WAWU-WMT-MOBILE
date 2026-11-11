@@ -7,7 +7,7 @@ order: -41
 priority: launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: [AITOOLS-06, POINTS-11, POINTS-13]
 decisions: [R-109, R-78, R-79, R-43, R-61, R-65, R-68, R-47, R-27, R-29]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -17,6 +17,8 @@ tier: T1
 # POINTS-12 · Studio: Receptionist, set-up, knowledge and text chat (app)
 
 ## Current state
+
+- **Status:** review (lead, 11 Nov 2026): verified MERGE in round 1 of STUDIO-1110 (T2, `wmt/STUDIO-1110-verify` 0b72ae90), merged into `wmt/BATCH-1111` for main. Each new tool stays hidden until the owner turns on its `ai.listed.<id>` switch (R-47). Lows L1 to L3 are rows in SWEEP-APP.
 
 - **Fix round 1 (10 Nov 2026, STUDIO-1110, builder; verifier finding: the More pop-over clipped, medium).** `StudioPopover.tsx`: a list that fits neither above nor below its control now takes the whole safe screen (window minus the status and home bars, 16 clear) and covers the tile, hanging as low as the tile's foot allows; only a list taller than the whole safe screen scrolls, and then a down chevron stays on the panel's foot until the last row is reached. Shared pop-over kept, no new component, no fenced file. Tests: `studioPopover.test.ts` (3 new or changed cases fail on `6ac4d7d`, pass now), `studioHome.test.tsx` (the old drops-below case now asserts the new place). Pictures at 375x667, 390x844 and 1440x900, light and dark: `/tmp/wmt-shots/studio-1110/fix1/` (all 12 rows visible at 390x844 and 1440x900; at 375x667 the list scrolls with the chevron showing). Checks: typecheck EXIT 0, lint EXIT 0 (existing warnings only), gates EXIT 0, tasks EXIT 0, full jest -w 2: 530 of 534 suites, 7925 of 7933 tests passed; 3 suites (resetPasswordRoute, unread, library) did not run under memory and passed at `-w 1` with the points suites (27 suites, 441 tests), the fourth (studioHome) was the changed case, fixed. Phone check line for the More menu still needs a real phone.
 

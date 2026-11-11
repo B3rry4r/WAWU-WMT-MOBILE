@@ -7,7 +7,7 @@ order: 377
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: building
+status: review
 depends_on: []
 decisions: [R-131, R-47, R-86, R-37]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026, branch `wmt/WEBAPP-11` (from `wmt/BATCH-1110`).
-- **Status:** building (verifier said FIX, 10 Nov 2026). Round 2: fix M1 (steps card padding, use `Card padded`) and M2 (desktop wording: no home screen on a computer); re-shoot 390 light and dark and 1440. Verifier report in history/WEBAPP-11.md.
+- **Status:** review (lead, 11 Nov 2026): verified MERGE in round 2 (`wmt/WEBAPP-11-verify` 7145d927; latch model, lead decision 10 Nov), merged into `wmt/BATCH-1111` for main. Lows L1 to L4 of round 2 are rows in SWEEP-WEB.
 - **Done:** the web export now carries a manifest (`public/manifest.webmanifest`, content type `application/manifest+json`), icons at 192 and 512 in any and maskable plus a 180 Apple touch icon (`public/pwa/`), and the Apple tags and `theme-color` in `public/index.html`. All made by `npm run pwa` (`scripts/web/gen_pwa.js`) from the app icon (app.json `icon`) and the theme tokens (theme colour = accent, background = dark page); `src/__tests__/pwaManifest.test.ts` fails if they drift.
 - **Install screen** (`src/features/install/`): `detect.ts` (user agent and standalone flags), `InstallView.tsx` (the screen, shared parts only), `InstallAsk.web.tsx` beside the inert `InstallAsk.tsx`.  States: Install button (browser offer caught as `beforeinstallprompt`, `prompt()` on press), menu steps (Chromium with no offer yet), iPhone and iPad Safari steps, in-app browser (Instagram, WhatsApp, Facebook, Messenger, X, TikTok, LinkedIn, Snapchat, Line, any bare web view): open in Safari (iOS) or Chrome with Copy link, Chrome/Firefox/Edge on iOS (open in Safari), installed. **Round 2 (lead decision, 10 Nov): the screen is drawn OVER the app, never instead of it; the app renders from the first paint.** Chrome, Edge and Samsung: only when the browser's offer arrives within 3 s of load and before any touch, key or wheel; later offers are ignored; no timer hides anything. Any answer (Install accepted, dismissed or cancelled at any moment, Continue) latches the tab (sessionStorage `wmt.install.continued`) and the app is what is left. Unchanged: Android phone menu steps with no offer, iPhone and iPad, in-app browsers, Mac Safari Dock steps, Firefox no screen, standalone. Copy link copies the address opened (read at load), since the app may move the address under the screen. **Round 1 (lead rule for computers, R-131), superseded in part:** Chrome and Edge on a computer show the Install button when the browser offers it, and show nothing if no offer comes (round 2: no wait, no blank page); Safari 17 or later on a Mac shows File, Add to Dock; Firefox (and anything else that cannot install) shows no screen; computer words never say home screen. The iPad's Share step says top of Safari. The steps card uses the shared `<Card padded>`.
 - **Decisions (agent, owner may override):** `display-mode` standalone, fullscreen or minimal-ui and `navigator.standalone` all count as opened from the icon; the screen shows on desktop browsers too (R-131 names Chrome and Edge on a computer); the "pictures" for the iOS steps are the app's own Share, Plus and phone glyphs, not a drawing of Safari (design gap G-WEBAPP-11-1, R-29).

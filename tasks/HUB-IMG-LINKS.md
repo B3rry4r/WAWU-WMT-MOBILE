@@ -7,7 +7,7 @@ order: 380
 priority: after-launch
 repo: wawu-backend
 type: flow
-status: verifying
+status: review
 depends_on: []
 decisions: [R-47]
 passes: [V1, V3, V4, V6, V7, V9]
@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** round 1 built, back to verifying. Fix round 1 on wawu-wmt `wmt/HUB-IMG-LINKS` (`966c637`). GitHub's full run failed on `fad6147` in 3 suites (16 tests); both causes are fixed without editing any existing test.
+- **Status:** review (lead, 11 Nov 2026): live since 11 Nov 00:12 UTC (Hub #261, merge cb9a037; live check: day-start links, the same link 45 s apart, Spaces serves them, /creators avatars signed again). Verified MERGE in round 1 (`wmt/HUB-IMG-LINKS-verify` 24f0e03c). Lows are rows in SWEEP-WEB.
 - **Built:** one helper (`src/storage/read-link.ts`) signs every picture, preview, cover and avatar read link (`StorageService.readUrlFor`, so `freshUrlFor`, `coverUrlFor`, profile pictures, chat and AI media links; `CoverLinkService`) with `signingDate` rounded down to the start of the UTC day. **No `ResponseCacheControl` any more** (lead decision, 10 Nov): every read link has exactly the length and query parameter names it has on main; only the X-Amz-Date, X-Amz-Expires (same digit count) and X-Amz-Signature values differ. Default link signed for 7 days (the SigV4 maximum): shortest life 6 days and 1 second. A request for a life of one day or less (a chat attachment, 900 s), or whose lengthened expiry would have more digits (86401 to 99999 s, no caller asks), is signed at the second, as before.
 - **Community message media (FIX-71)** are signed at the current second as on main: `readUrlFor`/`freshUrlFor` take an explicit `{ atCurrentSecond: true }`, set only by `withFreshMedia` (`src/community-message/message-media.ts`).
 - **Avatar bug:** `GET /creators` (creator-discovery) signs the stored avatar through the shared `freshOwnImage` (`src/storage/own-image.ts`, also now used by Explore). A stored value that is not the creator's own key is returned as stored, as before (`photo-position.contract.spec.ts` holds it).
