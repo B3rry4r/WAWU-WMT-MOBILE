@@ -70,3 +70,35 @@ Also measured (new code, N=2 and 5): JPEG 25 MP progressive 83 and 147 MB; a 10 
 search-response "finds the seeded creator by a substring of their bio": not reproduced. On a fresh database `src/search-response` is 260/261 on the branch with only `popular-name.contract.spec.ts` failing, and that spec fails the same on a fresh main.
 
 Suites on fresh `hth_test_` databases (own mock on 16316), each `--runInBand`: protected + openapi 253/253 EXIT 0; account-purge + account 374/380 EXIT 1 (6 failures in `account-deletion.contract` and `account-deletion-reason-route.contract`); community-message 145/145 EXIT 0; admin 895/895 EXIT 0; search-response 260/261 EXIT 1; the other 97 specs that grep for StorageObject, storageObject, PutObject or purge: 712 + 950 + 576 tests, one failure (`movies.contract`). Branch-only failures: none. On a fresh `origin/main` the same four specs (`account-deletion`, `account-deletion-reason-route`, `movies`, `popular-name`) fail the same 8 tests. tsc EXIT 0, eslint on changed files EXIT 0, gates EXIT 0, check_baseline EXIT 0.
+
+## Verifier report, round 1 (11 Nov 2026; T1 verifier, draft 1 pushed after checks 1 and 2)
+
+Hub `wmt/HUB-THUMBS` 646cb678 against main cb9a037. Stack: own database `htv3_test_*` on 14001, storage stand-in 16339, Hubs 16320 (branch) and 16321 (main), a FRESH Hub process per memory row, RSS sampled every 5 ms from /proc. Fixture headers checked byte for byte (PNG IHDR): 49 MP = 7000x7000 bit depth 16, colour type 6 (RGBA), interlace 1; 25 MP = 5000x5000 depth 16 RGBA, interlace 0; 24.9 MP = 4990x4990 depth 8 RGBA.
+
+### Check 1, memory (PASS)
+
+kind|MP|N at once|peak RSS rise MB|copies made|confirm status
+PNG RGBA 16-bit interlaced|49|2|49|0 (refused)|200
+same|49|5|47|0|200
+PNG RGBA 16-bit|25|2|52|0 (refused)|200
+same|25|5|31|0|200
+PNG RGBA 8-bit|24.9|2|86|2|200
+same|24.9|5|125|5|200
+JPEG|24|2|48|2|200
+same|24|5|73|5|200
+JPEG|12|2|17|2|200
+same|12|5|56|5|200
+JPEG|50|2|59|0 (over the 25 MP cap)|200
+same|50|5|35|0|200
+WebP|24.9|2|22|2|200
+same|24.9|5|75|5|200
+
+Worst accepted picture: +125 MB (5 at once, 24.9 MP 8-bit RGBA PNG). Limit 300 MB. Round 0's attack (49 MP, 16-bit, interlaced): +47 to +49 MB, was +1634 MB. The refused rows rise 30 to 50 MB, not the builder's 2 MB, because the Hub reads the original (up to 10 MB each) and a cold process warms up; this is noise-level and unrelated to decoding. Fifty confirms of a 4.7 MB 24 MP JPEG at once (check 2): +115 MB.
+
+### Check 2, queue (PASS with one MEDIUM)
+
+- A waiting job holds only `(deps, key)`: the file is read inside `run()` after the job gets the slot (`ensure-thumbs.ts`). Measured: 50 confirms of a 4.7 MB JPEG, peak rise 115 MB; had the bytes been held that is 235 MB plus the decodes.
+- 50 confirms in a burst (from 8 loopback addresses to pass the 20-per-second throttle): all 50 returned 200 `confirmed`; the slowest took 2.97 s (the 2.5 s wait plus request overhead); the work carried on after the answer. 41 pictures got copies (1 running + 40 waiting); 9 were skipped as `busy` with no log line and left to the sweep. About 12 s for the 41.
+- Bounded: 1 running + 40 waiting, then skipped. Memory stays flat. A restart loses the queue (SIGKILL after 1.5 s of a 70 burst left 42 pictures without copies); the 10-minute sweep (`sweepThumbs`) is the only thing that picks them up.
+- Sweep and backfill: the sweep goes through the same one-slot queue as confirm (`ensureThumbs ... background:true`), one picture at a time, so it can sit in front of a confirm for at most one job (a few hundred ms); it cannot starve confirm. The backfill is a separate process with its own queue.
+- MEDIUM, sweep depth: see the section "Sweep starvation" below.
