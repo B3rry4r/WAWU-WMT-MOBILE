@@ -7,8 +7,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 37 | 0 | 0 | 0 |
-| building | 8 | 0 | 0 | 0 |
+| todo | 36 | 0 | 0 | 0 |
+| building | 9 | 0 | 0 | 0 |
 | verifying | 64 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
@@ -341,6 +341,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 - [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
 - [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
+- [WEBAPP-11](../tasks/WEBAPP-11.md) The web app is installable and asks to be installed on launch (You)
 - [WEBAPP-12](../tasks/WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web (You)
 
 ## Done
@@ -547,8 +548,8 @@ From `docs/LOG.md`, newest first.
 - 11 Nov 2026 · WEBAPP-12 · fix round 2: offline, a missing route file keeps the app's error screen (no reload to the browser's offline page); a session ending in one tab clears the picture cache and signs out every other tab, and the worker keeps pictures only while a session is open (built, verifying)
 - 10 Nov 2026 · WEBAPP-12 · fix round 1: a tab open across a deploy reloads once when a route file is gone (never loops), held pictures are deleted at sign-out and on an account change, and the picture cache is also bound at 60 MB (built, verifying)
 - 10 Nov 2026 · WEBAPP-12 · web pictures and files load faster: first paint 11.7 to 8.5 s (route chunks, one import per icon, 2,047 to 1,490 KB), a picture worker keeps a re-signed picture under its stable address (second visit 3 to 8 MB and 7 to 45 s become 0 bytes and about 1.5 s); the phone is unchanged; Hub follow-ups (stable links, thumbnails, unsigned avatar link) named in the task (verifying)
+- 11 Nov 2026 · WEBAPP-11 · fix round 2: the install screen is drawn over the app, never instead of it (only on an offer within 3 s and before a touch; any answer latches the tab); no blank page after a cancelled install or with no offer (built, verifying)
+- 10 Nov 2026 · WEBAPP-11 · fix round 1: the steps card has its padding; on a computer Chrome and Edge show Install or step aside, Safari on a Mac shows Add to Dock, Firefox shows no screen; iPad Share is at the top (built, verifying)
+- 10 Nov 2026 · WEBAPP-11 · the web app is installable (manifest, any and maskable icons, Apple tags) and asks to be installed first in a browser tab (R-131): Install button, iPhone Safari steps, in-app browsers sent to Safari or Chrome with Copy link, Continue in the browser; never from the icon or on the phone; Chromium installability, real `beforeinstallprompt` and 35 pictures checked; real iPhone and in-app browsers NOT RUN (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
-- 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
-- 10 Nov 2026 · CREATOR-TAKEDOWN · a creator takes a live or in-review piece down from My uploads and from the piece's page (confirm, place freed at once); buyers keep it (Hub: one nullable column, R-130); review sentence matches; Hub and jest checks run, web walk and pictures NOT RUN
-- 10 Nov 2026 · VIDEO-PRIVACY · fix round 2: web (pending) uploads cleaned at publish, settle and sweep; cool-down; WebM budget (verifying)
