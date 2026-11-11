@@ -11,3 +11,4 @@ Moved out of [tasks/WEB-STRIP.md](../WEB-STRIP.md) word for word, oldest first. 
 - Gaps: none filed; no shared-change rows (no fenced file touched in this repo).
 
 ## Verifier report
+- Round 1 addendum (lead's call, R-133 point 4, R-134): `src/lib/app-links.ts` no longer claims `/activate` or `/reset-password` (iOS AASA now lists `/r/ /selfie /receipt/ /u/ /c/ /content/` only; `UNCLAIMED_PASSWORD_PATHS` names the three password pages) and check-site-mode asserts none is claimed; assetlinks.json names no paths, so the Android claim comes from the app's own intent filters, which phones parked under R-134 keep.
