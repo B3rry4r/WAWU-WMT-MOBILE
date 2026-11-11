@@ -7,7 +7,7 @@ order: 389
 priority: after-launch
 repo: wawu-backend
 type: ops
-status: verifying
+status: building
 depends_on: []
 decisions: [R-17, R-19, R-136]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -19,37 +19,12 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** built, awaiting a T2 verifier. Hub branch `wmt/OPS-CLEAR-ROOMS` head 3685b50c (from `wmt/OPS-DEL-TEST` 9f054474, round 2 `d4d76123` merged); nothing run against any real database.
-- **Owner commands** (on the server, after the deploy builds `dist/scripts/ops/clear-communities.js`):
-  - dry run: `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a; node dist/scripts/ops/clear-communities.js`
-  - apply: the same, then `node dist/scripts/ops/clear-communities.js --apply --confirm "CLEAR <n> COMMUNITIES"` with the phrase the dry run printed (the count is in it).
-  - No `WAWU_ID_DATABASE_URL` is needed: the host handle is on the Hub profile.
-- **Real money (a room with any of these is kept and listed, no flag):** a pass not paid at the provider this server runs on proven sandbox keys (or any pass when the sandbox is not proven), or bought through a store outside the store sandbox; a pass payment still pending; a store purchase outside the sandbox; a store subscription not ended; a refund not yet `refunded`; credits spent from a lot bought through Flutterwave, a store outside the sandbox, or another provider (or any wallet-bought lot when the sandbox is not proven); a lot that cannot be found; a host earning not yet landed (or in a move not landed) or landed at another provider.
-- **Sample dry run** (made-up rooms, test database; 9 rooms, 4 cleared, 5 kept):
-```
-DRY RUN (nothing is written)
-Provider: fintava, sandbox. FINTAVA_BASE_URL is Fintava's sandbox host (...; the address and the key are not printed)
-Communities on the Hub: 9
-1. ocr-64ec1bce flutterwave [open] d4b65b13-...
-   host 97ec5eb8-...; members 1; messages 0
-   passes 0 (active 0, paid 0 kobo); credit spends 1 (host earning 850 kobo)
-   refunds none; cover no; link none
-   -> KEPT, real money:
-      CreditPurchase 81dff05e-... status flutterwave amount - kobo [live: Flutterwave (live, R-1) credit purchase funded spends in this room]
-...
-6. ocr-64ec1bce plain [open] 5333d8cf-...
-   host 97ec5eb8-...; members 1; messages 2
-   passes 0 (active 0, paid 0 kobo); credit spends 1 (host earning 0 kobo; 1 with no earning record)
-   refunds none; cover yes (stays in storage); link ocr-64ec1bce-plain
-   -> would clear
-Would clear: 4
-Kept for real money: 5 (listed above; this command never clears them)
-Totals to clear: 4 memberships, 2 messages, 1 passes, 2 credit spends, 1 cover images left in storage
-Confirmation phrase: CLEAR 4 COMMUNITIES
-Dry run only. To clear: add --apply --confirm "<the phrase above>".
-```
-- **Owner items:** run the command while the wallet provider is still on its test keys. Once live keys are in, every pass and wallet-bought credit counts as real money and those rooms are kept. Otherwise none blocking. Decide for the kept rooms (the dry run lists each record) once their money settles; this command never clears them.
-- **NOT RUN:** the full `npm run test:contract`; `src/storage/tests/thumbs.spec.ts` and `src/live/tests/live-hardening.contract.spec.ts` (the shared node_modules has no `sharp`); a deploy build of `dist/` (the repo's tsconfig compiles `scripts/` like `delete-test-account.ts`; `npx tsc --noEmit` shows only the two `sharp` type errors); anything against a real or remote database or provider.
+- **Status:** back to `building`. Verifier round 1 (T2) says **FIX**: one medium finding (M1 below), no blocker. Hub `wmt/OPS-CLEAR-ROOMS` head 3685b50c (task diff vs `d4d76123`: `scripts/ops/clear-communities.ts`, `scripts/ops/room-money-rows.ts`, `src/community/tests/ops-clear-communities.contract.spec.ts`; no migration, no schema change). Nothing was run against any real database or provider.
+- **M1 (fix before the owner runs it):** `scripts/ops/room-money-rows.ts:195-217` (the `st` check) keeps a room whose host share is not landed only when an `EarningSettlement` row exists. A settlement for a credit spend is made later by the sweep (`adoptHostShares`, `src/money/earnings/earning-settlement.service.ts:685`). A wallet-bought funded spend (sandbox) not yet adopted has no row, so the room is listed "would clear", and apply deletes the earning (host share, 850 kobo in the probe) before it was ever owed. Fix: a funded earning with `hostShareKobo > 0`, bought from the wallet, earned on or after `sweepStart`, with no settlement counts as "on its way" (kept, listed). Add a spec row.
+- **Everything else held** (full list in the history file, Verifier report round 1): every rule in `room-money-rows.ts` keeps or clears as written; 130 sandbox rows plus one real row is kept (no capped read anywhere); the room lock plus in-transaction recheck catches a pass or a credit spend committed during apply; wrong or missing phrase, unknown flag, DB down give exit 1, 1, 1, 2 with nothing written; a `kill -9` mid-apply leaves whole rooms only and a rerun finishes; the dry run writes nothing (row counts of all tables identical) and prints no email, phone or message text; member and host reads answer after a clear; sandbox proof is OPS-DEL-TEST's, untouched.
+- **Owner commands** (unchanged, once M1 is fixed): dry run `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a; node dist/scripts/ops/clear-communities.js`; apply: the same with `--apply --confirm "CLEAR <n> COMMUNITIES"` (the phrase the dry run printed). Run while the wallet provider is still on its test keys; on live keys every pass and wallet-bought credit is real money and those rooms are kept.
+- **Low findings (not blocking, for the area sweep or the builder's choice):** L1 a spend with no earning row is deleted with its room and cannot be traced to its lot (disclosed; the dry run counts them); L2 a sandbox store pass whose reference is `store:<id>:restored:<n>` is kept as unknown (safe, never clears); L3 a completed pass payment not yet delivered, or being refunded, is not a keep rule (the refund runs on the payment and needs no room; delivery to a gone room refunds); L4 the Purchases list still shows the pass payment for a cleared room; L5 spec gaps, see history.
+- **NOT RUN:** the full `npm run test:contract` (GitHub's PR run is the evidence); the two `sharp` type errors in `npx tsc --noEmit` are the shared checkout's missing `sharp` (same on the base); anything against a real or remote database or a live provider.
 
 ## Read first
 
