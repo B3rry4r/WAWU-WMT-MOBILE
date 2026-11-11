@@ -7,7 +7,7 @@ order: 386
 priority: after-launch
 repo: wawuafrica
 type: removal
-status: verifying
+status: review
 depends_on: []
 decisions: [R-48, R-126, R-127, R-133]
 passes: [V1, V2, V3, V4, V7, V9]
@@ -19,13 +19,9 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** built, verifying (T1). wawuafrica branch `wmt/WEB-STRIP` on `origin/main` bd72412; nothing merged or deployed.
-- **Built:** `/sign-in`, `/sign-up`, `/create/new`, `/create/library` are closed in join-only mode and the `upload-site` pages, `components/site-upload`, `lib/site-upload` and `lib/api/site-upload.ts` are deleted (with the `uploadOnly` props and the `client: "site"` upload option). `/forgot-password` moved out of the `(auth)` group and draws the `/join` frame in join-only mode; `/reset-password` unchanged except its sign-in links. New `/activate` (WAWU ID `POST /auth/activate`, form, success, expired). Old app paths get a 308 to usewmt.com (`src/lib/app-redirects.ts`, built from the mobile repo's `src/app/`); every Sign in link on a page that stays is `appUrl("/sign-in")`.
-- **Proof:** `npm run check:site-mode` (static 1154, with `--mobile-src` 1364, live join-only 2140, live full 1696; 0 failed), typecheck, lint, copy check and `npm run build` exit 0. Pictures at 390 px, dark and light, from a local production build in join-only mode (WAWU ID faked in the browser).
-- **For the verifier:** run the commands in the builder report; look at `/activate` (form, success, expired), `/forgot-password`, `/reset-password`; send a request for each row of the redirect map and for the never-redirect list; `SITE_MODE=full` still builds and serves.
-- **Decisions the builder made (the lead may override):** the redirect carries `Cache-Control: public, max-age=3600` (a permanent answer, but SITE_MODE can be flipped back); `/payment/return` and `/api/*` stay a 307 to /join (not app pages); `/settings/about` goes to usewmt.com `/about`; web pages with no usewmt.com page go to its home.
-- **Open, not mine:** the app-link files (`src/lib/app-links.ts`, AASA and assetlinks) still claim `/activate` and `/reset-password` for the phone app, so a phone with the app installed opens the app on those mails; the apps are parked (R-134) and the file is app-owned, so unchanged. `join-content.ts` step 3 still says the WAWU app arrives on the stores. Both need an owner word.
-- **NOT RUN:** a real activation or reset against WAWU ID (never called live); a deployed preview; ID-LINKS (WAWU ID) and APP-RESET are other tasks.
+- **Status:** review. Verifier round 1 (T1): verdict MERGE, no defect, three lows (below). wawuafrica branch `wmt/WEB-STRIP` at 040dad1b on `origin/main` bd72412; nothing merged or deployed.
+- **Open, not defects:** (1) the Android app's own intent filters still list `/activate` and `/reset-password` (phones are parked, R-134), so an Android phone with the app installed may open the app on those mails; unclear, owner word; (2) the join page still promises the app on the App Store and Google Play (`JoinLanding.tsx:143` and `:346`, `join-content.ts:55`, `page.tsx:20`); (3) `/payment/return` still answers 307 to /join (as on main).
+- **NOT RUN:** a real activation or reset against WAWU ID; a deployed preview (the verifier never calls a live service).
 
 ## Read first
 
