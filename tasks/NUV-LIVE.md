@@ -7,7 +7,7 @@ order: 392
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-138, R-39, R-42, R-11, R-19]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -19,9 +19,44 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** todo. Cut by the lead from R-138. No branch yet.
-- **Why:** every Nuvion wallet on the live Hub was opened on Nuvion's test system (`api.nuvion.dev`). The Hub keeps no environment on its Nuvion rows, so on live keys a person with a test entity would still be treated as having a wallet: balance reads would hit live Nuvion with test ids (`not_found`), opening would refuse ("This BVN or phone number already has a wallet on another account", `wallet-opening.service.ts`), and any earning, refund or hold that came from test money could be paid from WAWU's live operational account.
-- **Next:** a builder, then a T2 verifier with the money attacks.
+- **Status:** built, verifying. Hub `wmt/NUV-LIVE` `c7c1862a` (on main `158be141`). No schema change, no fenced file, no contract change (`contract:build` leaves `contract/` as it is).
+- **Files (Hub):** `scripts/ops/nuvion-live-reset.ts` (the command), `scripts/ops/nuvion-live-reset-kinds.ts` (every kind and its reason, the SQL steps), three specs under `src/money/tests/ops-nuvion-live-reset*.contract.spec.ts` (behaviour, live keys, schema walk).
+- **Owner commands** (on the server, still on the test keys; after the two account deletes and the community clear, before the keys change):
+  `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a`
+  dry run: `node dist/scripts/ops/nuvion-live-reset.js`
+  apply: `node dist/scripts/ops/nuvion-live-reset.js --apply --confirm "RETIRE <n> NUVION TEST WALLETS"` (the dry run prints the exact phrase; n is the people to retire).
+- **It prints** the proof line (sandbox host proven, address and key not printed), the people found, to retire and kept, rows per kind (deleted, closed, relabelled, cleared), per person an id and counts (no name, email, phone, BVN or account number), each kept person with the real-money rows that keep them, the phrase, and after apply one line per person plus an audit line. Exit 0 done or nothing to do, 1 refused (live keys, no proof, wrong phrase), 2 failed (safe to run again). On live keys it refuses before it connects.
+- **A retired row says `nuvion_test`** in its `provider` column. No server runs that provider, so no read or sweep picks it. Rows in motion are also made final (some paths, like the payment sweep, read by status and not by provider), and their timers, review marks and fee-owed flags are cleared. The command has no provider code: it reads and writes the database only (a spec checks its source).
+- **Per kind (reasons in `nuvion-live-reset-kinds.ts`):**
+
+| Kind | Action | Why every read still works |
+|---|---|---|
+| FintavaWallet, FintavaWalletOpening (provider nuvion) | deleted | the screen answers "no wallet yet"; the unique BVN hash and phone are free, so the same BVN and phone open again |
+| NuvionEntity, NuvionOnboarding, NuvionDocument | deleted | live Nuvion does not know them; the identity check starts again |
+| WalletIdentity, SelfieMatchAttempt, BvnCheckAttempt | deleted | R-138: the identity check is done again on live |
+| FintavaLedgerEntry (person's own), its references and notices, MoneyReceipt | deleted | history is read by the current account number, so a live wallet never shows them; the daily limits add a person's rows with no account filter, so they must go |
+| FintavaLedgerEntry (WAWU's own account, no person) | relabelled, timers cleared | the live check compares only its provider |
+| EarningSettlement, EarningMove | deleted (owed and landed) | every settlement is wallet money of the test system; the move table forbids a provider change; a landed test move would also block a live move the same Lagos day |
+| EarningDeduction | relabelled | a test debt is never taken from live earnings |
+| WalletPayment | pending to failed; completed and undelivered to delivered-as-test; relabelled | open key freed (the item can be bought again); what was bought stays the buyer's |
+| WalletHold | held to refunded-as-test (release already chosen: released, no transfer); relabelled | the table forbids changing a chosen action; no release, refund, host share or event payout can pay it |
+| WalletTransfer, AddMoneySession, WalletCard, FxOperation | in motion to final, fee flags stamped; relabelled | final rows are never selected |
+| CapitalOrder | not final to cancelled, fee owed to none, Nuvion ids emptied; relabelled | no fee is taken for a test order |
+| FxQuote, FxAccount, FxMovement | quote expired and used; others relabelled | reads are by provider |
+| AbroadSend, AbroadQuote, AbroadRecipient | in motion cancelled, fee give-back and settle stamped done; quote used; recipient removed | no provider column, picked by person |
+| CommunityPassRefund | pending to refunded-as-test, notified stamped; relabelled | no false message, no payment |
+| SchoolSettlement | pending, sent, review to paid or refunded as test; relabelled | its enrolment stays |
+| StoreEarning, StoreEarningPayout | only of a store SANDBOX purchase: cancelled; relabelled | an earning of a real store purchase is never touched (its person is kept) |
+| PointConversion | held to cancelled and the points hold released in the same transaction | the table forbids a provider change; points stay as counts |
+| MoneyBeneficiary, MoneyPayoutAccount | six Nuvion cache columns emptied, row stays | the name check runs again before the first live send |
+| NuvionBookTransfer | deleted when an end is a retired entity (or unowned) | test log |
+| MoneyCheckRun | relabelled | tonight's live run is not suppressed by a test row |
+| NuvionReconcileFinding, NuvionWebhookEvent | open findings resolved; pending or failed events marked processed with a note | the dispatcher takes only `pending`; history stays |
+| WalletPaymentFx, BillPayment, HealthSubscription, EventOrder, AccountDeletion, vendor ids | follow or untouched | named with a reason in the kinds file |
+
+- **Kept, never touched, listed:** a person with a Flutterwave, store (not sandbox), credits-with-money or other-provider row (`real-money-rows.ts`, the OPS-DEL-TEST rows), and anyone with a payment, hold, transfer or refund in motion with a kept person. No flag overrides it. The command ends with a warning while any kept person remains.
+- **Owner decisions:** (a) A KEPT person still carries a test wallet, and the command never touches them. On live keys their test ids would be read and their test earnings could be swept, so settle each kept person by hand (delete-test-account, or the owner's call) before the keys change. Anyone holding a credit balance above zero counts as real money (unclear is live), so they are kept: read the kept count in the dry run before choosing the day. (b) Store SANDBOX earnings are test money of another kind; the command cancels them for the people it retires.
+- **Not run:** the reconcile sweep and a replayed test webhook (by construction only), the whole contract suite (CI), the real command on the real database. History: `tasks/history/NUV-LIVE.md` has the builder report with exit codes.
 
 ## Read first
 
@@ -53,8 +88,8 @@ The owner runs one command on the server while it is still on Nuvion's test keys
 - [ ] A person with a real-money row is kept and listed; nothing real is touched.
 - [ ] The command refuses on live keys and calls no provider.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/NUV-LIVE.md](history/NUV-LIVE.md).
 
 ## Owner sign-off

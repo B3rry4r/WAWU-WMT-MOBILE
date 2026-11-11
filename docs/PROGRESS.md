@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 37 | 0 | 0 | 0 |
+| todo | 36 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 54 | 0 | 0 | 0 |
+| verifying | 55 | 0 | 0 | 0 |
 | review | 270 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -342,6 +342,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
+- [NUV-LIVE](../tasks/NUV-LIVE.md) A one-off command that retires every test-system Nuvion wallet record before the Hub moves to Nuvion live (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -547,6 +548,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Nov 2026 · NUV-LIVE · a one-off Hub command that retires every Nuvion test-system wallet record before the keys move to live (R-138): dry run, typed phrase, one transaction per person, no provider call, real-money people kept and listed; written, not run against anything real (Hub `wmt/NUV-LIVE` `c7c1862a`); built, verifying
 - 11 Nov 2026 · Records · merged and live: ID-LINKS (wawu-id #28), WEB-STRIP (wawuafrica #47), STUDIO-ON (Hub #264), OPS-DEL-TEST (Hub #263), OPS-CLEAR-ROOMS (Hub #265), APP-RESET (mobile #29), LEGAL-ELEVEN (Hub #266, on the server 14:06 UTC); their lows cut as SWEEP-1111; usewmt.com builds only main (docs/WEB-DEPLOY.md)
 - 11 Nov 2026 · APP-RESET · Forgot password can send a code to the phone (method sms) then code boxes and New password; /activate sets a first password from the mailed link; reset link and Settings change password proved on the web export (R-133; usewmt.com only, R-134; mobile `wmt/APP-RESET`)
 - 11 Nov 2026 · WEB-STRIP · wawuafrica.com keeps the company pages, /join, the legal pages and the password pages; sign in, sign up and R-126's upload pages close; /activate is new (WAWU ID `POST /auth/activate`); old app paths get a 308 to the same place on usewmt.com, built from this repo's routes; every Sign in link on a page that stays goes to usewmt.com (R-133; wawuafrica `wmt/WEB-STRIP`, built, verifying)
@@ -561,4 +563,3 @@ From `docs/LOG.md`, newest first.
 - 10 Nov 2026 · STUDIO-1110 · the Studio line of 30 Oct (POINTS-12 to 18, STUDIO-HOME: twelve new tools, the studio home) merged with today's line `7a6f585`, contract from Hub `8285e1b`; a Studio picture made a piece now gets its paid preview copy (R-118); smoke on the web export with the provider stand-in: 19 tools listed, four kinds run with points held then kept (built, verifying)
 - 30 Oct 2026 · STUDIO-HOME patch round 1 (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `d831d6fa`, HELD; app only, no native change, fingerprints android `c2474bd9` and ios `240378f1` unchanged): the verifier's findings. The More pop-over is capped to the room between its tile and the screen's safe edge with its rows scrolling inside it (it rises above the tile, or drops below when its rows fit better there); with a file in the box only Edit a photo and Music for a video (when the Hub lists its mood line) show the words box, every other file chip hides it (R-47: no dead control) and sends no words; a More row's description may take two lines. 24 new tests (7 pure, 17 on the real router including Android at 390x667 and the full 12-row list); no assertion changed. Pictures before / ElevenLabs / after / PT1, dark and light, in tasks/STUDIO-HOME.md.
 - 30 Oct 2026 · STUDIO-HOME · Built (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `origin/wmt/S2-APP-2` `43abe9a1`; app only, HELD: not merged into the phones' line or main, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): R-113 (lead, from the owner's ElevenLabs screenshot) the Studio tab is a studio home: the points card, "What would you like to make?", one prompt box with chips for the prompt tools the Hub lists, "+" to attach a photo, clip or recording (the chips become the tools that take it), a voice chip for Speech, "Make" opens the tool with the words and file already in at its quote (nothing charged on the home), a four-to-a-line grid (Speech, Music, Image, Video, Dubbing, Talking photo, Voice changer, More) with a More pop-over menu, and Recent (the last 10 results). Only what the Hub lists is drawn (R-47). 15 new tests including Android back, keyboard and picker; assertions changed and named in tasks/STUDIO-HOME.md (the caption line, and rows that moved into More). Pictures before / ElevenLabs / after / PT1, dark and light, in the task file.
-- 30 Oct 2026 · S2-APP-2 · Built (Sonnet builder, T1; mobile `wmt/S2-APP-2` on `origin/wmt/S2-APP-1` `91be8d5c`, contract from backend `origin/wmt/S2-HUB-3` `483a27d`; app only, HELD: not merged, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): Studio part 2 (R-109). POINTS-16: Voice changer (pick or record a clip, voice rows), Dialogue (line cards with a voice each), Clone your own voice (the Hub's consent line, a recording, a name, Remove) and "Your voice" in every voice list. POINTS-17: Music for a video (video checked before upload, a Cancel on a big upload, music kept separate from the video) and Split a song (each part its own play and "Make it a piece"). POINTS-18: Audiobook (text or a .txt file, a seekable player) and Podcast maker (text or https link, one host or two, three lengths). POINTS-12: Receptionist (set-up, what it knows from text, a link or a document, chat by text); nothing about WhatsApp, a phone or a call. No assertion of the 7 launch tools changed. Pictures in `scratchpad/s2app2-b/pics/beside/`; the gallery is `__DEV__` only and absent from the release export.
