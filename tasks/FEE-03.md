@@ -19,7 +19,7 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** verifying. Built 11 Nov 2026 on Hub `wmt/FEE-01` `176859ec`; see the Builder report. Cut by the lead from R-139 points 3, 5 and 11.
+- **Status:** FIX after verifier round 1 (11 Nov 2026): see tasks/history/FEE-03.md, Verifier report, round 1 (F1 deploy order, F2 abroad button, F8 missing pictures are the blockers to clear). Built 11 Nov 2026 on Hub `wmt/FEE-01` `176859ec`; see the Builder report. Cut by the lead from R-139 points 3, 5 and 11.
 - **What exists:** the confirm screens already show fees before the PIN: `features/send/ReviewScreen.tsx`, `features/withdraw/WithdrawScreen.tsx`, `features/abroad/views.tsx` (`AbroadReviewView`), `features/wallet/fx/swap/SwapReview.tsx`, `components/pay-sheet/PaySheet.tsx` (and TipSheets, AskSheets, RequestPaySheet, legal PaySheets), `features/addmoney/model.ts`. They draw today's provider plus WAWU lines.
 
 ## Read first
@@ -58,5 +58,7 @@ Round 0 (11 Nov 2026) is in [tasks/history/FEE-03.md](history/FEE-03.md). **Roun
 - **NOT RUN:** a picture of the Tip sheet and of the Ticket sheet on their own (their screens need a profile and an event from the Hub; both flows pass in jest with the new fields, and the pay sheet pictures show the same Fee, VAT, Total rows; Tip's breakdown draws them in its own list); the swap review (swap is off); a real Android phone; the live Hub. Still saying "Bank charge" or "WAWU fee", outside the confirm screens: transaction detail for past rows, crypto send, Capital, dev Showcase.
 
 ## Verifier report
+
+Round 1 (verifier, 11 Nov 2026): FIX. The full report is in [tasks/history/FEE-03.md](history/FEE-03.md), "Verifier report, round 1". `npm run check` exit 0 on `6a62f0f1`.
 
 ## Owner sign-off
