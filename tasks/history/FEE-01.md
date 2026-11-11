@@ -71,3 +71,49 @@ Checks (Hub head `5e1629a7`)
 - Gates 0 (0 fail, 139 warn, 88 accepted); `check_baseline.py` 0; `npm run contract:build` 0, additive only (16 lines added: `vatMinor` on the send view, three optional fields on the statement line).
 - Protected suite `ci-check.sh 148e76a9 HEAD 0`, fresh `feeusd_protected` database: 0, 253 of 253.
 - NOT RUN: a real Nuvion call of any kind; a real dollar wire or local inflow (so the payment type of either is unknown); the full HTTP send of a dollar payout through the contract world (the quote is covered through `AbroadService`, the record and settlement as units); the `-fee` book transfer against a real Nuvion; a real WAWU ID mail for the rate-difference alert; the rest of the full jest suite.
+
+## Round 3 (builder, naira side, after the dollar-side merge)
+
+Hub `wmt/FEE-01` merged with `wmt/FEE-01-usd` (5e1629a7), no conflicts; `contract:build` left the contract unchanged by the merge; the fee engine spec, `dollar-fees.spec.ts`, `abroad-usd-fee.spec.ts` and the add-money contract spec pass (71 tests).
+
+### Root causes of the red suites (none was a real behaviour fault; each a setup or a figure that follows R-139)
+
+1. **Env-pinned Nuvion fees, no rows (setup).** Suites that boot their own app and set `NUVION_FEE_*` got no schedule rows. Fixed in the shared harnesses with `seedFlatFees` (rows removed on close): `test/events/event-wallet-harness.ts`, `test/schools/school-enrolment-harness.ts`, `test/schools/school-nuvion-harness.ts` (book 1500, bank 2500; a spec that passes `NUVION_FEE_BANK_PAYOUT: '0:2000'` gets 2000), `test/points/cash-out-harness.ts` (flat 1500 for the two Nuvion cash-out rigs; a boot that blanks `NUVION_FEE_BANK_PAYOUT` stands for an empty schedule, so "fees not set" there means "no schedule row in force", assertions unchanged), `test/payments/pay-fx-harness.ts`, and per spec in `community-pass-nuvion`.
+2. **The stand-in's charge read from the quote (setup).** `nuvion.feeKobo = () => BigInt(q.fee.providerFeeKobo)` made the stand-in charge 0 once the quote showed 0 for Nuvion's part (R-139 lead ruling 1). Now `q.fee.totalFeeKobo` (the same number, F = P in these specs): `test/schools/school-nuvion-harness.ts`, `src/money/earnings/tests/earning-settlement-nuvion.contract.spec.ts`, `src/money/payments/tests/payment-fx.contract.spec.ts`.
+3. **The stepped fee (figure).** The shared Nuvion rig stepped its charge (2325 below NGN 5,000, 1575 from it); the schedule has no steps, so the rig is flat 2325. The tier harness's `liveFee` follows the rig, and stays stepped when the spec runs on the Fintava double. The Fintava double's own scripting uses a new always-stepped `fintavaDashboardFee` (this fixed the 8 BILLS-04 tests and the bills round-2 test: bills ride Fintava and their path is untouched; the first cut had flattened `liveFee` for them too).
+4. **Swaps off (R-139 point 3) switches PAY-FX off.** `payment-fx.service.ts` refuses a payment from another currency with `currency_not_supported` while `fx.product.swap.on` is 0, and the migration sets it to 0 in every database it runs on. The two PAY-FX specs now turn the switch on in their harness and put it back on close. Product question for the lead: paying a naira price from dollars shares the swap switch, so it is off at launch too.
+
+### Changed assertions, round 3 (none weakened)
+
+| File | Test | Old | New | R-139 |
+|---|---|---|---|---|
+| `src/event-ticketing/tests/event-wallet-order.contract.spec.ts` | EVENTS-07 E3 quote and the mixed-tier basket | `const FEE = 1_575`; `fee: { providerFeeKobo: FEE, wawuFeeKobo: 0 }`; `totalKobo: 1_001_575` | `FEE = 2_325`; `{ providerFeeKobo: 0, wawuFeeKobo: FEE }`; `totalKobo: 1_002_325` | 1 and 5, ruling 1; stepped fee flattened |
+| `src/event-ticketing/tests/event-wallet-order-round2.contract.spec.ts`, `event-order-cap.contract.spec.ts` | all figures built from `FEE` | `const FEE = 1_575` | `const FEE = 2_325` | stepped fee flattened |
+| `src/event-ticketing/tests/event-call-off-refund.contract.spec.ts` | none (Fintava-bound; `FEE` stays 1_575) | | | |
+| `src/schools/enrolment/tests/school-enrolment.contract.spec.ts` | SC5 to SC7 quote | `const FEE = 1_575`; `fee: { providerFeeKobo: FEE, wawuFeeKobo: 0, totalFeeKobo: FEE }` | `FEE = 2_325`; `{ providerFeeKobo: 0, wawuFeeKobo: FEE, totalFeeKobo: FEE }` | 1, flattened |
+| `src/direct-message/wallet/tests/paid-dm-wallet.contract.spec.ts` | I3 to I5 paid question quote | `fee: { providerFeeKobo: FEE, wawuFeeKobo: 0 }` | `{ providerFeeKobo: 0, wawuFeeKobo: FEE }` | 1 |
+| `src/community/pass/tests/community-pass-nuvion.contract.spec.ts` | member pays N2,000 | `fee: { providerFeeKobo: NUVION_FEE, wawuFeeKobo: 0 }` | `{ providerFeeKobo: 0, wawuFeeKobo: NUVION_FEE }` | 1 |
+| `src/legal/wallet/tests/legal-fee-wallet.contract.spec.ts`, `src/plans/purchases/tests/plan-purchase-nuvion.contract.spec.ts`, `src/credit-purchase/wallet/tests/credit-wallet-nuvion.contract.spec.ts` | payment quote | `{ providerFeeKobo: FEE, wawuFeeKobo: 0 }` | `{ providerFeeKobo: 0, wawuFeeKobo: FEE }` | 1 |
+| `src/money/payments/tests/payment-fx.contract.spec.ts` (line 446) | stand-in charge | `BigInt(nview.fee.providerFeeKobo)` | `BigInt(nview.fee.totalFeeKobo)` | 1 |
+| `src/money/earnings/tests/earning-settlement-nuvion.contract.spec.ts` (194) | stand-in charge | `BigInt(q.fee.providerFeeKobo)` | `BigInt(q.fee.totalFeeKobo)` | 1 |
+
+Gap found, not changed: history and receipt views are built from ledger rows, which still carry Nuvion's charge as `providerFeeKobo` (`src/money/receipts/receipt-document.ts` prints it). That is an app answer showing Nuvion's charge per transaction. Folding it for the app needs a change in the ledger view, a fenced-adjacent area; for the lead.
+
+## How the suites red on main were proved red on main
+
+Worktree of `origin/main` 148e76a9 (detached), its own database migrated with main's migrations only, its own mock WAWU ID, the same runner:
+
+`npx jest --runInBand --forceExit src/event-ticketing/tests/event-door-idempotency src/event-ticketing/tests/event-edit-races src/event-ticketing/tests/event-price-edit-followups src/event-ticketing/tests/event-purchase-races src/event-ticketing/tests/event-tickets-review src/event-ticketing/tests/event-tickets-wallet-orders src/admin/events src/admin/notifications src/community-message src/community/tests/community.contract src/plans/tier-badge`
+
+Output line: `Test Suites: 11 failed, 14 passed, 25 total` / `Tests: 79 failed, 294 passed, 373 total`, with `FAIL` on each of those eleven files: `admin-events`, `admin-notifications`, `community-message`, `community.contract`, `tier-badge-views` and the six `event-*` suites above (the event suites fail on `prisma.userProfile.update` with "No record was found for an update", before any fee). They are red on main in this environment (a local mock WAWU ID and an empty database); CI's environment may differ, which is why the PR is the check.
+
+## Round 3b (CI findings on PR #268 and the verifier's Hub items)
+
+- **Account data map** (`src/account-purge/account-data-map.ts`): `MoneyFeeRecord.wawuFeeMinor` is listed in `NOT_A_USER_REFERENCE` with its reason. A fee record has no person column (it is keyed by the transaction's reference) and is kept as finance's record of the transaction, like the ledger rows it describes. No assertion changed.
+- **Real-money walk** (`scripts/ops/real-money-rows.ts`): `MoneyFeeRecord` (no person column, history of a transaction), `FeeSchedule` and `ProviderRate` (configuration, not a person's money) are in `NOT_MONEY_TABLES` with reasons. A `REAL_MONEY_TABLES` entry needs a person column, which a fee record does not have; `nuvion-live-reset` deletes fee records and leaves the rate table (`scripts/ops/nuvion-live-reset-kinds.ts`). No walk assertion changed.
+- **tip-wallet, unlock-wallet**: `fee: { providerFeeKobo: FEE, wawuFeeKobo: 0 }` became `{ providerFeeKobo: 0, wawuFeeKobo: FEE }` (ruling 1); the harness seeds F = P = the stand-in's charge, so every "plus the charge once" figure, the 85/15 split and the once-only assertions are unchanged.
+- **Abroad (verifier F4)**: under the fee engine a partner fee still configured for a corridor is folded into `feeMinor` and into WAWU's fee fields, `providerFeeMinor` is 0 on the quote and on the send view (the total is unchanged: `totalMinor` = amount + `feeMinor` + `vatMinor`). Fintava-side and non-engine answers unchanged.
+- **Pay from a dollar account (F3)**: the quote carries `currency`, `feeMinor`, `vatMinor`, `vatOn`, `totalMinor`, `receiveMinor` (in the source currency) with `source.providerFeeMinor` 0 and the provider's charge folded into `source.wawuFeeMinor`; the paid-from view on the payment is folded the same way. New test in `payment-fx.contract.spec.ts` (no existing assertion changed; the existing quote test has zero provider and WAWU fees so it still holds).
+- **Receipts (F9)**: under the engine the history item (and so the receipt) shows one fee, equal to the quote: provider part folded into WAWU's line; `receiptLines` omits the provider line when it is 0 and WAWU's is above 0. New test in `wallet-transfer-bank-nuvion.contract.spec.ts`: quote, send, transfer view and history item show the same fee and total.
+- **Also found red on main** (proved the same way as above, `Test Suites: 4 failed, 15 passed, 19 total`, 59 failed tests): `account-deletion`, `account-deletion-reason-route`, `purchase.contract`, `direct-message.contract` (all four), in addition to the eleven already listed.
+- Local results: `src/money` 132 of 132 suites; the rest of the Nuvion-touching directories pass except the suites listed as red on main.
