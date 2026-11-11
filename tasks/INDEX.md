@@ -523,6 +523,11 @@ Builder and verifier are always different sessions.
 84. [OPS-CLEAR-ROOMS](OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word
 85. [LEGAL-ELEVEN](LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change
 86. [SWEEP-1111](SWEEP-1111.md) Sweep of 11 Nov: the low findings of the day's Hub, WAWU ID and web tasks
+87. [NUV-LIVE](NUV-LIVE.md) A one-off command that retires every test-system Nuvion wallet record before the Hub moves to Nuvion live
+88. [NUV-FEES](NUV-FEES.md) Nuvion's live fees charged exactly (percentages with a minimum and maximum, the card's dollar fee at the day's rate) and WAWU's own card fee on top
+89. [FEE-01](FEE-01.md) The fee engine: WAWU's fee schedule with history, Nuvion's rates in a locked table, VAT, a full record per transaction, and the withdrawal safety checks
+90. [FEE-02](FEE-02.md) Dashboard: fee settings with history, and Nuvion's rates in a locked area
+91. [FEE-03](FEE-03.md) App: every withdrawal and payment shows the fee and what is received under the new schedule; switched-off products hidden; adding money by account number only
 
 ## Developer
 
