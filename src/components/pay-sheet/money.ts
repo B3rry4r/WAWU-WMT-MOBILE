@@ -12,6 +12,8 @@ export type PayFeeLine = {
   label: string;
   /** Integer kobo. Zero is valid and is shown as ₦0. */
   amountKobo: number;
+  /** VAT on the fee: with it, no separate "Fees" sum row is drawn (Fee, VAT and Total read on their own). */
+  vat?: boolean;
 };
 
 export function assertKobo(kobo: number, what: string): void {

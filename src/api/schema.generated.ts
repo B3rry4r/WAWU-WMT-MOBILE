@@ -9041,7 +9041,7 @@ export interface paths {
          *     job's `audioUrl` is the podcast (`pieceFormat: audio`). A link that is not `https`, one over the limit, two voices that
          *     are the same and a language off the list are refused with the reason and nothing held. If the provider does not take
          *     our account (its Studio API is open to allowlisted accounts only) the job fails with "This isn't available right now.
-         *     No points were taken." The tool is listed only while `ai.listed.podcast` and `ai.podcast_studio_api_ok` are both on.
+         *     No points were taken." The tool is listed unless `ai.listed.podcast` is turned off or the Hub's Studio API proof is refused (`ai.podcast_studio_api_ok` -1 uses the proof, 1 forces on, 0 forces off).
          */
         post: operations["AiToolsController_createPodcast"];
         delete?: never;
@@ -10938,7 +10938,7 @@ export interface components {
         };
         MoneyErrorReason: {
             /** @enum {string} */
-            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "points_not_cashable" | "tier_required" | "pack_not_allowed" | "price_not_on_list" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
+            code: "wallet_not_open" | "wallet_opening" | "wallet_frozen" | "provider_unreachable" | "idempotency_key_required" | "idempotency_key_reused" | "idempotency_in_progress" | "pin_required" | "pin_not_set" | "pin_already_set" | "pin_incorrect" | "pin_locked" | "pin_mismatch" | "pin_changed_again" | "reset_code_invalid" | "insufficient_funds" | "daily_limit_exceeded" | "amount_out_of_range" | "quote_changed" | "name_check_failed" | "account_name_changed" | "account_not_in_your_name" | "name_check_rate_limited" | "recipient_not_found" | "recipient_has_no_wallet" | "recipient_blocked" | "self_transfer" | "beneficiary_limit_reached" | "bank_transfers_blocked" | "target_not_found" | "target_not_payable" | "not_found" | "bvn_not_confirmed" | "bvn_phone_mismatch" | "phone_not_nigerian" | "identity_checks_exhausted" | "bvn_not_checked" | "wallet_already_open" | "selfie_not_matched" | "selfie_checks_exhausted" | "selfie_already_matched" | "selfie_required" | "identity_has_wallet" | "account_not_opened" | "phone_held_by_other_identity" | "reset_codes_exhausted" | "device_approval_refused" | "payment_in_progress" | "statement_too_large" | "statement_rate_limited" | "statement_busy" | "email_not_verified" | "statement_email_failed" | "recipient_search_rate_limited" | "fees_not_set" | "limit_reached" | "below_minimum_withdrawal" | "fee_exceeds_amount" | "product_off" | "identity_under_review" | "step_not_used" | "open_address_limited" | "below_minimum" | "insufficient_points" | "currency_not_supported" | "event_order_limit" | "question_already_waiting" | "points_cap_reached" | "points_not_short" | "points_not_cashable" | "tier_required" | "pack_not_allowed" | "price_not_on_list" | "add_money_unavailable" | "fx_switched_off" | "quote_expired" | "account_frozen" | "address_invalid" | "chain_mismatch" | "provider_declined" | "fx_account_not_open" | "corridor_not_supported" | "recipient_details_invalid" | "rate_unavailable" | "send_not_cancellable" | "world_switched_off" | "world_limit_reached" | "country_not_supported" | "residence_not_set" | "residence_mismatch" | "passport_country_required" | "capital_unavailable" | "reservation_expired" | "withdrawal_not_available" | "cards_unavailable" | "card_limit_reached" | "card_blocked" | "card_reveal_rate_limited";
             /** @description insufficient_funds: the wallet provider's available balance when the movement was refused. */
             balanceKobo?: number;
             /** @description insufficient_funds, daily_limit_exceeded: the total the request needed (amount plus fees). */
@@ -11543,6 +11543,82 @@ export interface components {
             };
             streams: components["schemas"]["AdminMoneyStreamView"][];
             note: string;
+        };
+        FeeRowDto: {
+            id: string;
+            kind: string;
+            currency: string;
+            percent: string;
+            minMinor: number;
+            maxMinor: number | null;
+            passThrough: boolean;
+            startsAt: string;
+            changedBy: string;
+            note: string | null;
+            createdAt: string;
+        };
+        FeeKindViewDto: {
+            kind: string;
+            currency: string;
+            on: boolean;
+            current: components["schemas"]["FeeRowDto"] | null;
+            history: components["schemas"]["FeeRowDto"][];
+        };
+        FeeKindsDto: {
+            kinds: components["schemas"]["FeeKindViewDto"][];
+        };
+        AddFeeDto: {
+            /** @enum {string} */
+            kind: "ngn_bank_withdrawal" | "usd_bank_payout" | "intl_wire_in" | "usd_local_in" | "fx_swap" | "wallet_to_wallet" | "ngn_add_money";
+            /** @enum {string} */
+            currency: "NGN" | "USD";
+            /** @description A decimal string such as "0.4", up to four decimals, at most 100. Left out for a pass-through kind. */
+            percent?: string;
+            minMinor?: number;
+            maxMinor?: number | null;
+            /** @description true for ngn_add_money (the provider's charge is passed on). */
+            passThrough?: boolean;
+            /** @description ISO 8601. The fee applies from this time. */
+            startsAt: string;
+            note?: string;
+        };
+        FeePreviewDto: {
+            feeMinor: number;
+            vatMinor: number;
+            totalMinor: number;
+            receiveMinor: number;
+            currency: string;
+        };
+        ProviderRateRowDto: {
+            id: string;
+            provider: string;
+            kind: string;
+            currency: string;
+            percent: string;
+            minMinor: number;
+            maxMinor: number | null;
+            fixedMinor: number;
+            startsAt: string;
+            changedBy: string;
+            note: string | null;
+            createdAt: string;
+        };
+        ProviderRatesDto: {
+            rates: components["schemas"]["ProviderRateRowDto"][];
+        };
+        AddProviderRateDto: {
+            /** @example nuvion */
+            provider: string;
+            /** @enum {string} */
+            kind: "ngn_bank_withdrawal" | "usd_bank_payout" | "intl_wire_in" | "usd_local_in" | "fx_swap" | "wallet_to_wallet" | "ngn_add_money" | "card_issuance" | "card_maintenance" | "card_decline";
+            currency: string;
+            percent: string;
+            minMinor: number;
+            maxMinor: number | null;
+            fixedMinor: number;
+            /** @description ISO 8601. */
+            startsAt: string;
+            note?: string | null;
         };
         OpenFxAccountDto: {
             /** @enum {string} */
@@ -13467,7 +13543,7 @@ export interface components {
         };
         FeeQuotePartView: {
             /** @enum {string} */
-            code: "bank_transfer" | "balance_transfer" | "bill_charge" | "wawu_fee";
+            code: "bank_transfer" | "balance_transfer" | "bill_charge" | "wawu_fee" | "vat";
             /** @enum {string} */
             source: "wawu" | "provider";
             amountKobo: number;
@@ -13486,6 +13562,12 @@ export interface components {
             quoteToken: string;
             expiresAt: string;
             arrivalMinutes?: number | null;
+            currency?: string | null;
+            feeMinor?: number | null;
+            vatMinor?: number | null;
+            vatOn?: boolean | null;
+            totalMinor?: number | null;
+            receiveMinor?: number | null;
         };
         CheckedBvnView: {
             last4: string;
@@ -13809,6 +13891,12 @@ export interface components {
             remainingTodayKobo: number | null;
             quoteToken: string;
             expiresAt: string;
+            currency?: string | null;
+            feeMinor?: number | null;
+            vatMinor?: number | null;
+            vatOn?: boolean | null;
+            totalMinor?: number | null;
+            receiveMinor?: number | null;
             source?: components["schemas"]["PaymentSourceView"] | null;
         };
         PaymentPaidFromView: {
@@ -14040,6 +14128,11 @@ export interface components {
             wawuFeeKobo: number;
             feeKobo: number;
             chargeKobo: number;
+            feeMinor: number;
+            vatMinor: number;
+            vatOn: boolean;
+            totalMinor: number;
+            receiveMinor: number;
         };
         AddMoneyView: {
             id: string;
@@ -14207,6 +14300,12 @@ export interface components {
             speed: string;
             expiresAt: string;
             validForSeconds: number;
+            currency: string;
+            feeMinor: number;
+            vatMinor: number;
+            vatOn: boolean;
+            totalMinor: number;
+            receiveMinor: number;
         };
         AbroadSendView: {
             id: string;
@@ -14223,6 +14322,10 @@ export interface components {
             providerFeeMinor: number | null;
             wawuFeeKobo: number;
             wawuFeeMinor: number;
+            vatMinor?: number | null;
+            currency?: string | null;
+            feeMinor?: number | null;
+            totalMinor?: number | null;
             narration: string | null;
             failureReason: string | null;
             speed: string;
@@ -14361,6 +14464,7 @@ export interface components {
         FxCurrenciesView: {
             currencies: components["schemas"]["FxCurrencyView"][];
             products: components["schemas"]["FxProductsView"];
+            localUsdIn: boolean;
             naira: {
                 /** @enum {string} */
                 code: "NGN";
@@ -14415,6 +14519,9 @@ export interface components {
             reference: string;
             occurredAt: string;
             conversion: components["schemas"]["FxConversionView"] | null;
+            wawuFeeMinor?: number | null;
+            vatMinor?: number | null;
+            receiveMinor?: number | null;
         };
         FxTransactionPage: {
             items: components["schemas"]["FxTransactionView"][];
@@ -14438,6 +14545,12 @@ export interface components {
             totalFromMinor: number;
             expiresAt: string;
             validForSeconds: number;
+            currency: string;
+            feeMinor: number;
+            vatMinor: number;
+            vatOn: boolean;
+            totalMinor: number;
+            receiveMinor: number;
         };
         FxSwapView: {
             id: string;
@@ -14628,6 +14741,15 @@ export interface components {
         CardTransactionPage: {
             items: components["schemas"]["CardTransactionView"][];
             nextCursor: string | null;
+        };
+        AccountDeletionResponse: {
+            deletionScheduledAt: string;
+        };
+        PushTokenRegistered: {
+            registered: boolean;
+        };
+        PushTokenRemoved: {
+            removed: boolean;
         };
         PointNextExpiryView: {
             points: number;
@@ -17217,15 +17339,6 @@ export interface components {
             ctaDestinationId?: string | null;
             ctaUrl?: string | null;
             artworkUrl: string;
-        };
-        AccountDeletionResponse: {
-            deletionScheduledAt: string;
-        };
-        PushTokenRegistered: {
-            registered: boolean;
-        };
-        PushTokenRemoved: {
-            removed: boolean;
         };
         CommentAuthor: {
             wawuId: string;

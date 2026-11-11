@@ -25,6 +25,7 @@ import { fetchFeeQuote, sendToBankAccount, sendToWawuUser, transferQuery, type C
 import { dropIntent, findIntent, putIntent, rereadIntent, type SendIntent } from './intent';
 import {
   BANK_CHARGE,
+  refusalOf,
   earlierSendLine,
   failureLine,
   feeLinesOf,
@@ -40,6 +41,7 @@ import {
   WALLET_NAME,
   type Payee,
 } from './model';
+import { receiveOf, totalOf } from '@/features/send/quotedFee';
 
 /** How often a send the provider has not confirmed is read again (`GET /money/transfers/{id}`, our record). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -360,7 +362,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
 
   const submitPin = async (pin: string) => asPinResult(await run({ pin }));
   const approvalKind = useApprovalKind();
-  const prompt = quote ? approvalLine({ totalKobo: quote.totalKobo, payee: payee.name }) : 'Approve this payment';
+  const prompt = quote ? approvalLine({ totalKobo: totalOf(quote), payee: payee.name }) : 'Approve this payment';
   const approveWithBiometric = async (_kind: BiometricKind) => asBiometricResult(await run({ approve: (signed) => approveRequest(signed, prompt) }));
 
   const confirming = request?.phase === 'pending';
@@ -387,9 +389,9 @@ export function ReviewScreen(props: ReviewScreenProps) {
             <ErrorState
               testID="send-review-error"
               icon={isApiError(quoted.error) && quoted.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
-              title="We couldn't work out the fees"
+              title={refusalOf(quoted.error) !== null ? "This can't be sent" : "We couldn't work out the fees"}
               message={isApiError(quoted.error) && quoted.error.message ? quoted.error.message : 'Check your connection and try again.'}
-              onRetry={() => void quoted.refetch()}
+              onRetry={refusalOf(quoted.error) !== null ? undefined : () => void quoted.refetch()}
             />
           </View>
         ) : (
@@ -421,7 +423,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
       : quoteAddsUp(quote)
         ? null
         : { kind: 'blocked', title: NO_TOTAL_TITLE, message: 'Try again to ask for the fees once more.', tryAgain: true };
-  const shown: PayStatus = confirming ? { kind: 'confirming', line: reviewConfirmingLine(quote.totalKobo) } : blocked !== null && status.kind === 'review' ? blocked : status;
+  const shown: PayStatus = confirming ? { kind: 'confirming', line: reviewConfirmingLine(totalOf(quote)) } : blocked !== null && status.kind === 'review' ? blocked : status;
   const handle = payee.handle ? `@${payee.handle.replace(/^@/, '')}` : null;
   const sentNote = request?.note ?? note.trim();
 
@@ -438,7 +440,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
         setFresh(again.data);
         setRequest(null);
         newIntent();
-        if (again.data.totalKobo !== quote.totalKobo) {
+        if (totalOf(again.data) !== totalOf(quote)) {
           setNotice('The fees changed. Check the new total before you send.');
           return;
         }
@@ -479,7 +481,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
         wallet={walletState}
         walletName={WALLET_NAME}
         actionLabel="Send"
-        recipientGetsKobo={amountKobo}
+        recipientGetsKobo={receiveOf(quote)}
         status={shown}
         onPay={pay}
         onAddMoney={props.onAddMoney}
@@ -498,7 +500,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
       <PinSheet
         visible={pinOpen}
         onClose={() => setPinOpen(false)}
-        approval={{ totalKobo: quote.totalKobo, payee: payee.name }}
+        approval={{ totalKobo: totalOf(quote), payee: payee.name }}
         onSubmit={submitPin}
         biometric={approvalKind ? { kind: approvalKind, onPress: approveWithBiometric } : undefined}
         unansweredLine={PAYMENT_UNANSWERED_LINE}

@@ -102,7 +102,7 @@ describe('S18 · Book', () => {
     await press('legal-book-pay');
     await press('legal-book-pay');
     release();
-    await rtl.screen.findByText('Bank charge');
+    await rtl.screen.findByText('Fee');
     expect(hub.bookings).toEqual([{ medium: 'zoom', scheduledFor: '2099-10-02T11:00:00.000Z' }]);
     expect(hub.quoteCalls).toBe(1);
     expect(rtl.screen.getByText('Video consultation')).toBeTruthy();
@@ -404,7 +404,7 @@ describe('S21 · Quote and sign, S22 · Pay to start', () => {
     expect(rtl.screen.getByText('Signed as')).toBeTruthy();
     expect(rtl.screen.getByText('Lennox Emmanuel')).toBeTruthy();
     expect(rtl.screen.getByText('Price')).toBeTruthy();
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
     expect(await rtl.screen.findByRole('button', { name: 'Pay ₦45,015.75 to start' })).toBeTruthy();
     expect(rtl.screen.getByText('Pay from wallet')).toBeTruthy();
   });
@@ -547,7 +547,7 @@ describe('S26 · Fixed-price request', () => {
     hub.thread = conversation();
     const onStarted = jest.fn();
     await screen(onStarted);
-    expect(await rtl.screen.findByText('Bank charge')).toBeTruthy();
+    expect(await rtl.screen.findByText('Fee')).toBeTruthy();
     expect(rtl.screen.getByText('Price')).toBeTruthy();
     expect(rtl.screen.getByText('Takes')).toBeTruthy();
     expect(rtl.screen.getByText('5 to 7 working days')).toBeTruthy();
@@ -576,7 +576,7 @@ describe('S26 · Fixed-price request', () => {
     await screen();
     expect(await rtl.screen.findByText('Price')).toBeTruthy();
     await rtl.waitFor(() => expect(rtl.screen.getByRole('button', { name: 'Continue' })).toBeTruthy());
-    expect(rtl.screen.queryByText('Bank charge')).toBeNull();
+    expect(rtl.screen.queryByText('Fee')).toBeNull();
     expect(rtl.screen.queryByText('Total')).toBeNull();
   });
 

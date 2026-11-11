@@ -37,7 +37,7 @@ const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data }
 const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
 
 /** `lost`: the Hub takes the send and its answer never arrives. `lost_before`: the request never reaches the Hub. */
-type SendMode = 'ok' | 'pending' | 'failed' | 'short' | 'changed' | 'no_answer' | 'no_pin' | 'blocked' | 'lost' | 'lost_before';
+type SendMode = 'ok' | 'pending' | 'failed' | 'short' | 'changed' | 'no_answer' | 'no_pin' | 'blocked' | 'lost' | 'lost_before' | 'vat_on' | 'below_minimum' | 'legacy' | 'total_differs';
 const hub = {
   mode: 'ok' as SendMode,
   pins: [] as string[],
@@ -74,6 +74,12 @@ function quote(amountKobo: number, extra = hub.quoteTotalExtra, ttlMs: number | 
       { code: 'wawu_fee', source: 'wawu', amountKobo: wawu },
     ],
     totalKobo: amountKobo + extra,
+    currency: 'NGN',
+    feeMinor: amountKobo + extra - amountKobo,
+    vatMinor: 0,
+    vatOn: false,
+    totalMinor: amountKobo + extra,
+    receiveMinor: amountKobo,
     withinDailyLimit: hub.limit === null,
     remainingTodayKobo: hub.limit ? hub.limit.remaining : null,
     quoteToken: `tok-${amountKobo}-${extra}`,
@@ -122,6 +128,19 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   if (path === '/money/transfers/presets') return ok({ quickAmounts: [{ amountKobo: 500_000 }, { amountKobo: 1_000_000 }], noteMaxLength: 100 });
   if (path === '/money/fees/quote') {
     hub.quotes += 1;
+    if (hub.mode === 'below_minimum') return refuse(422, { code: 'below_minimum_withdrawal', message: 'This is less than the smallest amount you can withdraw. Try a larger amount.' });
+    if (hub.mode === 'legacy') {
+      const { currency: _c, feeMinor: _f, vatMinor: _v, vatOn: _o, totalMinor: _t, receiveMinor: _r, ...old } = quote(Number(url.searchParams.get('amountKobo')));
+      return ok(old);
+    }
+    if (hub.mode === 'total_differs') {
+      const amountKobo = Number(url.searchParams.get('amountKobo'));
+      return ok({ ...quote(amountKobo), feeMinor: 3000, totalMinor: amountKobo + 3000 });
+    }
+    if (hub.mode === 'vat_on') {
+      const amountKobo = Number(url.searchParams.get('amountKobo'));
+      return ok({ ...quote(amountKobo), feeMinor: 2500, vatMinor: 188, vatOn: true, totalKobo: amountKobo + 2688, totalMinor: amountKobo + 2688, receiveMinor: amountKobo });
+    }
     return ok(quote(Number(url.searchParams.get('amountKobo'))));
   }
   if (path === '/money/transfers/wawu' && method === 'POST') {
@@ -395,12 +414,67 @@ describe('W9 · the amount', () => {
   });
 });
 
-describe('W10 · review, with W11 the PIN sheet', () => {
-  it('a user sending ₦25,000 sees Bank charge, WAWU’s fee, Fees and the Total, the total on the button and "They get ₦25,000"', async () => {
-    await toReview('25000', 'Rent contribution');
-    expect(screen.getByText("Bank charge")).toBeTruthy();
+describe('R-139 · the fee and what is received, before the PIN', () => {
+  it('with VAT on, the review draws Fee, VAT, Total and “They get”, and the button carries the Hub’s total', async () => {
+    hub.mode = 'vat_on';
+    await toReview('25000');
+    expect(screen.getByText('Fee')).toBeTruthy();
+    expect(screen.getByText('VAT')).toBeTruthy();
+    expect(screen.queryByText('Fees')).toBeNull();
+    expect(screen.queryByText('Bank charge')).toBeNull();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getByText('They get ₦25,000')).toBeTruthy();
+    expect(screen.getByText('Send ₦25,026.88')).toBeTruthy();
+  });
+
+  it('F1: a quote that says nothing of its fee is drawn as before R-139 (Bank charge, WAWU’s fee, Fees, Total), never a dead end', async () => {
+    hub.mode = 'legacy';
+    await toReview('25000');
+    expect(screen.getByText('Bank charge')).toBeTruthy();
     expect(screen.getByText("WAWU's fee")).toBeTruthy();
     expect(screen.getByText('Fees')).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getByText('They get ₦25,000')).toBeTruthy();
+    expect(screen.getByText('Send ₦25,025.75')).toBeTruthy();
+    expect(screen.queryByText("We couldn't work out the fees")).toBeNull();
+  });
+
+  it('F7: where totalMinor and totalKobo differ the button reads totalMinor', async () => {
+    hub.mode = 'total_differs';
+    await toReview('25000');
+    expect(screen.getByText('Send ₦25,030')).toBeTruthy();
+  });
+
+  it('on an Android phone the review draws the same Fee, Total and “They get”', async () => {
+    const { Platform } = require('react-native') as typeof import('react-native');
+    const restore = jest.replaceProperty(Platform, 'OS', 'android');
+    try {
+      hub.mode = 'vat_on';
+      await toReview('25000');
+      for (const label of ['Fee', 'VAT', 'Total']) expect(screen.getByText(label)).toBeTruthy();
+      expect(screen.getByText('They get ₦25,000')).toBeTruthy();
+    } finally {
+      restore.restore();
+    }
+  });
+
+  it('a refusal reads plainly, with no Try again, and nothing is sent', async () => {
+    hub.mode = 'below_minimum';
+    await toAmount();
+    for (const k of '50') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
+    await fireEvent.press(screen.getByTestId('send-continue'));
+    expect(await screen.findByText("This can't be sent")).toBeTruthy();
+    expect(screen.getByText('This is less than the smallest amount you can withdraw. Try a larger amount.')).toBeTruthy();
+    expect(screen.queryByText('Try again')).toBeNull();
+    expect(hub.sends).toHaveLength(0);
+  });
+});
+
+describe('W10 · review, with W11 the PIN sheet', () => {
+  it('a user sending ₦25,000 sees the Fee and the Total, the total on the button and "They get ₦25,000"', async () => {
+    await toReview('25000', 'Rent contribution');
+    expect(screen.getByText('Fee')).toBeTruthy();
+    expect(screen.queryByText('Bank charge')).toBeNull();
     expect(screen.getByText('Total')).toBeTruthy();
     expect(screen.getByText('Send ₦25,025.75')).toBeTruthy();
     expect(screen.getByText('They get ₦25,000')).toBeTruthy();
@@ -494,9 +568,8 @@ describe('W12 · the receipt', () => {
     expect(screen.getByText('16 Oct 2026, 10:42')).toBeTruthy();
     expect(screen.getByText('Naira wallet')).toBeTruthy();
     expect(screen.getByText('Rent')).toBeTruthy();
-    for (const label of ["Bank charge", "WAWU's fee", 'Fees', 'Total paid']) expect(screen.getByText(label)).toBeTruthy();
+    for (const label of ['Fee', 'Total paid']) expect(screen.getByText(label)).toBeTruthy();
     expect(screen.getByLabelText('25,025 naira 75 kobo')).toBeTruthy();
-    expect(screen.getByLabelText('15 naira 75 kobo')).toBeTruthy();
     expect(screen.getByLabelText('25 naira 75 kobo')).toBeTruthy();
     await press('Done');
     await waitFor(() => expect(pathname()).toBe('/wallet'));

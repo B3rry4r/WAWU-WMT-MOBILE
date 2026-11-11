@@ -69,7 +69,8 @@ describe('I14: the amount', () => {
     await type('25000');
     await rtl.fireEvent.changeText(rtl.screen.getByTestId('send-note'), 'For the shoot, thank you');
     await rtl.screen.findByTestId('chat-send-total');
-    expect(rtl.screen.getByText('Bank charge ₦15.75 + WAWU’s fee ₦10 = ₦25.75')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee ₦25.75')).toBeTruthy();
+    expect(rtl.screen.queryByText(/Bank charge/)).toBeNull();
     expect(rtl.screen.getByTestId('chat-send-total').props.children).toBe('Total ₦25,025.75');
     expect(rtl.screen.getByTestId('chat-send-gets').props.children).toBe('Femi gets ₦25,000');
     expect(rtl.screen.getByText('Send ₦25,025.75')).toBeTruthy();

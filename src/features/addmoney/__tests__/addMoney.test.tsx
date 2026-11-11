@@ -250,9 +250,10 @@ describe('what the Hub says of a transfer in (FIX-109: the fee, the arrival line
     hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { feeKobo: 0, arrivalMinutes: 7 } };
     await toAddMoney();
     expect(screen.getByTestId('add-money-fee')).toBeTruthy();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
-    expect(screen.getByText('Total fee')).toBeTruthy();
-    expect(screen.getAllByText('₦0.00')).toHaveLength(2);
+    expect(screen.getByText('Fee')).toBeTruthy();
+    expect(screen.queryByText('Bank charge')).toBeNull();
+    expect(screen.queryByText('Total fee')).toBeNull();
+    expect(screen.getAllByText('₦0.00')).toHaveLength(1);
     expect(screen.queryByTestId('add-money-free')).toBeNull();
     expect(screen.queryByText(/free|no fee/i)).toBeNull();
     expect(screen.getByText('Money you send arrives in about 7 minutes.')).toBeTruthy();
@@ -272,7 +273,7 @@ describe('what the Hub says of a transfer in (FIX-109: the fee, the arrival line
     hub.wallet = { state: 'open', account: ACCOUNT, transferIn: { feeKobo: 2500, arrivalMinutes: 0 } };
     await toAddMoney();
     expect(screen.getByTestId('add-money-fee')).toBeTruthy();
-    expect(screen.getAllByText('₦25.00')).toHaveLength(2);
+    expect(screen.getAllByText('₦25.00')).toHaveLength(1);
     expect(screen.queryByText(/free/i)).toBeNull();
     expect(screen.queryByTestId('add-money-arrives')).toBeNull();
   });

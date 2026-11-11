@@ -124,6 +124,12 @@ function paymentQuote(priceKobo: number, over: Record<string, unknown> = {}) {
     priceKobo,
     fee: { providerFeeKobo: provider, wawuFeeKobo: 0, totalFeeKobo: provider },
     totalKobo: priceKobo + provider,
+    currency: 'NGN',
+    feeMinor: (priceKobo + provider) - (priceKobo),
+    vatMinor: 0,
+    vatOn: false,
+    totalMinor: priceKobo + provider,
+    receiveMinor: priceKobo,
     balanceKobo: hub.balanceKobo,
     shortfallKobo: null,
     willBeHeld: true,
@@ -212,7 +218,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (hub.mode === 'short') return refuse(402, { code: 'insufficient_funds', message: 'Not enough.', balanceKobo: 500_000, totalKobo: Number(body.expectedTotalKobo), shortfallKobo: Number(body.expectedTotalKobo) - 500_000 });
     if (hub.mode === 'limit') return refuse(409, { code: 'event_order_limit', message: 'You have reached the order limit for this event.' });
     if (hub.mode === 'changed') {
-      return refuse(409, { code: 'quote_changed', message: 'The price changed.', paymentQuote: paymentQuote(Number(body.expectedTotalKobo) - 1575, { fee: { providerFeeKobo: 2575, wawuFeeKobo: 0, totalFeeKobo: 2575 }, totalKobo: Number(body.expectedTotalKobo) - 1575 + 2575, quoteToken: 'tok-new' }) });
+      return refuse(409, { code: 'quote_changed', message: 'The price changed.', paymentQuote: paymentQuote(Number(body.expectedTotalKobo) - 1575, { fee: { providerFeeKobo: 2575, wawuFeeKobo: 0, totalFeeKobo: 2575 }, totalKobo: Number(body.expectedTotalKobo) - 1575 + 2575, feeMinor: 2575, totalMinor: Number(body.expectedTotalKobo) - 1575 + 2575, quoteToken: 'tok-new' }) });
     }
     if (hub.mode === 'in_progress') return refuse(409, { code: 'payment_in_progress', message: 'Still confirming.' });
     if (hub.mode === 'lost_before' && hub.pays.length === 1) return json(500, { statusCode: 500, message: 'Something went wrong' });
@@ -374,7 +380,7 @@ describe('E3 and E4: pay and PIN', () => {
     await getTickets();
     await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
     expect(rtl.screen.queryByText('No fee')).toBeNull();
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
     expect(rtl.screen.getByText('₦0')).toBeTruthy();
     expect(rtl.screen.getByText('Total')).toBeTruthy();
     expect(await rtl.screen.findByRole('button', { name: 'Pay ₦7,500' })).toBeTruthy();
@@ -386,7 +392,7 @@ describe('E3 and E4: pay and PIN', () => {
     await getTickets();
     await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
     expect(rtl.screen.queryByText('No fee')).toBeNull();
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
     expect(await rtl.screen.findByRole('button', { name: 'Pay ₦7,515.75' })).toBeTruthy();
   });
 
@@ -395,7 +401,7 @@ describe('E3 and E4: pay and PIN', () => {
     await getTickets();
     // The word is the page's own label and the sheet's price row.
     await rtl.waitFor(() => expect(rtl.screen.getAllByText('Tickets')).toHaveLength(2));
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
     expect(rtl.screen.getByText('Total')).toBeTruthy();
     expect(rtl.screen.queryByText("WAWU's fee")).toBeNull();
     expect(rtl.screen.getByText(/^1 × Regular · [A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/)).toBeTruthy();
@@ -496,7 +502,7 @@ describe('E3 and E4: pay and PIN', () => {
       expect(hub.creates[1].key).toBe(hub.creates[0].key);
       expect(hub.creates[0].key).toMatch(/\S/);
       expect(hub.creates[1].body).toEqual(hub.creates[0].body);
-      expect(await rtl.screen.findByText('Bank charge')).toBeTruthy();
+      expect(await rtl.screen.findByText('Fee')).toBeTruthy();
       expect(new Set(hub.creates.map((c) => c.key)).size).toBe(1);
     });
 
@@ -531,7 +537,7 @@ describe('E3 and E4: pay and PIN', () => {
       await bootDetail();
       await getTickets();
       await rtl.waitFor(() => expect(hub.creates).toHaveLength(1));
-      await rtl.screen.findByText('Bank charge');
+      await rtl.screen.findByText('Fee');
       await rtl.cleanup();
       await bootDetail();
       await getTickets();
@@ -562,7 +568,7 @@ describe('E3 and E4: pay and PIN', () => {
     const buy = await bootDetail();
     await getTickets();
     await rtl.waitFor(() => expect(buy.onOpenWallet).toHaveBeenCalledTimes(1));
-    expect(rtl.screen.queryByText('Bank charge')).toBeNull();
+    expect(rtl.screen.queryByText('Fee')).toBeNull();
   });
 
   it('a user short of money sees the bank\'s figures and can add money', async () => {
@@ -594,7 +600,7 @@ describe('a free ticket (R-8)', () => {
     await getTickets();
     await rtl.waitFor(() => expect(buy.onOpenOrder).toHaveBeenCalledWith(ORDER_ID));
     expect(hub.pays).toHaveLength(0);
-    expect(rtl.screen.queryByText('Bank charge')).toBeNull();
+    expect(rtl.screen.queryByText('Fee')).toBeNull();
     expect(rtl.screen.queryByText('Enter your PIN')).toBeNull();
     expect(hub.creates[0].body.lines).toEqual([{ ticketTypeId: 't-free', quantity: 1 }]);
   });

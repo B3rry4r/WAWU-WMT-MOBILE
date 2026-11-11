@@ -374,7 +374,7 @@ export function useLegalFeePay(args: FeePayArgs) {
 
   return {
     quote,
-    fees: payment ? feeLines(payment.fee) : [],
+    fees: payment ? feeLines(payment) : [],
     wallet,
     status: blocked !== null && status.kind === 'review' ? blocked : status,
     payOpen,

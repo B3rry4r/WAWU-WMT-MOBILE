@@ -147,6 +147,11 @@ describe("what is typed for a card and an amount (WALLET-25)", () => {
       wawuFeeKobo: 0,
       feeKobo: 75,
       chargeKobo: 1_000_075,
+      feeMinor: 75,
+      vatMinor: 0,
+      vatOn: false,
+      totalMinor: 1_000_075,
+      receiveMinor: 1_000_000,
     };
     expect(quoteLines(q).map((l) => l.key)).toEqual([
       "provider",

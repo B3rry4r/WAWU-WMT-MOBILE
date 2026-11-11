@@ -17,7 +17,6 @@ import { approveRequest, asBiometricResult, asPinResult, notApproved, useApprova
 import { fieldMetrics } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { feeLinesFromParts } from '@/features/money-attempt/fees';
 import { WALLET_LABEL } from '@/features/money-attempt/refusal';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
@@ -30,6 +29,7 @@ import {
   hueOfPayee,
   limitLine,
   NOT_READY_LINE,
+  feeLinesOf,
   quoteAddsUp,
   type Payee,
 } from '@/features/send/model';
@@ -38,6 +38,7 @@ import { newRequestKey } from '@/features/wallet/api/settings';
 import { canvasNormalLineHeight, space, useWawu } from '@/theme';
 
 import { addChatSend, chatSends } from './sends';
+import { receiveOf, totalOf } from '@/features/send/quotedFee';
 
 /** `WawuTransferDto.note` takes 100 characters (the contract). */
 const NOTE_MAX = 100;
@@ -170,11 +171,11 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
     try {
       const again = await fetchFeeQuote(amountKobo);
       setFresh(again);
-      if (again.totalKobo !== quote.totalKobo) {
+      if (totalOf(again) !== totalOf(quote)) {
         setNotice(PRICE_CHANGED_LINE);
         return;
       }
-      if (balanceKobo !== null && balanceKobo < again.totalKobo) {
+      if (balanceKobo !== null && balanceKobo < totalOf(again)) {
         setShowShort(true);
         return;
       }
@@ -291,7 +292,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
 
   const submitPin = async (pin: string) => asPinResult(await run({ pin }));
   const approvalKind = useApprovalKind();
-  const approvePrompt = quote ? approvalLine({ totalKobo: quote.totalKobo, payee: payee.name }) : 'Approve this payment';
+  const approvePrompt = quote ? approvalLine({ totalKobo: totalOf(quote), payee: payee.name }) : 'Approve this payment';
   const approveWithBiometric = async () => asBiometricResult(await run({ approve: (signed) => approveRequest(signed, approvePrompt) }));
 
   let balanceLine;
@@ -314,7 +315,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
   }
 
   const name = firstName(payee.name);
-  const fees = quote ? feeLinesFromParts(quote.parts) : [];
+  const fees = quote ? feeLinesOf(quote) : [];
   const confirming = kept?.phase === 'pending';
   const overlay = status.kind === 'failed' || showShort;
 
@@ -329,10 +330,11 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
             {quote ? (
               <View style={styles.fees} testID="chat-send-fees">
                 <Text variant="meta" tone="textMuted" style={styles.centre}>
-                  {`${fees.map((line) => `${line.label} ${naira(line.amountKobo)}`).join(' + ')} = ${naira(quote.totalKobo - quote.amountKobo)}`}
+                  {fees.map((line) => `${line.label} ${naira(line.amountKobo)}`).join(' + ')}
                 </Text>
+
                 <Text variant="kvValue" style={styles.centre} testID="chat-send-total">
-                  {`Total ${naira(quote.totalKobo)}`}
+                  {`Total ${naira(totalOf(quote))}`}
                 </Text>
               </View>
             ) : quoted.isError && amountKobo > 0 ? (
@@ -344,7 +346,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
             ) : null}
             {quote ? (
               <Text variant="muted" style={styles.centre} testID="chat-send-gets">
-                {`${name} gets ${naira(quote.amountKobo)}`}
+                {`${name} gets ${naira(receiveOf(quote))}`}
               </Text>
             ) : null}
             {notice ? (
@@ -364,7 +366,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
             ) : null}
             <Button
               testID="chat-send"
-              label={quote ? `Send ${naira(quote.totalKobo)}` : 'Send'}
+              label={quote ? `Send ${naira(totalOf(quote))}` : 'Send'}
               full
               loading={tapping || status.kind === 'paying'}
               disabled={!quote || amountKobo <= 0 || blockedLine !== null || confirming || kept === undefined}
@@ -443,7 +445,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
         <PinSheet
           visible={pinOpen}
           onClose={() => setPinOpen(false)}
-          approval={{ totalKobo: quote.totalKobo, payee: payee.name }}
+          approval={{ totalKobo: totalOf(quote), payee: payee.name }}
           onSubmit={submitPin}
           biometric={approvalKind ? { kind: approvalKind, onPress: approveWithBiometric } : undefined}
           unansweredLine={PAYMENT_UNANSWERED_LINE}

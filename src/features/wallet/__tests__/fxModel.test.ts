@@ -148,24 +148,27 @@ describe('WALLET-21 · the swap\'s ends, fees and words', () => {
   });
 
   it('writes the fee as the Hub\'s breakdown (BRIEF rules 3 and 4, R-23, R-53): the parts, Fees, then Total, and never "No fee", even at zero', () => {
-    const q = { fromCurrency: 'NGN' as const, fromDecimals: 2, providerFeeMinor: 0, wawuFeeMinor: 0, totalFromMinor: 15_800_000 };
+    const q = { fromCurrency: 'NGN' as const, fromDecimals: 2, providerFeeMinor: 0, wawuFeeMinor: 0, feeMinor: 0, vatMinor: 0, vatOn: false, totalMinor: 15_800_000, totalFromMinor: 15_800_000 };
     expect(feeSummary(q)).toBe('₦0.00');
     expect(feeSplit(q)).toBe('Bank charge ₦0.00 + WAWU fee ₦0.00');
     expect(feeSummary({ ...q, providerFeeMinor: null })).toBe('₦0.00 + bank charge');
     expect(feeSummary({ ...q, wawuFeeMinor: 5_000 })).toBe('₦50.00');
     expect(feeSplit({ ...q, providerFeeMinor: 1_200, wawuFeeMinor: 5_000 })).toBe('Bank charge ₦12.00 + WAWU fee ₦50.00');
+    // R-139: the review draws one Fee and the Total; the provider's charge is never a row.
     expect(feeRows(q)).toEqual([
-      { label: 'Bank charge', value: '₦0.00' },
-      { label: 'WAWU fee', value: '₦0.00' },
-      { label: 'Fees', value: '₦0.00' },
+      { label: 'Fee', value: '₦0.00' },
       { label: 'Total', value: '₦158,000.00' },
     ]);
-    expect(feeRows({ ...q, providerFeeMinor: null, wawuFeeMinor: 5_000, totalFromMinor: 15_805_000 })).toEqual([
-      { label: 'Bank charge', value: 'Shown on your receipt' },
-      { label: 'WAWU fee', value: '₦50.00' },
-      { label: 'Total', value: '₦158,050.00 + bank charge' },
+    expect(feeRows({ ...q, feeMinor: 5_000, totalMinor: 15_805_000 })).toEqual([
+      { label: 'Fee', value: '₦50.00' },
+      { label: 'Total', value: '₦158,050.00' },
     ]);
-    for (const row of [...feeRows(q), ...feeRows({ ...q, providerFeeMinor: null })]) expect(row.value).not.toMatch(/No fee|Nuvion/);
+    expect(feeRows({ ...q, feeMinor: 5_000, vatMinor: 375, vatOn: true, totalMinor: 15_805_375 })).toEqual([
+      { label: 'Fee', value: '₦50.00' },
+      { label: 'VAT', value: '₦3.75' },
+      { label: 'Total', value: '₦158,053.75' },
+    ]);
+    for (const row of [...feeRows(q), ...feeRows({ ...q, feeMinor: 1 })]) expect(row.value).not.toMatch(/No fee|Nuvion/);
   });
 
   it('never draws the provider\'s words from a read or an account opening: a declined call gives the screen\'s own line (M-02)', () => {
@@ -192,10 +195,10 @@ describe('WALLET-21 · receipts, details and sends', () => {
     expect(shareText('USD', rows.slice(0, 2))).toBe('USD account details\nAccount name: Ada Eze\nAccount number: 9900004410');
   });
 
-  it('writes a send\'s rows in its own places and says the network fee is unnamed until the provider names it', () => {
+  it('writes a send\'s rows in its own places with one Fee and the total paid (R-139)', () => {
     const rows = sendRows({ id: 's1', status: 'completed', accountId: 'a', currency: 'USDT', chain: 'eth', decimals: 2, address: ADDRESS, amountMinor: 12_000, providerFeeMinor: null, wawuFeeMinor: 0, failureReason: null, createdAt: '2026-10-24T09:00:00.000Z', completedAt: null } as never);
-    expect(Object.fromEntries(rows.map((r) => [r.key, r.value]))).toMatchObject({ network: 'Ethereum', amount: '120.00 USDT', provider: 'None stated', wawu: '0.00 USDT', total: '120.00 USDT + network fee', to: ADDRESS });
-    expect(rows.map((r) => r.label)).toEqual(['Network', 'To', 'Amount', 'Network fee', 'WAWU fee', 'Total paid', 'Date', 'Reference']);
+    expect(Object.fromEntries(rows.map((r) => [r.key, r.value]))).toMatchObject({ network: 'Ethereum', amount: '120.00 USDT', fee: '0.00 USDT', total: '120.00 USDT', to: ADDRESS });
+    expect(rows.map((r) => r.label)).toEqual(['Network', 'To', 'Amount', 'Fee', 'Total paid', 'Date', 'Reference']);
     expect(JSON.stringify(rows)).not.toContain('No fee');
     expect(shortAddress(ADDRESS)).toBe('0x71C7...976F');
     expect(chainName('matic')).toBe('Polygon');
@@ -203,8 +206,8 @@ describe('WALLET-21 · receipts, details and sends', () => {
 
   it('writes a swap\'s rate and amounts from the swap itself', () => {
     const rows = swapRows({ id: 'w1', status: 'completed', fromCurrency: 'NGN', toCurrency: 'USD', fromAccountId: null, toAccountId: 'a', amountFromMinor: 15_800_000, amountToMinor: 10_000, fromDecimals: 2, toDecimals: 2, rate: String(100 / 158_000), providerFeeMinor: 0, wawuFeeMinor: 0, failureReason: null, createdAt: '2026-10-24T09:00:00.000Z', completedAt: null } as never);
-    expect(Object.fromEntries(rows.map((r) => [r.key, r.value]))).toMatchObject({ gave: '₦158,000.00', got: '$100.00', rate: '$1 = ₦1,580.00', provider: '₦0.00', wawu: '₦0.00', fees: '₦0.00', total: '₦158,000.00' });
-    expect(rows.map((r) => r.label)).toEqual(['From', 'To', 'You swapped', 'You got', 'Rate', 'Bank charge', 'WAWU fee', 'Fees', 'Total paid', 'Date', 'Reference']);
+    expect(Object.fromEntries(rows.map((r) => [r.key, r.value]))).toMatchObject({ gave: '₦158,000.00', got: '$100.00', rate: '$1 = ₦1,580.00', fee: '₦0.00', total: '₦158,000.00' });
+    expect(rows.map((r) => r.label)).toEqual(['From', 'To', 'You swapped', 'You got', 'Rate', 'Fee', 'Total paid', 'Date', 'Reference']);
     expect(JSON.stringify(rows)).not.toMatch(/No fee|Nuvion/);
   });
 

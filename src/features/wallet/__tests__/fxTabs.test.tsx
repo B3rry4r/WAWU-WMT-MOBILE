@@ -236,6 +236,13 @@ describe('W2 · a currency account', () => {
     expect(mockCopied).toEqual(['026000999']);
   });
 
+  it('R-139 (lead ruling): the USD account keeps its Get paid row whatever the Hub says of local dollar receiving, because wires arrive on the same details', async () => {
+    hub.currencies = { ...hub.currencies, localUsdIn: false };
+    await boot();
+    await openTab('Dollar');
+    expect(await rtl.screen.findByRole('button', { name: /Get paid in dollars/ })).toBeTruthy();
+  });
+
   it('offers an account the person has not got only through + Add, and says the account is opening once it is asked for (R-106)', async () => {
     await boot();
     await rtl.screen.findByTestId('wallet-tab-add');

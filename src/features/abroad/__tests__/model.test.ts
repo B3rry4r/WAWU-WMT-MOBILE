@@ -14,6 +14,7 @@ import {
   wawuFeeText,
   type Field,
   type Rail,
+  receiptFeeRows,
 } from '../model';
 
 const digits = (key: string, pattern: string | null): Field => ({
@@ -95,8 +96,8 @@ describe('send abroad · what the screens say', () => {
 
   it('the PIN sheet says what is being approved, in the currency sent', () => {
     expect(
-      approvalPurpose({ amountFromMinor: 10000, fromCurrency: 'USD', fromDecimals: 2 }, { holderName: 'Ama Mensah', countryName: 'Ghana' }),
-    ).toBe('Send $100.00 to Ama Mensah in Ghana');
+      approvalPurpose({ totalMinor: 10800, fromCurrency: 'USD', fromDecimals: 2 }, { holderName: 'Ama Mensah', countryName: 'Ghana' }),
+    ).toBe('Send $108.00 to Ama Mensah in Ghana');
   });
 
   it('a held quote read from an address must be whole; anything else is refused', () => {
@@ -116,6 +117,12 @@ describe('send abroad · what the screens say', () => {
       speed: 'Same day',
       expiresAt: '2026-10-24T12:00:00.000Z',
       validForSeconds: 179,
+      currency: 'USD',
+      feeMinor: 0,
+      vatMinor: 0,
+      vatOn: false,
+      totalMinor: 5000,
+      receiveMinor: 50180,
     };
     expect(readHeldQuote(JSON.stringify(quote))?.id).toBe('q');
     expect(readHeldQuote(JSON.stringify({ ...quote, amountFromMinor: 50.5 }))).toBeNull();
@@ -180,6 +187,11 @@ describe('send abroad from a foreign account · WAWU fee (WALLET-42)', () => {
       toDecimals: 2,
       wawuFeeKobo: 0,
       providerFeeMinor: null,
+      feeMinor: 0,
+      vatMinor: 0,
+      vatOn: false,
+      totalMinor: 300,
+      receiveMinor: 4026,
       expiresAt: '2026-10-24T10:00:00.000Z',
       speed: 'Instant',
       converted: true,
@@ -187,6 +199,28 @@ describe('send abroad from a foreign account · WAWU fee (WALLET-42)', () => {
     expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 150 }))?.wawuFeeMinor).toBe(150);
     expect(readHeldQuote(JSON.stringify(quote))).not.toBeNull();
     expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 1.5 }))).toBeNull();
+    // A quote held from before the Hub said its Fee, VAT, Total and what is received is not drawn half empty.
+    const { feeMinor: _fee, ...old } = quote;
+    expect(readHeldQuote(JSON.stringify(old))).toBeNull();
+  });
+});
+
+describe('the fee rows of a send abroad receipt (R-139)', () => {
+  const base = { wawuFeeKobo: 0, wawuFeeMinor: 800, fromCurrency: 'USD', fromDecimals: 2 };
+
+  it('with the send’s feeMinor and totalMinor it draws Fee, VAT when above nothing, and Total', () => {
+    expect(receiptFeeRows({ ...base, feeMinor: 800, vatMinor: 60, totalMinor: 10_860 })).toEqual([
+      { key: 'fee', label: 'Fee', text: '$8.00' },
+      { key: 'vat', label: 'VAT', text: '$0.60' },
+      { key: 'total', label: 'Total', text: '$108.60' },
+    ]);
+    expect(receiptFeeRows({ ...base, feeMinor: 800, vatMinor: 0, totalMinor: 10_800 }).map((r) => r.key)).toEqual(['fee', 'total']);
+  });
+
+  it('without them it draws the rows as before: WAWU’s fee, and VAT when the Hub says one, no Total', () => {
+    expect(receiptFeeRows(base)).toEqual([{ key: 'fee', label: 'Fee', text: '$8.00' }]);
+    expect(receiptFeeRows({ ...base, vatMinor: 60 })).toEqual([{ key: 'fee', label: 'Fee', text: '$8.00' }, { key: 'vat', label: 'VAT', text: '$0.60' }]);
+    expect(receiptFeeRows({ ...base, feeMinor: null, totalMinor: null }).map((r) => r.key)).toEqual(['fee']);
   });
 });
 

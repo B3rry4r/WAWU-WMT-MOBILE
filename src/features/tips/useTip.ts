@@ -123,7 +123,7 @@ export function useTip(handlers: FlowHandlers) {
     setNote: (text: string) => setNote(text.slice(0, NOTE_MAX)),
     /** The Hub's quote for THIS amount, or null while it is on its way. */
     quote,
-    fees: quote ? feeLines(quote.payment.fee) : [],
+    fees: quote ? feeLines(quote.payment) : [],
     balanceKobo,
     flow,
     /** The store's side (R-101): set on a phone with a store, null on the web. */

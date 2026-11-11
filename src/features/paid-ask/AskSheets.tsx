@@ -99,10 +99,10 @@ function Breakdown({ ask, source }: { ask: AskState; source?: PaySource }) {
     rows.push(...sourceRows(source));
   } else if (q) {
     for (const f of ask.fees) rows.push(row(f.label, f.amountKobo, f.label));
-    if (ask.fees.length > 1) rows.push(row('Fees', feesTotalKobo(ask.fees), 'fees'));
+    if (ask.fees.length > 1 && !ask.fees.some((f) => f.vat)) rows.push(row('Fees', feesTotalKobo(ask.fees), 'fees'));
     rows.push(row('Total', q.payment.totalKobo, 'total'));
   } else {
-    rows.push(row('Bank charge', null, 'charge'), row('Total', null, 'total'));
+    rows.push(row('Fee', null, 'charge'), row('Total', null, 'total'));
   }
   return <GroupedList testID="ask-breakdown">{rows}</GroupedList>;
 }

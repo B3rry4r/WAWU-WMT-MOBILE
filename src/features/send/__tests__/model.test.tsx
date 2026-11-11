@@ -3,7 +3,8 @@ import * as rtl from '@testing-library/react-native';
 import { MoneyCard } from '@/features/home/MoneyCard';
 import { actionTileSize } from '@/features/wallet/home/WalletActions';
 
-import type { Transfer } from '../api';
+import { readQuote, type Transfer } from '../api';
+import { receiveOf, totalOf } from '../quotedFee';
 import { CONFIRMING_LINE, RETRY_LINE, bankPayeeOf, feeLinesOf, firstName, limitLine, payeeFromParams, payeeLine, payeeParams, quoteAddsUp, quoteSpent, receiptRows, shareText, toLine } from '../model';
 
 const AMAKA = { wawuUserId: '11111111-1111-4111-8111-111111111111', name: 'Amaka Nwosu', handle: 'amaka', avatarUrl: null, tick: 'creator' as const };
@@ -58,15 +59,28 @@ describe('what the send screens read and write', () => {
     expect(firstName('Amaka Nwosu')).toBe('Amaka');
   });
 
-  it('the quote’s parts are Bank charge then WAWU’s fee, and a total that is not amount plus parts is refused', () => {
-    const quote = { amountKobo: 2_500_000, parts: [{ code: 'balance_transfer', source: 'provider', amountKobo: 1575 }, { code: 'wawu_fee', source: 'wawu', amountKobo: 1000 }], totalKobo: 2_502_575 } as never;
-    expect(feeLinesOf(quote)).toEqual([
-      { label: "Bank charge", amountKobo: 1575 },
-      { label: "WAWU's fee", amountKobo: 1000 },
-    ]);
+  it('the quote’s lines are the Hub’s Fee, then VAT only when it is on, never the provider’s parts; a total that is not amount plus fee and VAT is refused', () => {
+    const quote = { amountKobo: 2_500_000, feeMinor: 2575, vatMinor: 0, vatOn: false, totalMinor: 2_502_575, receiveMinor: 2_500_000, totalKobo: 2_502_575, parts: [{ code: 'balance_transfer', source: 'provider', amountKobo: 1575 }] } as never;
+    expect(feeLinesOf(quote)).toEqual([{ label: 'Fee', amountKobo: 2575 }]);
     expect(quoteAddsUp(quote)).toBe(true);
-    expect(quoteAddsUp({ ...(quote as object), totalKobo: 2_502_576 } as never)).toBe(false);
-    expect(feeLinesOf({ parts: [{ code: 'a', source: 'provider', amountKobo: 1 }, { code: 'b', source: 'provider', amountKobo: 2 }] } as never)).toEqual([{ label: "Bank charge", amountKobo: 3 }]);
+    expect(quoteAddsUp({ ...(quote as object), totalMinor: 2_502_576 } as never)).toBe(false);
+    const withVat = { amountKobo: 2_500_000, feeMinor: 2500, vatMinor: 188, vatOn: true, totalMinor: 2_502_688, receiveMinor: 2_500_000, totalKobo: 2_502_688, parts: [] } as never;
+    expect(feeLinesOf(withVat)).toEqual([{ label: 'Fee', amountKobo: 2500 }, { label: 'VAT', amountKobo: 188, vat: true }]);
+    expect(quoteAddsUp(withVat)).toBe(true);
+  });
+
+  it('a quote that says nothing of its fee (a Hub on Fintava, or rolled back) is drawn as before R-139, never refused', () => {
+    const old = { amountKobo: 2_500_000, parts: [{ code: 'balance_transfer', source: 'provider', amountKobo: 1575 }, { code: 'wawu_fee', source: 'wawu', amountKobo: 1000 }], totalKobo: 2_502_575 } as never;
+    expect(feeLinesOf(old)).toEqual([{ label: 'Bank charge', amountKobo: 1575 }, { label: "WAWU's fee", amountKobo: 1000 }]);
+    expect(quoteAddsUp(old)).toBe(true);
+    expect(quoteAddsUp({ ...(old as object), totalKobo: 2_502_576 } as never)).toBe(false);
+    expect(readQuote({ amountKobo: 1, totalKobo: 1, parts: [], quoteToken: 't', expiresAt: '2099-01-01T00:00:00.000Z' }).totalKobo).toBe(1);
+  });
+
+  it('totalMinor, not totalKobo, is the total where the two differ', () => {
+    expect(totalOf({ totalKobo: 100, totalMinor: 108, feeMinor: 8, vatMinor: 0, vatOn: false, receiveMinor: 100 })).toBe(108);
+    expect(totalOf({ totalKobo: 100 })).toBe(100);
+    expect(receiveOf({ amountKobo: 100, totalMinor: 108, feeMinor: 8, vatMinor: 0, vatOn: false, receiveMinor: 99 })).toBe(99);
   });
 
   it('a limit is said with the Hub’s own figure, and only when the send is over it', () => {
@@ -87,8 +101,6 @@ describe('what the send screens read and write', () => {
       ['date', '16 Oct 2026, 10:42'],
       ['from', 'Naira wallet'],
       ['note', 'Rent'],
-      ['provider', 1575],
-      ['wawu', 1000],
       ['fees', 2575],
       ['total', 2_502_575],
     ]);
@@ -104,9 +116,7 @@ describe('what the send screens read and write', () => {
         'Date: 16 Oct 2026, 10:42',
         'From: Naira wallet',
         'Note: Rent',
-        "Bank charge: ₦15.75",
-        "WAWU's fee: ₦10.00",
-        'Fees: ₦25.75',
+        'Fee: ₦25.75',
         'Total paid: ₦25,025.75',
         'Reference: wawu-send-8f2k91qx',
       ].join('\n'),

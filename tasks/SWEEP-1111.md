@@ -58,6 +58,12 @@ Only the rows in the table; nothing else is touched. Hub rows are Hub code (`waw
 | C3 | OPS-CLEAR-ROOMS | L6, test gap: no spec row for a funded earning with `hostShareKobo = 0` and no settlement (it must clear). | same, L6 | open |
 | L1 | LEGAL-ELEVEN | A failed race delete of the legal agent is not logged. | history/LEGAL-ELEVEN.md, verifier round 1 re-check, L1 | open |
 | L2 | LEGAL-ELEVEN | L2 and L3: a socket close after a response but before `agent_response_complete` fails the turn; an agent with no `created_at_unix_secs` sorts as oldest. Both are shown or cleared by the first real legal turns. | same, L2 and L3 | open |
+| F1 | FEE-01 | G1 (medium, owned here): `settle()` reopens a reversed fee record without restoring `vatMinor`, and a reopened record claims `kept = F - actual` even when fee-back already gave the fee back (a late success after a failure). VAT is off at launch (`tax.vat_on` 0). Test: reverse, then settle; VAT and kept match what was taken. | history/FEE-01.md, verifier round 2 re-check, G1 | open |
+| F2 | FEE-01 | G2 (medium hazard, owned here): an admin-set `wallet_to_wallet` fee above Nuvion's charge makes every wallet payment quote answer 503 `fees_not_set` (tickets, paid DMs, credits, tiers, bills), with a misleading message. Seeded state never triggers it (wallet-to-wallet is free, R-139). Until fixed, nobody sets a wallet_to_wallet fee above 0. Fix: the admin route refuses such a row, or the message says why. | same, G2 | open |
+| F3 | FEE-01 | G3 (low): the quote-time split (F9) depends on the object identity of `quote.fee`; a clone between `check()` and `legSplit` silently re-reads the schedule. | same, G3 | open |
+| F4 | FEE-01 | Not run by the verifier: Nuvion's actual charge differing from the expected one, end to end, and two sends at once with different keys. | same, NOT RUN | open |
+| F5 | FEE-02 | Lows 2 to 5: the editor's default start is when the dialog opened (refused after 5 minutes open); swap preview words and a USD 100,000 default; the refusal page keeps the Provider rates header; no automated test on `feeText.ts`. | history/FEE-02.md, verifier, lows 2 to 5 | open |
+| F6 | FEE-03 | L2 to L4: crypto send and FX receipt Fee summed in the app; chat send and request pay lack a `totalKobo` versus `totalMinor` spec; round 1 F6 (`maxWithdrawKobo` leaves its last candidate unchecked, submit stays blocked). L1 (abroad receipt without the fee fields) closed by step 3, b9bfc76a. | history/FEE-03.md, verifier round 2 re-check | open |
 
 ## Capability checks
 

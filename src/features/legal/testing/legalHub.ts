@@ -125,6 +125,12 @@ const quoteView = (priceKobo: number, n: number) => ({
     priceKobo,
     fee: { providerFeeKobo: PROVIDER_FEE, wawuFeeKobo: 0, totalFeeKobo: PROVIDER_FEE },
     totalKobo: priceKobo + PROVIDER_FEE,
+    currency: 'NGN',
+    feeMinor: (priceKobo + PROVIDER_FEE) - (priceKobo),
+    vatMinor: 0,
+    vatOn: false,
+    totalMinor: priceKobo + PROVIDER_FEE,
+    receiveMinor: priceKobo,
     balanceKobo: hub.balanceKobo,
     shortfallKobo: null,
     willBeHeld: false,
@@ -233,7 +239,7 @@ export function installHub() {
     if (path === '/money/fees/quote') {
       if (hub.feeQuoteFails) return refuse(503, { code: 'fees_not_set', message: 'Fees are not set.' });
       const amount = Number(url.searchParams.get('amountKobo'));
-      return ok({ kind: 'purchase', billCategory: null, amountKobo: amount, fee: { providerFeeKobo: PROVIDER_FEE, wawuFeeKobo: 0, totalFeeKobo: PROVIDER_FEE }, parts: [], totalKobo: amount + PROVIDER_FEE, withinDailyLimit: true, remainingTodayKobo: null, quoteToken: 'fee-tok', expiresAt: '2099-01-01T00:00:00.000Z' });
+      return ok({ kind: 'purchase', billCategory: null, amountKobo: amount, fee: { providerFeeKobo: PROVIDER_FEE, wawuFeeKobo: 0, totalFeeKobo: PROVIDER_FEE }, parts: [], totalKobo: amount + PROVIDER_FEE, currency: 'NGN', feeMinor: PROVIDER_FEE, vatMinor: 0, vatOn: false, totalMinor: amount + PROVIDER_FEE, receiveMinor: amount, withinDailyLimit: true, remainingTodayKobo: null, quoteToken: 'fee-tok', expiresAt: '2099-01-01T00:00:00.000Z' });
     }
     if (path === '/money/wallet/balance') return ok({ availableKobo: hub.balanceKobo, asOf: '2099-09-20T09:00:00.000Z' });
     throw new Error(`no answer for ${method} ${path}`);

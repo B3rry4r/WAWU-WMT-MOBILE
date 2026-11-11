@@ -12,6 +12,12 @@ const quote = (amountKobo_: number, over: Partial<FeeQuote> = {}): FeeQuote => (
     { code: 'wawu_fee', source: 'wawu', amountKobo: 2500 },
   ],
   totalKobo: amountKobo_ + 6500,
+  currency: 'NGN',
+  feeMinor: amountKobo_ + 6500 - amountKobo_,
+  vatMinor: 0,
+  vatOn: false,
+  totalMinor: amountKobo_ + 6500,
+  receiveMinor: amountKobo_,
   withinDailyLimit: true,
   remainingTodayKobo: null,
   quoteToken: 'tok',
@@ -43,12 +49,12 @@ describe('the amount a person types (W17)', () => {
 });
 
 describe('the fee and the button (R-10, R-53)', () => {
-  it('draws the bank charge and WAWU’s fee as their own rows, then Fees, and never the provider’s name', () => {
-    const rows = withdrawFeeRows(quote(5_000_000));
+  it('draws the Hub’s one Fee, VAT only when the Hub says it is on, and never the provider’s charge or name (R-139)', () => {
+    expect(withdrawFeeRows(quote(5_000_000))).toEqual([{ key: 'fee', label: 'Fee', kobo: 6500 }]);
+    const rows = withdrawFeeRows(quote(5_000_000, { feeMinor: 6000, vatMinor: 500, vatOn: true }));
     expect(rows).toEqual([
-      { key: 'Bank charge', label: 'Bank charge', kobo: 4000 },
-      { key: "WAWU's fee", label: "WAWU's fee", kobo: 2500 },
-      { key: 'fees', label: 'Fees', kobo: 6500 },
+      { key: 'fee', label: 'Fee', kobo: 6000 },
+      { key: 'vat', label: 'VAT', kobo: 500 },
     ]);
     expect(JSON.stringify(rows)).not.toMatch(/Fintava|Nuvion/);
   });
@@ -97,7 +103,7 @@ describe('why Withdraw is off', () => {
       kind: 'over_limit',
       line: 'This is over your limit for today. You can withdraw ₦1,000 more today.',
     });
-    expect(withdrawBlock(input({ quote: quote(5_000_000, { totalKobo: 5_000_001 }) }))).toEqual({ kind: 'no_total' });
+    expect(withdrawBlock(input({ quote: quote(5_000_000, { totalMinor: 5_000_001 }) }))).toEqual({ kind: 'no_total' });
   });
 });
 
@@ -165,7 +171,7 @@ describe('W19', () => {
   it('says where it goes, and lists the reference, both parts of the fee, Fees and Total paid', () => {
     expect(receiptTo(base)).toBe('To Access Bank · 0987654321');
     const rows = withdrawReceiptRows({ reference: 'wawu-bank-1', fee: { providerFeeKobo: 4000, wawuFeeKobo: 2500, totalFeeKobo: 6500 }, totalKobo: 5_006_500 });
-    expect(rows.map((r) => [r.label, r.money ?? r.value])).toEqual([['Reference', 'wawu-bank-1'], ['Bank charge', 4000], ["WAWU's fee", 2500], ['Fees', 6500], ['Total paid', 5_006_500]]);
+    expect(rows.map((r) => [r.label, r.money ?? r.value])).toEqual([['Reference', 'wawu-bank-1'], ['Fee', 6500], ['Total paid', 5_006_500]]);
   });
 
   it('shares the receipt as text with every figure on screen and the reference', () => {

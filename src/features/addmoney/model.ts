@@ -44,16 +44,12 @@ export function accountRows(account: AccountDetails): AccountRow[] {
 }
 
 /**
- * The fee of a bank transfer in, as its breakdown (BRIEF rules 3 and 4, R-23): the bank's charge, which is the Hub's `transferIn.feeKobo`,
- * then the total fee. A zero is the figure ₦0.00, never "Free". The Hub serves no WAWU fee on a transfer in, so no row claims one; with one
- * part the total is that part. Nothing when the Hub sent no fee (it says none when the charge depends on the amount).
+ * The fee of a bank transfer in (R-139 point 11): one Fee row, the bank's receiving charge passed on with nothing added, which is the Hub's
+ * `transferIn.feeKobo`. A zero is the figure ₦0.00, never "Free". Nothing when the Hub sent no fee (it says none when the charge depends on the amount).
  */
-export function feeRows(feeKobo: number | undefined): { key: 'provider' | 'total'; label: string; kobo: number }[] {
+export function feeRows(feeKobo: number | undefined): { key: 'total'; label: string; kobo: number }[] {
   if (feeKobo === undefined) return [];
-  return [
-    { key: 'provider', label: 'Bank charge', kobo: feeKobo },
-    { key: 'total', label: 'Total fee', kobo: feeKobo },
-  ];
+  return [{ key: 'total', label: 'Fee', kobo: feeKobo }];
 }
 
 /** What Share details hands the phone's share sheet (R-33): the three values, the number as the bank gave it. */

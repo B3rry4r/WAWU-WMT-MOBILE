@@ -14,6 +14,7 @@ import { WalletRow } from '@/features/money-attempt/WalletRow';
 import { space } from '@/theme';
 
 import { REQUEST_CONFIRMING_LINE, type useRequestPay } from './useRequestPay';
+import { receiveOf, totalOf } from '@/features/send/quotedFee';
 
 const SHEET_GAP = 16;
 const ROW_VALUE = 14.5;
@@ -37,7 +38,7 @@ const naira = (kobo: number) => formatMoney(kobo, { decimals: kobo % 100 !== 0 }
  */
 export function RequestPaySheet({ sheet, name, notice }: RequestPaySheetProps) {
   const { request, quote, fees, status, pinOpen } = sheet;
-  const total = quote.totalKobo;
+  const total = totalOf(quote);
   const pin = (
     <PayPinSheet
       visible={pinOpen}
@@ -88,7 +89,7 @@ export function RequestPaySheet({ sheet, name, notice }: RequestPaySheetProps) {
           {fees.map((line) => (
             <KeyValueRow key={line.label} label={line.label} value={<Money minorUnits={line.amountKobo} size={ROW_VALUE} decimals />} />
           ))}
-          {fees.length > 1 ? <KeyValueRow key="fees" label="Fees" value={<Money minorUnits={feesTotalKobo(fees)} size={ROW_VALUE} decimals />} /> : null}
+          {fees.length > 1 && !fees.some((f) => f.vat) ? <KeyValueRow key="fees" label="Fees" value={<Money minorUnits={feesTotalKobo(fees)} size={ROW_VALUE} decimals />} /> : null}
           <KeyValueRow key="total" label={TOTAL_LABEL} value={<Money minorUnits={total} size={ROW_VALUE} decimals />} testID="request-total" />
         </GroupedList>
         <WalletRow balanceKobo={sheet.balanceKobo} />

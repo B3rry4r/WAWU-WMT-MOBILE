@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { hasQuotedFee } from '@/features/send/quotedFee';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
@@ -121,6 +122,10 @@ export function usePaySource(args: {
     amountMinor: source.amountMinor,
     providerFeeMinor: source.providerFeeMinor,
     wawuFeeMinor: source.wawuFeeMinor,
+    // The quote's own six fields are in this account's currency while it pays (the Hub's `foreignFields`).
+    ...(payment && hasQuotedFee(payment) && payment.currency === source.currency
+      ? { quoted: { feeMinor: payment.feeMinor, vatMinor: payment.vatMinor, vatOn: payment.vatOn, totalMinor: payment.totalMinor } }
+      : {}),
     availableMinor: source.availableMinor,
     expired,
     choices,

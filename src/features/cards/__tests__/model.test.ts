@@ -46,12 +46,10 @@ describe('WALLET-22: the words and figures of the card screens', () => {
     expect(kindTitle('virtual')).toBe('Virtual card');
   });
 
-  it("the fee rows show the bank's charge even at 0 and WAWU's only when there is one (R-10)", () => {
-    expect(feeRows({ providerFeeKobo: 65772, wawuFeeKobo: 0, totalFeeKobo: 65772 })).toEqual([{ label: 'Bank charge', kobo: 65772 }]);
-    expect(feeRows({ providerFeeKobo: 65772, wawuFeeKobo: 500, totalFeeKobo: 66272 })).toEqual([
-      { label: 'Bank charge', kobo: 65772 },
-      { label: 'WAWU’s fee', kobo: 500 },
-    ]);
+  it('the fee row is one Fee, the Hub’s whole fee even at 0, never the issuer’s charge on its own (R-139)', () => {
+    expect(feeRows({ providerFeeKobo: 65772, wawuFeeKobo: 0, totalFeeKobo: 65772 })).toEqual([{ label: 'Fee', kobo: 65772 }]);
+    expect(feeRows({ providerFeeKobo: 65772, wawuFeeKobo: 500, totalFeeKobo: 66272 })).toEqual([{ label: 'Fee', kobo: 66272 }]);
+    expect(feeRows({ providerFeeKobo: 0, wawuFeeKobo: 0, totalFeeKobo: 0 })).toEqual([{ label: 'Fee', kobo: 0 }]);
   });
 
   it('a day reads Today, Yesterday, or the day and month', () => {

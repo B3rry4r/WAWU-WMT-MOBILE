@@ -29,6 +29,7 @@ export const currenciesBody = (opts: { openAccount?: boolean; off?: string[] } =
     { code: 'RLUSD', name: 'Ripple USD', kind: 'stablecoin', decimals: 2, chains: ['eth'], enabled: false },
   ],
   products: { openAccount: opts.openAccount ?? true, swap: true, cryptoSend: true },
+  localUsdIn: true,
   naira: { code: 'NGN', decimals: 2 },
 });
 
@@ -146,6 +147,12 @@ export async function fxFetch(request: Request, path: string): Promise<Response 
       providerFeeMinor: hub.quoteFee.providerFeeMinor,
       wawuFeeMinor: hub.quoteFee.wawuFeeMinor,
       totalFromMinor: amountFromMinor + (hub.quoteFee.providerFeeMinor ?? 0) + hub.quoteFee.wawuFeeMinor,
+      currency: body.fromCurrency ?? 'NGN',
+      feeMinor: (hub.quoteFee.providerFeeMinor ?? 0) + hub.quoteFee.wawuFeeMinor,
+      vatMinor: 0,
+      vatOn: false,
+      totalMinor: amountFromMinor + (hub.quoteFee.providerFeeMinor ?? 0) + hub.quoteFee.wawuFeeMinor,
+      receiveMinor: amountToMinor,
       expiresAt: new Date(Date.now() + hub.quoteSeconds * 1000).toISOString(),
       validForSeconds: hub.quoteSeconds,
     };

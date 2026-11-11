@@ -434,7 +434,7 @@ export function useEnrolPay(args: EnrolPayArgs) {
       wallet: balanceKobo !== undefined ? { kind: 'open', balanceKobo } : { kind: 'loading' },
       status: blocked !== null && status.kind === 'review' ? blocked : status,
       lockedUntil,
-      fees: feeLines(payment.fee),
+      fees: feeLines(payment),
       pay,
       run,
       cancel,

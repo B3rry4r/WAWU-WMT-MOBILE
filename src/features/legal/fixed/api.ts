@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import { readQuote, type FeeQuote } from '@/features/send/api';
 
 /**
  * The calls behind a fixed-price request (S24, S26; LEGAL-06, R2-LEGAL2):
@@ -10,7 +11,7 @@ import type { components } from '@/api/schema.generated';
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data` (SHARED-CHANGES.md row 11).
  */
-export type FeeQuote = components['schemas']['FeeQuoteView'];
+export type { FeeQuote };
 
 type Envelope<T> = { data?: T | null };
 
@@ -28,7 +29,5 @@ export async function fetchPurchaseFee(amountKobo: number): Promise<FeeQuote> {
   const body = (await unwrap(
     api.GET('/api/hub/money/fees/quote', { params: { query: { kind: 'purchase', amountKobo } } }),
   )) as unknown as Envelope<FeeQuote>;
-  const q = body?.data;
-  if (!q || typeof q.totalKobo !== 'number' || !q.fee || typeof q.fee.providerFeeKobo !== 'number' || typeof q.fee.wawuFeeKobo !== 'number') throw unreadable('fee');
-  return q;
+  return readQuote(body?.data);
 }

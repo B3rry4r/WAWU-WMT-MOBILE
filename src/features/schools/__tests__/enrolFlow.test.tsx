@@ -83,6 +83,12 @@ const quoteView = (over: Record<string, unknown> = {}) => ({
   priceKobo: 15_000_000,
   fee: { providerFeeKobo: 1575, wawuFeeKobo: 0, totalFeeKobo: 1575 },
   totalKobo: 15_001_575,
+  currency: 'NGN',
+  feeMinor: (15_001_575) - (15_000_000),
+  vatMinor: 0,
+  vatOn: false,
+  totalMinor: 15_001_575,
+  receiveMinor: 15_000_000,
   balanceKobo: hub.balanceKobo,
   shortfallKobo: null,
   willBeHeld: true,
@@ -360,7 +366,7 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     await render(<EnrolmentScreen id={ENR} {...handlers()} />);
     await payButton();
     expect(rtl.screen.getByText('Course fee')).toBeTruthy();
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
     expect(rtl.screen.getByText('Total')).toBeTruthy();
     expect(rtl.screen.getAllByText('Product Design Bootcamp').length).toBeGreaterThan(0);
     expect(rtl.screen.getByText('Greenfield Tech Academy · starts 3 Nov')).toBeTruthy();

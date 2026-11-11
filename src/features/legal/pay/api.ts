@@ -2,6 +2,7 @@ import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
 import { approvalRefused, credentialHeader, part, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
+import type { PaymentQuote } from '@/features/events/buyApi';
 
 /**
  * The calls behind paying a legal fee from the wallet (LEGAL-04's S19, LEGAL-06's S22 and S26), as the Hub's contract types them
@@ -18,7 +19,7 @@ import { approvalRefused, credentialHeader, part, type ApprovalStopped, type Cre
  */
 export type FeeQuote = components['schemas']['LegalFeeWalletQuoteView'];
 export type FeePayment = components['schemas']['LegalFeeWalletView'];
-export type PaymentQuote = components['schemas']['PaymentQuoteView'];
+export type { PaymentQuote } from '@/features/events/buyApi';
 
 type Envelope<T> = { data?: T | null };
 
@@ -33,7 +34,7 @@ function unreadable(what: string): ApiError {
 
 /** A payment quote that can be approved: whole-kobo money and the token the payment must carry. */
 export function readPaymentQuote(value: unknown): PaymentQuote {
-  const q = value as Partial<PaymentQuote> | null;
+  const q = value as Partial<components['schemas']['PaymentQuoteView']> | null;
   const ok =
     q &&
     typeof q === 'object' &&

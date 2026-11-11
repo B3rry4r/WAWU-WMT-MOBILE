@@ -23,6 +23,7 @@ import { nameOrSomeone } from '@/features/feed/model';
  * only the code (SHARED-CHANGES WALLET-06 #2), so the send reads its own answer and hands the screen one of `SendOutcome`.
  */
 export type Recipient = components['schemas']['RecipientView'];
+/** R-139's fee fields are optional in the contract: a quote without them is drawn as before (`quotedFee.ts`), never refused. */
 export type FeeQuote = components['schemas']['FeeQuoteView'];
 export type Transfer = components['schemas']['TransferView'];
 export type TransferPresets = components['schemas']['TransferPresetsView'];

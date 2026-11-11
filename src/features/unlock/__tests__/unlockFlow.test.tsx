@@ -69,6 +69,9 @@ const hub = {
   mode: 'paid' as Mode,
   balanceKobo: 48_525_075,
   feeKobo: FEE,
+  /** A Hub on Fintava, or rolled back: the quote says nothing of its fee. */
+  legacy: false,
+  vatKobo: 0,
   quotes: 0,
   pays: [] as { pin: string | null; key: string | null; body: Record<string, unknown> }[],
   paidKeys: new Set<string>(),
@@ -104,6 +107,9 @@ const quoteView = () => ({
     priceKobo: PRICE,
     fee: { providerFeeKobo: hub.feeKobo, wawuFeeKobo: 0, totalFeeKobo: hub.feeKobo },
     totalKobo: PRICE + hub.feeKobo,
+    ...(hub.legacy
+      ? {}
+      : { currency: 'NGN', feeMinor: hub.feeKobo, vatMinor: hub.vatKobo, vatOn: hub.vatKobo > 0, totalMinor: PRICE + hub.feeKobo + hub.vatKobo, receiveMinor: PRICE }),
     balanceKobo: hub.balanceKobo,
     shortfallKobo: null,
     willBeHeld: false,
@@ -252,7 +258,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   clearAttempts();
-  Object.assign(hub, { kind: 'video', preview: 'https://cdn.test/preview.webm', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, nameless: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending', usd: false });
+  Object.assign(hub, { kind: 'video', preview: 'https://cdn.test/preview.webm', mode: 'paid', balanceKobo: 48_525_075, feeKobo: FEE, quotes: 0, pays: [], paidKeys: new Set<string>(), payments: 0, wrongFirst: false, quoteNoWallet: false, nameless: false, reads: 0, support: [], supportRefused: false, supportHold: null, state: 'pending', usd: false, legacy: false, vatKobo: 0 });
   (require('@/api/paySource') as typeof import('@/api/paySource')).clearPaySource();
   mockPush.mockClear();
 });
@@ -300,7 +306,7 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     expect(hub.quotes).toBe(1);
     expect(screen.getByText('How I built a ₦2M a month agency')).toBeTruthy();
     expect(screen.getByText(/Video · 18 min/)).toBeTruthy();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
     expect(screen.getAllByLabelText('2,500 naira')).toHaveLength(2); // the offer bar's chip and the sheet's Price row
     expect(screen.getByLabelText('23 naira 25 kobo')).toBeTruthy();
     expect(screen.getByLabelText('2,523 naira 25 kobo')).toBeTruthy();
@@ -315,11 +321,29 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     hub.feeKobo = 0;
     const screen = await openSheet();
     expect(screen.queryByText('No fee')).toBeNull();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
     expect(screen.getByText('₦0')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
     expect(screen.getByText('Forever, in My purchases')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Unlock · ₦2,500' })).toBeTruthy();
+  });
+
+  it('F1: a quote that says nothing of its fee is drawn as before R-139 (Bank charge, then the Total), never a dead sheet', async () => {
+    hub.legacy = true;
+    const screen = await openSheet();
+    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.queryByText('Fee')).toBeNull();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Unlock · ₦2,523.25' })).toBeTruthy();
+  });
+
+  it('with VAT on the sheet reads Fee, VAT and the Total from the quote, and the button carries totalMinor', async () => {
+    hub.vatKobo = 100;
+    const screen = await openSheet();
+    expect(screen.getByText('Fee')).toBeTruthy();
+    expect(screen.getByText('VAT')).toBeTruthy();
+    expect(screen.queryByText('Fees')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Unlock · ₦2,524.25' })).toBeTruthy();
   });
 
   it('H14 draws the piece\'s thumbnail when its preview is a picture', async () => {
@@ -338,7 +362,7 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
   it('a quote with a fee never says "No fee": the charge, the Total and the button carry the total', async () => {
     const screen = await openSheet();
     expect(screen.queryByText('No fee')).toBeNull();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
   });
 

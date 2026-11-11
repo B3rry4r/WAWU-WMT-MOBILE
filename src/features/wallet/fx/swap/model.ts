@@ -94,22 +94,14 @@ export function feeSplit(q: FeeQuote): string {
 
 export type FeeRow = { label: string; value: string };
 
-/** The review's fee breakdown (R-10, R-23): the bank's charge and WAWU's fee as their own rows, Fees, then the Total that leaves the account. Every figure is the quote's. */
-export function feeRows(q: FeeQuote & Pick<FxQuote, 'totalFromMinor'>): FeeRow[] {
+/** The review's fee breakdown (R-139): the Hub's Fee, VAT only when it is on, and the Total that leaves the account. The provider's charge is never a row. Every figure is the quote's. */
+export function feeRows(q: Pick<FxQuote, 'fromCurrency' | 'fromDecimals' | 'feeMinor' | 'vatMinor' | 'vatOn' | 'totalMinor'>): FeeRow[] {
   const code = q.fromCurrency as QuoteCode;
   const money = (minor: number) => formatMinor(minor, code, q.fromDecimals);
-  if (q.providerFeeMinor === null) {
-    return [
-      { label: 'Bank charge', value: 'Shown on your receipt' },
-      { label: 'WAWU fee', value: money(q.wawuFeeMinor) },
-      { label: 'Total', value: `${money(q.totalFromMinor)} + bank charge` },
-    ];
-  }
   return [
-    { label: 'Bank charge', value: money(q.providerFeeMinor) },
-    { label: 'WAWU fee', value: money(q.wawuFeeMinor) },
-    { label: 'Fees', value: money(q.providerFeeMinor + q.wawuFeeMinor) },
-    { label: 'Total', value: money(q.totalFromMinor) },
+    { label: 'Fee', value: money(q.feeMinor) },
+    ...(q.vatOn ? [{ label: 'VAT', value: money(q.vatMinor) }] : []),
+    { label: 'Total', value: money(q.totalMinor) },
   ];
 }
 
