@@ -62,3 +62,37 @@ Round reports, verifier reports and lead notes, word for word, oldest first: [hi
 - **Ran:** 37 suites / 501 tests green (ops specs, community, community-message, inbox, notification, me), tsc, eslint, gates, baseline all exit 0.
 - **NOT RUN:** the full contract suite, the protected suite, anything real.
 
+
+## Verifier report (round 2, 11 Nov 2026)
+
+**Verdict: MERGE** (0 blocker, 0 high, 0 medium; lows below). Verifier did not build this task. Hub head c5800e01 checked out detached in its own worktree (`npm ci`, so `sharp` is present); database `ocr_v2` (own, Postgres 127.0.0.1:14001) and my own mock WAWU ID on 4201; both dropped, stopped and deleted afterwards. The shared mock on 4001 was used (not started or stopped by me) only for `notification.contract.spec.ts`, which hard-codes that port.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 Gates | passed | `python3 scripts/gates/run.py` exit 0: 9 gates, 2245 files scanned, 0 fail, 139 warn, 88 accepted. `check_baseline.py` exit 0 (125 entries). eslint (no --fix) on the 6 changed ops files and specs exit 0. `NODE_OPTIONS=--max-old-space-size=4096 npx tsc --noEmit` exit 0 (clean; `sharp` present) |
+| V2 Contract | passed | the four ops specs (`ops-clear-communities`, `ops-clear-communities-money`, `ops-delete-test-account`, `ops-real-money-schema-walk`): 4 suites 28/28 exit 0. community, community-message, inbox, notification, notification-settings: 31 suites, 30 pass; `notification.contract.spec.ts` failed 9 only because it hard-codes mock port 4001 and my env pointed at 4201; rerun against 4001: 11/11 exit 0 |
+| V3 Regression | NOT RUN | protected suite and whole `npm run test:contract` not run (GitHub's PR run is the evidence). The task adds no route and no schema change; `npm run contract:build` exit 0, `git diff --exit-code contract/` exit 0 |
+| V4 Field trace | passed | M1 rule against the sweep's own query, below |
+| V6 States | passed | the two money specs seed each state through real rows (below) |
+| V7 Flow walk | passed | unchanged from round 1 (member and host reads); this round changed only the keep rule and the start argument |
+| V9 Live seam | NOT RUN | a script, no app or HTTP route involved |
+
+**M1 closed.** `scripts/ops/room-money-rows.ts:252-262`: a credit-spend earning with no settlement, `hostShareKobo > 0` and `earnedAt >= sweepStart` adds a row, so the room is kept and listed ("no settlement yet"). Read against `adoptHostShares` (`src/money/earnings/earning-settlement.service.ts:685-740`): the sweep takes an earning when `hostShareKobo > 0`, `earnedAt >= start.at`, no settlement exists, and every lot is wallet-bought from a completed payment at one merchant account and the running provider. The keep rule is a superset of that query on every count: it ignores the lot and provider conditions (so a share the sweep would refuse for a mixed or other-provider lot is kept too, never cleared) and uses the same `>=` on the same `earnedAt`. The date test is the same one. No funded share the sweep could still make can fall between the two.
+- **`sweepStartFor`** (`room-money-rows.ts:293-305`) reads `EARNINGS_SWEEP_START` first, then the stored `EarningSweepStart` row, read only (the sweep's `sweepStart()` at `earning-settlement.service.ts:790` writes the row when missing; the command must not). With neither it returns the beginning of time, so every unsettled share keeps its room: the safe direction. The config value is parsed as `new Date(raw)`; the Hub's own parser (`payment-config.ts:146`) additionally refuses a value that is not a full moment and the Hub will not boot, so the only difference is for a value the live Hub could not be running with. Both the command and the Hub read the same `/etc/wawu/hub-api.env`. The start never changes once stored, so a share cannot move across it after the command has read it.
+- **Unfunded or pre-start shares.** `hostShareKobo = 0`: nothing is owed, the room clears (right). `earnedAt` before the start: the sweep never takes it (lead ruling 17 Oct, `adoptHostShares` doc), it would never become money, so it clears (right); the spec has the control. Store-bought (sandbox) credits: the sweep never adopts them either (join to a wallet payment fails the `HAVING`), they clear as before, and a store-bought lot outside the sandbox keeps the room by the older rule.
+- **Residual (not a defect):** a share whose lots the sweep would refuse (mixed Flutterwave and wallet lots, two merchant accounts) is kept for ever as "no settlement yet" until the share is settled by hand; the room stays listed with the record, which is the safe side.
+
+**L5 closed.** New spec `src/community/tests/ops-clear-communities-money.contract.spec.ts` (2 tests, 17 rooms, exit 0): kept rooms for an unsettled share, a production store pass, production store-bought credits, a missing lot, a landed settlement in an owed move, an active store subscription, a production store purchase with no pass, and 130 test passes plus one real; controls that clear (a share before the start, sandbox store pass and credits, a landed move, an ended subscription, 130 test passes only); two races through the test-only `Deps.beforeRoom` (`clear-communities.ts:69-70, 360`; the CLI entry builds its deps without it, so the command line cannot set it). My own mutants, each on the source file, restored after (`git status` clean):
+| Mutant | Result |
+|--------|--------|
+| M1 rule removed (`if (false)` in place of the new condition) | 2 of 2 fail ("Expected substring KEPT"; the unsettled-share room is "would clear") |
+| `FOR UPDATE` removed from the room lock | 1 fail (apply: a kept room no longer exists afterwards) |
+| in-transaction recheck removed (`if (money.length > 0) return { kept: money }`) | 1 fail (same assertion) |
+
+**Merge of `wmt/OPS-DEL-TEST` 7dfd5cf8.** `git diff 3685b50c 97c74e98` is `contract/openapi.json`, `scripts/ops/real-money-rows.ts` (account-delete query: provider test pushed into the query, `awaiting_payment` CAC application refuses) and the OPS-DEL-TEST spec. `room-money-rows.ts` imports only the `RealMoneyRow` type from `real-money-rows.ts` and does not call `findRealMoneyRows`; `proveTestProvider` (`delete-test-account.ts`) is unchanged. Nothing in the merge changes a room rule. `npm run contract:build` exit 0, `git diff --exit-code contract/` exit 0.
+
+**Findings.** None medium or worse.
+- **L6, low, test gap (new).** The money spec has no row for a funded earning with `hostShareKobo = 0` and no settlement (it must clear); the helper fixes the share at 850 (`ops-clear-communities-money.contract.spec.ts:176`). A mutant that changes `> 0` to `>= 0` would survive. It would keep rooms, never clear one, so no money is at risk. Test that kills it: one such room in CLEARED.
+- L1 to L4 from round 1 stand unchanged (disclosed lows).
+
+**Commands.** `npx jest --runInBand --forceExit` on the four ops specs exit 0 (28/28); on community, community-message, inbox, notification, notification-settings exit 1 only for the port reason above (423 pass, 9 fail in the one spec), spec rerun exit 0 (11/11); three mutant runs exit 1 each; `tsc` exit 0; eslint exit 0; gates exit 0; baseline exit 0; `contract:build` exit 0 and `git diff --exit-code contract/` exit 0. NOT RUN: the full `npm run test:contract`, the protected suite, anything against a real database or provider.

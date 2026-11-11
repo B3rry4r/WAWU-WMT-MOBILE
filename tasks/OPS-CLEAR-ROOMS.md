@@ -7,7 +7,7 @@ order: 389
 priority: after-launch
 repo: wawu-backend
 type: ops
-status: verifying
+status: review
 depends_on: []
 decisions: [R-17, R-19, R-136]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -19,12 +19,9 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** fix round 1 built, awaiting the verifier's second look (`verifying`). Hub `wmt/OPS-CLEAR-ROOMS` head c5800e01 (OPS-DEL-TEST `7dfd5cf8` merged by a merge commit, no conflict). Nothing was run against any real database or provider.
-- **M1 closed:** `room-money-rows.ts` keeps a room when a credit-spend earning has `hostShareKobo > 0`, `earnedAt` on or after the sweep's start and no settlement yet (the sweep makes it later). The start is read as the sweep reads it: `EARNINGS_SWEEP_START` when set, else the stored `EarningSweepStart` row, else the beginning of time (everything unsettled keeps its room); read only.
-- **L5 closed:** new spec `src/community/tests/ops-clear-communities-money.contract.spec.ts` (2 tests, 17 rooms): kept rooms for an unsettled share, a production store pass, production store-bought credits, a missing lot, a landed settlement in an owed move, an active store subscription, a production store purchase with no pass, 130 test passes plus one real; their controls clear (a share before the start, sandbox store pass and credits, a landed move, an ended subscription, 130 test passes only). Two races: a pass committed after the plan, and one still open when the apply reaches the room. Mutants run by hand and killed: M1 rule removed (2 fail), `FOR UPDATE` removed (1 fail), in-transaction recheck removed (1 fail). A test-only `Deps.beforeRoom` hook (not reachable from the command line) lets the spec land the purchases.
-- **Owner commands** (unchanged): dry run `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a; node dist/scripts/ops/clear-communities.js`; apply: the same with `--apply --confirm "CLEAR <n> COMMUNITIES"` (the phrase the dry run printed). Run while the wallet provider is still on its test keys; on live keys every pass and wallet-bought credit is real money and those rooms are kept.
-- **Low findings left as disclosed:** L1 a spend with no earning row is deleted with its room (the dry run counts them); L2 a sandbox store pass with a `:restored:<n>` reference is kept as unknown (safe); L3 a completed pass payment not yet delivered is not a keep rule (refunds run on the payment); L4 the Purchases list still shows the pass payment of a cleared room.
-- **Ran (exit 0 each):** the five ops specs (new two, OPS-DEL-TEST, schema walk) and the community, community-message, inbox, notification and me specs: 37 suites, 501 tests, with a real `npm ci` in the Hub worktree (so `sharp` was present); `npx tsc --noEmit` clean; eslint (no --fix) on the four files; `python3 scripts/gates/run.py`; `check_baseline.py`; `npm run contract:build` twice, `git diff --exit-code contract/` clean (the merged contract needed no change).
+- **Status:** `review`. Verifier round 2 (T2, the re-check of M1 and L5) says **MERGE**: no blocker, no high, no medium. Hub `wmt/OPS-CLEAR-ROOMS` head c5800e01, checked as built; nothing was run against any real database or provider.
+- **M1 closed, L5 closed** (report in history). Lows L1 to L4 stay as disclosed; one new test-gap note (a share of 0 kobo is not in the spec).
+- **Owner commands** (on the server, after the deploy builds `dist/scripts/ops/clear-communities.js`): dry run `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a; node dist/scripts/ops/clear-communities.js`; apply: the same with `--apply --confirm "CLEAR <n> COMMUNITIES"`, the phrase the dry run printed. Run while the wallet provider is still on its test keys; on live keys every pass and wallet-bought credit is real money and those rooms are kept. A host share the sweep has not made yet keeps its room until it has (the sweep's start is read from the same `EARNINGS_SWEEP_START`).
 - **NOT RUN:** the full `npm run test:contract` and the protected suite (GitHub's PR run is the evidence); anything against a real or remote database or a live provider.
 
 ## Read first
