@@ -7,7 +7,7 @@ order: 394
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-139, R-138, R-42, R-11]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -56,6 +56,38 @@ Every fee a person pays on a Nuvion money move comes from WAWU's fee schedule (p
 - [ ] A withdrawal below the minimum or with a fee bigger than its amount is refused.
 
 ## Builder report
+
+Builder, 11 Nov 2026. Hub branch `wmt/FEE-01` (head in the Hub repo's log; first push `171c538c`).
+
+**Lead ruling recorded (11 Nov 2026), which side the fee sits on.** Money going out (naira bank send or withdrawal, dollar payout, wallet-to-wallet, wallet payments): fee and VAT are added on top; `totalMinor` = amount + fee + VAT, `receiveMinor` = amount. NGN 10,000 withdrawal: fee NGN 100, the bank gets NGN 10,000, the wallet pays NGN 10,100 (plus VAT when on). A fee bigger than the amount is refused. Money coming in (international wire, dollars from local banks, adding money by account number): fee and VAT come off what arrives, `receiveMinor` = amount - fee - VAT. Swap: the person's rate is the provider's made 2% worse (at least USD 1 equivalent); the quote shows the difference as the fee.
+
+**Built**
+- Additive migration `20270101090000_fee_engine` (stamp later than main's newest `20261231110000`): `FeeSchedule`, `ProviderRate`, `MoneyFeeRecord`, and a small `FeeAlertSent` (one row per kind, the once-a-day mail claim; not named in the brief). `FeeSchedule` and `ProviderRate` are append-only (a trigger refuses UPDATE and DELETE). Seeds (first rows, changed by "R-139 seed", starting now): NGN bank withdrawal 0.4% min 10000 max 70000 kobo; USD payout 1% min 800 max 6000 cents; wire in 1.25% min 3000 max 75000; local dollars in 1.5% min 700 no max; swap 2% min 100 cents (USD 1) no max; wallet to wallet 0; add money pass-through. Nuvion rates (from tasks/NUV-FEES.md): bank payout 0.2% min 5000 max 50000 kobo; receive domestic 0.2% min 5000; book transfer 0; card issuance 100 cents, monthly 250, decline 100. The same migration sets the saved `fx.product.swap.on` to 0. Rollback `rollback.sql` refuses while any non-seed fee or rate row or any MoneyFeeRecord exists.
+- Settings (plan registry): `tax.vat_on` (default 0), `tax.vat_percent` ("7.5"), `money.min_withdrawal_minor` (lines such as "NGN 100000", default none), `fx.product.local_usd_in.on` (default 0).
+- Routes (`src/money/fees/engine/`): `GET/POST /admin/money/fees`, `GET /admin/money/fees/preview`, `GET/POST /admin/money/provider-rates`. Roles: fees read superadmin, finance, support; fees write superadmin, finance; provider rates read and write superadmin and finance only.
+- The rule in BigInt millionths, half up (`percent-fee.ts`, from NUV-FEES). The quote under Nuvion takes the fee from the schedule and Nuvion's expected charge from the rate table (the NUVION_FEE_* settings are no longer read for the quote or the money-limits check). `fees_not_set` now means no schedule row in force.
+- Error codes `below_minimum_withdrawal` 422, `fee_exceeds_amount` 422, `product_off` 409 (added to the enum and status table).
+- MoneyFeeRecord written when a Nuvion wallet or bank send is claimed and its Nuvion charge filled when the provider's record states `applicable_fee`; a difference from the expected charge, or a new rate row, emails `MONEY_CHECK_RECIPIENT_WAWU_IDS` once a day per kind.
+
+**Differences and gaps, plainly**
+1. The quote's new fields (`currency`, `feeMinor`, `vatMinor`, `vatOn`, `totalMinor`, `receiveMinor`) are present only when the fee engine prices the move (Nuvion running); under Fintava the answer stays byte-identical to main (NUV-07's golden test fails otherwise). They are optional in the type.
+2. Under Nuvion `fee.providerFeeKobo` still shows the part of the fee Nuvion keeps (its expected charge from the rate table, inside the fee, not on top), so the existing fee legs are unchanged. That is a per-amount figure derived from a confidential rate; the owner may want it folded into `fee.wawuFeeKobo` for the app (then the fee leg has to change). `GET /money/fees/quote` does not carry the rate table itself.
+3. The alert email goes through the money check's mailer (WAWU ID's `money-check-report` route) as one item of the check `merchant_charges`, because WAWU ID takes only that shape. WAWU ID owns the wording; a dedicated mail type needs a WAWU ID change. NOT RUN against a real WAWU ID.
+4. Swaps and local-dollar receiving: the switches exist and `GET /money/fx/currencies` now answers `localUsdIn` beside `products` (not inside it, so `products` keeps its three keys); swaps still refuse with the existing `fx_switched_off` (changing its code would change a response the app handles). There is no WAWU route for receiving dollars from local banks to refuse (it arrives at Nuvion); `product_off` is defined and not yet thrown by any route.
+5. Swap quote, dollar payout (abroad quote) and the add-money quote gain the added fields from the fees they already quote; they are NOT yet priced from the schedule (`usd_bank_payout`, `fx_swap`, `intl_wire_in`, `usd_local_in`, `ngn_add_money` rows are stored, previewed and edited, but only the naira bank send and wallet-to-wallet use them). VAT is not applied on those. The add-money quote keeps its existing "amount the wallet gets, charge on top" meaning, which differs from the lead ruling for money coming in. A follow-up task (FEE-07 suggested) must price those four from the schedule and take the fee off what arrives.
+6. MoneyFeeRecord is written for wallet and bank sends only (not abroad, swap, add-money, cards).
+7. `money.min_withdrawal_minor` applies to the naira bank send; the USD line is stored but nothing reads it until the dollar payout is priced from the schedule.
+
+**Checks (exit codes, Hub head `062333dd`)**
+- `npx tsc --noEmit` 0; eslint without --fix on the changed .ts 0 (after `--fix` on my own files).
+- New spec `src/money/fees/engine/tests/fee-engine.spec.ts` 16 of 16 (the five owner tests, edges, history, VAT, safety, record, rate table not in an app route, roles). `nuvion-fees.spec.ts` (Fintava quotes byte-identical) and `fee-quote.spec.ts` pass.
+- Areas touched, run against a migrated `fee01_test` database with a local mock WAWU ID: 50 of 58 suites pass. **Failing, by design of the replacement, not edited:** `nuvion-fees.contract.spec.ts` (3 tests: it sets `NUVION_FEE_*` and expects those to be the fee source and `fees_not_set` while unset; the engine replaces them) and the five Nuvion money-movement contract specs under `src/money/transfers/tests/` (`wallet-transfer-bank-nuvion`, `wallet-transfer-fee-back-failed-nuvion`, `wallet-transfer-nuvion`, `wallet-transfer-nuvion-adapter`, `wallet-transfer-wawu-fee-nuvion`, 55 tests: each pins the fee through `NUVION_FEE_*` and `WAWU_FEE_*` env and a stand-in charging those figures, so the quote now comes from the seeded schedule and rate table while the stand-in charges its own). Their setup (stand-in fees aligned to the rate table, or a fee row written in the spec's `beforeAll`) needs the lead's or verifier's approval; I did not touch a test. Until then they are red on this branch.
+- `python3 scripts/gates/run.py` 0 (0 fail, 139 warn, 88 accepted); `check_baseline.py` 0.
+- `npm run contract:build` 0; diff against main is additive: 3 new paths, no path or schema removed; schemas widened: `FeeQuoteView`, `FeeQuotePartView`, `FxCurrenciesView`, `MoneyErrorReason` and the abroad, FX and add-money quote views.
+- Protected route suite as CI runs it (`ci-check.sh 158be141 HEAD 0`, fresh `fee01_protected` database): 0, 253 of 253 (244 required).
+- Migration applied to a fresh database: 0; the append-only trigger refuses an UPDATE (tried by hand). `rollback.sql` NOT RUN.
+- `python3 scripts/tasks/check_tasks.py` 0.
+- NOT RUN: a real WAWU ID mail for the alert; any live provider (stand-ins only); the rest of the full jest suite beyond the areas listed; the rollback script; abroad, swap and add-money priced from the schedule (not built, see gap 5); the app's `GET /money/fees/quote` over HTTP with the engine (covered by the service spec only).
 
 ## Verifier report
 
