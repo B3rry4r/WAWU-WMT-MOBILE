@@ -89,6 +89,8 @@ Builder, 11 Nov 2026. Hub branch `wmt/FEE-01` (head in the Hub repo's log; first
 - `python3 scripts/tasks/check_tasks.py` 0.
 - NOT RUN: a real WAWU ID mail for the alert; any live provider (stand-ins only); the rest of the full jest suite beyond the areas listed; the rollback script; abroad, swap and add-money priced from the schedule (not built, see gap 5); the app's `GET /money/fees/quote` over HTTP with the engine (covered by the service spec only).
 
+**Fix round 1, dollar side (11 Nov 2026, Hub `wmt/FEE-01-usd` `5e1629a7`):** dollar payout to a bank, dollars received, and add money now follow the schedule and the lead's side rule; the wire fee waits for the owner to name Nuvion's wire `payment_type` (`FX_WIRE_PAYMENT_TYPES`). Full report in tasks/history/FEE-01.md.
+
 ## Verifier report
 
 ## Owner sign-off
