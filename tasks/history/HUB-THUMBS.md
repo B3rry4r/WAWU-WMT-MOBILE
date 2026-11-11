@@ -141,3 +141,14 @@ The `within` 8 s timeout releases the queue slot but does not stop a sharp decod
 3. LOW timeout does not cancel the decode.
 
 Memory (the HIGH of round 0) is fixed: worst accepted picture +125 MB, the 49 MP 16-bit interlaced PNG is refused for about +48 MB (not 2 MB, but not decoded). No paid picture is copied.
+
+### Round 2 (11 Nov): the verifier's three findings
+
+Hub `b02aa106` (on `646cb678`). Code change outside tests: 26 added and 32 removed non-comment lines in `storage.service.ts` and `thumbs/ensure-thumbs.ts` (`git diff --stat HEAD~1`: storage.service.ts 46, tests/thumbs.spec.ts 125, thumbs/ensure-thumbs.ts 25; 138 insertions, 58 deletions).
+1. Sweep starvation: `sweepThumbs` now reads up to 10 x limit candidates, asks one query which already have both copies, and spends its looks (default raised from 20 to 60, about 12 s of work) only on the rest.
+2. Confirm never waits for copies (lead ruling 11 Nov): `THUMB_INLINE_WAIT_MS` and the inline race are removed; `ensureThumbs` queues the job and returns; only the sweeps and the backfill pass `background: true`, which awaits the job. A comment says so.
+3. Queue slot: the slot is released only when the decode promise truly settles; the 8 s limit only stops waiting.
+Tests that fail on 646cb678 and pass now (thumbs.spec.ts, 25 tests): "a confirm never waits for copies" (returns in under 300 ms with a 1.5 s read), "a sweep spends its 20 looks only on pictures that still need copies" (50 with copies ahead of 5 without), "keeps the queue slot until the decode truly ends" (two decodes never overlap). Checked by putting the 646cb678 files back: those 3 fail, 22 pass.
+Confirm time, 12 MP noisy JPEG (10 MB) avatar, local stack with the storage stand-in, ms: single main 37, branch 40; 5 at once main [46,52,44,43,56] max 56, branch [66,46,74,44,42] max 74.
+Burst: 50 confirms returned in 331 ms (10 users, presigns spaced for the throttler); the Hub was killed with `kill -9`; at that point 40 of 50 had copies; ONE `sweepThumbs()` from a fresh StorageService looked at only the 10 that needed them (754 ms) and the bucket then held 50 originals and 100 copies, every picture done.
+Checks: tsc EXIT 0, eslint on changed files EXIT 0, gates EXIT 0, check_baseline EXIT 0, `src/storage` (with thumbs spec) on a fresh database 387/387 EXIT 0.
