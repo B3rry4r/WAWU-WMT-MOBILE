@@ -271,3 +271,8 @@ Fails on 9f054474's list and passes on d4d76123's: I ran the real spec with 9f05
 - Low: the walk spec only reads names, so a field in a JSON column (a payment reference inside `Json`) is invisible to it.
 
 NOT RUN: the full account and account-purge suites (GitHub's PR run); the script on the server or against any provider.
+
+
+## Lead re-cut (M1, M2) builder entry (11 Nov 2026)
+
+Hub `2546bf13` on d4d76123. Code change in `scripts/ops/real-money-rows.ts`: 19 lines added, 8 removed. M1: a provider-scoped table is now read with `NOT provider = running` in the query (plus `provider IS NULL` for FintavaLedgerEntry, the one nullable column, when the server runs Nuvion), and the JS provider test is gone, so `take: 100` only limits what is printed. M2: a ServiceApplication refuses when `amountPaid` is set or `status` is `awaiting_payment`. Specs: 120 running-provider ledger rows plus one `nuvion` row refuse; an awaiting_payment application refuses; the clean sandbox account still deletes with a `fintava` and a NULL-provider ledger row. Evidence (database `odt_r3`, dropped): ops specs 2 suites, 20 tests EXIT 0; eslint EXIT 0; gates EXIT 0; check_baseline EXIT 0. Full account and account-purge suites: NOT RUN.
