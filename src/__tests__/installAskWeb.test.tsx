@@ -8,6 +8,8 @@ type Handler = (e: unknown) => void;
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
 
 const handlers: Record<string, Handler[]> = {};
+let now = 0;
+jest.spyOn(performance, 'now').mockImplementation(() => now);
 const g = globalThis as unknown as Record<string, unknown>;
 // The module catches the browser's offer when it loads, so the stand-in window exists before it is required (once: one React).
 g.window = { addEventListener: (n: string, h: Handler) => (handlers[n] ||= []).push(h) };
@@ -24,47 +26,56 @@ function browser(opts: { ua: string; standalone?: boolean; continued?: boolean; 
   g.sessionStorage = { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => void (store[k] = v), removeItem: (k: string) => void delete store[k] };
   Object.defineProperty(globalThis, 'navigator', { value: { userAgent: opts.ua, maxTouchPoints: 0, clipboard }, configurable: true });
   mod.resetInstallAsk();
+  now = 0;
   if (opts.continued) store['wmt.install.continued'] = '1';
   return { fire: (n: string, e: unknown) => (handlers[n] ?? []).forEach((h) => h(e)), clipboard, store };
 }
 
 function Probe() {
-  const asking = mod.useInstallAsk();
-  return asking ? <mod.InstallAskScreen /> : null;
+  return <mod.InstallAskScreen />;
 }
 
-describe('the web install gate', () => {
+const DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+const offer = (outcome: 'accepted' | 'dismissed' = 'dismissed', choice?: Promise<{ outcome: string }>) => ({
+  preventDefault: jest.fn(),
+  prompt: jest.fn().mockResolvedValue(undefined),
+  userChoice: choice ?? Promise.resolve({ outcome }),
+});
+const stored = (b: { store: Record<string, string> }) => b.store['wmt.install.continued'];
+
+describe('the web install screen is drawn over the app, never instead of it', () => {
   it('opened from the icon (standalone) it never shows', async () => {
     browser({ ua: ANDROID, standalone: true });
     await render(<Probe />);
     expect(screen.queryByTestId('install-screen')).toBeNull();
   });
 
-  it('opened in a tab it shows; beforeinstallprompt makes the Install button, which calls prompt()', async () => {
+  it('Android Chrome: menu steps from the first paint; an offer in the window makes the Install button, which calls prompt(); any answer ends the screen', async () => {
     const b = browser({ ua: ANDROID });
     await render(<Probe />);
-    expect(screen.getByTestId('install-screen')).toBeTruthy();
+    expect(screen.getByTestId('install-steps')).toBeTruthy();
     expect(screen.queryByTestId('install-button')).toBeNull();
-    const prompt = jest.fn().mockResolvedValue(undefined);
-    const preventDefault = jest.fn();
-    await act(async () => b.fire('beforeinstallprompt', { preventDefault, prompt, userChoice: Promise.resolve({ outcome: 'accepted' }) }));
-    expect(preventDefault).toHaveBeenCalled();
+    const o = offer('accepted');
+    now = 800;
+    await act(async () => b.fire('beforeinstallprompt', o));
+    expect(o.preventDefault).toHaveBeenCalled();
     await fireEvent.press(screen.getByTestId('install-button'));
-    expect(prompt).toHaveBeenCalledTimes(1);
+    expect(o.prompt).toHaveBeenCalledTimes(1);
     await act(async () => undefined);
-    expect(screen.getByTestId('install-title').props.children).toBe('Who Made This is on your device');
+    expect(screen.queryByTestId('install-overlay')).toBeNull();
+    expect(stored(b)).toBe('1');
   });
 
-  it('Continue in the browser lets the app draw, remembers it for the tab, and does not touch the address', async () => {
+  it('Continue in the browser ends the screen, latches the tab, and does not touch the address', async () => {
     const b = browser({ ua: ANDROID, href: 'https://x.test/content/abc?ref=1' });
     await render(<Probe />);
     await fireEvent.press(screen.getByTestId('install-continue'));
     expect(screen.queryByTestId('install-screen')).toBeNull();
-    expect(b.store['wmt.install.continued']).toBe('1');
+    expect(stored(b)).toBe('1');
     expect((globalThis as unknown as { window: { location: { href: string } } }).window.location.href).toBe('https://x.test/content/abc?ref=1');
   });
 
-  it('a tab that already continued does not ask again; a new tab (no stored flag) does', async () => {
+  it('a tab that already answered does not ask again', async () => {
     browser({ ua: ANDROID, continued: true });
     await render(<Probe />);
     expect(screen.queryByTestId('install-screen')).toBeNull();
@@ -78,36 +89,91 @@ describe('the web install gate', () => {
     expect(b.clipboard.writeText).toHaveBeenCalledWith('https://x.test/r/ABC123');
   });
 
-  const DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
-  const offer = () => ({ preventDefault: jest.fn(), prompt: jest.fn().mockResolvedValue(undefined), userChoice: Promise.resolve({ outcome: 'dismissed' }) });
-
-  it('desktop Chrome with an offer shows the Install button', async () => {
-    jest.useFakeTimers();
-    const b = browser({ ua: DESKTOP });
-    await render(<Probe />);
-    expect(screen.queryByTestId('install-button')).toBeNull();
-    await act(async () => b.fire('beforeinstallprompt', offer()));
-    await act(async () => jest.advanceTimersByTime(mod.OFFER_WAIT_MS + 100));
-    expect(screen.getByTestId('install-button')).toBeTruthy();
-    jest.useRealTimers();
-  });
-
-  it('desktop Chrome with no offer after the wait steps aside (most often already installed)', async () => {
+  it('desktop Chrome: no offer means nothing is drawn, at any time (no blank wait)', async () => {
     jest.useFakeTimers();
     browser({ ua: DESKTOP });
     await render(<Probe />);
-    expect(screen.queryByTestId('install-screen')).toBeNull();
-    await act(async () => jest.advanceTimersByTime(mod.OFFER_WAIT_MS + 100));
-    expect(screen.queryByTestId('install-waiting')).toBeNull();
-    expect(screen.queryByTestId('install-screen')).toBeNull();
+    expect(screen.toJSON()).toBeNull();
+    await act(async () => jest.advanceTimersByTime(10000));
+    expect(screen.toJSON()).toBeNull();
     jest.useRealTimers();
+  });
+
+  it('desktop Chrome: an offer inside the window draws the Install button over the app', async () => {
+    const b = browser({ ua: DESKTOP });
+    await render(<Probe />);
+    now = 900;
+    await act(async () => b.fire('beforeinstallprompt', offer()));
+    expect(screen.getByTestId('install-button')).toBeTruthy();
+  });
+
+  it('H1: Install then cancelled (the browser dialog closed 5 s later) lands on the app, not an empty page', async () => {
+    const b = browser({ ua: DESKTOP });
+    await render(<Probe />);
+    now = 1000;
+    let cancel!: (v: { outcome: string }) => void;
+    const o = offer('dismissed', new Promise((r) => (cancel = r)));
+    await act(async () => b.fire('beforeinstallprompt', o));
+    await fireEvent.press(screen.getByTestId('install-button'));
+    now = 6000;
+    await act(async () => cancel({ outcome: 'dismissed' }));
+    expect(screen.toJSON()).toBeNull();
+    expect(stored(b)).toBe('1');
+    // and a new offer does not bring it back
+    await act(async () => b.fire('beforeinstallprompt', offer()));
+    expect(screen.toJSON()).toBeNull();
+  });
+
+  it('H1: a prompt that throws also ends on the app', async () => {
+    const b = browser({ ua: DESKTOP });
+    await render(<Probe />);
+    now = 500;
+    const o = offer();
+    o.prompt = jest.fn().mockRejectedValue(new Error('no'));
+    await act(async () => b.fire('beforeinstallprompt', o));
+    await fireEvent.press(screen.getByTestId('install-button'));
+    await act(async () => undefined);
+    expect(screen.toJSON()).toBeNull();
+  });
+
+  it('M1: an offer after the window (5 s) never replaces the app, on a computer or on a phone', async () => {
+    const b = browser({ ua: DESKTOP });
+    await render(<Probe />);
+    now = 5000;
+    await act(async () => b.fire('beforeinstallprompt', offer()));
+    expect(screen.toJSON()).toBeNull();
+    const a = browser({ ua: ANDROID, continued: true });
+    now = 5000;
+    await act(async () => a.fire('beforeinstallprompt', offer()));
+    expect(screen.queryByTestId('install-button')).toBeNull();
+  });
+
+  it('an offer after the person has touched the page is ignored, and the visit is latched', async () => {
+    const b = browser({ ua: DESKTOP });
+    await render(<Probe />);
+    now = 400;
+    await act(async () => b.fire('pointerdown', {}));
+    expect(stored(b)).toBe('1');
+    await act(async () => b.fire('beforeinstallprompt', offer()));
+    expect(screen.toJSON()).toBeNull();
+  });
+
+  it('the latch holds for the visit: a touch while the screen is up does not end it, an answer does', async () => {
+    const b = browser({ ua: ANDROID });
+    await render(<Probe />);
+    await act(async () => b.fire('keydown', {}));
+    expect(screen.getByTestId('install-screen')).toBeTruthy();
+    expect(stored(b)).toBeUndefined();
+    await fireEvent.press(screen.getByTestId('install-continue'));
+    expect(stored(b)).toBe('1');
+    await act(async () => b.fire('beforeinstallprompt', offer()));
+    expect(screen.toJSON()).toBeNull();
   });
 
   it('desktop Firefox shows no screen at all', async () => {
     browser({ ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0' });
     await render(<Probe />);
-    expect(screen.queryByTestId('install-screen')).toBeNull();
-    expect(screen.queryByTestId('install-waiting')).toBeNull();
+    expect(screen.toJSON()).toBeNull();
   });
 
   it('Safari 17 or later on a Mac shows the Add to Dock steps', async () => {
@@ -116,4 +182,3 @@ describe('the web install gate', () => {
     expect(screen.getByText('Choose Add to Dock.')).toBeTruthy();
   });
 });
-

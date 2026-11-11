@@ -17,7 +17,7 @@ export type InstallViewProps = {
   /** An iPad: its Share button is at the top of Safari. */
   ipad?: boolean;
   /** The person accepted the browser's install, or the browser said the app was installed. */
-  installed: boolean;
+  installed?: boolean;
   /** "Link copied" is showing. */
   copied: boolean;
   onInstall: () => void;
@@ -95,7 +95,7 @@ export function copyFor(context: InstallContext, canPrompt: boolean, installed: 
 }
 
 /** WEBAPP-11 (R-131): the install screen. No board draws it (design gap filed, R-29), so it is built from the shared parts. */
-export function InstallView({ context, canPrompt, ipad, installed, copied, onInstall, onCopy, onContinue }: InstallViewProps) {
+export function InstallView({ context, canPrompt, ipad, installed = false, copied, onInstall, onCopy, onContinue }: InstallViewProps) {
   const { colors } = useWawu();
   const c = copyFor(context, canPrompt, installed, ipad);
   return (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { View } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 
 import { useWawu } from '@/theme';
 
@@ -9,18 +9,27 @@ import { InstallView } from './InstallView';
 /** The browser's own install offer, held until the button is pressed. Typed here: the DOM lib has no `BeforeInstallPromptEvent`. */
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
 
+/** Set for the tab once the screen has been answered (Install accepted, dismissed or cancelled, or Continue), or was not wanted this visit. */
 const KEY = 'wmt.install.continued';
 
-let deferred: InstallPromptEvent | null = null;
-let installedNow = false;
-let continued = false;
-/** A computer's Chrome or Edge that was offered no install within the wait: most often the app is already installed, so the screen steps aside. */
-let noOffer = false;
+/**
+ * R-131, lead decision 10 Nov (round 2): the app is never hidden and never blank. The install screen is drawn OVER it. On Chrome, Edge and
+ * Samsung the browser's offer must arrive within this long after the page loaded, and before the person has touched the page; a later offer is
+ * ignored, and nothing waits on a timer to hide anything.
+ */
+export const OFFER_WINDOW_MS = 3000;
 
-/** How long a computer's Chrome or Edge waits for the browser's offer before the screen steps aside. */
-export const OFFER_WAIT_MS = 2500;
+let deferred: InstallPromptEvent | null = null;
+let continued = false;
+let cached: InstallContext | null = null;
+/** The person has touched the page (a press, a key, the wheel or a drag). */
+let touched = false;
+/** The address the browser opened on, read once when the code loads: the app may move the address under the screen, the copy button copies this. */
+const landing: string | null = typeof window !== 'undefined' ? (window.location?.href ?? null) : null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
+
+const sinceLoad = () => (typeof performance !== 'undefined' ? performance.now() : 0);
 
 function remembered(): boolean {
   try {
@@ -29,8 +38,6 @@ function remembered(): boolean {
     return continued;
   }
 }
-
-const isDesktopChromium = (c: InstallContext) => c.kind === 'chromium' && c.os === 'desktop';
 
 /** Read now, from the page itself: the standalone flags and the user agent. */
 export function readContext(): InstallContext {
@@ -49,17 +56,52 @@ export function readContext(): InstallContext {
   });
 }
 
-// The browser fires this once, soon after the page loads and often before React draws, so it is caught when the code loads.
+const context = (): InstallContext => (cached ??= readContext());
+
+/** Latches "no screen this visit": it never comes back in this tab. */
+function latch(): void {
+  continued = true;
+  try {
+    sessionStorage.setItem(KEY, '1');
+  } catch {
+    // Storage refused: this page load still stays latched.
+  }
+  emit();
+}
+
+/**
+ * Is the screen over the app right now? Not from the icon, not in a browser that cannot install, not once answered. Where the browser says it
+ * can install by an offer (a computer's Chrome or Edge) only while an offer is held; on an iPhone, an iPad, a Mac's Safari, in another app's
+ * browser and on an Android phone (menu steps when there is no offer) from the first paint.
+ */
+function visibleNow(): boolean {
+  const c = context();
+  if (c.kind === 'standalone' || c.kind === 'cannot') return false;
+  if (continued || remembered()) return false;
+  if (c.kind === 'chromium' && c.os === 'desktop') return deferred !== null;
+  return true;
+}
+
+// The browser fires the offer once, soon after load and often before React draws, so it is caught when the code loads.
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
+    // Late (after the window) or after the person has touched the page: ignored, so it never replaces the app they are using.
+    if (touched || sinceLoad() > OFFER_WINDOW_MS || continued || remembered()) return;
     deferred = e as InstallPromptEvent;
     emit();
   });
+  const touch = () => {
+    if (touched) return;
+    touched = true;
+    // A touch before the screen is up means no screen this visit.
+    if (!visibleNow()) latch();
+  };
+  // Only what a person does (not a scroll event, which the app itself can cause).
+  for (const name of ['pointerdown', 'touchstart', 'touchmove', 'keydown', 'wheel']) window.addEventListener(name, touch, { capture: true, passive: true });
   window.addEventListener('appinstalled', () => {
     deferred = null;
-    installedNow = true;
-    emit();
+    latch();
   });
 }
 
@@ -70,33 +112,17 @@ const subscribe = (l: () => void) => {
   };
 };
 
-/** True while the install screen stands in front of the app: in a browser tab, not from the icon, and not yet continued past it in this tab. */
+/** True while the install screen is drawn over the app. */
 export function useInstallAsk(): boolean {
-  const [context] = useState(readContext);
-  const gone = useSyncExternalStore(subscribe, () => continued || remembered(), () => true);
-  const skipped = useSyncExternalStore(subscribe, () => noOffer && deferred === null && !installedNow, () => true);
-  useEffect(() => {
-    if (!isDesktopChromium(context) || gone) return undefined;
-    const t = setTimeout(() => {
-      if (deferred === null && !installedNow) {
-        noOffer = true;
-        emit();
-      }
-    }, OFFER_WAIT_MS);
-    return () => clearTimeout(t);
-  }, [context, gone]);
-  // Standalone (from the icon) and a browser that cannot install (Firefox) show no screen; neither does a computer's Chrome with no offer.
-  if (context.kind === 'standalone' || context.kind === 'cannot') return false;
-  if (isDesktopChromium(context) && skipped) return false;
-  return !gone;
+  return useSyncExternalStore(subscribe, visibleNow, () => false);
 }
 
 /** Test seam: forget what this tab did. */
 export function resetInstallAsk(): void {
   deferred = null;
-  installedNow = false;
   continued = false;
-  noOffer = false;
+  cached = null;
+  touched = false;
   try {
     sessionStorage.removeItem(KEY);
   } catch {
@@ -127,14 +153,18 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
+// A fixed layer over the whole window (the app's own column sits beneath it, drawn and running).
+const overlay = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 } as unknown as ViewStyle;
+
 /**
- * The install screen with its behaviour. The address the person opened is never touched: the app's routes are simply not drawn until
- * "Continue in the browser", so the same address opens after it (an invite, a piece, a payment return).
+ * The install screen, drawn over the app, with its behaviour. It draws nothing when it is not wanted. However it ends (Install accepted,
+ * dismissed or cancelled, Continue) it latches for the tab and the app is what is left.
  */
 export function InstallAskScreen() {
-  const [context] = useState(readContext);
+  const show = useInstallAsk();
+  const { colors } = useWawu();
+  const c = context();
   const prompt = useSyncExternalStore(subscribe, () => deferred, () => null);
-  const installed = useSyncExternalStore(subscribe, () => installedNow, () => false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -146,46 +176,33 @@ export function InstallAskScreen() {
   const onInstall = useCallback(() => {
     const e = deferred;
     if (!e) return;
-    // A browser's offer can be used once: it stays until the person has answered it, then the menu steps take over.
+    // A browser's offer is used once; whatever the answer, and however late, the screen ends and the app is what is left.
     void e
       .prompt()
       .then(() => e.userChoice)
-      .then((choice) => {
+      .catch(() => undefined)
+      .then(() => {
         deferred = null;
-        if (choice.outcome === 'accepted') installedNow = true;
-        emit();
-      })
-      .catch(() => undefined);
+        latch();
+      });
   }, []);
 
   const onCopy = useCallback(() => {
-    void copyText(window.location.href).then((ok) => setCopied(ok));
+    void copyText(landing ?? window.location.href).then((ok) => setCopied(ok));
   }, []);
 
-  const onContinue = useCallback(() => {
-    continued = true;
-    try {
-      sessionStorage.setItem(KEY, '1');
-    } catch {
-      // Storage refused: this page load still continues.
-    }
-    emit();
-  }, []);
-
-  const { colors } = useWawu();
-  // A computer's Chrome or Edge shows nothing until the browser's offer arrives (or the wait ends and the screen steps aside).
-  if (isDesktopChromium(context) && prompt === null && !installed) return <View testID="install-waiting" style={{ flex: 1, backgroundColor: colors.surfacePage }} />;
-
+  if (!show) return null;
   return (
-    <InstallView
-      context={context}
-      ipad={isIpad(navigator.userAgent, navigator.maxTouchPoints)}
-      canPrompt={prompt !== null}
-      installed={installed}
-      copied={copied}
-      onInstall={onInstall}
-      onCopy={onCopy}
-      onContinue={onContinue}
-    />
+    <View testID="install-overlay" role="dialog" aria-modal style={[overlay, { backgroundColor: colors.surfacePage }]}>
+      <InstallView
+        context={c}
+        ipad={isIpad(navigator.userAgent, navigator.maxTouchPoints)}
+        canPrompt={prompt !== null}
+        copied={copied}
+        onInstall={onInstall}
+        onCopy={onCopy}
+        onContinue={latch}
+      />
+    </View>
   );
 }
