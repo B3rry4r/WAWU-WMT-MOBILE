@@ -102,3 +102,42 @@ Worst accepted picture: +125 MB (5 at once, 24.9 MP 8-bit RGBA PNG). Limit 300 M
 - Bounded: 1 running + 40 waiting, then skipped. Memory stays flat. A restart loses the queue (SIGKILL after 1.5 s of a 70 burst left 42 pictures without copies); the 10-minute sweep (`sweepThumbs`) is the only thing that picks them up.
 - Sweep and backfill: the sweep goes through the same one-slot queue as confirm (`ensureThumbs ... background:true`), one picture at a time, so it can sit in front of a confirm for at most one job (a few hundred ms); it cannot starve confirm. The backfill is a separate process with its own queue.
 - MEDIUM, sweep depth: see the section "Sweep starvation" below.
+
+### Sweep starvation (MEDIUM, found in check 2)
+
+`sweepThumbs(limit = 20)` reads the 60 newest public pictures of the last 2 hours and stops after LOOKING at 20 (`looked += 1` is counted before `ensureThumbs`, so a picture that already has copies uses up a place). Measured: after a 50 burst and a 70 burst (queue overflow plus a SIGKILL), 51 good 24 MP JPEGs had no copies. The 02:40 sweep repaired 7 (the newest 7 of the 20 it looked at; the other 13 already had copies), the 02:50 sweep repaired 0, and the 51 were still missing 10 minutes later. Once the newest 20 pictures have copies, no older picture is ever reached, until it ages out of the 2-hour window; then it is never repaired (only the backfill, which is not run). On the live server any restart during uploads, or any burst over 41, leaves pictures permanently without copies (served full size: no harm, but the feature quietly fails). Fix: do not count a picture that already has copies (ask for the rows first and skip those), or look at 20 pictures that LACK copies.
+
+### Check 3, upload time (MEDIUM, for the lead to rule)
+
+Confirm of a 12 MP (2.3 MB) JPEG, on main and branch, same database, warm: main single 21 to 43 ms; branch single 160 to 340 ms. Five at once: main 50 to 63 ms each; branch 171 to 755 ms (they queue one at a time). 24.9 MP 8-bit RGBA PNG, five at once: confirm answers at 0.6, 1.2, 1.7, 2.2 and 2.6 s. Fifty at once: up to 2.97 s. So the 2.5 s wait is real and the later pictures in a burst pay all of it. Every confirm returned 200 `confirmed` (also for the three refused picture kinds: 49 MP 16-bit interlaced, 25 MP 16-bit, 50 MP JPEG: 78 to 232 ms, no copies). Inside the task's own 2.5 s rule; but a 5 to 10 times slower normal confirm is the "slower upload" the brief calls a blocker. Options: wait 300 to 500 ms at most and let the rest carry on (the copies then reach the app from the next read), or no wait at all. Needs the lead's ruling.
+
+### Check 4, round 0 passes (PASS)
+
+- Paid pictures: `thumbSourceOk` run on 50 keys (7 allowed, 43 refused): content/full (jpg, png), video, pdf and audio previews, chat, kyc, ai, legal, event(s), community, profile/work, ads, `..`, `%2e%2e`, leading and doubled slash, trailing newline, `.t96/.t640` copies, wrong extensions, other folders, a URL. One note: `avatars/not-a-uuid/<uuid>.jpg` passes the key test, but `run()` also needs a row of that owner whose id equals the folder, so nothing is copied; not a leak. Only the four public families can be copied.
+- EXIF: a JPEG with Make, GPS block and orientation 6 (900x300): both copies have no exif, icc, xmp, orientation, and no `Exif`, `GPS` or the camera name in their bytes; the copies are 213x640 and 32x96 (upright).
+- Website and dashboard answers: main and branch run on one database; `/users/me`, `/search`, `/feed`, `/content/public/featured`, `/me/purchases`, `/me/saved`, `/users/me/profile-stats` byte-identical with no header and with `X-Wawu-Client: site`. With `app`, equal to main once `*Thumbs` keys are removed; `avatarThumbs` appears only with `app` (real signed links to `.t96.webp` and `.t640.webp`). Not compared: public-profile, visitor-profile, explore, creators/suggestions (404 at the paths I guessed); those rest on the builder's specs.
+- Contract diff: openapi.json 110 added, 0 removed; package.json one line (`sharp` 0.34.5).
+
+### Check 5, tests
+
+- tsc (alone, 4 GB) EXIT 0. eslint on the 22 changed `.ts` files EXIT 0. gates EXIT 0 (9 gates, 2241 files, 0 fail, 139 warn, 88 accepted). check_baseline EXIT 0.
+- Fresh databases, `--runInBand`, branch vs main (same specs, same failing test names, diff 0 in all):
+  - thumbs spec: branch 23/23 EXIT 0.
+  - src/storage: branch 385/385 EXIT 0 (main 362/362).
+  - src/account-purge: branch 119/119 EXIT 0 (main 119/119).
+  - src/account/account-deletion*: 24 failed of 232 EXIT 1 on BOTH (`account-deletion`, `account-deletion-reason-route`): same on fresh main, as the builder said.
+  - src/movies: 1 failed of 30 on BOTH.
+  - src/search-response: 12 failed of 261 on BOTH (popular-name, search-people, search-response). More than the builder's 1: my mock WAWU ID has no seeded accounts, so I cannot call this a clean pass; but it is identical on main, no branch-only failure.
+  - protected-routes: 13 failed of 253 on BOTH (WAWU ID 401, "invalid service key" in my mock setup). NOT a clean pass in my environment; identical to main. The builder's 253/253 is not reproduced here.
+
+### Not done / limits
+
+The `within` 8 s timeout releases the queue slot but does not stop a sharp decode that is still running, so a stuck decode could overlap the next job (low; needs a picture that takes over 8 s). Real Spaces read time is not in any figure. Explore/suggestions bodies not compared. Hub restart on a real droplet not tried.
+
+### Verdict: FIX
+
+1. MEDIUM sweep starvation (above). Small change in `sweepThumbs`.
+2. MEDIUM confirm latency (check 3): ruling or a shorter inline wait.
+3. LOW timeout does not cancel the decode.
+
+Memory (the HIGH of round 0) is fixed: worst accepted picture +125 MB, the 49 MP 16-bit interlaced PNG is refused for about +48 MB (not 2 MB, but not decoded). No paid picture is copied.
