@@ -498,6 +498,8 @@ Builder and verifier are always different sessions.
 74. [WEBAPP-11](WEBAPP-11.md) The web app is installable and asks to be installed on launch
 75. [TIER-RENEW](TIER-RENEW.md) Renew shows only when a tier is ending or has ended
 76. [WEBAPP-12](WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web
+77. [HUB-IMG-LINKS](HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it
+78. [HUB-THUMBS](HUB-THUMBS.md) Pictures are served at the size they are drawn
 
 ## Developer
 
