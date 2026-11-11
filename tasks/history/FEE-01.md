@@ -71,3 +71,37 @@ Checks (Hub head `5e1629a7`)
 - Gates 0 (0 fail, 139 warn, 88 accepted); `check_baseline.py` 0; `npm run contract:build` 0, additive only (16 lines added: `vatMinor` on the send view, three optional fields on the statement line).
 - Protected suite `ci-check.sh 148e76a9 HEAD 0`, fresh `feeusd_protected` database: 0, 253 of 253.
 - NOT RUN: a real Nuvion call of any kind; a real dollar wire or local inflow (so the payment type of either is unknown); the full HTTP send of a dollar payout through the contract world (the quote is covered through `AbroadService`, the record and settlement as units); the `-fee` book transfer against a real Nuvion; a real WAWU ID mail for the rate-difference alert; the rest of the full jest suite.
+
+## Verifier report, round 1
+
+Verifier, 11 Nov 2026. Hub `wmt/FEE-01` 263ecd12 (still the head at the end; no newer push). Stand-ins only; no live service called. Verdict: **FIX** (no blocker; four highs/mediums below that the owner should see before go-live).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 owner tests and edges | PASS | Probe of `percent-fee.ts` (scratch, removed): NGN 10,000 = 100, 100,000 = 400, 500,000 = 700 (cap); USD 100 payout = 8; USD 1,000 wire = 30; 1 kobo = min; just under/over each clamp; half up at x.5 and x.4999; 10^18 kobo = cap; `0.12345` and `100.0001` refused. fee-engine.spec (quote route, 100,000 -> 400, total 100,400) green. |
+| V2 money conservation | PARTIAL | transfers (182), add-money, abroad (98), fx (54), nuvion (1514) specs pass on a fresh DB, incl. leg split, fee under provider charge, fee-back. NOT RUN by me: own end-to-end probe of actual charge higher/lower than expected, two sends at once (code path unchanged: claim is unique, `record` is an upsert with empty update, so a repeat adds nothing). |
+| V3 history | PASS with low finding | Future start applies only from then (spec); old token: `check()` compares total, so a changed fee gives `quote_changed`; FeeSchedule/ProviderRate refuse UPDATE/DELETE (tried by hand). Gaps F5, F6. |
+| V4 confidentiality | PARTIAL | Provider-rate routes superadmin and finance only (support excluded, code and spec); no `expected()` result reaches a view; quote, transfer view, history (out), payment view fold to one fee. Gaps F2. |
+| V5 safety | PASS | min withdrawal NGN and USD, `fee_exceeds_amount`, `fees_not_set`, swap `fx_switched_off`: specs green. |
+| V6 VAT | PASS | on and off, on the fee only, saved and shown apart (fee-engine and dollar-fees specs). Gap F4 (purchases). |
+| V7 Fintava byte-identity | PASS for quotes, FAIL for receipts | nuvion-fees golden and fee-quote specs green. See F3. |
+| V8 changed assertions | PASS | `git diff` of specs: every removed line is an R-139 ruling-1 or point-11 change; replacements equal or stronger; no test deleted; setup seeds F and P equal to old figures. One hygiene finding F7. |
+| V9 migration | PASS | Fresh DB applies; seed rows match R-139 point 2 and tasks/NUV-FEES.md (0.2% min 50 max 500; receive 0.2% min 50; book free; card 1.00/2.50/1.00); rollback refuses with a non-seed FeeSchedule row, and succeeds on a seed-only DB (tables, triggers, migration row gone). |
+| NUV-LIVE | PASS | `src/money/tests` (8 suites, incl. reset kinds and schema walk) 67 of 67. |
+
+Lead items: (a) `abroad-usd-fee.spec` and add-money spec re-run on 263ecd12, green (abroad 98, add-money 31); the fold still has no dedicated assertion that a configured partner fee lands in `feeMinor` with `providerFeeMinor` 0 (F8). (b) Incoming rows: history and receipts fold outgoing rows only. Add money shows Nuvion's receiving charge as the one fee (ruling point 11, fine). A dollar inflow statement line keeps `feeMinor` as Nuvion's figure (builder report) while the new fields carry WAWU's (F2).
+
+### Findings
+
+- **F1 medium** `src/money/fees/engine/fee-record.service.ts` (no failed path; `wallet-transfer.service.ts` settles only on completion). A send that fails and is given back keeps its `MoneyFeeRecord` with `keptMinor = F - P` and no status: the record says WAWU kept money it returned. Probe: fail a send in the fee-back-failed world, read the record. Kill: a spec asserting kept 0 (or a status) after fee-back.
+- **F2 medium** dollar inflow statement line (`dollar-fees.ts` / statement line `feeMinor`): still Nuvion's actual charge, so a person sees a provider figure next to WAWU's. R-139 point 9. Kill: scan the statement answer for a funded dollar account under Nuvion with a stand-in charge and assert the charge figure is absent.
+- **F3 medium** `src/money/receipts/receipt-document.ts:172` drops the "Fintava's charge" line when `providerFeeKobo === 0 && wawuFeeKobo > 0`, with no engine check. Under Fintava (provider fee 0, WAWU fee above 0) the receipt differs from main. Kill: a receipt spec, Fintava, provider 0, WAWU fee 50, expects the line.
+- **F4 medium** purchases (`wallet_to_wallet` via `legSplit`, `wallet-payment.service.ts`): no `MoneyFeeRecord` is written for wallet payments, and no leg moves F - P or VAT (builder-flagged). With the seeded 0 fee it is harmless; the moment an admin sets a wallet-to-wallet fee or turns VAT on, buyers are quoted a fee that is never collected or recorded. Kill: payment spec with F 100, VAT on; assert record and collection.
+- **F5 low** `fee-schedule.service.ts` `START_SLACK_MS` 5 minutes: a start up to 5 minutes in the past is accepted and takes effect at once (ruling: past start refused). `ProviderRate.add` has no start check at all.
+- **F6 low** `FeeSchedule` and `ProviderRate` triggers are row-level, so `TRUNCATE` succeeds (tried: emptied the table). Add a TRUNCATE trigger. The spec cleanup helper also relies on `session_replication_role = replica` (superuser): confirm the app's production DB role is not.
+- **F7 low** `add-money.contract.spec.ts` writes a `ProviderRate` row (`changedBy` "add-money spec") and never removes it; the table is append-only, so it stays in a shared test DB and sits over the seed row in later runs. Use `seedFees`/`removeSpecFees`.
+- **F8 low** abroad partner-fee fold untested (see above); `product_off` defined, never thrown; USD provider rates (payout, wire) have no seed row (commercials list none), so expected charge there is the env estimate or 0.
+- **F9 low** `legSplit` re-reads the schedule and rates after `check()`, so a refresh between the two (15 s cache) could move a different leg than the checked total. Narrow; derive the split from the checked quote.
+
+### Exit codes and NOT RUN
+tsc, lint, gates, contract:build: not re-run by me (builder's results taken as claimed). Jest, one directory at a time, fresh DB: src/money/fees 113/113; transfers 182/182; add-money 31/31; abroad 98/98; fx 54/54; money/tests 67/67; payments 242/242 (alone); history 47/47; receipts 64/64; nuvion 1514/1514; protected-routes 248 of 253: the 5 failures (`/learn/*`, `/creators/:id/evg`) connect to 127.0.0.1:5432, my environment, not the code; the CI script `ci-check.sh` was not run. A first parallel run of mine raced on one database and gave false reds; discarded. NOT RUN: own two-sends-at-once and actual-charge-differs probes, real WAWU ID mail, any live provider, gates and contract diff.

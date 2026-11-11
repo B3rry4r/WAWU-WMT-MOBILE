@@ -18,6 +18,8 @@ tier: T2
 
 ## Current state
 
+**Verifier round 1 (11 Nov 2026): FIX.** No blocker; F1 to F4 medium, F5 to F9 low. See tasks/history/FEE-01.md, "Verifier report, round 1".
+
 As of 11 Nov 2026.
 - **Status:** todo. Cut by the lead from R-139. Nuvion's go-live waits for this task, FEE-02 and FEE-03 (R-139 point 12).
 - **What exists** (lead's map of Hub main 158be141): `GET /money/fees/quote` (`src/money/fees/fee-quote.service.ts`, kinds `wawu_transfer`, `bank_transfer`, `purchase`, `bill`; provider and WAWU lines, total, a signed `quoteToken` checked at pay time, `409 quote_changed`). Fee figures are env settings read at boot (`fee-config.ts`, `nuvion-fee-config.ts`, `abroad-settings.ts`, `fx-settings.ts`, `add-money-config.ts`): flat or `from:fee` bands in kobo, no percentage, no minimum or maximum, no currency, no start date, no history. `fees-set.guard.ts` answers `503 fees_not_set` while a `NUVION_FEE_*` is unset. Admins edit plan settings live (`PATCH /admin/plan-settings`, audit rows in `AdminOpsAudit`, no route reads the audit back). No VAT anywhere; no "amount kept" field; no minimum withdrawal; no fee-bigger-than-amount check on withdrawals. Gating settings: `fx.product.swap.on` (default 1), no switch for dollars received from local banks. Percentage arithmetic in BigInt (millionths, no floating point) exists on the stopped branch `wmt/NUV-FEES` 4c28ef51 (`src/money/fees/percent-fee.ts`): reuse it.
