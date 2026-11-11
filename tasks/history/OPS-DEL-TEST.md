@@ -101,3 +101,25 @@ T2 verifier, 11 Nov 2026. Hub `109213b5` on main `bf3f4a3b`. Local stack odv_tes
 
 Mutants not run (budget).
 
+
+
+## Round 2 Builder report (11 Nov 2026)
+
+Hub `wmt/OPS-DEL-TEST` d4d76123 (on 9f054474). Changed: `scripts/ops/real-money-rows.ts` (exports and return shapes kept; the query now ANDs a table's `only` filter with its account columns, and three exports are added: `WALLET_PROVIDER_TABLES`, `NOT_MONEY_TABLES`, more `REAL_MONEY_TABLES` rows), the ops spec (R-130 test, a test seeding the three Flutterwave tables), a new `ops-real-money-schema-walk.contract.spec.ts`.
+
+Classification:
+- LegalRequest: real money (Flutterwave consultation or service fee). Refuses when `consultationTxRef` or `serviceTxRef` is set.
+- WaitlistRegistration: real money (Flutterwave, /join). Refuses any row claimed by the account.
+- ServiceApplication: real money (Flutterwave CAC fee). Refuses when `amountPaid` is set.
+- StorePurchase: real money (App Store / Play), buyer or creator owed a share. Refuses unless `environment` is `sandbox`.
+- StoreSubscription: real money (store), no environment on the row, so unclear is live. Any row refuses.
+- StorePurchaseIntent: not money, a price quote; money moves only in a StorePurchase.
+- FintavaLedgerEntry: provider-scoped (`provider` column), either side; a row of another provider than the one running refuses.
+- WalletBill, SchoolEnrolment: wallet-provider money (paid through WalletPayment and WalletHold, no Flutterwave field, no provider column); covered by the sandbox proof and the money service. Listed in `WALLET_PROVIDER_TABLES`.
+- MoneyBeneficiary: not money, a saved payee.
+- KycSubmission: not money, an identity review; the payout bank is a destination.
+- Found by the walk: CreditSpendEarning (host share of Flutterwave-bought credits): real money, refuses. The remaining ~60 flagged models are placed in `WALLET_PROVIDER_TABLES` or `NOT_MONEY_TABLES`, each with a reason.
+
+Open for the verifier: wallet-provider tables with their own `provider` column (FintavaWallet, FintavaWalletOpening, EarningSettlement, EarningDeduction, SchoolSettlement and others) are listed as covered by the money service, not row-checked by provider here, as in round 1.
+
+Evidence (own database `odt_r2`, deleted after): `npm run test:contract -- src/account/tests/ops-` 2 suites, 18 tests, EXIT 0. The walk spec fails on 9f054474's list (68 unclassified models, shown by running it against that file with empty new lists) and passes on the new one. eslint on 3 files EXIT 0. `gates/run.py` EXIT 0, `check_baseline.py` EXIT 0. `tsc --noEmit` EXIT 2 only for `sharp` missing from the shared node_modules (`storage/thumbs`), nothing in changed files. The specs ran with `sharp` installed in scratch outside the repo (NODE_PATH), nothing in shared node_modules. Full account and account-purge suites: NOT RUN.

@@ -19,9 +19,9 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** T2 verifier said FIX. Branch `wmt/OPS-DEL-TEST` on wawu-backend (109213b5). Report in the history file.
-- **Open:** B1 (blocker): the script deletes Flutterwave wallets, pending withdrawals, pending card payments, cards, bought credits with no refusal. M1: `--allow-test-holds` waives other people's money.
-- **Next:** builder fixes B1 and M1 with a spec per money table, then a T2 re-check. Not run on the server.
+- **Status:** round 2 built (fix round 2 of 2), awaiting the T2 re-check. Hub branch `wmt/OPS-DEL-TEST` at d4d76123. Not run on the server.
+- **Done:** B1 closed: LegalRequest (paid), WaitlistRegistration (claimed), ServiceApplication (amountPaid), StorePurchase (not sandbox), StoreSubscription, CreditSpendEarning refuse; FintavaLedgerEntry is provider-scoped. Every other table with a money-looking field is on an explicit wallet-provider list or a not-money list with a reason. A spec walks `prisma/schema.prisma` and fails on an unclassified model. R-130 asserted. Full account and account-purge suites NOT RUN here (GitHub PR run).
+- **Next:** verifier re-check.
 
 ## Read first
 
