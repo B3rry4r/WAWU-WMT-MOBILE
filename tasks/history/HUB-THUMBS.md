@@ -36,3 +36,37 @@ Verdict: **FIX**. Hub `wmt/HUB-THUMBS` 385bf16, records 17c93ac4.
 7. Deploy (pass). The lockfile carries `@img/sharp-linux-x64` 0.34.5 and `@img/sharp-libvips-linux-x64` 1.2.4. A fresh `npm ci` plus `require('sharp')` works. deploy.sh needs nothing else.
 8. Tests, partial. src/storage 382/382 and src/me 58/58 pass. Failing on both main and branch: feed-cards.contract, creator-discovery, profile-work-owner, search-people and popular-name (environment). **Failing only on the branch:** search-response.contract, "finds the seeded creator by a substring of their bio". Unresolved: possibly state left by a killed run. Re-run on a fresh database. NOT RUN: tsc, eslint, the gates, check_baseline, the protected suite, account-purge, and the other suites that grep for StorageObject.
 9. The backfill's count mode only reads.
+
+### Round 1 (11 Nov): fix for the verifier's HIGH (memory)
+
+Hub `646cb678`. Levers used, all four: (1) decode ONCE: the 640 px copy comes from the original, the 96 px copy from the 640 px result; (2) `sequentialRead` kept; (3) the pixel cap is now 25 MP, and a header-only memory estimate (pixels x channels x bytes per sample, doubled for an interlaced PNG) is refused above 120 MB, so 16-bit and interlaced pictures get a lower pixel allowance; (4) ONE copy job at a time in the whole process (queue, 40 waiting, then skipped to the sweep). A refused picture still uploads and just gets no copies (logged). The test fixtures in round 0 were not really 16-bit or interlaced (sharp ignores `interlace`; the option is `progressive`, and 16-bit needs `toColourspace('rgb16')`); this round's fixtures were checked against their PNG headers.
+
+Rise of peak RSS (fresh process per row; "old" = round 0 code, all N at once; "new" = round 1 code, N calls through the one-at-a-time queue):
+
+kind|MP|depth|interlace|conc|code|rise MB|ms|result
+PNG RGBA|49|16|yes|2|old(parallel)|1716|997|ok
+PNG RGBA|49|16|yes|2|new(serial)|2|3|refused
+PNG RGBA|49|16|yes|5|old(parallel)|1717|2626|ok
+PNG RGBA|49|16|yes|5|new(serial)|3|5|refused
+PNG RGBA|25|16|yes|2|old(parallel)|918|639|ok
+PNG RGBA|25|16|yes|2|new(serial)|1|2|refused
+PNG RGBA|25|16|yes|5|old(parallel)|987|1566|ok
+PNG RGBA|25|16|yes|5|new(serial)|1|4|refused
+PNG RGBA|25|8|yes|2|old(parallel)|481|309|ok
+PNG RGBA|25|8|yes|2|new(serial)|0|3|refused
+PNG RGBA|25|8|yes|5|old(parallel)|519|839|ok
+PNG RGBA|25|8|yes|5|new(serial)|1|4|refused
+PNG RGBA|25|8|no|2|old(parallel)|140|262|ok
+PNG RGBA|25|8|no|2|new(serial)|56|422|ok
+PNG RGBA|25|8|no|5|old(parallel)|265|605|ok
+PNG RGBA|25|8|no|5|new(serial)|102|1076|ok
+PNG RGBA|15|8|yes|2|old(parallel)|297|253|ok
+PNG RGBA|15|8|yes|2|new(serial)|89|406|ok
+PNG RGBA|15|8|yes|5|old(parallel)|316|597|ok
+PNG RGBA|15|8|yes|5|new(serial)|102|1038|ok
+
+Also measured (new code, N=2 and 5): JPEG 25 MP progressive 83 and 147 MB; a 10 MB 12 MP phone photo 33 and 46 MB, 328 ms for two (about 165 ms each, far under the 2.5 s confirm wait). Worst picture accepted: 25 MP 8-bit RGBA PNG (100 MB decoded), rise 56 to 102 MB; worst refused ones cost under 3 MB. Round 0's 49 MP 16-bit interlaced RGBA PNG: old 1716 MB, new refused with 2 MB. Cost: photos above 25 MP (a 48 MP camera original, uploaded unresized from the web) now get no copies and are served full as before; a spec covers the refusal and the one-at-a-time queue (`thumbs.spec.ts`, 23 tests).
+
+search-response "finds the seeded creator by a substring of their bio": not reproduced. On a fresh database `src/search-response` is 260/261 on the branch with only `popular-name.contract.spec.ts` failing, and that spec fails the same on a fresh main.
+
+Suites on fresh `hth_test_` databases (own mock on 16316), each `--runInBand`: protected + openapi 253/253 EXIT 0; account-purge + account 374/380 EXIT 1 (6 failures in `account-deletion.contract` and `account-deletion-reason-route.contract`); community-message 145/145 EXIT 0; admin 895/895 EXIT 0; search-response 260/261 EXIT 1; the other 97 specs that grep for StorageObject, storageObject, PutObject or purge: 712 + 950 + 576 tests, one failure (`movies.contract`). Branch-only failures: none. On a fresh `origin/main` the same four specs (`account-deletion`, `account-deletion-reason-route`, `movies`, `popular-name`) fail the same 8 tests. tsc EXIT 0, eslint on changed files EXIT 0, gates EXIT 0, check_baseline EXIT 0.
