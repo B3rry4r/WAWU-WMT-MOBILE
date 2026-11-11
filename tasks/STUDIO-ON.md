@@ -7,7 +7,7 @@ order: 385
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-109, R-135]
 passes: [V1, V2, V3, V4, V9]
@@ -19,9 +19,7 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** todo. Cut by the lead from R-135.
-- **Today:** the 12 tools of R-109 are each behind `ai.listed.<id>`, all 0 in `src/plan-settings/plan-settings.defaults.json` (lines 43-46, 60-64, 74-76), so Studio on usewmt.com shows only the launch tools. The Podcast maker also needs `ai.podcast_studio_api_ok` (default 0), which a person was meant to set after the provider's Studio API proof call.
-- **Next:** builder on wawu-backend `wmt/STUDIO-ON`, then a T1 verifier.
+- **Status:** fix round 1 built, waiting for the lean re-check. Hub `wmt/STUDIO-ON` head `b690e171`: F1 (openapi.json regenerated, a second `contract:build` is clean), F2 (dead `PODCAST_PASS_MS` removed), F4 (clearing the stored row returns `ai.podcast_studio_api_ok` to -1; the Dashboard never types -1). See `tasks/history/STUDIO-ON.md`.
 
 ## Read first
 
@@ -49,6 +47,7 @@ A signed-in person opening Studio sees every built tool, with nobody touching th
 - [ ] Podcast is listed when the stand-in proof passes and not listed when it is refused, with no person setting anything.
 - [ ] Nothing else in `GET /ai-tools` changes (the launch tools, prices, `enabled`).
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/STUDIO-ON.md](history/STUDIO-ON.md).
+
