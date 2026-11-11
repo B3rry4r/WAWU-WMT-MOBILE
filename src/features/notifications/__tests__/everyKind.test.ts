@@ -11,7 +11,7 @@ import { routeOf } from '../model';
  * from a push, and the screen is one the route graph has.
  */
 
-type Target = { kind: 'content' | 'transaction' | 'paid_question' | 'community' | 'profile' | 'tgif_day'; id: string };
+type Target = { kind: 'content' | 'transaction' | 'paid_question' | 'community' | 'profile' | 'tgif_day' | 'ai_job'; id: string };
 type Sample = { target: Target | null; actionHref?: string; actor?: { wawuId: string } };
 
 /** What the Hub writes beside each kind (backend `targetFor` and the emit sites), with the in-app path it carries when it carries one. */
@@ -48,6 +48,7 @@ const AS_SENT: Record<HubNotificationKind, Sample> = {
   pass_sold: { target: null },
   question_answered: { target: null },
   question_credit: { target: null },
+  ai_job_ready: { target: { kind: 'ai_job', id: 'j1' } },
 };
 
 const feedItem = (kind: string, sample: Sample) => ({

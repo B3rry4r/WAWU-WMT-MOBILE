@@ -67,7 +67,8 @@ export function stateLine(tier: Pick<MyTier, 'state' | 'activeUntil'>, now?: num
  * VF14 · Your tier, with VF14a (ending soon) and VF14b (ended). Everything is the Hub's own answer (`GET /me/tier`): the tier's name and
  * dates, the products used and allowed (the places the person added included), the points the tier gave and the event pass; a row
  * the Hub does not carry is not drawn. Renew pays the tier held, at its own price (the checkout asks the Hub for the quote), and
- * Upgrade moves up, paying only the difference (VF5b); both are drawn only when the Hub sells them. A tier that ended keeps its
+ * Upgrade moves up, paying only the difference (VF5b); both are drawn only when the Hub sells them, and Renew only while the tier is
+ * `ending` or `ended` (R-132): an active tier shows Upgrade when a higher tier exists and no buy button on the highest. A tier that ended keeps its
  * published products up and pauses new publishing until it is renewed.
  */
 export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourTierScreenProps) {
@@ -120,6 +121,8 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
   } else {
     const sold = plans.data.tiers.find((t) => t.id === held.id) ?? null;
     const canUpgrade = higherTiers(plans.data.tiers, held.id).length > 0;
+    // R-132: Renew only when the Hub says the tier is ending or ended; an active tier gets Upgrade (when a higher tier exists) or nothing.
+    const canRenew = sold !== null && (tier.state === 'ending' || tier.state === 'ended');
     const renewPrice = tierItemOf(store.state, held.id)?.price ?? null;
     const line = stateLine(tier);
     body = (
@@ -169,10 +172,10 @@ export function YourTierScreen({ onBack, onRenew, onUpgrade, onSeeTiers }: YourT
       </>
     );
     foot =
-      canUpgrade || sold ? (
+      canUpgrade || canRenew ? (
         <View style={styles.foot}>
           {canUpgrade ? <Button testID="your-tier-upgrade" label="Upgrade" variant="outline" onPress={onUpgrade} style={styles.half} /> : null}
-          {sold ? <Button testID="your-tier-renew" label={renewPrice ? `Renew · ${renewPrice}` : 'Renew'} onPress={() => onRenew(held.id)} style={styles.half} /> : null}
+          {canRenew ? <Button testID="your-tier-renew" label={renewPrice ? `Renew · ${renewPrice}` : 'Renew'} onPress={() => onRenew(held.id)} style={styles.half} /> : null}
         </View>
       ) : undefined;
   }

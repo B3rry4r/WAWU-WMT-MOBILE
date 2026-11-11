@@ -56,6 +56,13 @@ The website (`wawuafrica`): WEBPAY and WEB tasks. Paused with the website (R-49)
 | HOME-16 | F2 | Web (follows the app after launch, R-49): a `tgif_daily` row now appears in the web's GET /notifications; the web has no case for the kind and its button goes to /notifications. Safe and additive; give the web a case when it follows. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/HOME-16.md`, finding 2 |
 | WALLET-40 | info 4 | Web (follows the app after launch, R-49): the web's /notifications has no `wallet_ready` in its kind type; an unknown kind shows the label "Update", the Bell icon and the href /notifications (`kinds.ts` `default`, `NotificationCard.tsx` `??`). Sensible and additive, the same as `money_in`. Give the web the kind when it follows. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/WALLET-40.md`, finding 4 (info) |
 | LINKS-01 | F3 | Web (follows the app after launch, R-49): `src/app/(auth)/reset-password/components/ResetPasswordForm.tsx:95` says "You will be signed in on this device once it is saved.", which is untrue in join-only mode (there is no sign-in) and was already untrue before (the done state says "Next time you sign in"). Not caused by LINKS-01. | `/tmp/claude-0/-home-user/f6abda14-ea52-5aeb-b102-78d31cb7857d/scratchpad/verify/LINKS-01.md`, finding F3 |
+| WEBAPP-11 | r2 L1 | The app moves the address to `/welcome` under the install overlay, so Add to Home Screen or Dock from a shared link saves `/welcome`. | `wmt/WEBAPP-11-verify` 7145d927, `tasks/history/WEBAPP-11.md`, round 2 report |
+| WEBAPP-11 | r2 L2 | In a tab that never answered the install screen, a stale-chunk reload draws the screen again. | same, round 2 report |
+| WEBAPP-11 | r2 L3 | A touch before the app's code has loaded is not counted as an interaction for the 3 s window. | same, round 2 report |
+| WEBAPP-11 | r2 L4 | Android with no install offer shows the menu steps over the app ("Tap Install app" may not exist in incognito or once installed). | same, round 2 report (also round 1 L1) |
+| WEBAPP-12 | r2 low | The remembered in-app address (memory only, 8 entries, 30 s) is not cleared at sign-out; a path only, no data. | `wmt/WEBAPP-12-verify` 808aa235, `tasks/history/WEBAPP-12.md`, round 2 report |
+| WEBAPP-12 | r1 low | The error screen's buttons stretch full width at 1440 (existing layout). | `wmt/WEBAPP-12-verify` f6ae3748, round 1 report |
+| HUB-IMG-LINKS | low 1 | A stored link that is never signed again (for example the avatar `recipient.service.ts:186` returns unsigned) now lives 6 to 7 days instead of 7. | `wmt/HUB-IMG-LINKS-verify` 24f0e03c, `tasks/history/HUB-IMG-LINKS.md` |
 
 ## Builder report
 

@@ -14,6 +14,7 @@ import { refreshSignupGate, resetSignupGate, useSignupGate } from '@/features/au
 import { useAcceptanceRetry } from '@/features/about/acceptance';
 import { onSuspendedRefusal } from '@/api/suspension';
 import { useClaimOfferStep } from '@/features/claim/offerStep';
+import { InstallAskScreen } from '@/features/install/InstallAsk';
 import { PlaceBridge } from '@/features/geo/PlaceBridge';
 import { PushBridge } from '@/features/push/PushBridge';
 import { useTierOfferStep } from '@/features/tier-offer/offerStep';
@@ -165,7 +166,8 @@ export default function RootLayout() {
     if ((loaded || error) && ready) SplashScreen.hideAsync();
   }, [loaded, error, ready]);
 
-  if ((!loaded && !error) || !ready) return null;
+  // WEBAPP-11 (R-131): the install screen is drawn over the app (never instead of it); on the phone it draws nothing.
+  if ((!loaded && !error) || !ready) return (loaded || error) && themed ? <InstallAskScreen /> : null;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -378,6 +380,7 @@ export default function RootLayout() {
       <PushBridge live={inApp} />
       <PlaceBridge live={inApp} />
       </WebFrame>
+      <InstallAskScreen />
     </QueryClientProvider>
   );
 }

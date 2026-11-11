@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 446.**
+**Launch tasks done: 176 of 461.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 39 | 0 | 0 | 0 |
+| todo | 36 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 47 | 0 | 0 | 0 |
-| review | 249 | 0 | 0 | 0 |
+| verifying | 54 | 0 | 0 | 0 |
+| review | 261 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -122,6 +122,14 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [FIX-57](../tasks/FIX-57.md) The local test stack never reports UP on a port it does not own (You)
 - [FIX-85](../tasks/FIX-85.md) A failed send that Nuvion then reverses counts the fee once and gives it back once (You)
 - [FIX-55](../tasks/FIX-55.md) Bank transfer only for a short wallet, and no pay sheet offers Add money until WALLET-05 (You)
+- [POINTS-13](../tasks/POINTS-13.md) Studio: every result goes into Create as a piece, Save, and a quiet Download (app) (You)
+- [POINTS-14](../tasks/POINTS-14.md) Studio: Make an image and Edit a photo (app) (You)
+- [POINTS-15](../tasks/POINTS-15.md) Studio: Make a video and Talking photo (app) (You)
+- [POINTS-16](../tasks/POINTS-16.md) Studio: Voice changer, Dialogue and Clone your own voice (app) (You)
+- [POINTS-17](../tasks/POINTS-17.md) Studio: Music for a video and Split a song (app) (You)
+- [POINTS-18](../tasks/POINTS-18.md) Studio: Audiobook and Podcast maker (app) (You)
+- [POINTS-12](../tasks/POINTS-12.md) Studio: Receptionist, set-up, knowledge and text chat (app) (You)
+- [STUDIO-HOME](../tasks/STUDIO-HOME.md) Studio home: one prompt box, chips, a tools grid with a More menu, and Recent (app) (You)
 - [FIX-51](../tasks/FIX-51.md) ID and address documents leave the app with their files in them (You)
 - [HARNESS-NUV](../tasks/HARNESS-NUV.md) The shared backend test helpers run on Nuvion, not the Fintava double (You)
 - [FIX-48](../tasks/FIX-48.md) App tests never reach a real server: a network guard and a closed-port env under every test (You)
@@ -264,6 +272,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WEBAPP-08](../tasks/WEBAPP-08.md) The web walk's fixes (Phase 1 fix batch) (You)
 - [VIDEO-PRIVACY](../tasks/VIDEO-PRIVACY.md) A video someone uploads carries no location or device data (You)
 - [WEBAPP-09](../tasks/WEBAPP-09.md) The second web walk's fixes (Phase 1, last batch) (You)
+- [WEBAPP-11](../tasks/WEBAPP-11.md) The web app is installable and asks to be installed on launch (You)
+- [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
+- [WEBAPP-12](../tasks/WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web (You)
+- [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
 
 ## Being verified
 
@@ -298,6 +310,13 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HOME-SELF](../tasks/HOME-SELF.md) The viewer's own card draws no Follow, on Home and on every other creator list (You)
 - [SWEEP-R2](../tasks/SWEEP-R2.md) App sweep: three low rows from R2-MONEY and R2-AUTHME2 (beneficiary switch, tier checkout ring, selfie portrait guide) (You)
 - [TIER-OFFER](../tasks/TIER-OFFER.md) Right after sign-up a full screen offers the three tiers, once; it always has a way out (R-94) (You)
+- [AITOOLS-08](../tasks/AITOOLS-08.md) Studio media pipeline, the result into Create, and the listing gate (backend) (You)
+- [AITOOLS-09](../tasks/AITOOLS-09.md) Make an image and Edit a photo (backend) (You)
+- [AITOOLS-10](../tasks/AITOOLS-10.md) Make a video and Talking photo (backend) (You)
+- [AITOOLS-11](../tasks/AITOOLS-11.md) Voice changer, Dialogue and a saved clone of your own voice (backend) (You)
+- [AITOOLS-12](../tasks/AITOOLS-12.md) Music for a video and Split a song (backend) (You)
+- [AITOOLS-13](../tasks/AITOOLS-13.md) Audiobook and Podcast maker (backend) (You)
+- [AITOOLS-06](../tasks/AITOOLS-06.md) Receptionist: a talking AI agent with the creator's own knowledge (backend) (You)
 - [SWEEP-INBOX](../tasks/SWEEP-INBOX.md) Inbox sweep: the low findings of communities and the Inbox (You)
 - [SWEEP-EVENTS](../tasks/SWEEP-EVENTS.md) Events sweep: the low findings of events and the door (You)
 - [SWEEP-AUTH](../tasks/SWEEP-AUTH.md) Auth sweep: the low findings of sign-up and sign-in (You)
@@ -519,18 +538,18 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
+- 10 Nov 2026 · STUDIO-1110 · the Studio line of 30 Oct (POINTS-12 to 18, STUDIO-HOME: twelve new tools, the studio home) merged with today's line `7a6f585`, contract from Hub `8285e1b`; a Studio picture made a piece now gets its paid preview copy (R-118); smoke on the web export with the provider stand-in: 19 tools listed, four kinds run with points held then kept (built, verifying)
+- 30 Oct 2026 · STUDIO-HOME patch round 1 (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `d831d6fa`, HELD; app only, no native change, fingerprints android `c2474bd9` and ios `240378f1` unchanged): the verifier's findings. The More pop-over is capped to the room between its tile and the screen's safe edge with its rows scrolling inside it (it rises above the tile, or drops below when its rows fit better there); with a file in the box only Edit a photo and Music for a video (when the Hub lists its mood line) show the words box, every other file chip hides it (R-47: no dead control) and sends no words; a More row's description may take two lines. 24 new tests (7 pure, 17 on the real router including Android at 390x667 and the full 12-row list); no assertion changed. Pictures before / ElevenLabs / after / PT1, dark and light, in tasks/STUDIO-HOME.md.
+- 30 Oct 2026 · STUDIO-HOME · Built (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `origin/wmt/S2-APP-2` `43abe9a1`; app only, HELD: not merged into the phones' line or main, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): R-113 (lead, from the owner's ElevenLabs screenshot) the Studio tab is a studio home: the points card, "What would you like to make?", one prompt box with chips for the prompt tools the Hub lists, "+" to attach a photo, clip or recording (the chips become the tools that take it), a voice chip for Speech, "Make" opens the tool with the words and file already in at its quote (nothing charged on the home), a four-to-a-line grid (Speech, Music, Image, Video, Dubbing, Talking photo, Voice changer, More) with a More pop-over menu, and Recent (the last 10 results). Only what the Hub lists is drawn (R-47). 15 new tests including Android back, keyboard and picker; assertions changed and named in tasks/STUDIO-HOME.md (the caption line, and rows that moved into More). Pictures before / ElevenLabs / after / PT1, dark and light, in the task file.
+- 30 Oct 2026 · S2-APP-2 · Built (Sonnet builder, T1; mobile `wmt/S2-APP-2` on `origin/wmt/S2-APP-1` `91be8d5c`, contract from backend `origin/wmt/S2-HUB-3` `483a27d`; app only, HELD: not merged, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): Studio part 2 (R-109). POINTS-16: Voice changer (pick or record a clip, voice rows), Dialogue (line cards with a voice each), Clone your own voice (the Hub's consent line, a recording, a name, Remove) and "Your voice" in every voice list. POINTS-17: Music for a video (video checked before upload, a Cancel on a big upload, music kept separate from the video) and Split a song (each part its own play and "Make it a piece"). POINTS-18: Audiobook (text or a .txt file, a seekable player) and Podcast maker (text or https link, one host or two, three lengths). POINTS-12: Receptionist (set-up, what it knows from text, a link or a document, chat by text); nothing about WhatsApp, a phone or a call. No assertion of the 7 launch tools changed. Pictures in `scratchpad/s2app2-b/pics/beside/`; the gallery is `__DEV__` only and absent from the release export.
+- 30 Oct 2026 · S2-APP-1 · Built (Sonnet builder, T1; mobile `wmt/S2-APP-1` on `origin/wmt/STORE-BUY-APP` `a77f50bb`, contract from backend `8e39c48`; app only, HELD: not merged, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): R-109 in the app. POINTS-13: every Studio result ends in "Make it a piece" first and big (creators), Save, "Use in a product" (audio), and a quiet Download (progress, cancel, photos or share sheet, fresh link on a stale one); `ai_job_ready` opens the finished job. POINTS-14: Make an image and Edit a photo (shape chips, photo row with library and camera, HEIC to JPEG, release on replace). POINTS-15: Make a video (length chips, cost per second from the quote, leave and resume, player) and Talking photo (photo, a recording or a voice result); Record now is not drawn (G-STUDIO2-APP-1: the Hub takes MP3 or WAV only). Four assertions changed (Save now on every done view). Pictures in `scratchpad/s2-app-1-b/beside/`; the gallery is `__DEV__` only and absent from the release export. Patch round 1: working titles read "Making your image" and so on, the piece row "as an image piece", R-109 in DECISIONS.md, more pictures (uploading, refused, result beside the original, PT3 sheet, talking-photo working and failed, video failed).
+- 10 Nov 2026 · HUB-IMG-LINKS · a picture, preview, cover and avatar read link is the same for a UTC day and carries a browser cache header (Hub `wmt/HUB-IMG-LINKS` `fad6147`); creator suggestions sign the avatar; upload link byte-identical; stack proof; built, verifying
+- 11 Nov 2026 · WEBAPP-12 · fix round 2: offline, a missing route file keeps the app's error screen (no reload to the browser's offline page); a session ending in one tab clears the picture cache and signs out every other tab, and the worker keeps pictures only while a session is open (built, verifying)
+- 10 Nov 2026 · WEBAPP-12 · fix round 1: a tab open across a deploy reloads once when a route file is gone (never loops), held pictures are deleted at sign-out and on an account change, and the picture cache is also bound at 60 MB (built, verifying)
+- 10 Nov 2026 · WEBAPP-12 · web pictures and files load faster: first paint 11.7 to 8.5 s (route chunks, one import per icon, 2,047 to 1,490 KB), a picture worker keeps a re-signed picture under its stable address (second visit 3 to 8 MB and 7 to 45 s become 0 bytes and about 1.5 s); the phone is unchanged; Hub follow-ups (stable links, thumbnails, unsigned avatar link) named in the task (verifying)
+- 11 Nov 2026 · WEBAPP-11 · fix round 2: the install screen is drawn over the app, never instead of it (only on an offer within 3 s and before a touch; any answer latches the tab); no blank page after a cancelled install or with no offer (built, verifying)
+- 10 Nov 2026 · WEBAPP-11 · fix round 1: the steps card has its padding; on a computer Chrome and Edge show Install or step aside, Safari on a Mac shows Add to Dock, Firefox shows no screen; iPad Share is at the top (built, verifying)
+- 10 Nov 2026 · WEBAPP-11 · the web app is installable (manifest, any and maskable icons, Apple tags) and asks to be installed first in a browser tab (R-131): Install button, iPhone Safari steps, in-app browsers sent to Safari or Chrome with Copy link, Continue in the browser; never from the icon or on the phone; Chromium installability, real `beforeinstallprompt` and 35 pictures checked; real iPhone and in-app browsers NOT RUN (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
-- 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
-- 10 Nov 2026 · CREATOR-TAKEDOWN · a creator takes a live or in-review piece down from My uploads and from the piece's page (confirm, place freed at once); buyers keep it (Hub: one nullable column, R-130); review sentence matches; Hub and jest checks run, web walk and pictures NOT RUN
-- 10 Nov 2026 · VIDEO-PRIVACY · fix round 2: web (pending) uploads cleaned at publish, settle and sweep; cool-down; WebM budget (verifying)
-- 10 Nov 2026 · VIDEO-PRIVACY · fix round 1: bounded sample tables (crafted file no longer freezes the Hub), phone leftovers zeroed, ETag guard, own keys only, tries limit, big files cleaned after the confirm (verifying)
-- 10 Nov 2026 · VIDEO-PRIVACY · the Hub strips location, device and time tags from a stored mp4, mov or webm in place (no re-encode), on confirm, publish and a sweep; sweep for old videos written, not run (verifying)
-- 10 Nov 2026 · CARD-FEE-HISTORY · fix round 1 (Hub `6cb7775`): issuer row reads Bank charge (R-53), late-made and failed adoption, bounded fee retries, bounded wallet wait; checks EXIT 0; verifying
-- 10 Nov 2026 · CARD-FEE-HISTORY · the virtual card's fee is a row in the wallet history (Hub `wmt/CARD-FEE-HISTORY` `ef56ba3`: issuer fee row written with the card, WAWU fee its own row; no migration; protected 253 of 253 both sides; stack proof 550,100 to 484,328 and the list adds up); built, verifying
-- 10 Nov 2026 · WEBAPP-09 · second web walk fixes W1 to W7 built (mid-sign-up links lead on, /tiers always closes, points sheet shows the Hub grant, two-tab payment shows paid, upgrade row, Enter sends a paid reply, room join words); checks EXIT 0
-- 9 Nov 2026 · WEBAPP-08 · web walk fixes F1 to F15 built (live purchase hook in the export, wss in the CSP, dollars offer, sign-up draft, wallet words, Enter sends); checks EXIT 0
-- 2026-11-09 · WEBAPP-02/03/04 · web phone-width frame, web share, return after sign-in, once-a-tab tier offer, Exif-free web photos, WAV for web voice (built, verifying)
-- 9 Nov 2026 · WEBAPP-05, WEBAPP-06 · The PIN and amount keypads take a laptop keyboard, the hosted selfie opens in the same tab and returns to the web app, tiers, points, credits, the upload pack and community passes are paid from the wallet on the web, and the web draws no Bills entry (verifying)
-- 10 Nov 2026 · WEBAPP (lead): 04:58 UTC. WEBAPP-10's lean verifier MERGE (`wmt/WEBAPP-10-verify` 3e4f56c; all 98 renders looked at; the board rebuilds identical; the 61 existing sections unchanged but the flow count; no bills, no WAWU logo, no em-dash, Naira only). Three drawing lows fixed by the designer (`wmt/WEBAPP-10` d370a17: D9 cover behind "Preview ended", D20 bank search, D35 counts on an empty Inbox); seven more designer choices added as owner decisions 15 to 21, and one owner question (the "WAW-" receipt prefix; R-37 keeps "WAWU's fee"). Review page republished. Status: waiting for the owner's review before the desktop build is cut.
-- 10 Nov 2026 · WEBAPP (lead): 04:28 UTC. WEBAPP-09 merged into the batch (verifier MERGE: W1 to W7 on the export, 41 mid sign-up opens all led on, every purchase charged once); batch `npm run check` EXIT 0 (521 suites, 7,760 passed); the lead's plan records merged in (392eb3b). PR #25 opened, `wmt/BATCH-WEBAPP1` into main: GitHub CI stops at `npx expo-doctor` (12 Expo patch releases newer than the pins; main red since 3 Nov); one comment on the PR says so; the owner chooses: merge with the pins kept (lead suggestion, an exclude with the reason) or update and rebuild. WEBAPP-10 drawn (Opus, `wmt/WEBAPP-10` 60d4eb0): `design/Desktop Flow.dc.html`, 49 artboards (D1 to D40 at 1440, nine at 1024), 14 owner decisions in its task file; a review page for the owner at https://claude.ai/artifact/PkXNMpKkMVYhQ9iATdaXDT; a lean verifier is checking it. Two container restarts in the night (about 01:15 and before 03:39 UTC) stopped work in flight once; every agent was resumed and nothing pushed was affected.

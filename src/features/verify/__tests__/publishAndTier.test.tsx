@@ -655,7 +655,7 @@ describe('VF13 · all products used', () => {
 });
 
 describe('VF14 · your tier', () => {
-  it('a user sees the Hub’s dates and counts (active), a warning when it ends soon, and the ended state with Renew', async () => {
+  it('a user sees the Hub’s dates and counts (active), a warning when it ends soon, and the ended state with Renew (never Renew while active, R-132)', async () => {
     hub.until = '2026-11-26T10:00:00.000Z';
     await renderRouter(routes, { initialUrl: '/your-tier' });
     expect(await screen.findByTestId('your-tier-name')).toHaveTextContent('Verify');
@@ -664,10 +664,56 @@ describe('VF14 · your tier', () => {
     expect(screen.getByTestId('your-tier-points')).toHaveTextContent(/100/);
     expect(screen.getByTestId('your-tier-pass')).toHaveTextContent(/Watch live, apply/);
     expect(screen.queryByTestId('your-tier-ending')).toBeNull();
-    // G-IAP-02-5: Renew is bought in the store sheet, so no Hub plan price is drawn (the store's own once it has answered).
-    expect(screen.getByTestId('your-tier-renew')).toHaveTextContent(/^Renew$/);
-    await fireEvent.press(screen.getByTestId('your-tier-renew'));
-    expect(await screen.findByTestId('where')).toHaveTextContent('/checkout?kind=renew&tier=verify');
+    // R-132: an active tier is never offered Renew; a higher tier exists, so it is offered Upgrade.
+    expect(screen.queryByTestId('your-tier-renew')).toBeNull();
+    expect(screen.getByTestId('your-tier-upgrade')).toBeTruthy();
+  });
+
+  it.each([{ os: 'ios' }, { os: 'android' }])('R-132 ($os): an active Verify is offered Upgrade and no Renew', async ({ os }) => {
+    const was = Platform.OS;
+    Platform.OS = os as typeof Platform.OS;
+    try {
+      await renderRouter(routes, { initialUrl: '/your-tier' });
+      expect(await screen.findByTestId('your-tier-name')).toBeTruthy();
+      expect(await screen.findByTestId('your-tier-upgrade')).toBeTruthy();
+      expect(screen.queryByTestId('your-tier-renew')).toBeNull();
+    } finally {
+      Platform.OS = was;
+    }
+  });
+
+  it.each([{ os: 'ios' }, { os: 'android' }])('R-132 ($os): the highest tier, active, has no buy button at all', async ({ os }) => {
+    const was = Platform.OS;
+    Platform.OS = os as typeof Platform.OS;
+    try {
+      hub.heldTier = 'founding';
+      await renderRouter(routes, { initialUrl: '/your-tier' });
+      expect(await screen.findByTestId('your-tier-name')).toHaveTextContent('Founding Maker');
+      expect(screen.queryByTestId('your-tier-renew')).toBeNull();
+      expect(screen.queryByTestId('your-tier-upgrade')).toBeNull();
+    } finally {
+      Platform.OS = was;
+    }
+  });
+
+  it.each([
+    { os: 'ios', state: 'ending' },
+    { os: 'android', state: 'ending' },
+    { os: 'ios', state: 'ended' },
+    { os: 'android', state: 'ended' },
+  ])('R-132 ($os): a tier that is $state is offered Renew, and it opens the renew checkout', async ({ os, state }) => {
+    const was = Platform.OS;
+    Platform.OS = os as typeof Platform.OS;
+    try {
+      hub.tier = state as 'ending' | 'ended';
+      await renderRouter(routes, { initialUrl: '/your-tier' });
+      // G-IAP-02-5: Renew is bought in the store sheet, so no Hub plan price is drawn (the store's own once it has answered).
+      expect(await screen.findByTestId('your-tier-renew')).toHaveTextContent(/^Renew$/);
+      await fireEvent.press(screen.getByTestId('your-tier-renew'));
+      expect(await screen.findByTestId('where')).toHaveTextContent('/checkout?kind=renew&tier=verify');
+    } finally {
+      Platform.OS = was;
+    }
   });
 
   /*

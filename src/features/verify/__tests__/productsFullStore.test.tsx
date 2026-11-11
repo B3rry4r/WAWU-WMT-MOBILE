@@ -450,7 +450,7 @@ describe('G-IAP-02-5 · on the screens themselves (F4)', () => {
   it('VF14: a tier the store does not sell has no price on Renew, never the Hub’s plan price', async () => {
     const { YourTierScreen } = require('../YourTierScreen') as typeof import('../YourTierScreen');
     serve({ products: [tierProduct('plus')], prices: { 'africa.wawu.tier.plus': '$19.99' } });
-    hub.routes['GET /me/tier'] = { state: 'active', tier: { id: 'verify', name: 'Verify', badge: null }, activeFrom: '2026-01-01T00:00:00.000Z', activeUntil: '2027-01-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 1, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
+    hub.routes['GET /me/tier'] = { state: 'ended', tier: { id: 'verify', name: 'Verify', badge: null }, activeFrom: '2025-01-01T00:00:00.000Z', activeUntil: '2026-01-01T00:00:00.000Z', productsAllowed: 3, productsUsed: 1, extraProducts: 0, pointsIncluded: 0, firstVoiceIntroIncluded: false, eventPass: null };
     await renderSignedIn(<YourTierScreen onBack={jest.fn()} onRenew={jest.fn()} onUpgrade={jest.fn()} onSeeTiers={jest.fn()} />);
     const renew = await rtl.screen.findByTestId('your-tier-renew');
     await rtl.waitFor(() => expect(hub.reads).toContain('GET /store/products'));
