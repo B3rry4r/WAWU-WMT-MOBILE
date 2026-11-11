@@ -47,3 +47,13 @@ No failed chunk, blank page, error screen, page error or 4xx/5xx on any page wal
 - Observation: the Following and For you tabs showed the same single post for Bola (one live post by a followed creator).
 ## NOT RUN
 Money smoke, install latch, worker second visit, sign-out clearing, Purchases tile, 1440 dark of Ada's creator screens, Studio tools.
+
+## Lead ruling on the walk's two unproven items (11 Nov 2026)
+
+The walk proved what this batch changes: pictures on every screen that draws one, side by side with main (nothing softer, no blank, broken or wrong picture), and a new upload drawing its copy after a reload. It also found no failed chunk, no page error and no 4xx/5xx anywhere.
+
+Two items were not proven, both because of the walker's driver. The lead rules they carry over from the BATCH-1111 walks, on this evidence:
+- **The diff touches neither path.** `git diff origin/main...wmt/BATCH-1111b -- src` changes no file in install, wallet, unlock, pay, checkout or a sheet. On the piece page the only change is the maker avatar's `avatarThumbs` prop (`ContentDetailScreen.tsx` +1, `Parts.tsx`). No layer, touch or pointer handling changed in `PositionedImage`, `Avatar` or `MediaCard`.
+- **Money smoke** (unlock with the wallet, charged once): proven on BATCH-1111 (walk 1 and walk 3) on the same money code, live since 03:22 UTC.
+- **Install screen:** checked by the lead on the live site at 06:07 UTC. usewmt.com in Chromium with an Android user agent and an install offer at 1 s draws "Install Who Made This", Install and "Continue in the browser" over the welcome page. The install code in this batch is identical to what is live.
+- **The picture worker's second visit and sign-out clearing:** this batch does not change the worker code. Both were proven on BATCH-1111's walk and its verifiers.
