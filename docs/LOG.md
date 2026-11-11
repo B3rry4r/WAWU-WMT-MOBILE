@@ -1,4 +1,5 @@
 # Work log
+- 11 Nov 2026 · LEGAL-ELEVEN · the legal assistant's chat turns and brief run through the agent platform, typed only, with the model and a way back to Gemini as Hub settings; nothing the app sees changes (R-137; Hub `wmt/LEGAL-ELEVEN` `37dd5f3a`; built, verifying)
 - 11 Nov 2026 · APP-THUMBS · avatars, cards, grids and rows draw the Hub's 96 or 640 px copy for the size drawn times the pixel ratio, the full picture when there is none or the copy fails (once); pieces' own pages, zooms and full-width covers stay full (mobile `wmt/APP-THUMBS`, contract from Hub `bf3f4a3b`; built, verifying)
 - 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
 - 11 Nov 2026 · HUB-THUMBS · pictures get 96 px and 640 px copies (public families only), served as additive app-only fields; backfill written, not run (Hub `wmt/HUB-THUMBS` `fd6b776`); built, verifying
