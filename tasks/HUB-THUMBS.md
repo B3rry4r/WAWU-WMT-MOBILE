@@ -7,7 +7,7 @@ order: 381
 priority: after-launch
 repo: wawu-backend
 type: flow
-status: todo
+status: review
 depends_on: [HUB-IMG-LINKS]
 decisions: [R-47, R-118]
 passes: [V1, V3, V4, V6, V7, V9]
@@ -18,11 +18,12 @@ tier: T1
 
 ## Current state
 
-As of 10 Nov 2026.
-- **Status:** todo. Cut by the lead from WEBAPP-12's measurements.
-- **Found (WEBAPP-12):** pictures are served at upload size with no smaller copies (an avatar of 537 KB drawn at 44 px; Today 3.2 MB and For you 5.2 MB of pictures on a cold visit; first picture after 25 to 29 s at 1.6 Mbps). The Hub has no image library today (no `sharp` in package.json).
-- **Estimate (WEBAPP-12):** Today and Explore pictures from 3.2 MB to about 0.1 MB; the first cold picture from about 28 s to about 11 s.
-- **Next:** a builder on wawu-backend `wmt/HUB-THUMBS` after HUB-IMG-LINKS.
+As of 11 Nov 2026.
+- **Status:** review (lead, 11 Nov 2026). Round 0 FIX (memory HIGH), round 1 FIX (2 medium), round 2 accepted on the lead's diff read. Hub `wmt/HUB-THUMBS` b02aa106; the PR to main follows, and it is live when merged (deploy). Backfill written, NOT run (owner's word). Next: APP-THUMBS.
+- **Built:** `sharp` 0.34.5 (exact pin; prebuilt linux-x64 through the deploy's existing `npm ci --include=dev`, no workflow change). Two WebP copies (96 and 640 px long side, orientation applied, all metadata dropped) of public pictures only: `avatars`, `profile/cover`, `content/cover`, `content/preview` (pictures only). Made at confirm, settle, the web's publish, the profile save, the reconcile and a sweep, all through `StorageService` (the only PutObject). Stored beside the original (`<name>.t96.webp`, `<name>.t640.webp`) with a `thumbs` StorageObject row of the owner (never counted in the allowance).
+- **Served:** `avatarThumbs`, `coverThumbs`, `thumbnailThumbs`, `previewThumbs` as `{ w96, w640 } | null`, on `X-Wawu-Client: app` requests only (feed cards and strips, Explore, creator suggestions, profiles, GET /content, search, My purchases, My saved). The website's and dashboard's answers carry no new key.
+- **Not done, on purpose:** ad artwork is public but has no owner folder and no StorageObject row, so it gets no copies (follow-up if wanted). The backfill (`scripts/backfill-thumbs.ts`) is written and NOT run: waiting for the owner's word.
+- **Next:** SHARED-CHANGES `HUB-THUMBS #1` (types and contract), then app task APP-THUMBS (draw w96 in avatars, w640 in cards and grids, fall back to the full link on null). Verifier: see the report in `tasks/history/HUB-THUMBS.md`.
 
 ## Read first
 
@@ -48,8 +49,8 @@ Cards, avatars and grids get a small copy of the picture; the full picture is on
 - [ ] The website's and the dashboard's routes answer exactly as before (V3).
 - [ ] A broken or huge picture never fails the upload.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/HUB-THUMBS.md](history/HUB-THUMBS.md).
 
 ## Owner sign-off

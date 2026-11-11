@@ -7,10 +7,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 35 | 0 | 0 | 0 |
+| todo | 34 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 55 | 0 | 0 | 0 |
-| review | 261 | 0 | 0 | 0 |
+| review | 262 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -276,6 +276,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
 - [WEBAPP-12](../tasks/WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web (You)
 - [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
+- [HUB-THUMBS](../tasks/HUB-THUMBS.md) Pictures are served at the size they are drawn (You)
 
 ## Being verified
 
@@ -541,6 +542,7 @@ From `docs/LOG.md`, newest first.
 
 - 11 Nov 2026 · APP-THUMBS · avatars, cards, grids and rows draw the Hub's 96 or 640 px copy for the size drawn times the pixel ratio, the full picture when there is none or the copy fails (once); pieces' own pages, zooms and full-width covers stay full (mobile `wmt/APP-THUMBS`, contract from Hub `bf3f4a3b`; built, verifying)
 - 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
+- 11 Nov 2026 · HUB-THUMBS · pictures get 96 px and 640 px copies (public families only), served as additive app-only fields; backfill written, not run (Hub `wmt/HUB-THUMBS` `fd6b776`); built, verifying
 - 10 Nov 2026 · STUDIO-1110 · the Studio line of 30 Oct (POINTS-12 to 18, STUDIO-HOME: twelve new tools, the studio home) merged with today's line `7a6f585`, contract from Hub `8285e1b`; a Studio picture made a piece now gets its paid preview copy (R-118); smoke on the web export with the provider stand-in: 19 tools listed, four kinds run with points held then kept (built, verifying)
 - 30 Oct 2026 · STUDIO-HOME patch round 1 (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `d831d6fa`, HELD; app only, no native change, fingerprints android `c2474bd9` and ios `240378f1` unchanged): the verifier's findings. The More pop-over is capped to the room between its tile and the screen's safe edge with its rows scrolling inside it (it rises above the tile, or drops below when its rows fit better there); with a file in the box only Edit a photo and Music for a video (when the Hub lists its mood line) show the words box, every other file chip hides it (R-47: no dead control) and sends no words; a More row's description may take two lines. 24 new tests (7 pure, 17 on the real router including Android at 390x667 and the full 12-row list); no assertion changed. Pictures before / ElevenLabs / after / PT1, dark and light, in tasks/STUDIO-HOME.md.
 - 30 Oct 2026 · STUDIO-HOME · Built (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `origin/wmt/S2-APP-2` `43abe9a1`; app only, HELD: not merged into the phones' line or main, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): R-113 (lead, from the owner's ElevenLabs screenshot) the Studio tab is a studio home: the points card, "What would you like to make?", one prompt box with chips for the prompt tools the Hub lists, "+" to attach a photo, clip or recording (the chips become the tools that take it), a voice chip for Speech, "Make" opens the tool with the words and file already in at its quote (nothing charged on the home), a four-to-a-line grid (Speech, Music, Image, Video, Dubbing, Talking photo, Voice changer, More) with a More pop-over menu, and Recent (the last 10 results). Only what the Hub lists is drawn (R-47). 15 new tests including Android back, keyboard and picker; assertions changed and named in tasks/STUDIO-HOME.md (the caption line, and rows that moved into More). Pictures before / ElevenLabs / after / PT1, dark and light, in the task file.
@@ -553,4 +555,3 @@ From `docs/LOG.md`, newest first.
 - 11 Nov 2026 · WEBAPP-11 · fix round 2: the install screen is drawn over the app, never instead of it (only on an offer within 3 s and before a touch; any answer latches the tab); no blank page after a cancelled install or with no offer (built, verifying)
 - 10 Nov 2026 · WEBAPP-11 · fix round 1: the steps card has its padding; on a computer Chrome and Edge show Install or step aside, Safari on a Mac shows Add to Dock, Firefox shows no screen; iPad Share is at the top (built, verifying)
 - 10 Nov 2026 · WEBAPP-11 · the web app is installable (manifest, any and maskable icons, Apple tags) and asks to be installed first in a browser tab (R-131): Install button, iPhone Safari steps, in-app browsers sent to Safari or Chrome with Copy link, Continue in the browser; never from the icon or on the phone; Chromium installability, real `beforeinstallprompt` and 35 pictures checked; real iPhone and in-app browsers NOT RUN (built, verifying)
-- 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
