@@ -19,9 +19,9 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** round 1 fix built (B1, M1 and the lows), waiting for a T2 re-check. Branch `wmt/OPS-DEL-TEST` on wawu-backend. The first builder report, the verifier report and the round 1 report with the real-money table list are in [tasks/history/OPS-DEL-TEST.md](history/OPS-DEL-TEST.md).
+- **Status:** back to building. The round 1 T2 re-check (Hub `9f054474`) found 1 blocker: the real-money table list misses `LegalRequest` (paid consultation), `WaitlistRegistration` (paid Flutterwave spot) and `ServiceApplication` (CAC fee), which apply deletes with no refusal, and leaves the store and wallet-bill tables unclassified. Everything else held: all 29 listed tables refuse and write nothing, the flag is gone, holds, waiting earnings and payments in flight refuse, no Audit line on a refusal, email matching, WAWU ID side, half-done reruns. Full report: [tasks/history/OPS-DEL-TEST.md](history/OPS-DEL-TEST.md), last section.
 - **Not run on the server.** It runs only once this is merged and deployed, and then by the owner.
-- **Next:** the T2 re-check, then merge and deploy, then the owner runs the commands below.
+- **Next:** the builder adds the missing tables (and a schema-walk spec so none can be missed), then a short T2 re-check of that list only.
 
 ## Read first
 

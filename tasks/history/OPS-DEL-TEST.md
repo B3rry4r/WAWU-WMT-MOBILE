@@ -151,10 +151,45 @@ The wallet provider's own tables (`FintavaWallet`, `WalletHold`, `WalletPayment`
 
 **Checks:** tsc (alone, 4 GB) EXIT 0; eslint on the 3 changed files EXIT 0; gates EXIT 0; baseline EXIT 0; the spec 12 of 12 EXIT 0; account and account-purge suites on a fresh database, `--runInBand`: 29 suites, 392 tests, EXIT 0.
 
-## Verifier report, round 1 re-check (INTERIM, 11 Nov 2026, Hub `9f054474`)
+## Verifier report, round 1 re-check (11 Nov 2026, Hub `9f054474` on `109213b5`, main `bf3f4a3b`)
 
-T2 verifier, local stack odv2_test (real WAWU ID, Nuvion stand-in). Interim, final report follows. So far: **verdict leaning FIX (1 blocker)**.
-- B1 listed tables: all 29 seeded one at a time; dry run lists the row, apply exits 1, Hub row counts and WAWU ID checksum unchanged, no Audit line. The other-provider rows refuse, the running-provider rows (nuvion WalletCard, CommunityPassRefund) pass.
-- **NEW blocker (list misses real-money tables):** an account with a paid `LegalRequest` (`consultationTxRef` set, paid by the Flutterwave webhook) or a paid `WaitlistRegistration` (`claimedByWawuId`, `flutterwaveTxId`, `paidKobo`) shows `Real-money rows: none` and apply DELETES the row (exit 0). Also not listed and not refused: `ServiceApplication` (amountPaid), `StorePurchase`/`StorePurchaseIntent`/`StoreSubscription` (App Store and Play money; kept anonymised), `WalletBill`, `SchoolEnrolment`, `FintavaLedgerEntry`, `MoneyBeneficiary`, `KycSubmission` payout bank.
-- M1: `--allow-test-holds` is an error; hold (either side), waiting earning, payment in flight (either side) each refuse, dry run names what to settle, nothing written.
-- tsc, eslint, gates, baseline: EXIT 0.
+T2 verifier. Local stack odv2_test (real WAWU ID on 16631, Nuvion stand-in, Postgres 14001, databases `odv2_test_*`). **Verdict: FIX (1 blocker).** Round 0's B1 and M1 are fixed for every table on the builder's list, but the list itself misses tables that hold Flutterwave payments, and the script deletes those silently.
+
+| Pass | Result | Evidence |
+|------|--------|----------|
+| V1 | passed | tsc (alone, 4 GB) EXIT 0; eslint on the 4 changed files (no --fix) EXIT 0; gates EXIT 0 (2242 files, 0 fail, 139 warn, 88 accepted); baseline EXIT 0; new spec 12/12 EXIT 0 on a fresh db; account + account-purge suites, see the line under the table |
+| V3 | failed | blocker 1 (list incomplete) |
+| V4 | passed | every dry run: Hub row counts of all 251 tables and the WAWU ID checksum unchanged (`CommunityNoticeCursor`, the running Hub's own ticker, excluded) |
+| V6, V7, V9 | passed for what the list covers | see below |
+
+### Blocker
+
+**B1 (defect): real-money tables the list does not cover are deleted with no refusal.** Seeded one account per table (a row naming the account) and ran dry run then apply:
+- `LegalRequest` with `consultationTxRef` set and `consultationPaidAt` (a legal consultation paid by Flutterwave; `payment-webhook.service.ts` settles it by `consultationTxRef`): dry run `Real-money rows: none`, apply exit 0, row deleted.
+- `WaitlistRegistration` with `claimedByWawuId`, `flutterwaveTxId`, `paidKobo` 100000 (a paid Flutterwave waitlist spot, disposition OWNED): dry run `none`, apply exit 0, row deleted.
+- `ServiceApplication` with `amountPaid` 5000 (the CAC fee, "Flutterwave-gated" in `service-application.service.ts`, OWNED): dry run `none`, exit 0 (would delete).
+Under the lead's ruling (any row touching a real-money provider, unclear counts as live) these must refuse. Also dry run `none` and exit 0, so also unlisted: `StorePurchase` (buyer; App Store and Play money, `environment` production; the row is kept anonymised, so not lost, but it is real money), `StorePurchaseIntent`, `StoreSubscription`, `WalletBill`, `SchoolEnrolment`, `FintavaLedgerEntry`, `MoneyBeneficiary` (bank details), `KycSubmission` (payout bank). The last four are wallet-provider or identity rows and arguably belong under the provider rule; the builder should classify each in the table, not leave it silent. Fix: add LegalRequest, WaitlistRegistration (claimedByWawuId) and ServiceApplication as `live` any-row; classify the store tables (live) and the others; add a spec seeding each; and a spec that walks the schema (every model with a Flutterwave, TxRef, card or amount column and an account column must be in the list or in a short "not money" list), so the next table cannot be missed.
+
+### Medium
+
+None.
+
+### Low
+
+- L1: `StorePurchase` creator side (COUNTERPARTY) and the other-side columns of `WalletBill`/`SchoolEnrolment` are not looked at by the list; part of the B1 fix.
+- L2: the spec no longer asserts R-130 (the sold-piece case moved out because a sale writes a `Purchase`, which now refuses). R-130 holds by refusal for every sale path I found (`purchase.create`, `tip-wallet`, `unlock-wallet`, `store-grant` all write a `Purchase` row with `creatorWawuId`); the spec seeds the buyer side only. A seller-side `Purchase` case in the spec would pin it (I ran it by hand: refused).
+- L3: the server command sources WAWU ID's env file into the same subshell; any variable that file defines and the Hub's file does not (a port, a secret) reaches the script. Nothing read it in my run (only `DATABASE_URL` differed). Prefer `grep '^DATABASE_URL=' file` or the `read -rs` form.
+- L4: `--confirm --allow-test-holds` parses as a confirm value and then fails the phrase check, so it still refuses (harmless).
+
+### What was attacked and held
+
+1. **B1, listed tables (29).** Seeded one row per table, one table at a time, on a fresh account (rows via SQL with foreign keys off so each table stands alone): CreatorWallet; WalletLedgerEntry pending and final; WalletWithdrawal; Purchase buyer pending, buyer final, seller final; VerificationPurchase; DirectMessage both sides; CreditPurchase; CreditLot; CreditSpend both sides; CreditsState (balance above 0); PendingCharge; BillPayment; HealthSubscription; EventOrder; ShopOrder; MakerPurchase; MakerExtraProducts; PlanTransferOrder; MoneyPayoutAccount; StoreCredit; CommunityPass; CommunityPassRefund both sides with provider fintava; WalletCard provider flutterwave and fintava; StoreEarning, StoreEarningPayout, PointConversion, AddMoneySession, EarningMove and WalletTransfer (both sides) with provider fintava. Every case: dry run exit 1 with the row listed (table, id, status, kobo), apply exit 1, no `Audit:` line, row counts of every Hub table and the WAWU ID checksum identical before and after. Rows of the running provider (WalletCard nuvion, CommunityPassRefund nuvion) pass, as designed (a sandbox-only account still deletes; see 5). Not seeded: `WalletCard` with a null provider (the column is NOT NULL).
+2. **M1.** `--allow-test-holds` prints `unknown option ... There is no flag that waives a blocker or a real-money row.`, exit 1. A held DM with the target as payee, with the target as payer, a completed unsettled sale (waiting earning), and a pending payment with the target on either side each print `REFUSES` with what to settle, apply exit 1, nothing written.
+3. **Lows.** A refusal prints no `Audit:` (checked on all refusals above). The server commands run as written against `dist` with two env files in a subshell: the parent shell holds no `DATABASE_URL` and no `WAWU_ID_DATABASE_URL` afterwards, the Hub's value wins, and the string never appears on the command line (the `read -rs` form works too). The 900 s token window is in the Known limits.
+4. **Round 0 passes.** Email: `  CLEAN.TGT@odv2.test  ` finds the target; a plus-address, a longer domain and a longer local part (decoys) are untouched (their profile, piece and refresh token remain); `clean.tgt@odv2.te` is "Nothing to do". Wrong phrase and missing `--confirm` refuse. Apply changed exactly `AccountDeletion` +1, `ContentPiece` -1, `UserProfile` -1; WAWU ID: the target anonymised (email null, phone `deleted:<id>`, banned, deleted_at set), refresh tokens 1 to 0, and the same email then registered again. Sandbox proof: `api.nuvion.co`, a lookalike host, an empty host, Fintava without a sandbox host, Fintava live in production and a bogus provider name all refuse (exit 1). Half-done runs: WAWU ID unreachable at the start leaves only a `purging` row (data intact, account active), the rerun finishes (purged, anonymised); `kill -9` right after the row appears leaves `purging` with WAWU ID `pending_deletion` and the email held, the rerun finishes. `purgeNow` has one caller, the script (grep over `src` and `scripts`). `dist` is ignored, nothing built is tracked.
+5. **A sandbox-only account still deletes** (clean account above; the spec also covers one with a wallet balance and a WalletCard of the running provider).
+6. **R-130.** Every sale path writes a `Purchase` with `creatorWawuId`, which refuses, so no buyer can lose a piece through this script; the purge's own keep rule is unchanged (`purges` suites pass).
+7. **Tests.** Spec diff against `109213b5`: 205 added, 35 removed; the removed lines are the old flag, the sold-piece R-130 case (see L2) and the flagged-apply case, all replaced by stronger ones; no gate or baseline touched. Diff against main: 3 added files and the `purgeNow` method on the sweep.
+
+### Not run
+The full `test:contract` (GitHub runs it on the PR). Mutants not run (budget).
