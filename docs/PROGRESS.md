@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 41 | 0 | 0 | 0 |
+| todo | 40 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 54 | 0 | 0 | 0 |
+| verifying | 55 | 0 | 0 | 0 |
 | review | 270 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -342,6 +342,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
+- [FEE-03](../tasks/FEE-03.md) App: every withdrawal and payment shows the fee and what is received under the new schedule; switched-off products hidden; adding money by account number only (You)
 
 ## Being built (or fixing verifier findings)
 
