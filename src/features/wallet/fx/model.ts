@@ -116,12 +116,6 @@ export function decimalsFor(currencies: FxCurrencies | null, accounts: readonly 
   return currencyOf(currencies, code)?.decimals ?? (accounts ?? []).find((a) => a.currency === code)?.decimals ?? NAIRA_DECIMALS;
 }
 
-/**
- * Dollars received from local banks (R-139 point 3): the USD account's "Get paid" details are drawn only while the Hub's `localUsdIn`
- * switch is on. A failed read draws nothing (R-47). Other currencies are not behind this switch.
- */
-export const localDollarsOffered = (currencies: FxCurrencies | null, code: string): boolean => code !== 'USD' || currencies?.localUsdIn === true;
-
 /** Swap is offered if the Hub has it on and the person holds an open account: there is a side to move money to or from. */
 export function swapOffered(currencies: FxCurrencies | null, accounts: readonly FxAccount[] | null): boolean {
   return Boolean(currencies?.products.swap && (accounts ?? []).some((a) => a.status === 'open'));

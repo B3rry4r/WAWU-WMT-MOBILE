@@ -35,7 +35,6 @@ import {
   sentenceOf,
   swapOffered,
   type CoinGroup,
-  localDollarsOffered,
 } from './model';
 import { FxAmount, FxFlag, FxTxRow, fxRowOf } from './parts';
 
@@ -148,7 +147,7 @@ function FiatBody({ code, ...props }: FxTabBodyProps & { code: FxCode }) {
           <ActionRound testID="fx-swap" icon="ArrowLeftRight" label={`Swap ${WORD[code]} to naira`} onPress={toNaira} />
         </View>
       ) : null}
-      {account.details?.status === 'active' && number && localDollarsOffered(props.currencies, code) ? (
+      {account.details?.status === 'active' && number ? (
         <PaidFromAbroad code={code} onPress={() => setSheet(true)} />
       ) : null}
       <Transactions owner={props.owner} accounts={[account]} currencies={props.currencies} allAccounts={props.accounts} noun={WORD[code]} />

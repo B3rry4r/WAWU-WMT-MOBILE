@@ -13891,6 +13891,12 @@ export interface components {
             remainingTodayKobo: number | null;
             quoteToken: string;
             expiresAt: string;
+            currency?: string | null;
+            feeMinor?: number | null;
+            vatMinor?: number | null;
+            vatOn?: boolean | null;
+            totalMinor?: number | null;
+            receiveMinor?: number | null;
             source?: components["schemas"]["PaymentSourceView"] | null;
         };
         PaymentPaidFromView: {
@@ -14316,6 +14322,7 @@ export interface components {
             providerFeeMinor: number | null;
             wawuFeeKobo: number;
             wawuFeeMinor: number;
+            vatMinor?: number | null;
             narration: string | null;
             failureReason: string | null;
             speed: string;
@@ -14509,6 +14516,9 @@ export interface components {
             reference: string;
             occurredAt: string;
             conversion: components["schemas"]["FxConversionView"] | null;
+            wawuFeeMinor?: number | null;
+            vatMinor?: number | null;
+            receiveMinor?: number | null;
         };
         FxTransactionPage: {
             items: components["schemas"]["FxTransactionView"][];

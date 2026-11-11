@@ -480,6 +480,7 @@ export function AbroadReceiptView({ send, loading, failed, retry, onDone, onAgai
             <KeyValueRow label="Rate" value={<Text variant="kvValue">{`1 ${send.fromCurrency} = ${send.rate} ${send.toCurrency}`}</Text>} />
           ) : null}
           <KeyValueRow label="Fee" testID="abroad-receipt-fee" value={<Text variant="kvValue">{wawuFeeText(send)}</Text>} />
+          {send.vatMinor ? <KeyValueRow label="VAT" testID="abroad-receipt-vat" value={<Text variant="kvValue">{formatMinor(send.vatMinor, send.fromCurrency, send.fromDecimals)}</Text>} /> : null}
           <KeyValueRow label="Arrives" value={<Text variant="kvValue">{send.speed}</Text>} />
         </GroupedList>
       </View>

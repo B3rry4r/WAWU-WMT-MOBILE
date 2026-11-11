@@ -45,14 +45,16 @@ export function sheetSubtitle(order: Pick<WalletOrder, 'lines' | 'event'>): stri
   return `${linesText(order.lines)} · ${w.weekday} ${w.day} ${w.month}`;
 }
 
-/** The sheet's fee row (R-139 point 5): one Fee, the Hub's whole fee for this payment. The provider's own charge is never a line of its own. */
-export function feeLines(fee: PaymentQuote['fee']): PayFeeLine[] {
-  return [{ label: 'Fee', amountKobo: fee.totalFeeKobo }];
+/** The sheet's fee rows (R-139 point 5): the quote's Fee, then VAT only when the Hub says it is on. The provider's own charge is never a line. */
+export function feeLines(quote: Pick<PaymentQuote, 'feeMinor' | 'vatMinor' | 'vatOn'>): PayFeeLine[] {
+  const lines: PayFeeLine[] = [{ label: 'Fee', amountKobo: quote.feeMinor }];
+  if (quote.vatOn) lines.push({ label: 'VAT', amountKobo: quote.vatMinor, vat: true });
+  return lines;
 }
 
 /** True when the quote's total is the price plus its fee parts (whole kobo), so the button, the PIN line and the payment agree. */
-export const quoteAddsUp = (quote: Pick<PaymentQuote, 'priceKobo' | 'fee' | 'totalKobo'>): boolean =>
-  quote.priceKobo + quote.fee.providerFeeKobo + quote.fee.wawuFeeKobo === quote.totalKobo;
+export const quoteAddsUp = (quote: Pick<PaymentQuote, 'priceKobo' | 'feeMinor' | 'vatMinor' | 'totalMinor'>): boolean =>
+  quote.priceKobo + quote.feeMinor + quote.vatMinor === quote.totalMinor;
 
 /** When a quote can no longer be used, as the Hub gave it. A quote with no readable time is treated as spent. */
 export function quoteSpent(quote: Pick<PaymentQuote, 'expiresAt'>, now: number): boolean {

@@ -115,7 +115,7 @@ function WebBuySheets({ flow, title, verb, onAddMoney, onOpenWallet, onForgotPin
         visible={!flow.pinOpen}
         item={{ title }}
         amountKobo={quote.payment.priceKobo}
-        fees={feeLines(quote.payment.fee)}
+        fees={feeLines(quote.payment)}
         wallet={balanceKobo === null ? { kind: 'loading' } : { kind: 'open', balanceKobo }}
         walletName={WALLET_NAME}
         actionLabel={verb}

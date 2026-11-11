@@ -1,5 +1,6 @@
 import { api, resendsUnderKey } from '@/api/client';
 import type { components } from '@/api/schema.generated';
+import type { WithPayment } from '@/features/events/buyApi';
 import { type Credential } from '@/features/device-approval/credential';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
@@ -11,7 +12,7 @@ import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, ty
  *   keeps it; the `Idempotency-Key` is one per attempt and travels again, unchanged, on every retry.
  * - `GET /tips/wallet/{id}`: the tip as it stands now: what the app polls after `pending`.
  */
-export type TipQuote = components['schemas']['TipWalletQuoteView'];
+export type TipQuote = WithPayment<components['schemas']['TipWalletQuoteView']>;
 export type Tip = components['schemas']['TipWalletView'];
 
 const STATUSES: readonly Tip['status'][] = ['pending', 'failed', 'reversed', 'refunded', 'paid'];

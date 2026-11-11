@@ -1,7 +1,10 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
+import type { WithPayment } from '@/features/events/buyApi';
 import { approvalRefused, credentialHeader, part, type ApprovalStopped, type Credential } from '@/features/device-approval/credential';
+import { hasQuotedFee } from '@/features/events/buyApi';
+import type { PaymentQuote } from '@/features/events/buyApi';
 
 /**
  * The calls behind paying a legal fee from the wallet (LEGAL-04's S19, LEGAL-06's S22 and S26), as the Hub's contract types them
@@ -16,9 +19,9 @@ import { approvalRefused, credentialHeader, part, type ApprovalStopped, type Cre
  * call reads the envelope itself. A refusal carries more than a code (`reason.triesLeft`, `balanceKobo`, `paymentQuote`), and the
  * shared `ApiError` keeps only the code, so the payment reads its own answer and hands the screen one of `PayOutcome`.
  */
-export type FeeQuote = components['schemas']['LegalFeeWalletQuoteView'];
+export type FeeQuote = WithPayment<components['schemas']['LegalFeeWalletQuoteView']>;
 export type FeePayment = components['schemas']['LegalFeeWalletView'];
-export type PaymentQuote = components['schemas']['PaymentQuoteView'];
+export type { PaymentQuote } from '@/features/events/buyApi';
 
 type Envelope<T> = { data?: T | null };
 
@@ -33,7 +36,7 @@ function unreadable(what: string): ApiError {
 
 /** A payment quote that can be approved: whole-kobo money and the token the payment must carry. */
 export function readPaymentQuote(value: unknown): PaymentQuote {
-  const q = value as Partial<PaymentQuote> | null;
+  const q = value as Partial<components['schemas']['PaymentQuoteView']> | null;
   const ok =
     q &&
     typeof q === 'object' &&
@@ -42,6 +45,7 @@ export function readPaymentQuote(value: unknown): PaymentQuote {
     !!q.fee &&
     isKobo(q.fee.providerFeeKobo) &&
     isKobo(q.fee.wawuFeeKobo) &&
+    hasQuotedFee(q) &&
     (q.balanceKobo === null || q.balanceKobo === undefined || isKobo(q.balanceKobo)) &&
     filled(q.quoteToken) &&
     filled(q.expiresAt);

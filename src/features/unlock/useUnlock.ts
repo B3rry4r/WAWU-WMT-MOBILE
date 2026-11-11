@@ -100,7 +100,7 @@ export function useUnlock(handlers: FlowHandlers) {
     begin,
     done,
     quote,
-    fees: quote ? feeLines(quote.payment.fee) : [],
+    fees: quote ? feeLines(quote.payment) : [],
     balanceKobo,
     flow,
     /** The store's side (R-101): set on a phone with a store, null on the web. */

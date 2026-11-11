@@ -199,7 +199,7 @@ export function useAsk(handlers: FlowHandlers, onAsked: (wawuId: string, questio
     setText: (next: string) => setText(next.slice(0, MAX_QUESTION)),
     /** The Hub's quote for THESE words, or null while it is on its way. */
     quote,
-    fees: quote ? feeLines(quote.payment.fee) : [],
+    fees: quote ? feeLines(quote.payment) : [],
     balanceKobo,
     flow,
   };

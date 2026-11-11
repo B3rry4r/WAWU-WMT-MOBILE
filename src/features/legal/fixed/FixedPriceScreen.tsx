@@ -131,8 +131,9 @@ export function FixedPriceScreen({ threadId, onBack, onStarted }: FixedArgs) {
           <KeyValueRow label="Price" value={<Money minorUnits={ok.priceNaira * 100} size={text.kvValue.fontSize} decimals={false} />} />
           {fee.data ? (
             <>
-              <KeyValueRow label="Fee" value={<Money minorUnits={fee.data.fee.totalFeeKobo} size={text.kvValue.fontSize} decimals={fee.data.fee.totalFeeKobo % 100 !== 0} />} testID="legal-fixed-fee" />
-              <KeyValueRow label="Total" value={<Money minorUnits={fee.data.totalKobo} size={text.kvValue.fontSize} decimals={fee.data.totalKobo % 100 !== 0} />} testID="legal-fixed-total" />
+              <KeyValueRow label="Fee" value={<Money minorUnits={fee.data.feeMinor} size={text.kvValue.fontSize} decimals={fee.data.feeMinor % 100 !== 0} />} testID="legal-fixed-fee" />
+              {fee.data.vatOn ? <KeyValueRow label="VAT" value={<Money minorUnits={fee.data.vatMinor} size={text.kvValue.fontSize} decimals={fee.data.vatMinor % 100 !== 0} />} testID="legal-fixed-vat" /> : null}
+              <KeyValueRow label="Total" value={<Money minorUnits={fee.data.totalMinor} size={text.kvValue.fontSize} decimals={fee.data.totalMinor % 100 !== 0} />} testID="legal-fixed-total" />
             </>
           ) : null}
         </GroupedList>

@@ -1,5 +1,6 @@
 import { api, resendsUnderKey } from '@/api/client';
 import type { components } from '@/api/schema.generated';
+import type { WithPayment } from '@/features/events/buyApi';
 import { part, type Credential } from '@/features/device-approval/credential';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
@@ -12,7 +13,7 @@ import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, ty
  * - `GET /content/{id}/unlock/wallet/{paymentId}`: the unlock as it stands now: what the app polls after `pending`.
  * - `GET /content/{id}/media`: the piece's frames and files as THIS viewer may see them (a photo set's frames after an unlock).
  */
-export type UnlockQuote = components['schemas']['UnlockWalletQuoteView'];
+export type UnlockQuote = WithPayment<components['schemas']['UnlockWalletQuoteView']>;
 export type Unlock = components['schemas']['UnlockWalletView'];
 export type MediaDetails = components['schemas']['MediaDetails'];
 

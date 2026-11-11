@@ -124,6 +124,12 @@ function paymentQuote(priceKobo: number, over: Record<string, unknown> = {}) {
     priceKobo,
     fee: { providerFeeKobo: provider, wawuFeeKobo: 0, totalFeeKobo: provider },
     totalKobo: priceKobo + provider,
+    currency: 'NGN',
+    feeMinor: (priceKobo + provider) - (priceKobo),
+    vatMinor: 0,
+    vatOn: false,
+    totalMinor: priceKobo + provider,
+    receiveMinor: priceKobo,
     balanceKobo: hub.balanceKobo,
     shortfallKobo: null,
     willBeHeld: true,
@@ -212,7 +218,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     if (hub.mode === 'short') return refuse(402, { code: 'insufficient_funds', message: 'Not enough.', balanceKobo: 500_000, totalKobo: Number(body.expectedTotalKobo), shortfallKobo: Number(body.expectedTotalKobo) - 500_000 });
     if (hub.mode === 'limit') return refuse(409, { code: 'event_order_limit', message: 'You have reached the order limit for this event.' });
     if (hub.mode === 'changed') {
-      return refuse(409, { code: 'quote_changed', message: 'The price changed.', paymentQuote: paymentQuote(Number(body.expectedTotalKobo) - 1575, { fee: { providerFeeKobo: 2575, wawuFeeKobo: 0, totalFeeKobo: 2575 }, totalKobo: Number(body.expectedTotalKobo) - 1575 + 2575, quoteToken: 'tok-new' }) });
+      return refuse(409, { code: 'quote_changed', message: 'The price changed.', paymentQuote: paymentQuote(Number(body.expectedTotalKobo) - 1575, { fee: { providerFeeKobo: 2575, wawuFeeKobo: 0, totalFeeKobo: 2575 }, totalKobo: Number(body.expectedTotalKobo) - 1575 + 2575, feeMinor: 2575, totalMinor: Number(body.expectedTotalKobo) - 1575 + 2575, quoteToken: 'tok-new' }) });
     }
     if (hub.mode === 'in_progress') return refuse(409, { code: 'payment_in_progress', message: 'Still confirming.' });
     if (hub.mode === 'lost_before' && hub.pays.length === 1) return json(500, { statusCode: 500, message: 'Something went wrong' });

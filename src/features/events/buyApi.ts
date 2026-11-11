@@ -19,7 +19,30 @@ import { approvalRefused, credentialHeader, type ApprovalStopped, type Credentia
  * one of `PayOutcome`.
  */
 export type WalletOrder = components['schemas']['EventWalletOrderView'];
-export type PaymentQuote = components['schemas']['PaymentQuoteView'];
+type RawPaymentQuote = components['schemas']['PaymentQuoteView'];
+/** The fields R-139 adds to a payment quote. The contract lets them be absent; a quote without them is refused (`readPaymentQuote`). */
+type QuotedFee = 'currency' | 'feeMinor' | 'vatMinor' | 'vatOn' | 'totalMinor' | 'receiveMinor';
+export type PaymentQuote = Omit<RawPaymentQuote, QuotedFee> & { [K in QuotedFee]-?: NonNullable<RawPaymentQuote[K]> };
+
+/** A view that carries a payment quote, with that quote as the app reads it (the new fee fields whole). */
+export type WithPayment<T extends { payment: unknown }> = Omit<T, 'payment'> & { payment: PaymentQuote };
+
+/** True when a payment quote says its Fee, VAT, Total and what is received (whole kobo, a known VAT switch). */
+export function hasQuotedFee(q: Partial<RawPaymentQuote>): boolean {
+  return (
+    typeof q.currency === 'string' &&
+    q.currency.length > 0 &&
+    typeof q.feeMinor === 'number' &&
+    Number.isSafeInteger(q.feeMinor) &&
+    typeof q.vatMinor === 'number' &&
+    Number.isSafeInteger(q.vatMinor) &&
+    typeof q.vatOn === 'boolean' &&
+    typeof q.totalMinor === 'number' &&
+    Number.isSafeInteger(q.totalMinor) &&
+    typeof q.receiveMinor === 'number' &&
+    Number.isSafeInteger(q.receiveMinor)
+  );
+}
 /** The contract types `payment` as always present; the Hub sends null for a basket that costs nothing. */
 export type OrderQuote = { order: WalletOrder; payment: PaymentQuote | null };
 export type OrderLine = { ticketTypeId: string; quantity: number };
@@ -60,7 +83,7 @@ export function readOrder(value: unknown): WalletOrder {
 
 /** A payment quote that can be approved: whole-kobo money and the token the payment must carry. */
 export function readPaymentQuote(value: unknown): PaymentQuote {
-  const q = value as Partial<PaymentQuote> | null;
+  const q = value as Partial<RawPaymentQuote> | null;
   const ok =
     q &&
     typeof q === 'object' &&
@@ -69,6 +92,7 @@ export function readPaymentQuote(value: unknown): PaymentQuote {
     !!q.fee &&
     isKobo(q.fee.providerFeeKobo) &&
     isKobo(q.fee.wawuFeeKobo) &&
+    hasQuotedFee(q) &&
     (q.balanceKobo === null || isKobo(q.balanceKobo)) &&
     filled(q.quoteToken) &&
     filled(q.expiresAt);
