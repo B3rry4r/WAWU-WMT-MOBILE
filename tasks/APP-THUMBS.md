@@ -25,7 +25,7 @@ As of 11 Nov 2026.
 - **Left full, by design:** a piece's own page and its media (`content-detail/Media`), `PictureViewer` zoom, feed posts and cards that fill the screen (`TemplatePost`, `PhotoSetPost`, `FeedCreatorCard`/`FeedProfessionalCard` portraits), profile covers (full width), photo-position and edit screens.
 - **Left full, no field in the contract:** search people rows, known-follower faces, Saved and Purchases tiles, chat and community avatars, professionals directory, send payees (BACKEND_GAPS: the Hub serves no `*Thumbs` there, or declares none in the contract).
 - **Proof:** tests `src/lib/__tests__/thumbs.test.tsx` and `src/components/__tests__/thumbsDrawn.test.tsx` (web, android, ios; pixel ratio, missing, null, failure fallback). tsc EXIT 0, lint EXIT 0, gates EXIT 0. Unique string in the export: `avatarThumbs` (5 chunks in this build, 0 in main's).
-- **Stack run (own Postgres on 16529, Hub bf3f4a3b, storage stand-in 16528):** 7 avatars of about 5 MB uploaded, copies made. Creators were made by SQL and their piece pictures went up through the avatars folder, because a content upload needs a tier (402). Measurements and pictures: see the last section of `tasks/history/APP-THUMBS.md`.
+- **Stack run (own Postgres on 16529, Hub bf3f4a3b, storage stand-in 16528):** 7 avatars of about 5 MB uploaded, copies made. Creators were made by SQL and their piece pictures went up through the avatars folder, because a content upload needs a tier (402). Measurements, seeds and NOT RUN: `tasks/history/APP-THUMBS.md`, Builder report, round 0. Explore, Today and creators: 6 avatars 30,313 KB on main, 780 KB here. Pictures and the full jest summary are NOT RUN.
 - **Open:** none graded. Phones get this with the next update, on the owner's word.
 
 ## Read first
@@ -55,6 +55,8 @@ Every avatar, card, grid and thumbnail draws the small copy. The full picture is
 - [ ] The pixel ratio is respected: avatars on a 3x screen are sharp.
 
 ## Builder report
+
+Moved to `tasks/history/APP-THUMBS.md`.
 
 ## Verifier report
 
