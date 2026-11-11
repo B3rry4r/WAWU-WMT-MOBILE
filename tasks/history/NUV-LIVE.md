@@ -12,5 +12,44 @@ Moved out of [tasks/NUV-LIVE.md](../NUV-LIVE.md) word for word, oldest first. Th
 - Owner decisions: (a) A KEPT person still carries a test wallet. The command never touches them (the OPS-DEL-TEST rule) and warns, but on live keys their test ids would be read and their test earnings could be swept, so each kept person must be settled by hand (delete-test-account, or the owner's call) before the keys change. Credits held with a balance above zero count as real money (unclear is live), so anyone holding credits is kept. Check the count in the dry run before choosing the day. (b) Store SANDBOX earnings are test money of another kind; the command cancels them for the people it retires, and for a person with no wallet. (c) The people with no row of the test system are not listed at all.
 - No `SHARED-CHANGES.md` row, no `BACKEND_GAPS.md` row.
 
-## Verifier report
+## Verifier report, round 0
 
+Verifier session, 11 Nov 2026. Hub `wmt/NUV-LIVE` `c7c1862a` on main `158be141`, own worktree and databases (`nuvlv_*`, dropped), stand-ins only, no provider called, no key file read. Probes were untracked spec files in the worktree, deleted before finishing (`git status` clean, node_modules and dist removed).
+
+**Verdict: FIX.** One high finding breaks invariant 3 (nothing calls live Nuvion with a test id).
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 diff against report | passed | 5 files, all `scripts/ops/` or `src/money/tests/`; no schema, contract, `src/common` or route change |
+| V2 gates | passed | tsc 0; gates 0 fail (139 warn, 88 accepted, 2253 files, same counts as builder); baseline 0; eslint (no-fix) on the 5 files 0; the 3 builder specs 13/13 pass |
+| V3 protected routes | NOT RUN | diff touches no runtime file, so the 129 routes cannot change; I did not run `ci-check.sh` (cost). CI runs it |
+| V4 invariants | failed (finding 1) | below |
+| V6 states | passed | 38 user reads and 4 admin services, none 5xx after retire |
+| V7 flows | passed | dry run, wrong phrase, apply, second run, cut-off then rerun |
+| V8 money | failed (finding 1) | below |
+| V9 live seam | passed | built `dist/` command run under `block-net.cjs` against a real database |
+
+Invariants:
+1. Test money never becomes real money. Reconcile sweep RUN: the real `NuvionMissedDeliverySweep` over a recording provider, with a retired person and a kept control, each with a Nuvion entity, a sending book transfer and a pending `wawu-bank-` ledger row. After apply it asked for the operational account only; the kept control was asked for (statement and `reconcileSend`), which proves the recorder and shows the kept-person caveat is real. Replayed test webhook: not driven. By reading, the inflow and outflow handlers (`inflows.ts:111`, `outflows-bank.ts:696`) look the entity up in `NuvionEntity` (deleted) and wait or fail, crediting nothing; stored events are marked processed. A school payout still reaches live Nuvion with a test id (finding 1).
+2. Real money never touched. Seeded one at a time on a person with a Nuvion wallet and a pending payment: credits balance above zero, Flutterwave pending charge, creator wallet (Flutterwave subaccount), payment of provider `fintava`, payment of provider `weird`. Each: `KEPT` in the dry run, and after a full apply wallet and pending payment unchanged. Control: credits balance 0 is not kept. Verification purchase seed did not build (my fixture); store production earning not seeded (NOT RUN). Schema walk: see finding 2.
+3. Open again after apply: wallet, opening, entity, identity rows gone for retired people (same as builder spec); `GET /money/wallet` answers 200 and wallet-gated reads answer 409 (wallet required), not 5xx. Not proven: an actual second opening with the same BVN through the route (the unique hashes are deleted, which is the cause).
+4. Safety. Built command: live host exit 1 REFUSED; `WALLET_PROVIDER=fintava` exit 1; no settings exit 1; look-alike host and http host exit 1; sandbox dry run exit 0, 24 people, 12 to retire, 12 kept, output has no `+234`, `@`, key, webhook secret or operational account id (0 matches). Dry run writes nothing: md5 of every table, before and after a full-database dry run, identical. Wrong phrase and missing phrase exit 1 (builder spec, re-run). A pending payment inserted just before a person's transaction is closed and relabelled (`failed`, `nuvion_test`). A person whose step is cut off ("FAILED ... unchanged") gives exit 2; the same command rerun finishes (exit 0) and a further dry run says "Nothing to retire". Calls no provider: `block-net.cjs` preloaded, no violation; no provider import.
+5. Relabelled rows: reads listed in V6 all answer. Sweeps filter by provider or status as the builder said; the payment sweep (status only) is covered by the closing. I did not re-read all 400 call sites; the probe of sweeps and reads above is the evidence.
+
+### Findings
+
+**1. high, defect: `SchoolPayee.counterpartyId` and `paymentDetailId` keep Nuvion TEST ids and are sent to live Nuvion.** `prisma/schema.prisma:6325` (`SchoolPayee`) is in neither `KIND_TABLE` nor a step. `src/schools/settlement/school-settlement.service.ts:622,651` copy them onto the settlement and `:689` passes `payee: { counterpartyId, paymentDetailId }` to `bankTransfer` from WAWU's live merchant account for the first school payout after the keys change. The command clears the same two caches on `MoneyBeneficiary` and `MoneyPayoutAccount` for exactly this reason. Probe: seeded a school payee with `cp_TESTSYSTEM` / `pd_TESTSYSTEM`, applied for a retired person; afterwards `counterpartyId=cp_TESTSYSTEM paymentDetailId=pd_TESTSYSTEM`. Note the payee belongs to a school, not a person, so it needs an unowned step (`UPDATE "SchoolPayee" SET "counterpartyId"=NULL,"paymentDetailId"=NULL`), and the name check path (`school-payee.service.ts:104` already nulls them on a change) then re-caches. Test that kills it: in `ops-nuvion-live-reset.contract.spec.ts` seed a `SchoolPayee` with both ids, apply, expect both null and the account, bank and name unchanged.
+
+**2. medium, defect: the schema-walk misses provider id columns with no `nuvion` or `provider` in the name.** `ops-nuvion-live-reset-schema-walk.contract.spec.ts:13` (`HOLDS_NUVION`) flags names like `provider*`, `nuvion*`, `entityId`, `bvnHash`. Models holding `counterpartyId`/`paymentDetailId` (`SchoolPayee`) or `fintavaTransactionId`/`fintavaReference` (`WalletBill`) pass unflagged and unclassified; this is how finding 1 got through. Mutant: delete nothing, simply run the regex over the schema; those two models are absent from the flagged list. Test that kills it: widen the regex to `counterparty|paymentDetail|fintava[A-Z]|providerCustomer|accountId` and classify the results, with a self-test that adds a fake model with `counterpartyId`.
+
+**3. low, unclear: `WalletBill` (`fintavaTransactionId`, `fintavaReference`) is "follows" its payment.** Plausible (a payment relabelled and closed), not probed. Test: seed a `WalletBill` with ids on a retired payment and read `/bills/wallet/{id}` for a 5xx.
+
+**4. low: the proof is host only.** A live-shaped key (`nv_live_sk_...`) on the sandbox host is not refused (exit 0 dry run). Real keys are per host so the risk is nil today; a spec asserting the refusal would pin it.
+
+**5. low: the server may stay up during the command.** A person who opens a wallet after the plan is made is handled by the unowned pass for wallet and opening rows only (the entity rows are person-only steps), and the audit counts what is left, so the command answers exit 2 and says run again. The task file should tell the owner to expect that, or to stop money routes for the run.
+
+**6. low: test hooks `onlyIds` and `beforePerson` sit in the production `Deps`.** Not reachable from the command line (`main` never sets them). A comment already says so.
+
+**Owner note (not a defect, already decision (a)):** the kept-person caveat is proven live in invariant 1: a kept person's Nuvion entity is statement-read by the reconcile sweep on live keys. In my dry run against a database of my own fixtures, 12 of 24 were kept. The owner must settle every kept person before the keys change.
+
+NOT RUN: protected route suite (V3), store production earning seed, verification purchase seed, replayed test webhook through the dispatcher (reasoned from the handlers), a second wallet opening by route with the same BVN, the whole contract suite.

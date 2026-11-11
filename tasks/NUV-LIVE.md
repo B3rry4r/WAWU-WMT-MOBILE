@@ -19,7 +19,7 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** built, verifying. Hub `wmt/NUV-LIVE` `c7c1862a` (on main `158be141`). No schema change, no fenced file, no contract change (`contract:build` leaves `contract/` as it is).
+- **Status:** verifier round 0 says FIX (1 high: `SchoolPayee` test counterparty and payment-detail ids stay and would be sent to live Nuvion; 1 medium: the schema walk cannot see such columns). See `history/NUV-LIVE.md`, Verifier report, round 0. Built, verifying. Hub `wmt/NUV-LIVE` `c7c1862a` (on main `158be141`). No schema change, no fenced file, no contract change (`contract:build` leaves `contract/` as it is).
 - **Files (Hub):** `scripts/ops/nuvion-live-reset.ts` (the command), `scripts/ops/nuvion-live-reset-kinds.ts` (every kind and its reason, the SQL steps), three specs under `src/money/tests/ops-nuvion-live-reset*.contract.spec.ts` (behaviour, live keys, schema walk).
 - **Owner commands** (on the server, still on the test keys; after the two account deletes and the community clear, before the keys change):
   `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a`
