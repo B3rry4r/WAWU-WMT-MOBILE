@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 38 | 0 | 0 | 0 |
+| todo | 37 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 63 | 0 | 0 | 0 |
+| verifying | 64 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -330,6 +330,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
 - [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
+- [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -541,6 +542,7 @@ From `docs/LOG.md`, newest first.
 - 30 Oct 2026 · STUDIO-HOME · Built (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `origin/wmt/S2-APP-2` `43abe9a1`; app only, HELD: not merged into the phones' line or main, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): R-113 (lead, from the owner's ElevenLabs screenshot) the Studio tab is a studio home: the points card, "What would you like to make?", one prompt box with chips for the prompt tools the Hub lists, "+" to attach a photo, clip or recording (the chips become the tools that take it), a voice chip for Speech, "Make" opens the tool with the words and file already in at its quote (nothing charged on the home), a four-to-a-line grid (Speech, Music, Image, Video, Dubbing, Talking photo, Voice changer, More) with a More pop-over menu, and Recent (the last 10 results). Only what the Hub lists is drawn (R-47). 15 new tests including Android back, keyboard and picker; assertions changed and named in tasks/STUDIO-HOME.md (the caption line, and rows that moved into More). Pictures before / ElevenLabs / after / PT1, dark and light, in the task file.
 - 30 Oct 2026 · S2-APP-2 · Built (Sonnet builder, T1; mobile `wmt/S2-APP-2` on `origin/wmt/S2-APP-1` `91be8d5c`, contract from backend `origin/wmt/S2-HUB-3` `483a27d`; app only, HELD: not merged, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): Studio part 2 (R-109). POINTS-16: Voice changer (pick or record a clip, voice rows), Dialogue (line cards with a voice each), Clone your own voice (the Hub's consent line, a recording, a name, Remove) and "Your voice" in every voice list. POINTS-17: Music for a video (video checked before upload, a Cancel on a big upload, music kept separate from the video) and Split a song (each part its own play and "Make it a piece"). POINTS-18: Audiobook (text or a .txt file, a seekable player) and Podcast maker (text or https link, one host or two, three lengths). POINTS-12: Receptionist (set-up, what it knows from text, a link or a document, chat by text); nothing about WhatsApp, a phone or a call. No assertion of the 7 launch tools changed. Pictures in `scratchpad/s2app2-b/pics/beside/`; the gallery is `__DEV__` only and absent from the release export.
 - 30 Oct 2026 · S2-APP-1 · Built (Sonnet builder, T1; mobile `wmt/S2-APP-1` on `origin/wmt/STORE-BUY-APP` `a77f50bb`, contract from backend `8e39c48`; app only, HELD: not merged, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): R-109 in the app. POINTS-13: every Studio result ends in "Make it a piece" first and big (creators), Save, "Use in a product" (audio), and a quiet Download (progress, cancel, photos or share sheet, fresh link on a stale one); `ai_job_ready` opens the finished job. POINTS-14: Make an image and Edit a photo (shape chips, photo row with library and camera, HEIC to JPEG, release on replace). POINTS-15: Make a video (length chips, cost per second from the quote, leave and resume, player) and Talking photo (photo, a recording or a voice result); Record now is not drawn (G-STUDIO2-APP-1: the Hub takes MP3 or WAV only). Four assertions changed (Save now on every done view). Pictures in `scratchpad/s2-app-1-b/beside/`; the gallery is `__DEV__` only and absent from the release export. Patch round 1: working titles read "Making your image" and so on, the piece row "as an image piece", R-109 in DECISIONS.md, more pictures (uploading, refused, result beside the original, PT3 sheet, talking-photo working and failed, video failed).
+- 10 Nov 2026 · HUB-IMG-LINKS · a picture, preview, cover and avatar read link is the same for a UTC day and carries a browser cache header (Hub `wmt/HUB-IMG-LINKS` `fad6147`); creator suggestions sign the avatar; upload link byte-identical; stack proof; built, verifying
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 2: a tick-only person is no longer sent to /tiers from a product draft's Publish, sees the places meter on Me and "Uploading is open" on the setup card (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · fix round 1: the limit sheet and the publish gate follow the Hub places alone, so a tick-only person (25 places, no tier) can publish and meets the limit sheet at 25 of 25; Your tier says what is true for them (built, verifying)
 - 10 Nov 2026 · UPLOAD-WORDS · one number for upload places (R-129): every meter, the limit sheet and the verification page read the Hub's uploads.allowed; "Up to 25 uploads" only for a pre-tier tick (built, verifying)
@@ -549,4 +551,3 @@ From `docs/LOG.md`, newest first.
 - 10 Nov 2026 · VIDEO-PRIVACY · fix round 1: bounded sample tables (crafted file no longer freezes the Hub), phone leftovers zeroed, ETag guard, own keys only, tries limit, big files cleaned after the confirm (verifying)
 - 10 Nov 2026 · VIDEO-PRIVACY · the Hub strips location, device and time tags from a stored mp4, mov or webm in place (no re-encode), on confirm, publish and a sweep; sweep for old videos written, not run (verifying)
 - 10 Nov 2026 · CARD-FEE-HISTORY · fix round 1 (Hub `6cb7775`): issuer row reads Bank charge (R-53), late-made and failed adoption, bounded fee retries, bounded wallet wait; checks EXIT 0; verifying
-- 10 Nov 2026 · CARD-FEE-HISTORY · the virtual card's fee is a row in the wallet history (Hub `wmt/CARD-FEE-HISTORY` `ef56ba3`: issuer fee row written with the card, WAWU fee its own row; no migration; protected 253 of 253 both sides; stack proof 550,100 to 484,328 and the list adds up); built, verifying
