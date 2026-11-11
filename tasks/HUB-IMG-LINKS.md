@@ -25,7 +25,8 @@ As of 10 Nov 2026.
 - **Avatar bug:** `GET /creators` (creator-discovery) signs the stored avatar through the shared `freshOwnImage` (`src/storage/own-image.ts`, also now used by Explore). A stored value that is not the creator's own key is returned as stored, as before (`photo-position.contract.spec.ts` holds it).
 - **Not changed:** `presignUpload` (byte-identical to main), `signedReadUrl` (KYC, 900 s), `downloadUrlFor`, the bucket probe.
 - **Verifier (10 Nov 2026, on `fad6147`):** MERGE, no blocker, high or medium; three lows in [history/HUB-IMG-LINKS.md](history/HUB-IMG-LINKS.md). Low 2 and 3 (`immutable` on paid files and on the in-place video clean) are gone with the cache header.
-- **Next:** verifier re-checks round 1 (all suites named in history), then the lead merges.
+- **Verifier round 1 (11 Nov 2026, on `966c637`):** MERGE, no blocker, high or medium; two lows in [history/HUB-IMG-LINKS.md](history/HUB-IMG-LINKS.md).
+- **Next:** the lead merges Hub #261.
 
 ## Goal
 
