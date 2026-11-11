@@ -7,7 +7,7 @@ order: 382
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: verifying
+status: review
 depends_on: [HUB-THUMBS]
 decisions: [R-47, R-118]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,7 +19,7 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** verifying. Built by a Sonnet builder on mobile `wmt/APP-THUMBS`, contract from Hub main `bf3f4a3b` (HUB-THUMBS merged). Types regenerated with `npm run api`; nothing hand-written.
+- **Status:** review (lead, 11 Nov 2026). Verified MERGE in round 1 (`wmt/APP-THUMBS-verify` 67b92d6f). Pictures were taken in a browser against a real local Hub, side by side with main, and nothing is softer. The 8 s stall fallback is proven. Full jest 546/546. Merged into `wmt/BATCH-1111b` for main. Lows are rows in SWEEP-WEB.
 - **Helper:** `src/lib/thumbs.ts`. `copyFor`: w96 up to 96 device px, w640 up to 640, else the full picture; device px = drawn size times `PixelRatio.get()` (44 on 3x = 132 = w640). Size unknown: w640. The copy keeps the `#wmt-pos` position (R-96) of the full link. `useCopy`: copy first, full picture on the first failure, no loop.
 - **Changed (copy drawn):** `Avatar` (prop `thumbs`), `MediaCard` (prop `imageThumbs`), `PositionedImage` (props `thumbs`, `drawn`); `pictureCandidates(.., small)` for rows. Callers: feed rail avatar, creator-card work tiles, Explore `CreatorCard`, Today `CreatorRail`, profile `NameBlock` (own and visitor), after-signup `FollowScreen`, content-detail maker row, Me grid tiles, search content rows.
 - **Left full, by design:** a piece's own page and its media (`content-detail/Media`), `PictureViewer` zoom, feed posts and cards that fill the screen (`TemplatePost`, `PhotoSetPost`, `FeedCreatorCard`/`FeedProfessionalCard` portraits), profile covers (full width), photo-position and edit screens.
