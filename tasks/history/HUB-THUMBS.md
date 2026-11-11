@@ -1,0 +1,18 @@
+# HUB-THUMBS · round history
+
+Moved out of [tasks/HUB-THUMBS.md](../HUB-THUMBS.md) word for word, oldest first. The current state is in that file.
+
+## Builder report
+
+Hub `wmt/HUB-THUMBS` `fd6b776`. Files: `src/storage/thumbs/{thumb-keys,make-thumbs,ensure-thumbs,remove-thumbs}.ts` (new), `storage.service.ts` (ensureThumbs, thumbsFor, pieceThumbs, sweepThumbs, removeThumbsOf, putThumb), `storage-sweep.service.ts`, `upload-release.ts`, `late-file-sweep.ts`, `own-image.ts`, `account-purge.service.ts`, serving in `feed-cards`, `explore`, `creator-discovery`, `user-profile`, `content-piece`, `search-response`, `me-purchases`, `me-saved`; `scripts/backfill-thumbs.ts`; `src/storage/tests/thumbs.spec.ts` (20 tests); `package.json`, lockfile.
+1. Key families copied, each public: `avatars` (shown to everyone), `profile/cover` (profile header), `content/cover` (R-114, public like the preview), `content/preview` (what a non-buyer sees; R-118 makes a picture preview the creator's own 640 px copy). Never `content/full`, chat, kyc, ai, legal, event, community, profile/work, ads. Tests: closed list, 20 refused keys, no request at all for a paid full file, the sweep query names only the four folders.
+2. Writes: one PutObject, in `StorageService.putThumb` (the purge-files spec allows only that file; a new spec checks `thumbs/` has none). Copies share the owner prefix and have a row of the owner (folder `thumbs`), so the account purge finds them. They are deleted when the original is (release of a cover or preview, the late-file sweep). Account purge: copies of a cover or preview a kept piece names are added to `soldKeys`, so they stay with it (R-130). A take-down changes the piece, not the files, so nothing is deleted then and buyers keep both original and copies. Avatars and profile covers are never deleted today when replaced (unchanged); their copies go with the account.
+3. EXIF/GPS: test builds a JPEG with Make, orientation 6 and a GPS block, proves the input has them, then both copies have no exif, icc, xmp, orientation, and no 'GPS'/'EXIF' bytes; the 300x100 sideways picture comes out upright (100x300).
+4. Limits: input over 25 MB (not read), over 50 megapixels (refused from the header; a 20000x20000 PNG of under 200 bytes is refused in under 2 s), `failOn: error` (truncated JPEG left), animated WebP (first frame), 8 s work limit (test with 1 ms), confirm waits at most 2.5 s, 2 at once and 40 waiting then skip, failures remembered 30 min / 6 h. Every path logs and returns; nothing throws.
+5. Links go through `readUrlFor` / read-link.ts (test: equal to the direct link, identical on two reads). Fields appear only when `isAppRequest()`; test: no header, `site`, and `pieceThumbs` give nothing. Stack proof: upload with GPS, confirm in 129 ms, bucket held original + `.t96.webp` + `.t640.webp` (96x64 and 640x427 WebP, no exif), `GET /users/me` with the app header had both links, without it no `avatarThumbs` key.
+6. Deploy: `.github/workflows/deploy.yml` runs `bash deploy/deploy.sh`, which runs `npm ci --include=dev --no-audit --no-fund` (no `--omit=optional`), so sharp's `@img/sharp-linux-x64` and libvips arrive with it. Clean `npm ci` in an empty folder from the lockfile: 971 packages, `node -e "require('sharp')"` gives 0.34.5 / vips 8.17.3 and a WebP encodes. No workflow or server change.
+Checks: see the EXIT lines in the hand-back. Backfill estimate: about 40 minutes per 10,000 pictures averaging 500 KB at 2 at once (`count` mode prints the real figure from the database; not run).
+Filed: SHARED-CHANGES `HUB-THUMBS #1`. Gap: no contract types yet, so the app cannot read the fields until it is applied.
+
+## Verifier report
+
