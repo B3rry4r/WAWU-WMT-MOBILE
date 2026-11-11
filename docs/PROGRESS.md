@@ -7,10 +7,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 35 | 0 | 0 | 0 |
+| todo | 34 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 54 | 0 | 0 | 0 |
-| review | 263 | 0 | 0 | 0 |
+| review | 264 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -278,6 +278,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
 - [HUB-THUMBS](../tasks/HUB-THUMBS.md) Pictures are served at the size they are drawn (You)
 - [APP-THUMBS](../tasks/APP-THUMBS.md) The app draws the small copy of a picture where it draws a small picture (You)
+- [OPS-DEL-TEST](../tasks/OPS-DEL-TEST.md) Delete one test account that holds test wallet money, on the owner's word (You)
 
 ## Being verified
 
