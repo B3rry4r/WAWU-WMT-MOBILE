@@ -54,3 +54,11 @@ Note on the aborted run: I started `npm run test:contract` by mistake without my
 - Side effect the builder named is real and in scope: tools with a listing switch now write `ai_job_ready` for a long job (`ai-job.service.ts:~1362`), because the switches are on by default.
 
 **Not run:** the whole `npm run test:contract`, any live provider, any call to the live Hub.
+
+## Builder report, fix round 1
+
+Hub `wmt/STUDIO-ON` head `b690e171`.
+- **F1 fixed:** `npm run contract:build` run in the Hub worktree (own `npm ci`, own `prisma generate`), `contract/openapi.json` committed (one line, the Podcast job summary); a second `contract:build` left it byte-identical.
+- **F2 fixed:** the unused `PODCAST_PASS_MS` is removed and the comment no longer says a pass is remembered for a day. Correct text: a pass has no expiry and only clears a refusal; a refusal lasts one hour (`PODCAST_REFUSAL_MS`). Letting a pass expire would change nothing, because the default is listed.
+- **F4 recorded:** `ai.podcast_studio_api_ok` now defaults to -1. Clearing the stored row returns it to -1, because `set(null)` deletes the row, so the Dashboard never needs to type -1. Behaviour unchanged.
+- F3 accepted as noted by the verifier.

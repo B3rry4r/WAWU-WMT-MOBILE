@@ -7,7 +7,7 @@ order: 385
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: verifying
 depends_on: []
 decisions: [R-109, R-135]
 passes: [V1, V2, V3, V4, V9]
@@ -19,10 +19,7 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** back to building. T1 verifier verdict FIX on Hub `wmt/STUDIO-ON` (2595cffc): one high finding.
-- **Open:** F1 (high): `contract/openapi.json` not regenerated, `npm run contract:build` changes the Podcast job summary and the CI contract job fails. Fix: regenerate and commit it. Lows F2 to F4 (dead `PODCAST_PASS_MS`, one 403 hides the tool for all for an hour, `-1` default needs a look in the dashboard) go to the CREATE sweep.
-- **Verified sound:** 19 tools by default, Dashboard 0 off, stored 1 and rows win, Podcast proof 403/hour/pass/override, refund and one owner item on 403, no charge or half job in the window, one process per service, missing keys still 503, specs follow R-135. 45 suites, 546 tests, tsc, eslint, gates and baseline all exit 0.
-- **Next:** builder fixes F1 only, then a lean re-check (contract:build clean).
+- **Status:** fix round 1 built, waiting for the lean re-check. Hub `wmt/STUDIO-ON` head `b690e171`: F1 (openapi.json regenerated, a second `contract:build` is clean), F2 (dead `PODCAST_PASS_MS` removed), F4 (clearing the stored row returns `ai.podcast_studio_api_ok` to -1; the Dashboard never types -1). See `tasks/history/STUDIO-ON.md`.
 
 ## Read first
 
