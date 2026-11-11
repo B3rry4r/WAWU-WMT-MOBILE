@@ -89,3 +89,24 @@ Max with a rising fee: 4 reads, returns 4,960,000, last fee 40,000 (total 5,000,
 
 ### NOT RUN
 A real Android phone (PHONE CHECK as the builder said); the live Hub and a Fintava-mode Hub; a Nuvion sandbox transfer (F9); my own web build pictures (I judged the builder's from the files; none of the touched sheets lacking a picture was taken by me).
+
+## Builder report, fix round 2
+
+Fix round 2 (builder, Sonnet, 11 Nov 2026) on `origin/wmt/FEE-03-verify` `85ceea32` (fast-forwarded, so the verifier report is kept). Hub `wmt/FEE-01` head used: `e5474cbe` (newest when this was written; its contract is byte-identical to the app's, and the pay-fx quote `PaymentSourceView` still carries no `feeMinor`, `vatMinor`, `totalMinor` or `receiveMinor`).
+
+| Finding | Fix |
+|---|---|
+| F1 high, never a dead end | A quote without the fee fields is no longer refused. `send/quotedFee.ts` holds `hasQuotedFee` (the whole set or none, never a mix), `totalOf` and `receiveOf`. With the fields every screen draws Fee, VAT when on, Total, "gets"; without them Withdraw, Send review, chat send and request, and every pay sheet (`events/buyModel.feeLines`, `quoteAddsUp`) and the Legal fixed-price card draw their old rows (Bank charge, WAWU's fee, Fees, Total) from the quote's `parts` or `fee`. Types are the generated ones again (the derived "whole" types are gone). Specs: Withdraw, Send review and the Unlock pay sheet each with a Fintava-shaped quote, `payQuoteFee.test.ts`, `model.test.tsx`. |
+| F2 high | The abroad review button and the PIN sheet line carry `totalMinor` ("Send $108.00" in the picture); spec asserts the button equals the Total row. |
+| F3 medium | The from-a-dollar sheet (`PaySheet` `sourceRows`) is back to its pre-R-139 rows (Bank charge, Conversion fee) because `PaymentSourceView` has no `feeMinor`, `vatMinor`, `totalMinor` or `receiveMinor` at `e5474cbe`; the app does no new fee arithmetic there. It moves to those fields once the Hub adds them. The one-fee draw I made in round 1 (`providerFeeMinor + wawuFeeMinor`) is removed. |
+| F5 medium | One "Fee" and no "Bank charge", "WAWU fee" or "Network fee" on: the card-issue confirm (`cards/model.ts` `feeRows`, the Hub's `totalFeeKobo`), the FX receipt (`FxReceiptScreen`: swap and crypto-send rows), crypto send (`CryptoSendScreen`: the form's fee list and the review sheet; Fee is everything beyond the amount from the quote's own two figures). Capital, the dev Showcase and past transaction detail rows stay. |
+| F7 low | Every shown or compared total reads `totalOf` (approval line, changed-total compare, button, Total row) in Withdraw, Send review, chat send and request. Specs where `totalKobo` and `totalMinor` differ: Withdraw, Send review, `model.test.tsx`, `payQuoteFee.test.ts`, the Unlock sheet with VAT. |
+| Add money | One Fee row kept (R-139 point 11), as ruled. |
+| F6, F9 | F6 left as a low. F9 (receipt Fee source) goes to the Hub builder. |
+| F4 | Hub side; the abroad review is drawn from the quote's own fields and the Hub's `providerFeeMinor` is 0 on this head. |
+
+**Checks:** `npm run check` exit 0 (typecheck 0, lint 0 with 28 warnings and no errors, jest 549 suites, 8160 tests passed, 6 skipped, gates 0 fail, tasks 0); `npm run tasks` exit 0 again after this report.
+
+**Pictures (F8)**, 390 px, light and dark, from this round's code, in `audits/FEE-03/round2/` (artboards W17, W10, W15, H14 stay in `audits/FEE-03/artboards/`; the stale round 0 and round 1 pictures are removed). Stand-in Hub (never the live Hub): `withdraw`, `withdraw-pin` (PIN sheet over Withdraw), `withdraw-receipt`, `withdraw-vat`, `withdraw-refused`, `withdraw-fallback` (a Fintava-shaped quote: Bank charge, WAWU's fee, Fees), `send-review`, `send-pin` (PIN sheet over Send), `send-receipt`, `send-review-vat`, `send-review-fallback`, `crypto-send`, `crypto-send-review`, `card-issue`, `add-money`, `abroad-review`, `abroad-receipt`, `tip` and `tip-vat` (the real Tip sheet), `pay-sheet`, `pay-sheet-send`, `pay-sheet-send-vat`, `pay-sheet-from-usd` (from-a-dollar sheet). Every one was opened and looked at.
+
+**NOT RUN (pictures):** Ticket, Ask, Request pay, chat Send, School, Legal fixed price, Legal matter pay and web wallet buy, each on its own. They need an event, a thread, a school, a matter or a request from the Hub, which the stand-in does not serve, and I did not get to building them in the time; they draw through the same fee lines, and their jest flows pass with the new and the old quote shapes (Unlock, Tip, Ask, Ticket, School, Legal, web wallet suites). A real Android phone; the live Hub; a Fintava-mode Hub run end to end.

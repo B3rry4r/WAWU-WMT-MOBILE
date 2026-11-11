@@ -30,8 +30,7 @@ export const WORDS = {
   keep: 'Keep card',
   getAnother: 'Get another card',
   feeNote: 'Taken from your Naira wallet when your card is made.',
-  bankCharge: 'Bank charge',
-  wawuFee: 'WAWU’s fee',
+  fee: 'Fee',
   total: 'Total',
   limitReached: 'You have the most cards one person can hold. Block one to get another.',
   off: 'Cards are not available right now.',
@@ -129,11 +128,9 @@ export function whenLine(iso: string | null | undefined, now: Date): string {
   return at.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
 }
 
-/** The fee lines a quote shows: the bank's charge always (even at 0, it is what the issuer takes), WAWU's only when there is one. */
+/** The fee line a card quote shows (R-139 point 5): one Fee, the Hub's whole fee (even at 0). The issuer's own charge is never a row. */
 export function feeRows(fee: { providerFeeKobo: number; wawuFeeKobo: number; totalFeeKobo: number }): { label: string; kobo: number }[] {
-  const rows: { label: string; kobo: number }[] = [{ label: WORDS.bankCharge, kobo: fee.providerFeeKobo }];
-  if (fee.wawuFeeKobo > 0) rows.push({ label: WORDS.wawuFee, kobo: fee.wawuFeeKobo });
-  return rows;
+  return [{ label: WORDS.fee, kobo: fee.totalFeeKobo }];
 }
 
 /** How long the card's number stays on screen after the PIN. Default (agent), owner may override. */

@@ -56,6 +56,7 @@ import {
   GETS_LABEL,
   TOTAL_LABEL,
 } from './model';
+import { receiveOf, totalOf } from '@/features/send/quotedFee';
 
 /** The board's field: the amount at 26 bold with the naira sign, "Max" in the accent at the end; the balance's figure is 36. The radio is 26 with a 10 dot. */
 const LOOK = { amount: 26, balance: 36, avatar: 44, radio: 26, dot: 10, ring: fieldMetrics.ring, max: 15 } as const;
@@ -184,7 +185,7 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
         setProblem(isApiError(error) && error.message ? error.message : 'We couldn’t work out the fees. Try again.');
         return;
       }
-      if (latest.totalKobo !== quote.totalKobo) {
+      if (totalOf(latest) !== totalOf(quote)) {
         setFresh(latest);
         setNotice('The fees changed. Check the new total before you withdraw.');
         return;
@@ -283,7 +284,7 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
 
   const submitPin = async (pin: string) => asPinResult(await run({ pin }));
   const approvalKind = useApprovalKind();
-  const approvePrompt = attempt ? approvalLine({ totalKobo: attempt.quote.totalKobo, payee: payout ? payout.accountName : 'your payout account' }) : 'Approve this withdrawal';
+  const approvePrompt = attempt ? approvalLine({ totalKobo: totalOf(attempt.quote), payee: payout ? payout.accountName : 'your payout account' }) : 'Approve this withdrawal';
   const approveWithBiometric = async () => asBiometricResult(await run({ approve: (signed) => approveRequest(signed, approvePrompt) }));
 
   const line = block ? blockLine(block) : null;
@@ -301,7 +302,7 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
         <View style={styles.foot}>
           <Button
             testID="withdraw-submit"
-            label={withdrawLabel(quote ? quote.totalMinor : null)}
+            label={withdrawLabel(quote ? totalOf(quote) : null)}
             full
             loading={busy}
             disabled={block !== null || quote === null || balance.data === undefined}
@@ -400,8 +401,8 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
             {rows.map((row) => (
               <KeyValueRow key={row.key} testID={`withdraw-fee-${row.key}`} label={row.label} value={<Money minorUnits={row.kobo} size={14.5} weight={600} />} />
             ))}
-            {quote ? <KeyValueRow testID="withdraw-fee-total" label={TOTAL_LABEL} value={<Money minorUnits={quote.totalMinor} size={14.5} weight={700} />} /> : null}
-            {quote ? <KeyValueRow testID="withdraw-gets" label={GETS_LABEL} value={<Money minorUnits={quote.receiveMinor} size={14.5} weight={700} />} /> : null}
+            {quote ? <KeyValueRow testID="withdraw-fee-total" label={TOTAL_LABEL} value={<Money minorUnits={totalOf(quote)} size={14.5} weight={700} />} /> : null}
+            {quote ? <KeyValueRow testID="withdraw-gets" label={GETS_LABEL} value={<Money minorUnits={receiveOf(quote)} size={14.5} weight={700} />} /> : null}
             {arrival !== null ? (
               <KeyValueRow
                 testID="withdraw-arrives"
@@ -439,7 +440,7 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
         <PinSheet
           visible={pinOpen}
           onClose={() => setPinOpen(false)}
-          approval={{ totalKobo: attempt.quote.totalKobo, payee: payout ? payout.accountName : 'your payout account' }}
+          approval={{ totalKobo: totalOf(attempt.quote), payee: payout ? payout.accountName : 'your payout account' }}
           onSubmit={submitPin}
           biometric={approvalKind ? { kind: approvalKind, onPress: approveWithBiometric } : undefined}
           unansweredLine={PAYMENT_UNANSWERED_LINE}

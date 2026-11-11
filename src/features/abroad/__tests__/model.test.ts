@@ -95,8 +95,8 @@ describe('send abroad · what the screens say', () => {
 
   it('the PIN sheet says what is being approved, in the currency sent', () => {
     expect(
-      approvalPurpose({ amountFromMinor: 10000, fromCurrency: 'USD', fromDecimals: 2 }, { holderName: 'Ama Mensah', countryName: 'Ghana' }),
-    ).toBe('Send $100.00 to Ama Mensah in Ghana');
+      approvalPurpose({ totalMinor: 10800, fromCurrency: 'USD', fromDecimals: 2 }, { holderName: 'Ama Mensah', countryName: 'Ghana' }),
+    ).toBe('Send $108.00 to Ama Mensah in Ghana');
   });
 
   it('a held quote read from an address must be whole; anything else is refused', () => {

@@ -9,6 +9,8 @@ import { Button } from '@/components/Button';
 import { GroupedList } from '@/components/Card';
 import { IconTile } from '@/components/IconTile';
 import { KeyValueRow } from '@/components/ListRow';
+import { BANK_CHARGE, feeLinesOf } from '@/features/send/model';
+import { totalOf } from '@/features/send/quotedFee';
 import { Money } from '@/components/Money';
 import { formatNaira } from '@/components/pay-sheet';
 import { Skeleton } from '@/components/Skeleton';
@@ -131,9 +133,15 @@ export function FixedPriceScreen({ threadId, onBack, onStarted }: FixedArgs) {
           <KeyValueRow label="Price" value={<Money minorUnits={ok.priceNaira * 100} size={text.kvValue.fontSize} decimals={false} />} />
           {fee.data ? (
             <>
-              <KeyValueRow label="Fee" value={<Money minorUnits={fee.data.feeMinor} size={text.kvValue.fontSize} decimals={fee.data.feeMinor % 100 !== 0} />} testID="legal-fixed-fee" />
-              {fee.data.vatOn ? <KeyValueRow label="VAT" value={<Money minorUnits={fee.data.vatMinor} size={text.kvValue.fontSize} decimals={fee.data.vatMinor % 100 !== 0} />} testID="legal-fixed-vat" /> : null}
-              <KeyValueRow label="Total" value={<Money minorUnits={fee.data.totalMinor} size={text.kvValue.fontSize} decimals={fee.data.totalMinor % 100 !== 0} />} testID="legal-fixed-total" />
+              {feeLinesOf(fee.data, BANK_CHARGE).map((line) => (
+                <KeyValueRow
+                  key={line.label}
+                  label={line.label}
+                  value={<Money minorUnits={line.amountKobo} size={text.kvValue.fontSize} decimals={line.amountKobo % 100 !== 0} />}
+                  testID={line.vat ? 'legal-fixed-vat' : line.label === 'Fee' ? 'legal-fixed-fee' : undefined}
+                />
+              ))}
+              <KeyValueRow label="Total" value={<Money minorUnits={totalOf(fee.data)} size={text.kvValue.fontSize} decimals={totalOf(fee.data) % 100 !== 0} />} testID="legal-fixed-total" />
             </>
           ) : null}
         </GroupedList>

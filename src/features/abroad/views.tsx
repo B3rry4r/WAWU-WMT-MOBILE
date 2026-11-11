@@ -358,7 +358,7 @@ export function AbroadReviewView(p: AbroadReviewViewProps) {
         ) : (
           <Button
             testID="abroad-send"
-            label={`Send ${formatMinor(q.amountFromMinor, q.fromCurrency, q.fromDecimals)}`}
+            label={`Send ${formatMinor(q.totalMinor, q.fromCurrency, q.fromDecimals)}`}
             full
             loading={p.waiting}
             onPress={p.onSend}

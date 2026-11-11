@@ -14,6 +14,7 @@ import { WalletRow } from '@/features/money-attempt/WalletRow';
 import { space } from '@/theme';
 
 import { REQUEST_CONFIRMING_LINE, type useRequestPay } from './useRequestPay';
+import { receiveOf, totalOf } from '@/features/send/quotedFee';
 
 const SHEET_GAP = 16;
 const ROW_VALUE = 14.5;
@@ -37,7 +38,7 @@ const naira = (kobo: number) => formatMoney(kobo, { decimals: kobo % 100 !== 0 }
  */
 export function RequestPaySheet({ sheet, name, notice }: RequestPaySheetProps) {
   const { request, quote, fees, status, pinOpen } = sheet;
-  const total = quote.totalKobo;
+  const total = totalOf(quote);
   const pin = (
     <PayPinSheet
       visible={pinOpen}

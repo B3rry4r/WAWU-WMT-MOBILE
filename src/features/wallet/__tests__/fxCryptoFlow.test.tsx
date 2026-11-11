@@ -162,20 +162,22 @@ async function send() {
 const fill = async (address = OUTSIDE, amount = '120') => {
   await fireEvent.changeText(rtl.screen.getByTestId('crypto-send-address'), address);
   await fireEvent.changeText(rtl.screen.getByTestId('crypto-send-amount'), amount);
-  await rtl.screen.findByText('Shown on your receipt', {}, patient);
+  await rtl.screen.findByText('0.00 USDT', {}, patient);
 };
 
 describe('W23 · Crypto · send', () => {
   beforeEach(() => sent.mockReset());
 
-  it('asks for the fees of this amount on this network, adds them on top, and names the network fee only when the Hub can', async () => {
+  it('asks for the fees of this amount on this network and draws one Fee and the total, never a network fee row (R-139)', async () => {
     await send();
     await fill();
     expect(hub.sendQuotes).toEqual([`?accountId=${USDT_ID}&currency=USDT&chain=eth&amountMinor=12000`]);
     // BRIEF rules 3 and 4: WAWU's part is drawn as a figure even at zero, never "No fee".
     expect(rtl.screen.getByText('0.00 USDT')).toBeTruthy();
     expect(rtl.screen.queryByText(/No fee/)).toBeNull();
-    expect(rtl.screen.getByText('120.00 USDT + network fee')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
+    expect(rtl.screen.queryByText(/Network fee|WAWU fee/)).toBeNull();
+    expect(rtl.screen.getAllByText('120.00 USDT').length).toBeGreaterThan(1);
     expect([rtl.screen.getByTestId('crypto-send-balance').props.children].flat().join('')).toBe('Balance 320.00 USDT');
     expect(rtl.screen.queryByText(/Arrives|About 2 minutes|TRC-20/)).toBeNull();
     expect(rtl.screen.getByTestId('crypto-send-review').props.accessibilityState.disabled).toBe(false);
@@ -209,10 +211,11 @@ describe('W23 · Crypto · send', () => {
     expect(rtl.screen.getByTestId('crypto-send-review-title').props.children.join('')).toBe('Send 120.00 USDT');
     // The review sheet draws the fee as its parts and then the total (BRIEF rules 3 and 4): WAWU's part as a figure, never "No fee".
     const card = rtl.within(rtl.screen.getByTestId('crypto-send-review-card'));
-    expect(card.getByText('WAWU fee')).toBeTruthy();
+    expect(card.getByText('Fee')).toBeTruthy();
+    expect(card.queryByText(/Network fee|WAWU fee/)).toBeNull();
     expect(card.getByText('0.00 USDT')).toBeTruthy();
     expect(card.getByText('Total')).toBeTruthy();
-    expect(card.getByText('120.00 USDT + network fee')).toBeTruthy();
+    expect(card.getAllByText('120.00 USDT').length).toBe(2);
     expect(card.queryByText(/No fee/)).toBeNull();
     await fireEvent.press(rtl.screen.getByTestId('crypto-send-confirm'));
     expect(await rtl.screen.findByText(/^Approve sending 120.00 USDT to 0x5290/)).toBeTruthy();

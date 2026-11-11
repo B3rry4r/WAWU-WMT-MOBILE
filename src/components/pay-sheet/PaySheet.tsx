@@ -355,8 +355,10 @@ export function sourceRows(s: PaySource): ReactElement[] {
   return [
     <KeyValueRow key="from" label="Pay from" value={s.accountName} testID="source-from" />,
     <KeyValueRow key="amount" label={`${s.currency} amount`} value={fmt(s.amountMinor)} testID="source-amount" />,
-    // R-139: one Fee line; the provider's own charge is not a line of its own.
-    ...(s.providerFeeMinor + s.wawuFeeMinor > 0 ? [<KeyValueRow key="fee" label="Fee" value={fmt(s.providerFeeMinor + s.wawuFeeMinor)} />] : []),
+    // The pay-from-a-dollar-account quote (`PaymentSourceView`) carries no `feeMinor`, `vatMinor` or `totalMinor` yet (FEE-01 is adding them),
+    // so it is drawn as before R-139. It moves to those fields, as the other sheets have, once the contract has them.
+    ...(s.providerFeeMinor > 0 ? [<KeyValueRow key="pfee" label="Bank charge" value={fmt(s.providerFeeMinor)} />] : []),
+    ...(s.wawuFeeMinor > 0 ? [<KeyValueRow key="wfee" label="Conversion fee" value={fmt(s.wawuFeeMinor)} />] : []),
     <KeyValueRow key="total" label="Total" value={fmt(sourceTotalMinor(s))} testID="source-total" />,
   ];
 }

@@ -1,6 +1,7 @@
 import { formatMoney } from '@/components/Money';
 import { koboOfText, pressKey } from '@/components/amount-entry';
-import { FEE_LINE, feeLinesOf, quoteAddsUp, refusalOf } from '@/features/send/model';
+import { BANK_CHARGE, FEE_LINE, feeLinesOf, quoteAddsUp, refusalOf } from '@/features/send/model';
+import { hasQuotedFee, totalOf, type QuotedFields } from '@/features/send/quotedFee';
 import { shortReference } from '@/features/send/reference';
 import type { FeeQuote, Transfer } from '@/features/send/api';
 import { FEE_LABELS } from '@/features/wallet/history/model';
@@ -58,8 +59,13 @@ export const destinationSub = (payout: Pick<PayoutAccount, 'accountName'>): stri
 export const withdrawKey = (payout: Pick<PayoutAccount, 'bankCode' | 'accountNumber'>): string => `withdraw:${payout.bankCode}:${payout.accountNumber}`;
 
 /** The fee lines of a quote, all the Hub's (R-139 point 5): Fee, then VAT only when the Hub says it is on. */
-export function withdrawFeeRows(quote: Pick<FeeQuote, 'feeMinor' | 'vatMinor' | 'vatOn'>): { key: string; label: string; kobo: number }[] {
-  return feeLinesOf(quote).map((line) => ({ key: line.vat ? 'vat' : 'fee', label: line.label, kobo: line.amountKobo }));
+export function withdrawFeeRows(quote: Pick<FeeQuote, 'parts'> & QuotedFields): { key: string; label: string; kobo: number }[] {
+  if (hasQuotedFee(quote)) return feeLinesOf(quote).map((line) => ({ key: line.vat ? 'vat' : 'fee', label: line.label, kobo: line.amountKobo }));
+  // A quote that does not say its fee (a Hub on Fintava, or rolled back) is drawn as before R-139: the bank charge, WAWU's fee, Fees.
+  const lines = feeLinesOf(quote, BANK_CHARGE);
+  const rows = lines.map((line) => ({ key: line.label === BANK_CHARGE ? 'bank' : 'wawu', label: line.label, kobo: line.amountKobo }));
+  if (lines.length > 1) rows.push({ key: 'fees', label: 'Fees', kobo: lines.reduce((sum, line) => sum + line.amountKobo, 0) });
+  return rows;
 }
 
 /** The line under the button: exactly what the bank account gets (the quote's `receiveMinor`). */
@@ -90,7 +96,7 @@ export type WithdrawInput = {
 };
 
 /** True when the quote's total is the amount plus its parts (whole kobo), so the button, the PIN line and the send agree. */
-export const quoteMakesTotal = (quote: Pick<FeeQuote, 'amountKobo' | 'feeMinor' | 'vatMinor' | 'totalMinor'>): boolean => quoteAddsUp(quote);
+export const quoteMakesTotal = (quote: Pick<FeeQuote, 'amountKobo' | 'parts' | 'totalKobo'> & QuotedFields): boolean => quoteAddsUp(quote);
 
 export function withdrawBlock(input: WithdrawInput): WithdrawBlock | null {
   if (input.payout === null) return { kind: 'no_account' };
@@ -104,8 +110,9 @@ export function withdrawBlock(input: WithdrawInput): WithdrawBlock | null {
     const left = quote.remainingTodayKobo;
     return { kind: 'over_limit', line: left === null || left === undefined ? 'This is over your limit for today.' : `This is over your limit for today. You can withdraw ${cash(left)} more today.` };
   }
-  if (input.balanceKobo !== null && quote.totalKobo > input.balanceKobo) {
-    return { kind: 'short_with_fees', balanceKobo: input.balanceKobo, totalKobo: quote.totalKobo, shortKobo: quote.totalKobo - input.balanceKobo };
+  const total = totalOf(quote);
+  if (input.balanceKobo !== null && total > input.balanceKobo) {
+    return { kind: 'short_with_fees', balanceKobo: input.balanceKobo, totalKobo: total, shortKobo: total - input.balanceKobo };
   }
   return null;
 }

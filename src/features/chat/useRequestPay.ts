@@ -11,6 +11,7 @@ import { failureLine, feeLinesOf, limitLine, quoteAddsUp, quoteSpent } from '@/f
 import type { MoneyRequest } from './api';
 import { declineMoneyRequest, fetchFeeQuote, fetchMoneyRequest, payMoneyRequest, requestKey, type FeeQuote } from './requestApi';
 import { isApprovalStop, noRecordToForget, notApproved, stopCode, type Credential, type Settled } from '@/features/device-approval';
+import { receiveOf, totalOf } from '@/features/send/quotedFee';
 
 /** How often a payment the provider has not confirmed is read again (`GET .../money-requests/{id}`, which settles it first). Default (agent), owner may override. */
 const POLL_MS = 4000;
@@ -180,7 +181,7 @@ export function useRequestPay(args: RequestPayArgs) {
       try {
         const again = await fetchFeeQuote(target.amountKobo);
         setQuote(again);
-        if (again.totalKobo !== quote.totalKobo) {
+        if (totalOf(again) !== totalOf(quote)) {
           setNotice(PRICE_CHANGED_LINE);
           return;
         }

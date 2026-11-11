@@ -33,7 +33,7 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const ok = (data: unknown) => json(200, { statusCode: 200, message: 'OK', data });
 const refuse = (status: number, reason: Record<string, unknown>) => json(status, { data: null, statusCode: status, message: String(reason.message ?? ''), reason });
 
-type Mode = 'ok' | 'lost' | 'wrong_first' | 'short' | 'not_your_name' | 'changed' | 'below_minimum' | 'fee_exceeds' | 'vat_on';
+type Mode = 'ok' | 'lost' | 'wrong_first' | 'short' | 'not_your_name' | 'changed' | 'below_minimum' | 'fee_exceeds' | 'vat_on' | 'legacy' | 'total_differs';
 type Stored = Record<string, unknown> & { id: string; status: string };
 const hub = {
   mode: 'ok' as Mode,
@@ -113,6 +113,15 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
     hub.quotes += 1;
     if (hub.mode === 'below_minimum') return refuse(422, { code: 'below_minimum_withdrawal', message: 'This is less than the smallest amount you can withdraw. Try a larger amount.' });
     if (hub.mode === 'fee_exceeds') return refuse(422, { code: 'fee_exceeds_amount', message: 'The fee is more than the amount. Try a larger amount.' });
+    if (hub.mode === 'legacy') {
+      // A Hub on Fintava (or rolled back): the quote says nothing of its fee, only its parts.
+      const { currency: _c, feeMinor: _f, vatMinor: _v, vatOn: _o, totalMinor: _t, receiveMinor: _r, ...old } = quote(Number(url.searchParams.get('amountKobo')));
+      return ok(old);
+    }
+    if (hub.mode === 'total_differs') {
+      const amountKobo = Number(url.searchParams.get('amountKobo'));
+      return ok({ ...quote(amountKobo), feeMinor: 7000, totalMinor: amountKobo + 7000 });
+    }
     if (hub.mode === 'vat_on') {
       const amountKobo = Number(url.searchParams.get('amountKobo'));
       return ok({ ...quote(amountKobo), feeMinor: 10_000, vatMinor: 750, vatOn: true, totalKobo: amountKobo + 10_750, totalMinor: amountKobo + 10_750, receiveMinor: amountKobo });
@@ -301,6 +310,23 @@ describe('W17 · Withdraw', () => {
     await typeAmount('60');
     expect((await screen.findByTestId('withdraw-refusal')).props.children).toBe('The fee is more than the amount. Try a larger amount.');
     expect(submit().props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('F1: a quote that says nothing of its fee (a Hub on Fintava) is drawn as before R-139: Bank charge, WAWU’s fee, Fees, the total on the button, never a dead end', async () => {
+    hub.mode = 'legacy';
+    await toQuoted('50000');
+    expect(plain()).toMatch(/Bank charge₦40.*WAWU's fee₦25.*Fees₦65/);
+    expect(screen.getByRole('button', { name: 'Withdraw ₦50,065' })).toBeTruthy();
+    expect(screen.queryByTestId('withdraw-fees-retry')).toBeNull();
+    expect(screen.queryByTestId('withdraw-refusal')).toBeNull();
+    expect(submit().props.accessibilityState?.disabled).toBeFalsy();
+  });
+
+  it('F7: where totalMinor and totalKobo differ the button and the Total row read totalMinor', async () => {
+    hub.mode = 'total_differs';
+    await toQuoted('50000');
+    expect(screen.getByRole('button', { name: 'Withdraw ₦50,070' })).toBeTruthy();
+    expect(plain()).toMatch(/Fee₦70.*Total₦50,070/);
   });
 
   it('R-139 on an Android phone: the same Fee, Total and “Your bank gets” rows are drawn before the PIN', async () => {

@@ -6,6 +6,7 @@ import { FEE_LABELS, OWN_WALLET } from '@/features/wallet/history/model';
 import { longDateTime } from '@/features/wallet/history/lagosTime';
 
 import type { FeeQuote, Recipient, Transfer } from './api';
+import { hasQuotedFee, type QuotedFields } from './quotedFee';
 import { shortReference } from './reference';
 
 /** The wallet a send comes from, as W10 and W12 name it. */
@@ -144,9 +145,21 @@ export const VAT_LINE = 'VAT';
  * The quote's fee as lines (R-139): `Fee` is the Hub's `feeMinor`, `VAT` is `vatMinor` and is drawn only when `vatOn`. Nothing is
  * worked out here and the provider's charge (the quote's `parts`) is not read. Any line can be zero (₦0).
  */
-export function feeLinesOf(quote: Pick<FeeQuote, 'feeMinor' | 'vatMinor' | 'vatOn'>): PayFeeLine[] {
-  const lines: PayFeeLine[] = [{ label: FEE_LINE, amountKobo: quote.feeMinor }];
-  if (quote.vatOn) lines.push({ label: VAT_LINE, amountKobo: quote.vatMinor, vat: true });
+export function feeLinesOf(quote: Pick<FeeQuote, 'parts'> & QuotedFields, providerLabel: string = FEE_LABELS.provider): PayFeeLine[] {
+  if (hasQuotedFee(quote)) {
+    const lines: PayFeeLine[] = [{ label: FEE_LINE, amountKobo: quote.feeMinor }];
+    if (quote.vatOn) lines.push({ label: VAT_LINE, amountKobo: quote.vatMinor, vat: true });
+    return lines;
+  }
+  // A quote that does not say its fee (a Hub on Fintava, or rolled back): its parts as lines, as before R-139. The provider's part is
+  // "Bank charge" (R-53), then WAWU's fee; two provider parts share a label, so they are added into one line.
+  const lines: PayFeeLine[] = [];
+  const add = (label: string, kobo: number) => {
+    const found = lines.find((l) => l.label === label);
+    if (found) found.amountKobo += kobo;
+    else lines.push({ label, amountKobo: kobo });
+  };
+  for (const part of quote.parts) add(part.source === 'wawu' ? FEE_LABELS.wawu : providerLabel, part.amountKobo);
   return lines;
 }
 
@@ -162,8 +175,9 @@ export function refusalOf(error: unknown): string | null {
 }
 
 /** True when the quote's total is the amount plus its fee and VAT (whole kobo), so the button, the PIN line and the send agree. */
-export function quoteAddsUp(quote: Pick<FeeQuote, 'amountKobo' | 'feeMinor' | 'vatMinor' | 'totalMinor'>): boolean {
-  return quote.amountKobo + quote.feeMinor + quote.vatMinor === quote.totalMinor;
+export function quoteAddsUp(quote: Pick<FeeQuote, 'amountKobo' | 'parts' | 'totalKobo'> & QuotedFields): boolean {
+  if (hasQuotedFee(quote)) return quote.amountKobo + quote.feeMinor + quote.vatMinor === quote.totalMinor;
+  return quote.amountKobo + quote.parts.reduce((sum, p) => sum + p.amountKobo, 0) === quote.totalKobo;
 }
 
 /** The sentence W10 shows when today's limit is the reason the send cannot go (the quote's own figures; the Hub's limit check is the authority). */

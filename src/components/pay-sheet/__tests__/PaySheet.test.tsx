@@ -431,9 +431,8 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
     it('draws a fee only when the quote has one, and adds it to the total', async () => {
       const p = props({ amountKobo: 30000, fees: [], source: source({ providerFeeMinor: 5, wawuFeeMinor: 2 }) });
       await render(<PaySheet {...p} />);
-      expect(screen.getByText('Fee')).toBeTruthy();
-      expect(screen.queryByText('Conversion fee')).toBeNull();
-      expect(screen.queryByText('Bank charge')).toBeNull();
+      expect(screen.getByText('Bank charge')).toBeTruthy();
+      expect(screen.getByText('Conversion fee')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Unlock · $0.30' })).toBeTruthy();
     });
 

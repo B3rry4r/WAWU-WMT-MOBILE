@@ -23,10 +23,8 @@ import { nameOrSomeone } from '@/features/feed/model';
  * only the code (SHARED-CHANGES WALLET-06 #2), so the send reads its own answer and hands the screen one of `SendOutcome`.
  */
 export type Recipient = components['schemas']['RecipientView'];
-type RawFeeQuote = components['schemas']['FeeQuoteView'];
-/** The fields R-139 adds to the quote. The contract lets them be absent; a quote without them is refused (`readQuote`), so a screen reads them whole. */
-type QuotedFee = 'currency' | 'feeMinor' | 'vatMinor' | 'vatOn' | 'totalMinor' | 'receiveMinor';
-export type FeeQuote = Omit<RawFeeQuote, QuotedFee> & { [K in QuotedFee]-?: NonNullable<RawFeeQuote[K]> };
+/** R-139's fee fields are optional in the contract: a quote without them is drawn as before (`quotedFee.ts`), never refused. */
+export type FeeQuote = components['schemas']['FeeQuoteView'];
 export type Transfer = components['schemas']['TransferView'];
 export type TransferPresets = components['schemas']['TransferPresetsView'];
 export type Beneficiary = components['schemas']['BeneficiaryView'];
@@ -99,18 +97,12 @@ export const presetsQuery = (owner: string | null) =>
 
 /** What a quote must hold for a send to carry it: whole-kobo parts that add up, and the token. */
 export function readQuote(value: unknown): FeeQuote {
-  const q = value as Partial<RawFeeQuote> | null;
+  const q = value as Partial<FeeQuote> | null;
   const ok =
     q &&
     typeof q === 'object' &&
     isKobo(q.amountKobo) &&
     isKobo(q.totalKobo) &&
-    filled(q.currency) &&
-    isKobo(q.feeMinor) &&
-    isKobo(q.vatMinor) &&
-    typeof q.vatOn === 'boolean' &&
-    isKobo(q.totalMinor) &&
-    isKobo(q.receiveMinor) &&
     Array.isArray(q.parts) &&
     q.parts.every((p) => isKobo(p?.amountKobo) && filled(p?.code)) &&
     filled(q.quoteToken) &&

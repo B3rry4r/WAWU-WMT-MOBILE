@@ -1,4 +1,5 @@
 import { fetchFeeQuote } from '@/features/send/api';
+import { hasQuotedFee } from '@/features/send/quotedFee';
 
 /**
  * What W17 reads beyond the shared money reads (`@/api/money` for the balance, `@/features/wallet/api/payoutAccount` for the
@@ -26,5 +27,5 @@ export const withdrawQuoteQuery = (owner: string | null, amountKobo: number, rou
 /** The fee a bank send of `amountKobo` costs on top, from a fresh quote: its fee and VAT, as the Hub says them (Max follows it down). */
 export async function feeAt(amountKobo: number): Promise<number> {
   const quote = await fetchFeeQuote(amountKobo, 'bank_transfer');
-  return quote.feeMinor + quote.vatMinor;
+  return hasQuotedFee(quote) ? quote.feeMinor + quote.vatMinor : quote.parts.reduce((sum, part) => sum + part.amountKobo, 0);
 }

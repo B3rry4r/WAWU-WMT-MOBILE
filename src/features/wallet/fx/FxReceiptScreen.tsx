@@ -38,16 +38,14 @@ export const fxReference = (id: string): string => shortReference(`wawu-fx-${id}
 
 type Row = { key: string; label: string; value: string; wrap?: boolean };
 
-/** The fee as the Hub's parts, Fees, then the total paid (BRIEF rules 3 and 4, R-23): a zero is a figure, never "No fee". A part the provider has not named says so, and the total says it is still coming. */
-function feeRows(parts: { provider: number | null; wawu: number; amount: number; providerLabel: string; money: (minor: number) => string }): Row[] {
-  const { provider, wawu, amount, providerLabel, money } = parts;
-  const rows: Row[] = [
-    { key: 'provider', label: providerLabel, value: provider === null ? 'None stated' : money(provider) },
-    { key: 'wawu', label: 'WAWU fee', value: money(wawu) },
+/** The one Fee and the total paid (R-139 point 5, BRIEF rules 3 and 4): a zero is a figure, never "No fee". The Fee is everything the person paid beyond the amount, from the Hub's figures; the provider's charge is never a row of its own. */
+function feeRows(parts: { provider: number | null; wawu: number; amount: number; money: (minor: number) => string }): Row[] {
+  const { provider, wawu, amount, money } = parts;
+  const fee = wawu + (provider ?? 0);
+  return [
+    { key: 'fee', label: 'Fee', value: money(fee) },
+    { key: 'total', label: 'Total paid', value: money(amount + fee) },
   ];
-  if (provider !== null) rows.push({ key: 'fees', label: 'Fees', value: money(provider + wawu) });
-  rows.push({ key: 'total', label: 'Total paid', value: provider === null ? `${money(amount + wawu)} + ${providerLabel.toLowerCase()}` : money(amount + provider + wawu) });
-  return rows;
 }
 
 /** The receipt's rows for a swap: each is the Hub's (the rate and the fees are the quote's, the dates the swap's). */
@@ -60,7 +58,7 @@ export function swapRows(s: FxSwap): Row[] {
     { key: 'gave', label: 'You swapped', value: formatMinor(s.amountFromMinor, from, s.fromDecimals) },
     { key: 'got', label: 'You got', value: formatMinor(s.amountToMinor, to, s.toDecimals) },
     { key: 'rate', label: 'Rate', value: rateLine({ fromCurrency: from, toCurrency: to, fromDecimals: s.fromDecimals, toDecimals: s.toDecimals, rate: s.rate }) ?? 'Not available' },
-    ...feeRows({ provider: s.providerFeeMinor, wawu: s.wawuFeeMinor, amount: s.amountFromMinor, providerLabel: 'Bank charge', money: (m) => formatMinor(m, from, s.fromDecimals) }),
+    ...feeRows({ provider: s.providerFeeMinor, wawu: s.wawuFeeMinor, amount: s.amountFromMinor, money: (m) => formatMinor(m, from, s.fromDecimals) }),
     { key: 'date', label: 'Date', value: longDateTime(s.createdAt) },
     { key: 'ref', label: 'Reference', value: fxReference(s.id), wrap: true },
   ];
@@ -70,7 +68,7 @@ export function swapRows(s: FxSwap): Row[] {
 export function sendRows(s: FxSend): Row[] {
   const code = s.currency as QuoteCode;
   const money = (m: number) => formatMinor(m, code, s.decimals);
-  const parts = feeRows({ provider: s.providerFeeMinor, wawu: s.wawuFeeMinor, amount: s.amountMinor, providerLabel: 'Network fee', money });
+  const parts = feeRows({ provider: s.providerFeeMinor, wawu: s.wawuFeeMinor, amount: s.amountMinor, money });
   return [
     { key: 'network', label: 'Network', value: chainName(s.chain as FxChain) },
     { key: 'to', label: 'To', value: s.address, wrap: true },

@@ -1,4 +1,5 @@
 import { formatMoney } from '@/components/Money';
+import { hasQuotedFee, type QuotedFields } from '@/features/send/quotedFee';
 import type { PayFeeLine } from '@/components/pay-sheet';
 
 import type { TicketType } from './api';
@@ -45,16 +46,26 @@ export function sheetSubtitle(order: Pick<WalletOrder, 'lines' | 'event'>): stri
   return `${linesText(order.lines)} · ${w.weekday} ${w.day} ${w.month}`;
 }
 
-/** The sheet's fee rows (R-139 point 5): the quote's Fee, then VAT only when the Hub says it is on. The provider's own charge is never a line. */
-export function feeLines(quote: Pick<PaymentQuote, 'feeMinor' | 'vatMinor' | 'vatOn'>): PayFeeLine[] {
-  const lines: PayFeeLine[] = [{ label: 'Fee', amountKobo: quote.feeMinor }];
-  if (quote.vatOn) lines.push({ label: 'VAT', amountKobo: quote.vatMinor, vat: true });
+/**
+ * The sheet's fee rows (R-139 point 5): the quote's Fee, then VAT only when the Hub says it is on. A quote that does not say its fee
+ * (a Hub on Fintava, or rolled back) is drawn as before: "Bank charge", and WAWU's fee when it has one.
+ */
+export function feeLines(quote: Pick<PaymentQuote, 'fee'> & QuotedFields): PayFeeLine[] {
+  if (hasQuotedFee(quote)) {
+    const lines: PayFeeLine[] = [{ label: 'Fee', amountKobo: quote.feeMinor }];
+    if (quote.vatOn) lines.push({ label: 'VAT', amountKobo: quote.vatMinor, vat: true });
+    return lines;
+  }
+  const lines: PayFeeLine[] = [{ label: BANK_CHARGE, amountKobo: quote.fee.providerFeeKobo }];
+  if (quote.fee.wawuFeeKobo > 0) lines.push({ label: WAWU_FEE, amountKobo: quote.fee.wawuFeeKobo });
   return lines;
 }
 
-/** True when the quote's total is the price plus its fee parts (whole kobo), so the button, the PIN line and the payment agree. */
-export const quoteAddsUp = (quote: Pick<PaymentQuote, 'priceKobo' | 'feeMinor' | 'vatMinor' | 'totalMinor'>): boolean =>
-  quote.priceKobo + quote.feeMinor + quote.vatMinor === quote.totalMinor;
+/** True when the quote's total is the price plus its fee (and VAT), whole kobo, so the button, the PIN line and the payment agree. */
+export const quoteAddsUp = (quote: Pick<PaymentQuote, 'priceKobo' | 'fee' | 'totalKobo'> & QuotedFields): boolean =>
+  hasQuotedFee(quote)
+    ? quote.priceKobo + quote.feeMinor + quote.vatMinor === quote.totalMinor
+    : quote.priceKobo + quote.fee.providerFeeKobo + quote.fee.wawuFeeKobo === quote.totalKobo;
 
 /** When a quote can no longer be used, as the Hub gave it. A quote with no readable time is treated as spent. */
 export function quoteSpent(quote: Pick<PaymentQuote, 'expiresAt'>, now: number): boolean {

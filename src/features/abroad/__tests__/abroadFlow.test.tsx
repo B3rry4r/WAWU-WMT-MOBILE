@@ -537,6 +537,8 @@ describe('send abroad', () => {
     expect(within(screen.getByTestId('abroad-review-fee')).getByText('$1.50')).toBeTruthy();
     expect(within(screen.getByTestId('abroad-review-total')).getByText('$101.50')).toBeTruthy();
     expect(screen.getByText('Total from your USD account')).toBeTruthy();
+    // The button carries the same total as the row above it (the Hub's totalMinor), as Withdraw and Send do.
+    expect(screen.getByRole('button', { name: 'Send $101.50' })).toBeTruthy();
     // The fee is known, so the line that said it would come later is gone, and nothing was sent yet.
     expect(screen.queryByTestId('abroad-provider-fee')).toBeNull();
     expect(hub.sends).toHaveLength(0);

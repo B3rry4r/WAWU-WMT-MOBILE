@@ -201,10 +201,10 @@ export function methodLabel(rail: Rail): string {
 
 /** The sentence under the amount: what they get, to whom. */
 export function approvalPurpose(
-  quote: Pick<Quote, 'amountFromMinor' | 'fromCurrency' | 'fromDecimals'>,
+  quote: Pick<Quote, 'totalMinor' | 'fromCurrency' | 'fromDecimals'>,
   recipient: Pick<Recipient, 'holderName' | 'countryName'>,
 ): string {
-  return `Send ${formatMinor(quote.amountFromMinor, quote.fromCurrency, quote.fromDecimals)} to ${recipient.holderName} in ${recipient.countryName}`;
+  return `Send ${formatMinor(quote.totalMinor, quote.fromCurrency, quote.fromDecimals)} to ${recipient.holderName} in ${recipient.countryName}`;
 }
 
 export function rateLine(quote: Pick<Quote, 'rate' | 'fromCurrency' | 'toCurrency'>): string | null {

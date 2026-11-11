@@ -1,7 +1,6 @@
 import { api, resendsUnderKey, unwrap } from '@/api/client';
 import { ApiError } from '@/api/errors';
 import type { components } from '@/api/schema.generated';
-import type { WithPayment } from '@/features/events/buyApi';
 import { type Credential } from '@/features/device-approval/credential';
 import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, type PayOutcome } from '@/features/feedpay/payCall';
 
@@ -19,7 +18,7 @@ import { filled, isKobo, readData, readPaymentQuote, sendPayment, unreadable, ty
  *
  * The Hub's success body is `{ statusCode, message, data }` and the contract types only `data`, so each call reads it itself.
  */
-export type AskQuote = WithPayment<components['schemas']['PaidQuestionQuoteView']>;
+export type AskQuote = components['schemas']['PaidQuestionQuoteView'];
 export type QuestionView = components['schemas']['PaidQuestionWalletView'];
 export type ThreadDetail = components['schemas']['PaidDmThreadDetail'];
 /**
