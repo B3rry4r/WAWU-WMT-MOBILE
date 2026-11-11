@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-**Verifier round 2 re-check (11 Nov 2026): MERGE, with G1 (VAT lost when a reversed record reopens) and G2 (a wallet_to_wallet fee above 0 would 503 every wallet payment) to be owned. See "Verifier report, round 2 re-check".** Earlier: **Verifier round 1: FIX.** No blocker; F1 to F4 medium, F5 to F9 low. See tasks/history/FEE-01.md, "Verifier report, round 1".
+**Lead, 11 Nov 2026, 22:10 UTC: MERGE taken on the round 2 re-check. G1, G2 and G3 are owned by SWEEP-1111 rows F1 to F3, F4 holds the probes not run. The migration was edited in place before it reached main; no database outside the dropped test ones ever applied the old version. Merges after Branch checks pass on c992b2ed.** Verifier round 2 re-check (11 Nov 2026): MERGE, with G1 (VAT lost when a reversed record reopens) and G2 (a wallet_to_wallet fee above 0 would 503 every wallet payment) to be owned. See "Verifier report, round 2 re-check".** Earlier: **Verifier round 1: FIX.** No blocker; F1 to F4 medium, F5 to F9 low. See tasks/history/FEE-01.md, "Verifier report, round 1".
 
 As of 11 Nov 2026.
 - **Status:** todo. Cut by the lead from R-139. Nuvion's go-live waits for this task, FEE-02 and FEE-03 (R-139 point 12).

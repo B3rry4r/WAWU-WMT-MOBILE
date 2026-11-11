@@ -18,6 +18,8 @@ tier: T2
 
 ## Current state
 
+**Lead, 11 Nov 2026: step 3 (b9bfc76a, the abroad receipt's Fee, VAT and Total from the send's own fields, contract from Hub c992b2ed) accepted on a diff read: 17 lines of logic in `abroad/model.ts` and `views.tsx`, a spec for both shapes, a fixture and two pictures. With the round 2 re-check's MERGE, FEE-03 merges after the Hub's FEE-01. Lows L2 to L4 go to SWEEP-1111 row F6.**
+
 As of 11 Nov 2026.
 - **Status:** verifier round 2 re-check on `b1f9e40d`: MERGE (lows only), see tasks/history/FEE-03.md, Verifier report, round 2 re-check. `npm run check` exit 0. Hub `wmt/FEE-01` still `263ecd12`, contract identical.
 - **What exists:** the confirm screens already show fees before the PIN: `features/send/ReviewScreen.tsx`, `features/withdraw/WithdrawScreen.tsx`, `features/abroad/views.tsx` (`AbroadReviewView`), `features/wallet/fx/swap/SwapReview.tsx`, `components/pay-sheet/PaySheet.tsx` (and TipSheets, AskSheets, RequestPaySheet, legal PaySheets), `features/addmoney/model.ts`. They draw today's provider plus WAWU lines.
