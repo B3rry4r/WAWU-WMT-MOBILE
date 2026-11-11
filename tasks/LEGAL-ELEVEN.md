@@ -7,7 +7,7 @@ order: 390
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: todo
+status: review
 depends_on: []
 decisions: [R-137]
 passes: [V1, V2, V3, V4, V9]
@@ -19,10 +19,16 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** todo. Cut by the lead from R-137.
-- **Today** (Hub `origin/main` bf3f4a3b): `src/legal-intake/assistant/legal-assistant.service.ts` (the profiling turn near 679 and `generateBrief` near 531), `src/legal-intake/legal-chat.service.ts` (near 232 and 398) and `src/legal-intake/legal-intake.service.ts` inject `GEMINI_CLIENT` (`src/common/ai/`, a fenced folder) and call Gemini with a response schema (JSON shaped by the provider).
-- **Already in the Hub:** an ElevenLabs agent client in `src/ai-tools/voice/http-voice-provider.ts` (create and update an agent, `text_only` conversation override, a text chat that answers `{ reply, conversationId }`, conversation deletion for REC-DELETE), used by the Receptionist (`src/ai-tools/receptionist/`), with the model chosen by a plan setting (`ai.receptionist_llm`).
-- **Next:** builder on wawu-backend `wmt/LEGAL-ELEVEN`, then a T1 verifier.
+- **Status:** review. Verifier round 1 re-check: MERGE (no medium or worse; three lows). Hub `wmt/LEGAL-ELEVEN` head 5e8c6654 (round 0 was 37dd5f3a); records on mobile `wmt/LEGAL-ELEVEN`, verifier report on `wmt/LEGAL-ELEVEN-verify`.
+- **Fixed and re-proved:** F-1 (one agent however many boots; a pin makes no list call; the race clean-up can only delete the agent the process just made), F-2 (preamble then JSON accepted, prose fails as before), F-3 (legal-only turn joining; Receptionist unchanged), F-4 (owner notes).
+- **Open:** three lows for the legal sweep (L1 log a failed race delete, L2 socket close after a response, L3 missing created time). NOT RUN against the real provider.
+- **Next:** lead merges the Hub branch; the first real run on the provider is the owner's V9.
+
+## Owner notes (LEGAL-ELEVEN)
+
+- **Server config:** legal on ElevenLabs needs `AI_VOICE_BASE_URL` and `AI_VOICE_API_KEY`, the same two Studio and the Receptionist already use. Without them legal answers as it does when its AI is unavailable. No voice list is needed.
+- **Rollback:** `legal.ai_provider=gemini` (a plan setting) takes effect at the next plan-settings refresh, with no restart. It is read on every call.
+- **The agent:** found at the provider by the exact name "WAWU Legal assistant" (made if none), so restarts add none. `legal.ai_agent_id` pins a specific agent instead. If two Hubs boot at the same moment the older agent stays and the other deletes its own.
 
 ## Read first
 
@@ -50,8 +56,27 @@ A person using the legal assistant gets the same answers, words and brief as tod
 - [ ] A person profiles a legal matter and sends a brief, with the same screens and answers as today, and the provider stand-in received every turn as a text-only agent conversation.
 - [ ] A reply that is not the expected JSON fails the turn with today's message and holds nothing.
 - [ ] No legal conversation stays at the provider.
-- [ ] `legal.ai_provider=gemini` brings back today's path after a restart.
+- [ ] `legal.ai_provider=gemini` brings back today's path at the next settings refresh (no restart).
 
-## Builder report
+## Platform facts relied on (read 11 Nov 2026, public documentation only; no provider call was made)
 
-## Verifier report
+| Fact | Source |
+|---|---|
+| A text-only conversation runs on the agent socket with `conversation_config_override.conversation.text_only = true`; the agent can also be made with `conversation.text_only`. Already built and used by the Receptionist (`askAgent`). | `docs/elevenlabs/API-FACTS.md` (Agents); `elevenlabs.io/docs/eleven-agents/guides/chat-mode` |
+| A single conversation can replace the agent's prompt (`agent.prompt.prompt`) and model (`agent.prompt.llm`), but only if the agent allows it: `platform_settings.overrides.conversation_config_override.agent.prompt.{prompt,llm} = true` (the flags are described as "Whether to allow overriding the prompt/llm field"). `text_only` has its own flag. | `elevenlabs.io/docs/eleven-agents/customization/personalization/overrides` and the create-agent API reference (override-permission schemas) |
+| The platform's model list (agent `prompt.llm` enum) includes `gemini-3-flash-preview`, `gemini-3.5-flash`, `gemini-2.5-flash` (deprecated, removed 30 Nov 2026), `gpt-5.x`, `claude-sonnet-5-5` and others. | `elevenlabs.io/docs/eleven-agents/customization/llm`; create-agent API reference |
+| The platform has NO structured output (no response schema or JSON mode on an agent). Its pages list none. So the shape is demanded in words in the prompt and checked by the Hub. | `elevenlabs.io/docs/eleven-agents/customization/llm` (no mention); create-agent reference (JSON schema only for tools and webhooks) |
+| Conversation privacy is `platform_settings.privacy`: `retention_days` (default -1, forever), `record_voice`, `delete_transcript_and_pii`, `delete_audio`, `zero_retention_mode` (enterprise only per `API-FACTS.md`). `DELETE /v1/convai/conversations/{id}` exists; its page gives no timing. | create-agent API reference (PrivacyConfig); delete-conversation reference; `src/ai-tools/voice/ai-voice-provider.ts` (`AGENT_PRIVACY`, REC-PRIVACY) |
+| A delete sent before the conversation is `done` is answered 204 and ignored (real provider, 30 Oct 2026). | `src/ai-tools/voice/ai-voice-provider.ts` and `scripts/dev/voice-standin.cjs` headers (REC-DELETE) |
+
+| List agents: `GET /v1/convai/agents`, query `search` ("Search by agents name", match kind not stated), `page_size` (max 100), `cursor`, `sort_by`; answer `agents[].{agent_id,name,created_at_unix_secs}`, `has_more`, `next_cursor`. | `elevenlabs.io/docs/api-reference/agents/list` (read 11 Nov 2026) |
+| Agent websocket has `agent_response` and `agent_response_complete`; the page does not say when the latter fires. | `elevenlabs.io/docs/eleven-agents/api-reference/eleven-agents/websocket` |
+
+NOT RUN: every call to the real provider. Whether the real platform accepts the `llm` override key as sent, and how fast a real
+turn answers, are proven only by the first real run (the docs page for overrides says it shows no exact key for `llm` or text-only
+in the permission block, so the permission keys above come from the API reference's schema names).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/LEGAL-ELEVEN.md](history/LEGAL-ELEVEN.md).
+
