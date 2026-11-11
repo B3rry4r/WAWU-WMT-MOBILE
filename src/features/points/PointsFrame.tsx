@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
+import { KeyboardAvoidingView, type ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/Button';
@@ -28,6 +28,10 @@ export type PointsFrameProps = {
   foot?: ReactNode;
   /** Centres the body in the space the bar and the foot leave (PT5a's empty view, PT6b). */
   centered?: boolean;
+  /** When this value changes the page scrolls back to the top (a tool folds its input into one row when Run is pressed, POINTS-18). */
+  scrollTopKey?: string | number | boolean;
+  /** The page's scroller, for a screen that brings one of its parts above the keyboard (Studio's prompt box, STUDIO-HOME). */
+  scrollRef?: RefObject<ScrollView | null>;
   children: ReactNode;
   testID?: string;
 };
@@ -38,9 +42,17 @@ export type PointsFrameProps = {
  * `ScreenFrame` has no round button on the right and no foot (SHARED-CHANGES.md, POINTS-05 #1), so this one draws them, as
  * `ProFrame` does; it goes when `ScreenFrame` takes both.
  */
-export function PointsFrame({ title, subtitle, onBack, action, gap, foot, centered, children, testID }: PointsFrameProps) {
+export function PointsFrame({ title, subtitle, onBack, action, gap, foot, centered, scrollTopKey, scrollRef, children, testID }: PointsFrameProps) {
   const { colors } = useWawu();
   const insets = useSafeAreaInsets();
+  const own = useRef<ScrollView>(null);
+  const scroller = scrollRef ?? own;
+  const seen = useRef(scrollTopKey);
+  useEffect(() => {
+    if (seen.current === scrollTopKey) return;
+    seen.current = scrollTopKey;
+    scroller.current?.scrollTo({ x: 0, y: 0, animated: false });
+  }, [scrollTopKey, scroller]);
   const footBottom = useFootBottom(Math.max(insets.bottom, frameMetrics.footBottom));
   return (
     <KeyboardAvoidingView testID={testID} behavior="padding" style={[styles.root, { backgroundColor: colors.surfacePage, paddingTop: insets.top }]}>
@@ -59,6 +71,7 @@ export function PointsFrame({ title, subtitle, onBack, action, gap, foot, center
         <View style={styles.side}>{action ? <IconButton icon={action.icon} label={action.label} onPress={action.onPress} testID={action.testID} /> : null}</View>
       </View>
       <FieldScroll
+        ref={scroller}
         style={styles.scroll}
         testID="points-scroll"
         contentContainerStyle={[

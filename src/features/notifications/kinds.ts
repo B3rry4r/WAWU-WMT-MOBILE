@@ -38,6 +38,8 @@ export const HUB_NOTIFICATION_KINDS = [
   'pass_sold',
   'question_answered',
   'question_credit',
+  // AITOOLS-08 (R-109): a Studio job of the picture and video tools that ran long is ready (target kind `ai_job`).
+  'ai_job_ready',
 ] as const;
 
 export type HubNotificationKind = (typeof HUB_NOTIFICATION_KINDS)[number];

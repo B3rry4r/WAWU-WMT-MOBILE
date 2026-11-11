@@ -21,6 +21,8 @@ export const STUDIO_WORDS = {
   tryAgain: 'Check your connection and try again.',
 } as const;
 
+/** The line under Studio's bar: the voice tools' caption while every tool drawn is one of them, "Every AI tool" once a picture or video tool is drawn too (POINTS-14, R-47: the caption never says less than the tiles show). */
+export const studioLine = (drawn: readonly Pick<AiTool, 'id'>[]): string => (drawn.some((t) => isMediaTool(t) || isStudio2Tool(t)) ? 'Every AI tool, paid in points' : STUDIO_WORDS.line);
 export const SHEET_WORDS = {
   title: 'Not enough points',
   costs: 'This costs',
@@ -49,21 +51,77 @@ const LOOKS: Record<string, IconName> = {
   music: 'Music',
   'sound-effect': 'Volume2',
   dubbing: 'Languages',
+  // POINTS-14 and POINTS-15 (R-109): the picture and video tools. Each is drawn only when the Hub lists it (its own switch) and describes it whole (`hasMediaOptions`).
+  image: 'Image',
+  'photo-edit': 'ImagePlus',
+  video: 'Clapperboard',
+  'talking-photo': 'UserRound',
+  // POINTS-16, POINTS-17, POINTS-18 and POINTS-12 (R-109): the voice, music, long-audio tools and the Receptionist. Each is drawn only when the Hub lists it (its own switch) and describes it whole (`hasStudio2Shape`).
+  'voice-changer': 'AudioLines',
+  dialogue: 'Users',
+  'my-voice': 'Fingerprint',
+  'video-music': 'Video',
+  stems: 'SlidersHorizontal',
+  audiobook: 'BookOpen',
+  podcast: 'Headphones',
+  receptionist: 'Headset',
 };
+/** The tools POINTS-16 to POINTS-18 and POINTS-12 add. */
+const STUDIO2_TOOLS: readonly string[] = ['voice-changer', 'dialogue', 'my-voice', 'video-music', 'stems', 'audiobook', 'podcast', 'receptionist'];
+export const isStudio2Tool = (tool: Pick<AiTool, 'id'>): boolean => STUDIO2_TOOLS.includes(tool.id);
+/**
+ * True when the Hub described one of these tools whole: what its screen reads from the entry (the kind of file and the voices of a Voice changer,
+ * the voices and the limit of a Dialogue, the three lengths and the languages of a Podcast maker...). A tool the Hub lists without them is not drawn (R-47).
+ */
+export function hasStudio2Shape(tool: Pick<AiTool, 'id' | 'input' | 'voices'>): boolean {
+  const i = tool.input;
+  const f = i.file;
+  if (tool.id === 'voice-changer') return Boolean(f && f.only === 'audio' && f.voice === true && tool.voices.length > 0);
+  if (tool.id === 'my-voice') return Boolean(f && f.only === 'audio' && f.clone === true);
+  if (tool.id === 'video-music') return Boolean(f && f.only === 'video');
+  if (tool.id === 'stems') return Boolean(f && f.only === 'audio' && (f.parts?.length ?? 0) > 0);
+  if (tool.id === 'dialogue') return i.kind === 'dialogue' && (i.dialogue?.maxVoices ?? 0) > 0 && i.maxCharacters > 0 && i.charactersPerUnit > 0 && tool.voices.length > 0;
+  if (tool.id === 'audiobook') return i.kind === 'text' && i.maxCharacters > 0 && i.charactersPerUnit > 0 && tool.voices.length > 0;
+  if (tool.id === 'podcast') {
+    const p = i.podcast;
+    return Boolean(i.kind === 'podcast' && p && p.modes.length > 0 && p.durations.length > 0 && p.languages.length > 0 && p.maxLinkCharacters > 0 && i.maxCharacters > 0 && tool.voices.length > 0);
+  }
+  if (tool.id === 'receptionist') return i.kind === 'chat';
+  return true;
+}
+/** The tools whose input is a picture or a video, not words or a recording. */
+const MEDIA_TOOLS: readonly string[] = ['image', 'photo-edit', 'video', 'talking-photo'];
+type MediaOptions = NonNullable<AiTool['input']['options']>;
+const hasPhotoRule = (o: MediaOptions): boolean => Boolean(o.photo && o.photo.folder && o.photo.maxBytes > 0 && o.photo.accepts.length > 0);
+/**
+ * True when the Hub described a picture or video tool whole: the shapes it takes, and for each the options its screen reads (the lengths of a
+ * clip, the photo rule of an edit or a talking photo, the voice rule of a talking photo). A tool the Hub lists without them is not drawn (R-47).
+ */
+export function hasMediaOptions(tool: Pick<AiTool, 'id' | 'input'>): boolean {
+  const o = tool.input.options;
+  if (!o) return false;
+  if (tool.id === 'image') return o.shapes.length > 0;
+  if (tool.id === 'photo-edit') return o.shapes.length > 0 && hasPhotoRule(o);
+  if (tool.id === 'video') return o.shapes.length > 0 && (o.lengths?.length ?? 0) > 0;
+  if (tool.id === 'talking-photo') return hasPhotoRule(o) && Boolean(o.speech && o.speech.audioFolder && o.speech.accepts.length > 0 && o.speech.maxSeconds > 0);
+  return true;
+}
 /** True when the app has a screen for the tool. */
 export const isBuiltTool = (tool: Pick<AiTool, 'id'>): boolean => Object.prototype.hasOwnProperty.call(LOOKS, tool.id);
 /**
  * True when Studio draws the tool (R-47: a tool the app cannot run is not drawn): the app has its screen, and Dubbing also has the Hub's
  * file rule and at least one language to choose from (POINTS-11). The tile and the Create hub's Studio card both ask this, and so does `toolReady`.
  */
-export const isDrawnTool = (tool: Pick<AiTool, 'id' | 'input'>): boolean =>
-  isBuiltTool(tool) && (tool.id !== 'dubbing' || (tool.input.file?.dubbing?.languages.length ?? 0) > 0);
+export const isDrawnTool = (tool: Pick<AiTool, 'id' | 'input'> & { voices?: AiTool['voices'] }): boolean =>
+  isBuiltTool(tool) && (tool.id !== 'dubbing' || (tool.input.file?.dubbing?.languages.length ?? 0) > 0) && (!MEDIA_TOOLS.includes(tool.id) || hasMediaOptions(tool)) && (!isStudio2Tool(tool) || hasStudio2Shape({ ...tool, voices: tool.voices ?? [] }));
+/** True for the picture and video tools (POINTS-14, POINTS-15). */
+export const isMediaTool = (tool: Pick<AiTool, 'id'>): boolean => MEDIA_TOOLS.includes(tool.id);
 export const toolIcon = (tool: Pick<AiTool, 'id'>): IconName => LOOKS[tool.id] ?? 'Sparkles';
 
 /** "250 a minute": the Hub's cost for one unit and the unit it counts in. A flat price (a use, a track) is the count alone, as PT1 draws "75" and "500". */
 export function costLine(tool: Pick<AiTool, 'costPointsPerUnit' | 'unit'> & { id?: string }): string {
   const n = formatPointsCount(tool.costPointsPerUnit);
-  const per: Record<string, string> = { minute: 'a minute', message: 'a message', track: '', use: '' };
+  const per: Record<string, string> = { minute: 'a minute', message: 'a message', track: '', use: '', second: 'a second' };
   const word = per[tool.unit as string];
   const line = word ? `${n} ${word}` : n;
   // PT1 draws Dubbing as "From 1,500 a minute": the price is for each language, so the figure on the tile is where it starts (POINTS-11).

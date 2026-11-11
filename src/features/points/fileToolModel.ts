@@ -61,8 +61,8 @@ const labelOf = (contentType: string): string => LABELS[contentType] ?? (content
 
 type FileRule = NonNullable<AiTool['input']['file']>;
 
-/** Every type the tool takes, the Hub's list: audio first, then video. */
-export const acceptedTypes = (rule: FileRule): string[] => [...rule.accepts.audio, ...rule.accepts.video];
+/** Every type the tool takes, the Hub's list: audio first, then video. A tool that takes one kind only (`only`, POINTS-16 and POINTS-17) lists that kind's types alone. */
+export const acceptedTypes = (rule: FileRule): string[] => (rule.only === 'audio' ? [...rule.accepts.audio] : rule.only === 'video' ? [...rule.accepts.video] : [...rule.accepts.audio, ...rule.accepts.video]);
 
 /** "MP3, WAV, M4A, AAC, MP4, MOV or WEBM". */
 export function typesLine(rule: FileRule): string {
@@ -70,8 +70,24 @@ export function typesLine(rule: FileRule): string {
   return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
 }
 
+/** The longest the tool takes, in seconds: the Hub's longest job, or the tool's own `maxSeconds` when that is shorter. */
+export const longestSeconds = (rule: FileRule): number => (typeof rule.maxSeconds === 'number' && rule.maxSeconds > 0 ? Math.min(rule.maxMinutes * 60, rule.maxSeconds) : rule.maxMinutes * 60);
+
+/** "30 seconds", "1 minute", "3 minutes", "2 minutes 30 seconds": a length written the way a person says it. */
+export function spokenLength(seconds: number): string {
+  const whole = Math.max(1, Math.round(seconds));
+  if (whole < 60) return `${whole} second${whole === 1 ? '' : 's'}`;
+  const m = Math.floor(whole / 60);
+  const s = whole % 60;
+  const minutes = `${m} minute${m === 1 ? '' : 's'}`;
+  return s === 0 ? minutes : `${minutes} ${s} second${s === 1 ? '' : 's'}`;
+}
+
 /** The line under the row, all from the Hub's rule: "MP3, WAV or MP4. Up to 500 MB and 60 minutes." */
-export const limitsLine = (rule: FileRule): string => `${typesLine(rule)}. Up to ${formatBytes(rule.maxBytes)} and ${rule.maxMinutes} minute${rule.maxMinutes === 1 ? '' : 's'}.`;
+export const limitsLine = (rule: FileRule): string => {
+  const longest = longestSeconds(rule);
+  return `${typesLine(rule)}. Up to ${formatBytes(rule.maxBytes)} and ${longest % 60 === 0 && longest >= 60 ? `${longest / 60} minute${longest === 60 ? '' : 's'}` : spokenLength(longest)}.`;
+};
 
 /** Other names a phone or a browser gives the same audio (`audio/x-m4a`, `audio/m4a`); the Hub's list is in its own names. */
 const ALIASES: Record<string, string> = { 'audio/x-m4a': 'audio/mp4', 'audio/m4a': 'audio/mp4', 'audio/x-aac': 'audio/aac', 'audio/aacp': 'audio/aac', 'video/x-quicktime': 'video/quicktime' };
@@ -86,10 +102,12 @@ export function typeOfRecording(file: Pick<ChosenFile, 'name' | 'contentType'>):
 }
 
 /** The sentence for a chosen file the Hub's rule would refuse, or null when it fits. The Hub checks again; this stops the person at the edge in the Hub's own numbers. */
-export function refusalFor(file: Pick<ChosenFile, 'name' | 'contentType'> & { blob: { size: number } }, rule: FileRule): string | null {
+export function refusalFor(file: Pick<ChosenFile, 'name' | 'contentType'> & { blob: { size: number }; seconds?: number }, rule: FileRule): string | null {
   if (!acceptedTypes(rule).includes(typeOfRecording(file))) return `That file type is not accepted here. Choose ${typesLine(rule)}.`;
   if (file.blob.size === 0) return 'That file is empty. Choose another.';
   if (file.blob.size > rule.maxBytes) return `That file is over the ${formatBytes(rule.maxBytes)} limit.`;
+  // A phone's library says how long a video is, so a clip past the Hub's longest is stopped before it goes up (the Hub reads the length again).
+  if (typeof file.seconds === 'number' && file.seconds > longestSeconds(rule) + 0.5) return `That ${rule.only === 'video' ? 'video' : 'file'} is longer than ${spokenLength(longestSeconds(rule))}.`;
   return null;
 }
 

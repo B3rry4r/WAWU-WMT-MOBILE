@@ -2,6 +2,8 @@ import { api, unwrap } from '@/api/client';
 import type { components } from '@/api/schema.generated';
 import { unreadable, type Envelope } from '@/features/wallet/api/home';
 
+import { readVoiceJob, type VoiceJob } from './voiceoverApi';
+
 /**
  * The calls behind Studio (PT1, PT1a) and the checks before a job runs (PT3, PT3a, PT3b, PT7), as the backend contract types them
  * (AITOOLS-01, POINTS-03).
@@ -109,3 +111,25 @@ export async function fetchJobQuote(job: JobInput): Promise<JobQuote> {
   const body = (await unwrap(api.POST('/api/hub/points/quote', { body: job }))) as unknown as Envelope<JobQuote>;
   return readJobQuote(body?.data);
 }
+
+/**
+ * `GET /ai-tools/jobs?limit=10`: the person's own jobs of every tool, newest first (STUDIO-HOME, R-113). Studio's home shows the finished ones as
+ * Recent. A row that is not whole is left out, never drawn half empty; the page itself is refused when it is not a page.
+ */
+export async function fetchRecentJobs(limit = 10): Promise<VoiceJob[]> {
+  const body = (await unwrap(api.GET('/api/hub/ai-tools/jobs', { params: { query: { limit } } }))) as unknown as Envelope<{ items?: unknown }>;
+  const items = body?.data?.items;
+  if (!Array.isArray(items)) throw unreadable('your recent results');
+  const jobs: VoiceJob[] = [];
+  for (const item of items) {
+    try {
+      jobs.push(readVoiceJob(item));
+    } catch {
+      // A row the app cannot read is not drawn.
+    }
+  }
+  return jobs;
+}
+
+/** Read again each time Studio is shown: a job finished since is a new card. */
+export const recentJobsQuery = (owner: string | null) => ({ queryKey: ['ai-tools', 'recent', owner ?? ''] as const, queryFn: () => fetchRecentJobs(10), staleTime: 0, enabled: Boolean(owner) }) as const;

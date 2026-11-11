@@ -42,7 +42,15 @@ export async function fetchFileQuote(toolId: string, fileKey: string): Promise<F
         ? api.POST('/api/hub/ai-tools/clean-audio/quote', { body })
         : toolId === 'dubbing'
           ? api.POST('/api/hub/ai-tools/dubbing/quote', { body })
-          : null;
+          : toolId === 'voice-changer'
+            ? api.POST('/api/hub/ai-tools/voice-changer/quote', { body })
+            : toolId === 'my-voice'
+              ? api.POST('/api/hub/ai-tools/my-voice/quote', { body })
+              : toolId === 'video-music'
+                ? api.POST('/api/hub/ai-tools/video-music/quote', { body })
+                : toolId === 'stems'
+                  ? api.POST('/api/hub/ai-tools/stems/quote', { body })
+                  : null;
   if (sent === null) throw new ApiError('unknown', 0, 'That did not work. Try again.');
   const out = (await unwrap(sent)) as unknown as Envelope<FileQuote>;
   return readFileQuote(out?.data);

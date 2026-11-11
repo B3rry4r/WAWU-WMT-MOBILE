@@ -175,6 +175,11 @@ export function routeForPush(raw: unknown): Href | null {
       return day && TGIF_DAY.test(day) ? { pathname: '/tgif', params: { date: day } } : '/tgif';
     }
     // An announcement goes where its button says, from the fixed table; one with no place opens the list it is in.
+    // AITOOLS-08 (R-109): a long Studio job is ready. The tool opens on the finished job (the job id names the tool); with no job named, Studio.
+    case 'ai_job_ready': {
+      const id = targetOf(data, 'ai_job');
+      return id ? { pathname: '/studio-tool', params: { job: id } } : '/studio';
+    }
     case 'campaign':
       return routeForAction(data.actionHref) ?? '/notifications';
     default:
