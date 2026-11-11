@@ -96,6 +96,7 @@ Builder, 11 Nov 2026. Hub branch `wmt/FEE-01` (head in the Hub repo's log; first
 3. **Naira safety** unchanged: `money.min_withdrawal_minor` NGN line on every naira bank send; `fee_exceeds_amount` kept.
 3b. `PaymentQuoteView` (wallet payments) gains the same added fields under Nuvion (priced by `wallet_to_wallet`, no provider charge in any of them); `FeeQuoteView`'s fields are optional in the contract but always present under Nuvion (a spec asserts it).
 4. `src/money/abroad/`, `src/money/fx/` and `src/money/add-money/` not touched in this round.
+**Fix round 1, dollar side (11 Nov 2026, Hub `wmt/FEE-01-usd` `5e1629a7`):** dollar payout to a bank, dollars received, and add money now follow the schedule and the lead's side rule; the wire fee waits for the owner to name Nuvion's wire `payment_type` (`FX_WIRE_PAYMENT_TYPES`). Full report in tasks/history/FEE-01.md.
 
 ## Verifier report
 
