@@ -65,6 +65,7 @@ The website (`wawuafrica`): WEBPAY and WEB tasks. Paused with the website (R-49)
 | HUB-IMG-LINKS | low 1 | A stored link that is never signed again (for example the avatar `recipient.service.ts:186` returns unsigned) now lives 6 to 7 days instead of 7. | `wmt/HUB-IMG-LINKS-verify` 24f0e03c, `tasks/history/HUB-IMG-LINKS.md` |
 | APP-THUMBS | r1 low a | `/creators` ("See all") at 390 on a 3x screen loads the FULL pictures, because its cards are about 810 device px, larger than the 640 px copy. The bytes are the same as main. A larger Hub copy (about 1080 px) would fix it. | `wmt/APP-THUMBS-verify` 67b92d6f, `tasks/history/APP-THUMBS.md`, round 1 report |
 | APP-THUMBS | r1 low b | Today's `FeedCreatorCard` tiles did not appear for the seeded viewer, so their copy was NOT RUN in a browser (covered in jest). | same |
+| APP-THUMBS | walk low | My content (Library) tiles draw the FULL pictures (224 KB for 4 small photos), and the task names them neither as changed nor as left full. Give them the copies, or record why not. | `wmt/WALK-1111b` c7909bf1, `tasks/history/BATCH-1111b-walk.md` |
 
 ## Builder report
 
