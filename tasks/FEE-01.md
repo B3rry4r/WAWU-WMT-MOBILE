@@ -89,6 +89,14 @@ Builder, 11 Nov 2026. Hub branch `wmt/FEE-01` (head in the Hub repo's log; first
 - `python3 scripts/tasks/check_tasks.py` 0.
 - NOT RUN: a real WAWU ID mail for the alert; any live provider (stand-ins only); the rest of the full jest suite beyond the areas listed; the rollback script; abroad, swap and add-money priced from the schedule (not built, see gap 5); the app's `GET /money/fees/quote` over HTTP with the engine (covered by the service spec only).
 
+## Fix round 1, the naira side (lead rulings, 11 Nov 2026)
+
+1. **One fee in the app.** Under Nuvion the app's quote shows ONE fee: WAWU's schedule fee F (plus VAT when on). Nuvion's expected charge P is in no app answer: `fee.providerFeeKobo` is 0, there is no provider part, and the transfer and payment views fold P into WAWU's line. Inside the Hub Nuvion takes P with the transfer and the fee leg moves F - P (plus VAT) to the operational account, so the person's total is exactly amount + F + VAT. If F is under P the leg moves only the VAT, the fee record shows a negative kept and the rate alert fires. The record keeps F, VAT, P expected, P actual (when Nuvion states it) and kept = F - P actual. Under Fintava the answer stays byte-identical to main. `purchase` (wallet payments) under the engine is priced by the `wallet_to_wallet` row in the same way; payments have no fee leg, so any F - P above 0 on a purchase is not collected (seeded F and P are 0; flagged).
+2. **The red specs aligned.** R-139 replaced R-10's "provider plus WAWU on top" for these sends. Each spec seeds its own fee-schedule and provider-rate rows in its setup (`src/money/fees/engine/tests/seed-fees.ts`), with F equal to the old provider charge plus the old WAWU fee and P equal to the old provider charge, so every money figure the specs assert is unchanged. Changed assertions are listed in `tasks/history/FEE-01.md`.
+3. **Naira safety** unchanged: `money.min_withdrawal_minor` NGN line on every naira bank send; `fee_exceeds_amount` kept.
+3b. `PaymentQuoteView` (wallet payments) gains the same added fields under Nuvion (priced by `wallet_to_wallet`, no provider charge in any of them); `FeeQuoteView`'s fields are optional in the contract but always present under Nuvion (a spec asserts it).
+4. `src/money/abroad/`, `src/money/fx/` and `src/money/add-money/` not touched in this round.
+
 ## Verifier report
 
 ## Owner sign-off
