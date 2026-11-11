@@ -7,7 +7,7 @@ order: 378
 priority: after-launch
 repo: wawu-wmt-mobile
 type: flow
-status: todo
+status: verifying
 depends_on: []
 decisions: [R-132, R-47]
 passes: [V1, V4, V5, V6, V7, V9]
@@ -19,9 +19,14 @@ tier: T1
 ## Current state
 
 As of 10 Nov 2026.
-- **Status:** todo. Cut by the lead from R-132 (owner, 10 Nov), from the owner's own walk of the web app.
-- **Found:** `src/features/verify/YourTierScreen.tsx` draws Renew whenever the held tier is sold (`sold ? <Button ... your-tier-renew`), so a person in the middle of an active year is offered Renew. The Hub already says `active`, `ending` (inside its `endingDays` window, `src/plans/maker-tier.service.ts`) or `ended`.
-- **Next:** a builder on `wmt/TIER-RENEW` from `wmt/BATCH-1110`.
+- **Status:** verifying. Built on `wmt/TIER-RENEW` from `wmt/BATCH-1110` (R-132).
+- **Done:** `YourTierScreen.tsx` draws Renew only when the Hub's state is `ending` or `ended` (and the tier is sold). Upgrade is unchanged (drawn when a higher tier exists); an active highest tier (Founding Maker) has no buy button.
+- **Grep of every Renew offer:** `your-tier-renew` was the only button. `checkout.tsx` takes `kind=renew` only from that button; the tier offer, Me (the meter says "Until"/"Ends", never Renew), push routes (pass reminder only) and the web-wallet path (`webwallet/api.ts`, a spec for the checkout) draw no Renew for the held tier. Nothing else changed.
+- **Pictures:** /tmp/wmt-shots/tier-renew/ (verify-active, founding-active, ending, ended; 390 light and dark, 1440 light and dark), looked at; board `VF14a` rendered to build/design_shots/. Web export served behind vercel.json's headers (CSP's api, id and ws hosts swapped for the stack's, CORS headers added by the browser harness), against stack `tr` with wawu-id. The tier end dates were set by SQL in my own `tr` database (+300 days, +3 days, -3 days); the Hub computed the states.
+- **Tests changed because R-132 changes the expected value:** `publishAndTier.test.tsx` "a user sees the Hub's dates..." (active Verify used to expect Renew and open the checkout; now expects Upgrade and no Renew; the Renew press moved to new ending/ended cases); `productsFullStore.test.tsx` "a tier the store does not sell has no price on Renew" (held tier state `active` became `ended`, same assertions). Added R-132 cases: active Verify and active Founding Maker on ios and android, ending and ended on ios and android.
+- **PHONE CHECK:** none new (a button is drawn or not).
+- **NOT RUN:** a real phone; the checkout reached by a typed `/checkout?kind=renew` URL is not blocked (not an offer).
+- **Verifier (T1):** MERGE, no findings; report in history/TIER-RENEW.md.
 
 ## Read first
 
@@ -46,8 +51,8 @@ A person on an active tier is never offered Renew; a person whose tier is ending
 - [ ] A person whose tier ends within the Hub's window, or has ended, sees Renew with its price.
 - [ ] Pictures of each state at 390 light and dark and at 1440.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/TIER-RENEW.md](history/TIER-RENEW.md).
 
 ## Owner sign-off
