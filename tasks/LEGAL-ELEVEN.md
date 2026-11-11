@@ -19,14 +19,16 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** verifying (builder fix round 1 done). Hub `wmt/LEGAL-ELEVEN`, head 5e8c6654; records on mobile `wmt/LEGAL-ELEVEN`.
+- **Status:** verifying (builder fix round 1 done). Hub `wmt/LEGAL-ELEVEN`, head a62f0f9c; records on mobile `wmt/LEGAL-ELEVEN`.
+- **Round 2 fix:** the PR check ("Protected route suite against the base branch's checker and lock") failed because `POST /legal/intake/:id/complete` answered 503: the harness has no AI_VOICE keys. The picker now uses ElevenLabs only where the keys are set. Details in the owner notes.
 - **Fixed:** F-1 (agent found by exact name, then made; a pin overrides), F-2 (reply handed to the legal parsers), F-3 (turn joined up to the end-of-turn event), F-4 (owner notes below). NOT RUN against the real provider.
 - **Next:** short re-verify.
 
 ## Owner notes (LEGAL-ELEVEN)
 
-- **Server config:** legal on ElevenLabs needs `AI_VOICE_BASE_URL` and `AI_VOICE_API_KEY`, the same two Studio and the Receptionist already use. Without them legal answers as it does when its AI is unavailable. No voice list is needed.
+- **Server config:** legal on ElevenLabs needs `AI_VOICE_BASE_URL` and `AI_VOICE_API_KEY`, the same two Studio and the Receptionist already use. Without them legal stays on Gemini (see the next note). No voice list is needed.
 - **Rollback:** `legal.ai_provider=gemini` (a plan setting) takes effect at the next plan-settings refresh, with no restart. It is read on every call.
+- **Which provider answers (fix round 2):** the agent platform answers only when it is set up on the server (`AI_VOICE_BASE_URL` and `AI_VOICE_API_KEY` both set) AND `legal.ai_provider` is `elevenlabs`. Otherwise legal is today's Gemini path exactly as on main, its own "not set" error included. Production has the AI_VOICE keys (Studio and the Receptionist use them), so it runs on ElevenLabs there. The protected route suite's harness sets Gemini keys only, so `POST /legal/intake/:id/complete` stays at 201 in it.
 - **The agent:** found at the provider by the exact name "WAWU Legal assistant" (made if none), so restarts add none. `legal.ai_agent_id` pins a specific agent instead. If two Hubs boot at the same moment the older agent stays and the other deletes its own.
 
 ## Read first

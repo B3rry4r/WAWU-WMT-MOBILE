@@ -133,3 +133,12 @@ NOT RUN: every call to the real provider (override acceptance, empty first messa
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/LEGAL-ELEVEN.md](history/LEGAL-ELEVEN.md).
+
+## Builder report
+
+Fix round 2. `LegalAiClient.pick()` (`src/legal-intake/ai/legal-ai.client.ts`) returns the ElevenLabs adapter only when `legal.ai_provider` is `elevenlabs` AND `ElevenLabsLegalAi.available()` (the agent client's `agentsConfigured`); otherwise the Gemini adapter, so a server without AI_VOICE keys behaves as main. New spec `legal-intake-provider-pick.contract.spec.ts`: no keys plus a Gemini stand-in gives the 201 brief on `POST /legal/intake/:id/complete` (Gemini called once, the voice stand-in untouched); with the keys it goes to the agent platform, text-only. The adapter spec gained the keys-unset picker case. The protected route suite was run locally exactly as CI does (`ci-check.sh`, base origin/main, fresh database).
+
+## History
+
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/LEGAL-ELEVEN.md](history/LEGAL-ELEVEN.md).
+

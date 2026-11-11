@@ -1,4 +1,5 @@
 # Work log
+- 11 Nov 2026 · LEGAL-ELEVEN · fix round 2: legal uses the agent platform only where its keys are set, else today's Gemini path, so the protected route suite stays green (Hub `wmt/LEGAL-ELEVEN`; built, verifying)
 - 11 Nov 2026 · LEGAL-ELEVEN · fix round 1: the legal agent is found by name before one is made, replies go to the legal parsers as Gemini's do, a turn is joined up to the platform's end-of-turn event (Hub `wmt/LEGAL-ELEVEN`; built, verifying)
 - 11 Nov 2026 · LEGAL-ELEVEN · the legal assistant's chat turns and brief run through the agent platform, typed only, with the model and a way back to Gemini as Hub settings; nothing the app sees changes (R-137; Hub `wmt/LEGAL-ELEVEN` `37dd5f3a`; built, verifying)
 - 11 Nov 2026 · APP-THUMBS · avatars, cards, grids and rows draw the Hub's 96 or 640 px copy for the size drawn times the pixel ratio, the full picture when there is none or the copy fails (once); pieces' own pages, zooms and full-width covers stay full (mobile `wmt/APP-THUMBS`, contract from Hub `bf3f4a3b`; built, verifying)

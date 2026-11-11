@@ -541,6 +541,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 From `docs/LOG.md`, newest first.
 
+- 11 Nov 2026 · LEGAL-ELEVEN · fix round 2: legal uses the agent platform only where its keys are set, else today's Gemini path, so the protected route suite stays green (Hub `wmt/LEGAL-ELEVEN`; built, verifying)
 - 11 Nov 2026 · LEGAL-ELEVEN · fix round 1: the legal agent is found by name before one is made, replies go to the legal parsers as Gemini's do, a turn is joined up to the platform's end-of-turn event (Hub `wmt/LEGAL-ELEVEN`; built, verifying)
 - 11 Nov 2026 · LEGAL-ELEVEN · the legal assistant's chat turns and brief run through the agent platform, typed only, with the model and a way back to Gemini as Hub settings; nothing the app sees changes (R-137; Hub `wmt/LEGAL-ELEVEN` `37dd5f3a`; built, verifying)
 - 11 Nov 2026 · APP-THUMBS · avatars, cards, grids and rows draw the Hub's 96 or 640 px copy for the size drawn times the pixel ratio, the full picture when there is none or the copy fails (once); pieces' own pages, zooms and full-width covers stay full (mobile `wmt/APP-THUMBS`, contract from Hub `bf3f4a3b`; built, verifying)
@@ -555,4 +556,3 @@ From `docs/LOG.md`, newest first.
 - 11 Nov 2026 · WEBAPP-12 · fix round 2: offline, a missing route file keeps the app's error screen (no reload to the browser's offline page); a session ending in one tab clears the picture cache and signs out every other tab, and the worker keeps pictures only while a session is open (built, verifying)
 - 10 Nov 2026 · WEBAPP-12 · fix round 1: a tab open across a deploy reloads once when a route file is gone (never loops), held pictures are deleted at sign-out and on an account change, and the picture cache is also bound at 60 MB (built, verifying)
 - 10 Nov 2026 · WEBAPP-12 · web pictures and files load faster: first paint 11.7 to 8.5 s (route chunks, one import per icon, 2,047 to 1,490 KB), a picture worker keeps a re-signed picture under its stable address (second visit 3 to 8 MB and 7 to 45 s become 0 bytes and about 1.5 s); the phone is unchanged; Hub follow-ups (stable links, thumbnails, unsigned avatar link) named in the task (verifying)
-- 11 Nov 2026 · WEBAPP-11 · fix round 2: the install screen is drawn over the app, never instead of it (only on an offer within 3 s and before a touch; any answer latches the tab); no blank page after a cancelled install or with no offer (built, verifying)
