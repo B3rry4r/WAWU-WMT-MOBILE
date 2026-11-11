@@ -152,3 +152,12 @@ Tests that fail on 646cb678 and pass now (thumbs.spec.ts, 25 tests): "a confirm 
 Confirm time, 12 MP noisy JPEG (10 MB) avatar, local stack with the storage stand-in, ms: single main 37, branch 40; 5 at once main [46,52,44,43,56] max 56, branch [66,46,74,44,42] max 74.
 Burst: 50 confirms returned in 331 ms (10 users, presigns spaced for the throttler); the Hub was killed with `kill -9`; at that point 40 of 50 had copies; ONE `sweepThumbs()` from a fresh StorageService looked at only the 10 that needed them (754 ms) and the bucket then held 50 originals and 100 copies, every picture done.
 Checks: tsc EXIT 0, eslint on changed files EXIT 0, gates EXIT 0, check_baseline EXIT 0, `src/storage` (with thumbs spec) on a fresh database 387/387 EXIT 0.
+
+## Lead acceptance of round 2 (11 Nov 2026)
+
+Accepted on the lead's diff read (docs/WORKFLOW.md step 5: a fix of 30 lines or fewer that closes named findings), with no verifier re-check. Hub `wmt/HUB-THUMBS` b02aa106; code outside tests is +26 and -32 non-comment lines.
+- **MEDIUM, sweep starvation: closed.** `sweepThumbs` filters to pictures that lack one of their copies BEFORE it applies the limit. The default limit is 60 looks over 600 rows. The builder's burst test (50 confirms, then kill -9, then one sweep) ended with 50 originals and 100 copies.
+- **MEDIUM, upload time: closed by the lead ruling (11 Nov): confirm never waits.** The inline wait is removed. Only the sweeps and the backfill await the job. A 12 MP confirm took 37 ms on main and 40 ms on the branch; five at once peaked at 56 ms on main and 74 ms on the branch.
+- **LOW, slot freed while the decode ran: closed.** The queue slot is released only when the decode promise settles. The time limit only stops waiting.
+- **Known limit, accepted by the lead:** if a decode never settled (sharp hung), the one slot would stay held. Copies would pause until the next restart, and new jobs past the 40 waiting would be skipped and later picked up by the sweep. Uploads are not affected. `limitInputPixels`, `failOn` and the decode estimate make a hung decode unlikely.
+- The new tests (3) fail on 646cb678 and pass now. On a fresh database: tsc, eslint, gates, check_baseline and src/storage (387/387) all EXIT 0. GitHub's full suite on the PR is the full check.
