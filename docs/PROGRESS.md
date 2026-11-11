@@ -7,10 +7,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 41 | 0 | 0 | 0 |
+| todo | 40 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 54 | 0 | 0 | 0 |
-| review | 270 | 0 | 0 | 0 |
+| review | 271 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -285,6 +285,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [APP-RESET](../tasks/APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code (You)
 - [OPS-CLEAR-ROOMS](../tasks/OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word (You)
 - [LEGAL-ELEVEN](../tasks/LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change (You)
+- [FEE-02](../tasks/FEE-02.md) Dashboard: fee settings with history, and Nuvion's rates in a locked area (You)
 
 ## Being verified
 
