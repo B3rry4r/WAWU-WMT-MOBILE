@@ -7,7 +7,7 @@ order: 390
 priority: after-launch
 repo: wawu-backend
 type: backend-endpoint
-status: building
+status: review
 depends_on: []
 decisions: [R-137]
 passes: [V1, V2, V3, V4, V9]
@@ -19,9 +19,10 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** verifying (builder fix round 1 done). Hub `wmt/LEGAL-ELEVEN`, head 5e8c6654; records on mobile `wmt/LEGAL-ELEVEN`.
-- **Fixed:** F-1 (agent found by exact name, then made; a pin overrides), F-2 (reply handed to the legal parsers), F-3 (turn joined up to the end-of-turn event), F-4 (owner notes below). NOT RUN against the real provider.
-- **Next:** short re-verify.
+- **Status:** review. Verifier round 1 re-check: MERGE (no medium or worse; three lows). Hub `wmt/LEGAL-ELEVEN` head 5e8c6654 (round 0 was 37dd5f3a); records on mobile `wmt/LEGAL-ELEVEN`, verifier report on `wmt/LEGAL-ELEVEN-verify`.
+- **Fixed and re-proved:** F-1 (one agent however many boots; a pin makes no list call; the race clean-up can only delete the agent the process just made), F-2 (preamble then JSON accepted, prose fails as before), F-3 (legal-only turn joining; Receptionist unchanged), F-4 (owner notes).
+- **Open:** three lows for the legal sweep (L1 log a failed race delete, L2 socket close after a response, L3 missing created time). NOT RUN against the real provider.
+- **Next:** lead merges the Hub branch; the first real run on the provider is the owner's V9.
 
 ## Owner notes (LEGAL-ELEVEN)
 
