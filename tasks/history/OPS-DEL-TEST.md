@@ -157,7 +157,7 @@ T2 verifier. Local stack odv2_test (real WAWU ID on 16631, Nuvion stand-in, Post
 
 | Pass | Result | Evidence |
 |------|--------|----------|
-| V1 | passed | tsc (alone, 4 GB) EXIT 0; eslint on the 4 changed files (no --fix) EXIT 0; gates EXIT 0 (2242 files, 0 fail, 139 warn, 88 accepted); baseline EXIT 0; new spec 12/12 EXIT 0 on a fresh db; account + account-purge suites, see the line under the table |
+| V1 | passed | tsc (alone, 4 GB) EXIT 0; eslint on the 4 changed files (no --fix) EXIT 0; gates EXIT 0 (2242 files, 0 fail, 139 warn, 88 accepted); baseline EXIT 0; new spec 12/12 EXIT 0 on a fresh db; account + account-purge suites: NOT RUN to the end (see the line under the table) |
 | V3 | failed | blocker 1 (list incomplete) |
 | V4 | passed | every dry run: Hub row counts of all 251 tables and the WAWU ID checksum unchanged (`CommunityNoticeCursor`, the running Hub's own ticker, excluded) |
 | V6, V7, V9 | passed for what the list covers | see below |
@@ -192,4 +192,4 @@ None.
 7. **Tests.** Spec diff against `109213b5`: 205 added, 35 removed; the removed lines are the old flag, the sold-piece R-130 case (see L2) and the flagged-apply case, all replaced by stronger ones; no gate or baseline touched. Diff against main: 3 added files and the `purgeNow` method on the sweep.
 
 ### Not run
-The full `test:contract` (GitHub runs it on the PR). Mutants not run (budget).
+The account and account-purge suites (29 files): started twice on fresh databases with `--runInBand`; the first run used the wrong mock-ID variable and failed at once, the second ran 13 minutes on a machine at load average 12 without finishing its first suite, so I stopped it. No result either way. Round 0 recorded 29 suites green on `109213b5`, and this branch changes only the script, its table list, the spec and the added `purgeNow` method, but GitHub's run on the PR is the evidence. The full `test:contract` (GitHub runs it on the PR). Mutants not run (budget).
