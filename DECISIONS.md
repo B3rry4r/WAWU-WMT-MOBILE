@@ -1013,3 +1013,11 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 2. **Money is never deleted by mistake (lead default).** Passes paid from a wallet on the provider's test keys, and credits spent from test purchases, are test money and go with their room. A room holding a real-money record (a pass paid on live keys, credits from a real purchase, a refund that is not settled) is not removed: the command lists it with its money for the owner to decide.
 3. **Afterwards:** a creator makes new communities as before. Nothing re-creates the old ones (the deploy's seed touches only the test database).
 **Carried out by:** OPS-CLEAR-ROOMS (Hub).
+
+### R-137 · The legal assistant runs on ElevenLabs, typed only
+*Owner, 11 Nov 2026, from the boss ("can we use 11 labs infrastructure to run what we are running on the legal with Gemini? Use it ... Leave the speaking. No one is speaking to the legal just for now ... the app is not going to change"; cost is not a reason against it: "it's not my decision. He said we should have it on 11 labs").*
+1. **Every AI turn of the legal assistant** (the chat that profiles a person's legal matter, and the brief written for the lawyer) runs through ElevenLabs' agent platform in text-only mode, with the language model chosen on that platform (a Hub setting), instead of calling Gemini directly. No voice.
+2. **Nothing the app sees changes:** the same routes, answers, words, limits and failure messages. The rules on what is sent stay as they are: never the person's name, email, phone, account or intake id, documents, or anything from their profile or wallet.
+3. **Privacy (lead default):** the provider keeps no legal conversation; where its platform cannot be told to keep none, the Hub deletes each one after use, as the Receptionist does (REC-DELETE).
+4. Gemini's code stays in the Hub, unused by legal, until a removal task after two weeks with no calls (the additive rule).
+**Carried out by:** LEGAL-ELEVEN (Hub).

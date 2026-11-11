@@ -520,6 +520,7 @@ Builder and verifier are always different sessions.
 81. [ID-LINKS](ID-LINKS.md) Every link WAWU ID mails has a host, even when a setting is missing
 82. [APP-RESET](APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code
 83. [OPS-CLEAR-ROOMS](OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word
+84. [LEGAL-ELEVEN](LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change
 
 ## Developer
 
