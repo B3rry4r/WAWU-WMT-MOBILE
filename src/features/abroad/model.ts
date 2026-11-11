@@ -235,6 +235,11 @@ export function readHeldQuote(raw: unknown): Quote | null {
     !whole(q.wawuFeeKobo) ||
     !(q.wawuFeeMinor === undefined || whole(q.wawuFeeMinor)) ||
     !(q.providerFeeMinor === null || whole(q.providerFeeMinor)) ||
+    !whole(q.feeMinor) ||
+    !whole(q.vatMinor) ||
+    typeof q.vatOn !== 'boolean' ||
+    !whole(q.totalMinor) ||
+    !whole(q.receiveMinor) ||
     typeof q.expiresAt !== 'string' ||
     typeof q.speed !== 'string' ||
     typeof q.converted !== 'boolean'

@@ -23,8 +23,8 @@ export const withdrawQuoteQuery = (owner: string | null, amountKobo: number, rou
     enabled: Boolean(owner) && amountKobo > 0 && enabled,
   }) as const;
 
-/** The fee a bank send of `amountKobo` costs on top, from a fresh quote: the sum of its parts (Max follows it down). */
+/** The fee a bank send of `amountKobo` costs on top, from a fresh quote: its fee and VAT, as the Hub says them (Max follows it down). */
 export async function feeAt(amountKobo: number): Promise<number> {
   const quote = await fetchFeeQuote(amountKobo, 'bank_transfer');
-  return quote.parts.reduce((sum, part) => sum + part.amountKobo, 0);
+  return quote.feeMinor + quote.vatMinor;
 }

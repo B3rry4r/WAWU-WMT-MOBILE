@@ -24,7 +24,7 @@ import { font, layout, space, type, useWawu } from '@/theme';
 import { fetchFeeQuote, sendToBankAccount, sendToWawuUser, transferQuery, type Credential, type FeeQuote, type SendKind, type SendOutcome, type Transfer } from './api';
 import { dropIntent, findIntent, putIntent, rereadIntent, type SendIntent } from './intent';
 import {
-  BANK_CHARGE,
+  refusalOf,
   earlierSendLine,
   failureLine,
   feeLinesOf,
@@ -387,9 +387,9 @@ export function ReviewScreen(props: ReviewScreenProps) {
             <ErrorState
               testID="send-review-error"
               icon={isApiError(quoted.error) && quoted.error.kind === 'network' ? 'WifiOff' : 'TriangleAlert'}
-              title="We couldn't work out the fees"
+              title={refusalOf(quoted.error) !== null ? "This can't be sent" : "We couldn't work out the fees"}
               message={isApiError(quoted.error) && quoted.error.message ? quoted.error.message : 'Check your connection and try again.'}
-              onRetry={() => void quoted.refetch()}
+              onRetry={refusalOf(quoted.error) !== null ? undefined : () => void quoted.refetch()}
             />
           </View>
         ) : (
@@ -474,12 +474,12 @@ export function ReviewScreen(props: ReviewScreenProps) {
               ? [{ label: 'Handle', value: handle }]
               : undefined
         }
-        fees={feeLinesOf(quote, payee.bank ? BANK_CHARGE : undefined)}
+        fees={feeLinesOf(quote)}
         notes={sentNote ? [{ label: 'Note', value: sentNote }] : undefined}
         wallet={walletState}
         walletName={WALLET_NAME}
         actionLabel="Send"
-        recipientGetsKobo={amountKobo}
+        recipientGetsKobo={quote.receiveMinor}
         status={shown}
         onPay={pay}
         onAddMoney={props.onAddMoney}

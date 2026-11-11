@@ -116,31 +116,32 @@ describe('W20 · Swap', () => {
     expect(rtl.screen.getByTestId('swap-hold').props.accessibilityLabel).toMatch(/^Rate held for 1:(29|30)$/);
     // BRIEF rules 3 and 4: the fee is its parts and a total, even at zero; "No fee" is never drawn.
     // FX-POLISH P5: the bank's charge and WAWU's fee are rows of their own, each the Hub's figure (they were one cramped line).
-    expect(rtl.screen.getByTestId('swap-fee-bank').props.children).toBe('₦0.00');
-    expect(rtl.screen.getByTestId('swap-fee-wawu').props.children).toBe('₦0.00');
+    // R-139: one Fee row, the Hub's; the bank's charge is not a row.
+    expect(rtl.screen.getByTestId('swap-fee-fee').props.children).toBe('₦0.00');
+    expect(rtl.screen.queryByTestId('swap-fee-bank')).toBeNull();
     expect(rtl.screen.queryByText(/No fee/)).toBeNull();
     expect(rtl.screen.getByTestId('swap-review').props.accessibilityState.disabled).toBe(false);
   });
 
-  it('draws the bank charge and WAWU\'s fee as their own rows, the Hub\'s figures, and says plainly when the Hub names no bank charge (FX-POLISH P5)', async () => {
+  it('draws one Fee row, the Hub\'s figure, with no bank charge row (R-139)', async () => {
     hub.quoteFee = { providerFeeMinor: 120_000, wawuFeeMinor: 50_000 };
     await boot();
     await rtl.screen.findByTestId('swap-from', {}, patient);
     await key('158000');
     expect(await rtl.screen.findByText('$1 = ₦1,580.00', {}, patient)).toBeTruthy();
-    expect(rtl.screen.getByTestId('swap-fee-bank').props.children).toBe('₦1,200.00');
-    expect(rtl.screen.getByTestId('swap-fee-wawu').props.children).toBe('₦500.00');
+    expect(rtl.screen.getByTestId('swap-fee-fee').props.children).toBe('₦1,700.00');
+    expect(rtl.screen.queryByTestId('swap-fee-bank')).toBeNull();
     expect(rtl.screen.queryByTestId('swap-fee-split')).toBeNull();
   });
 
-  it('with no bank charge named, the bank charge row says where it will show, not a made-up figure (FX-POLISH P5)', async () => {
+  it('with no bank charge named, the Fee row is WAWU\'s alone and no line says a bank charge will follow (R-139)', async () => {
     hub.quoteFee = { providerFeeMinor: null, wawuFeeMinor: 0 };
     await boot();
     await rtl.screen.findByTestId('swap-from', {}, patient);
     await key('158000');
     expect(await rtl.screen.findByText('$1 = ₦1,580.00', {}, patient)).toBeTruthy();
-    expect(rtl.screen.getByTestId('swap-fee-bank').props.children).toBe('Shown on your receipt');
-    expect(rtl.screen.getByTestId('swap-fee-wawu').props.children).toBe('₦0.00');
+    expect(rtl.screen.getByTestId('swap-fee-fee').props.children).toBe('₦0.00');
+    expect(rtl.screen.queryByText(/bank charge/i)).toBeNull();
   });
 
   it('counts the hold from the quote\'s own expiry and asks for a new rate when it runs out', async () => {
@@ -198,9 +199,8 @@ describe('W21 · review, with W11 the PIN sheet', () => {
     expect(rtl.screen.getByTestId('swap-review-rate').props.children).toBe('$1 = ₦1,580.00');
     // The amount screen under the sheet has the bank charge and WAWU fee rows too (FX-POLISH P5): the sheet's own are read inside its card.
     const card = rtl.within(rtl.screen.getByTestId('swap-review-card'));
-    expect(card.getByText('Bank charge')).toBeTruthy();
-    expect(card.getByText('WAWU fee')).toBeTruthy();
-    expect(card.getByText('Fees')).toBeTruthy();
+    expect(card.getByText('Fee')).toBeTruthy();
+    expect(card.queryByText('Bank charge')).toBeNull();
     expect(rtl.screen.getByTestId('swap-review-total').props.children).toBe('₦158,000.00');
     expect(rtl.screen.queryByText(/No fee|Nuvion/)).toBeNull();
     expect(rtl.screen.getByRole('button', { name: 'Swap ₦158,000' })).toBeTruthy();

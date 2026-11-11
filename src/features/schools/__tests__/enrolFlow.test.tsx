@@ -360,7 +360,7 @@ describe('SC5, SC6, SC7: pay from the wallet', () => {
     await render(<EnrolmentScreen id={ENR} {...handlers()} />);
     await payButton();
     expect(rtl.screen.getByText('Course fee')).toBeTruthy();
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
     expect(rtl.screen.getByText('Total')).toBeTruthy();
     expect(rtl.screen.getAllByText('Product Design Bootcamp').length).toBeGreaterThan(0);
     expect(rtl.screen.getByText('Greenfield Tech Academy · starts 3 Nov')).toBeTruthy();

@@ -93,6 +93,11 @@ const QUOTE: ways.AddMoneyQuote = {
   wawuFeeKobo: 0,
   feeKobo: 75,
   chargeKobo: 1_000_075,
+  feeMinor: 75,
+  vatMinor: 0,
+  vatOn: false,
+  totalMinor: 1_000_075,
+  receiveMinor: 1_000_000,
 };
 const attempt = (
   over: Partial<ways.AddMoneyAttempt> = {},

@@ -136,24 +136,34 @@ export const firstName = (name: string): string => name.trim().split(/\s+/)[0] ?
 /** What a search text is asked as: spaces trimmed. A pasted phone keeps its digits and its +; the Hub reads the rest. */
 export const searchText = (raw: string): string => raw.trim();
 
+/** The labels of the fee lines (R-139 point 5): WAWU's fee, then VAT only when the Hub says it is on. The provider's own charge is never a line. */
+export const FEE_LINE = 'Fee';
+export const VAT_LINE = 'VAT';
+
 /**
- * The quote's parts as lines, each charge as its own part (R-10): Bank charge (R-53), then WAWU's fee. A part that is zero stays
- * (any part can be zero, the sheet shows ₦0.00). Two provider parts would share a label, so they are added into one line.
+ * The quote's fee as lines (R-139): `Fee` is the Hub's `feeMinor`, `VAT` is `vatMinor` and is drawn only when `vatOn`. Nothing is
+ * worked out here and the provider's charge (the quote's `parts`) is not read. Any line can be zero (₦0).
  */
-export function feeLinesOf(quote: Pick<FeeQuote, 'parts'>, providerLabel: string = FEE_LABELS.provider): PayFeeLine[] {
-  const lines: PayFeeLine[] = [];
-  const add = (label: string, kobo: number) => {
-    const found = lines.find((l) => l.label === label);
-    if (found) found.amountKobo += kobo;
-    else lines.push({ label, amountKobo: kobo });
-  };
-  for (const part of quote.parts) add(part.source === 'wawu' ? FEE_LABELS.wawu : providerLabel, part.amountKobo);
+export function feeLinesOf(quote: Pick<FeeQuote, 'feeMinor' | 'vatMinor' | 'vatOn'>): PayFeeLine[] {
+  const lines: PayFeeLine[] = [{ label: FEE_LINE, amountKobo: quote.feeMinor }];
+  if (quote.vatOn) lines.push({ label: VAT_LINE, amountKobo: quote.vatMinor, vat: true });
   return lines;
 }
 
-/** True when the quote's total is the amount plus its parts (whole kobo), so the button, the PIN line and the send agree. */
-export function quoteAddsUp(quote: Pick<FeeQuote, 'amountKobo' | 'parts' | 'totalKobo'>): boolean {
-  return quote.amountKobo + quote.parts.reduce((sum, p) => sum + p.amountKobo, 0) === quote.totalKobo;
+/**
+ * The Hub's plain refusals of a quote (R-139 points 8 and 3): under the smallest amount, a fee bigger than the amount, a product that is
+ * off, and a fee schedule not set. The sentence is the Hub's own; null for any other failure (a network error is retried, not shown as a refusal).
+ */
+const REFUSALS = ['below_minimum_withdrawal', 'fee_exceeds_amount', 'product_off', 'fees_not_set'];
+export function refusalOf(error: unknown): string | null {
+  const e = error as { code?: unknown; message?: unknown } | null;
+  if (!e || typeof e.code !== 'string' || !REFUSALS.includes(e.code)) return null;
+  return typeof e.message === 'string' && e.message.trim() ? e.message : 'This payment is not available right now. Try again later.';
+}
+
+/** True when the quote's total is the amount plus its fee and VAT (whole kobo), so the button, the PIN line and the send agree. */
+export function quoteAddsUp(quote: Pick<FeeQuote, 'amountKobo' | 'feeMinor' | 'vatMinor' | 'totalMinor'>): boolean {
+  return quote.amountKobo + quote.feeMinor + quote.vatMinor === quote.totalMinor;
 }
 
 /** The sentence W10 shows when today's limit is the reason the send cannot go (the quote's own figures; the Hub's limit check is the authority). */
@@ -209,16 +219,14 @@ export type ReceiptRow = { key: string; label: string; value: string; money?: nu
 
 /** W12's card: the reference, the date (Lagos time), where it came from, the note, then the charges and the total paid (BRIEF W12). */
 export function receiptRows(t: Transfer): ReceiptRow[] {
-  const providerLabel = t.kind === 'bank_account' ? BANK_CHARGE : FEE_LABELS.provider;
   const rows: ReceiptRow[] = [
     { key: 'reference', label: 'Reference', value: shortReference(t.reference), copy: true },
     { key: 'date', label: 'Date', value: longDateTime(t.completedAt ?? t.createdAt) },
     { key: 'from', label: 'From', value: WALLET_NAME },
   ];
   if (t.note?.trim()) rows.push({ key: 'note', label: 'Note', value: t.note.trim(), wrap: true });
-  rows.push({ key: 'provider', label: providerLabel, value: '', money: t.fee.providerFeeKobo });
-  rows.push({ key: 'wawu', label: FEE_LABELS.wawu, value: '', money: t.fee.wawuFeeKobo });
-  rows.push({ key: 'fees', label: 'Fees', value: '', money: t.fee.providerFeeKobo + t.fee.wawuFeeKobo });
+  // R-139: one Fee line, the transfer's own fee in full; the provider's charge is never a line of its own.
+  rows.push({ key: 'fees', label: FEE_LINE, value: '', money: t.fee.totalFeeKobo });
   rows.push({ key: 'total', label: 'Total paid', value: '', money: t.totalKobo, strong: true });
   return rows;
 }

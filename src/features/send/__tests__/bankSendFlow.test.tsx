@@ -70,6 +70,12 @@ function quote(amountKobo: number, wawu = FEE_WAWU) {
       { code: 'wawu_fee', source: 'wawu', amountKobo: wawu },
     ],
     totalKobo: amountKobo + FEE_PROVIDER + wawu,
+    currency: 'NGN',
+    feeMinor: amountKobo + FEE_PROVIDER + wawu - amountKobo,
+    vatMinor: 0,
+    vatOn: false,
+    totalMinor: amountKobo + FEE_PROVIDER + wawu,
+    receiveMinor: amountKobo,
     withinDailyLimit: true,
     remainingTodayKobo: null,
     quoteToken: `tok-${amountKobo}-${wawu}`,
@@ -427,11 +433,11 @@ describe('W9 and W13 · the amount', () => {
 });
 
 describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', () => {
-  it('a user sending ₦25,000 sees Bank charge ₦40 + WAWU’s fee ₦25 = ₦65, the total on the button and "They get ₦25,000"', async () => {
+  it('a user sending ₦25,000 sees the Fee ₦65 (no bank charge), the total on the button and "They get ₦25,000"', async () => {
     await toReview();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
-    expect(screen.getByText("WAWU's fee")).toBeTruthy();
-    expect(screen.getByText('Fees')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
+    expect(screen.queryByText('Bank charge')).toBeNull();
+    expect(screen.queryByText('VAT')).toBeNull();
     expect(screen.getByText('Total')).toBeTruthy();
     expect(screen.getByText('Send ₦25,065')).toBeTruthy();
     expect(screen.getByText('They get ₦25,000')).toBeTruthy();
@@ -441,7 +447,7 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     expect(hub.sends).toHaveLength(0);
   });
 
-  it('the PIN sends the account, the amount, the quote and the name token (never the PIN in the body), and ends on a receipt with the bank charge', async () => {
+  it('the PIN sends the account, the amount, the quote and the name token (never the PIN in the body), and ends on a receipt with the fee', async () => {
     await toReview();
     await pay();
     expect(await screen.findByTestId('send-receipt-screen')).toBeTruthy();
@@ -450,7 +456,7 @@ describe('W10, W11 and W12 · send, with the bank’s charge, and the receipt', 
     expect(hub.sends[0].body).toEqual({ bankCode: GTB.code, accountNumber: ACCOUNT.accountNumber, amountKobo: 2_500_000, expectedTotalKobo: 2_506_500, quoteToken: 'tok-2500000-2500', nameToken: NAME_TOKEN });
     expect(Object.values(hub.sends[0].body)).not.toContain('1234');
     expect(screen.getByTestId('receipt-to').props.children).toBe(`To ${ACCOUNT.accountName} · ${GTB.name} ${ACCOUNT.accountNumber}`);
-    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
     expect(screen.getByTestId('receipt-total')).toBeTruthy();
     // "Save as beneficiary" saves the BANK account, by its bank and number (the Hub keeps the bank's name).
     await waitFor(() => expect(hub.savedPosts).toEqual([{ kind: 'bank_account', bankCode: GTB.code, accountNumber: ACCOUNT.accountNumber }]));

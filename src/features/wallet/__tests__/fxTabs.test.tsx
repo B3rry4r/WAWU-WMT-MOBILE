@@ -236,6 +236,14 @@ describe('W2 · a currency account', () => {
     expect(mockCopied).toEqual(['026000999']);
   });
 
+  it('R-139: with dollars from local banks switched off at the Hub, the Dollar account draws no Get paid row', async () => {
+    hub.currencies = { ...hub.currencies, localUsdIn: false };
+    await boot();
+    await openTab('Dollar');
+    await rtl.screen.findByTestId('fx-body-USD');
+    expect(rtl.screen.queryByRole('button', { name: /Get paid in dollars/ })).toBeNull();
+  });
+
   it('offers an account the person has not got only through + Add, and says the account is opening once it is asked for (R-106)', async () => {
     await boot();
     await rtl.screen.findByTestId('wallet-tab-add');

@@ -258,7 +258,7 @@ function money(p: PaySheetProps, kobo: number, tone?: ColorToken) {
 /** One row per fee part, then "Fees" when there are two or more (R-23). An array, so `GroupedList` draws a line between each. */
 function feeRows(p: PaySheetProps) {
   const rows = p.fees.map((f) => <KeyValueRow key={f.label} label={f.label} value={money(p, f.amountKobo)} />);
-  if (p.fees.length > 1) rows.push(<KeyValueRow key="fees" label="Fees" value={money(p, feesTotalKobo(p.fees))} />);
+  if (p.fees.length > 1 && !p.fees.some((f) => f.vat)) rows.push(<KeyValueRow key="fees" label="Fees" value={money(p, feesTotalKobo(p.fees))} />);
   return rows;
 }
 
@@ -355,8 +355,8 @@ export function sourceRows(s: PaySource): ReactElement[] {
   return [
     <KeyValueRow key="from" label="Pay from" value={s.accountName} testID="source-from" />,
     <KeyValueRow key="amount" label={`${s.currency} amount`} value={fmt(s.amountMinor)} testID="source-amount" />,
-    ...(s.providerFeeMinor > 0 ? [<KeyValueRow key="pfee" label="Bank charge" value={fmt(s.providerFeeMinor)} />] : []),
-    ...(s.wawuFeeMinor > 0 ? [<KeyValueRow key="wfee" label="Conversion fee" value={fmt(s.wawuFeeMinor)} />] : []),
+    // R-139: one Fee line; the provider's own charge is not a line of its own.
+    ...(s.providerFeeMinor + s.wawuFeeMinor > 0 ? [<KeyValueRow key="fee" label="Fee" value={fmt(s.providerFeeMinor + s.wawuFeeMinor)} />] : []),
     <KeyValueRow key="total" label="Total" value={fmt(sourceTotalMinor(s))} testID="source-total" />,
   ];
 }

@@ -145,6 +145,12 @@ const QUOTE: Quote = {
   speed: 'Instant',
   expiresAt: '2026-10-24T12:00:00.000Z',
   validForSeconds: 179,
+  currency: 'USD',
+  feeMinor: 150,
+  vatMinor: 0,
+  vatOn: false,
+  totalMinor: 10_150,
+  receiveMinor: 100_361,
 };
 const SEND: AbroadSend = {
   id: 's1',

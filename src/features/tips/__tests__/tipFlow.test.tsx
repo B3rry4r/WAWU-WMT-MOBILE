@@ -322,7 +322,7 @@ describe('H2 and H26: the rail and the tip sheet', () => {
     expect(hub.quotes).toEqual([{ amountKobo: 100000 }]);
     const rows = screen.getByTestId('tip-breakdown');
     expect(rtl.within(rows).getByLabelText('1,000 naira')).toBeTruthy();
-    expect(rtl.within(rows).getByText('Bank charge')).toBeTruthy();
+    expect(rtl.within(rows).getByText('Fee')).toBeTruthy();
     expect(rtl.within(rows).getByLabelText('23 naira 25 kobo')).toBeTruthy();
     expect(rtl.within(rows).getByLabelText('1,023 naira 25 kobo')).toBeTruthy();
     expect(screen.queryByText(/Dollar|USDT/)).toBeNull();
@@ -589,7 +589,7 @@ describe('PAY-FX (R-91): the tip sheet for a buyer paying from a dollar account'
     expect(rtl.within(rows).getAllByText('$0.23').length).toBe(2);
     expect(screen.queryByText('Checking your balance')).toBeNull();
     expect(screen.queryByText('Pay from wallet')).toBeNull();
-    expect(screen.queryByText('Bank charge')).toBeNull();
+    expect(screen.queryByText('Fee')).toBeNull();
     // The button says what leaves the account, in its currency, with its sign.
     await rtl.fireEvent.press(await screen.findByRole('button', { name: 'Tip $0.23' }));
     // The PIN sheet says the same amount, not the naira.

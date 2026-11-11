@@ -39,9 +39,7 @@ import {
   WAITING_TITLE,
   type AccountRow,
 } from './model';
-import { OtherWays } from './OtherWays';
 import { useLanding, type Landing } from './useLanding';
-import type { AddMoneyRail } from './ways';
 
 /** kit.js line 61, `copyBtn`: 32 high, 12 at the sides, a pill on the sunken surface, the Copy glyph 14, the word 13 / 600, 6 between. */
 const COPY = { height: 32, padX: 12, icon: 14, label: 13, iconGap: 6, ms: 2000 } as const;
@@ -64,8 +62,6 @@ export type AddMoneyScreenProps = {
   onDone: () => void;
   /** How often the balance is asked for while a transfer is awaited (tests). */
   pollMs?: number;
-  /** Opens one of the other ways to add money (WALLET-25, WALLET-26). Left out, the list of other ways is not drawn. */
-  onOpenWay?: (rail: AddMoneyRail) => void;
 };
 
 /**
@@ -83,7 +79,7 @@ export type AddMoneyScreenProps = {
  * failed and a read in flight each have their own state. When a pay sheet sent the person here, the note above the card names what
  * was missing.
  */
-export function AddMoneyScreen({ shortfallKobo, onBack, onDone, pollMs = POLL_MS, onOpenWay }: AddMoneyScreenProps) {
+export function AddMoneyScreen({ shortfallKobo, onBack, onDone, pollMs = POLL_MS }: AddMoneyScreenProps) {
   const owner = useSessionAccount(undefined);
   const entry = useOpenWalletEntry();
   const wallet = useQuery(walletHomeQuery(owner), queryClient);
@@ -106,6 +102,7 @@ export function AddMoneyScreen({ shortfallKobo, onBack, onDone, pollMs = POLL_MS
   if (wallet.data && wallet.data.account && (wallet.data.state === 'open' || wallet.data.state === 'frozen')) {
     body = (
       <>
+        {/* R-139 point 11: the account number only. No card, no USSD, no other way is drawn. */}
         <AccountCard
           account={wallet.data.account}
           waiting={landing.phase === 'waiting'}
@@ -114,7 +111,6 @@ export function AddMoneyScreen({ shortfallKobo, onBack, onDone, pollMs = POLL_MS
           onSent={() => setSent(true)}
           onNotice={setNotice}
         />
-        {onOpenWay ? <OtherWays onOpen={onOpenWay} /> : null}
       </>
     );
   } else if (wallet.data?.state === 'not_open') {

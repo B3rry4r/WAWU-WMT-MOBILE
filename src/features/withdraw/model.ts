@@ -1,6 +1,6 @@
 import { formatMoney } from '@/components/Money';
 import { koboOfText, pressKey } from '@/components/amount-entry';
-import { BANK_CHARGE, feeLinesOf } from '@/features/send/model';
+import { FEE_LINE, feeLinesOf, quoteAddsUp, refusalOf } from '@/features/send/model';
 import { shortReference } from '@/features/send/reference';
 import type { FeeQuote, Transfer } from '@/features/send/api';
 import { FEE_LABELS } from '@/features/wallet/history/model';
@@ -22,6 +22,10 @@ export const AMOUNT_LABEL = 'Amount';
 export const MAX_LABEL = 'Max';
 export const TO_LABEL = 'To';
 export const CHANGE_LABEL = 'Change';
+export const TOTAL_LABEL = 'Total';
+/** What the bank account gets: the quote's `receiveMinor`, before the PIN. */
+export const GETS_LABEL = 'Your bank gets';
+
 
 /** How often a withdrawal the bank has not settled is read again (`GET /money/transfers/{id}`, the Hub's record). Default (agent), owner may override. */
 export const POLL_MS = 4000;
@@ -53,16 +57,13 @@ export const destinationSub = (payout: Pick<PayoutAccount, 'accountName'>): stri
 /** The key a withdrawal's payment intent is kept under: stable for the same account, never a send to the same account by hand (that is `bank:...`). */
 export const withdrawKey = (payout: Pick<PayoutAccount, 'bankCode' | 'accountNumber'>): string => `withdraw:${payout.bankCode}:${payout.accountNumber}`;
 
-/** The fee lines of a quote, the provider's part named "Bank charge" (R-53), then "Fees" when there are two (the pay sheet's rule). */
-export function withdrawFeeRows(quote: Pick<FeeQuote, 'parts'>): { key: string; label: string; kobo: number }[] {
-  const lines = feeLinesOf(quote, BANK_CHARGE);
-  const rows = lines.map((line) => ({ key: line.label, label: line.label, kobo: line.amountKobo }));
-  if (lines.length > 1) rows.push({ key: 'fees', label: 'Fees', kobo: lines.reduce((sum, line) => sum + line.amountKobo, 0) });
-  return rows;
+/** The fee lines of a quote, all the Hub's (R-139 point 5): Fee, then VAT only when the Hub says it is on. */
+export function withdrawFeeRows(quote: Pick<FeeQuote, 'feeMinor' | 'vatMinor' | 'vatOn'>): { key: string; label: string; kobo: number }[] {
+  return feeLinesOf(quote).map((line) => ({ key: line.vat ? 'vat' : 'fee', label: line.label, kobo: line.amountKobo }));
 }
 
-/** The line under the button: what the bank account gets. */
-export const bankGetsLine = (amount: number): string => `Your bank gets ${cash(amount)}`;
+/** The line under the button: exactly what the bank account gets (the quote's `receiveMinor`). */
+export const bankGetsLine = (receiveKobo: number): string => `Your bank gets ${cash(receiveKobo)}`;
 
 /** The button's words: the total that leaves the wallet, fees included (brief rule 5). */
 export const withdrawLabel = (totalKobo: number | null): string => (totalKobo === null ? 'Withdraw' : `Withdraw ${cash(totalKobo)}`);
@@ -89,8 +90,7 @@ export type WithdrawInput = {
 };
 
 /** True when the quote's total is the amount plus its parts (whole kobo), so the button, the PIN line and the send agree. */
-export const quoteMakesTotal = (quote: Pick<FeeQuote, 'amountKobo' | 'parts' | 'totalKobo'>): boolean =>
-  quote.amountKobo + quote.parts.reduce((sum, part) => sum + part.amountKobo, 0) === quote.totalKobo;
+export const quoteMakesTotal = (quote: Pick<FeeQuote, 'amountKobo' | 'feeMinor' | 'vatMinor' | 'totalMinor'>): boolean => quoteAddsUp(quote);
 
 export function withdrawBlock(input: WithdrawInput): WithdrawBlock | null {
   if (input.payout === null) return { kind: 'no_account' };
@@ -191,15 +191,14 @@ export function receiptTo(transfer: Pick<Transfer, 'toBankAccount'>): string {
   return account ? `To ${account.bankName} · ${account.accountNumber}` : '';
 }
 
-/** W19's card: the reference, then the fee as its parts, then what left the wallet (BRIEF W19: ₦40 + ₦25 = ₦65 and Total paid). */
+/** W19's card: the reference, then the fee, then what left the wallet (BRIEF W19: ₦40 + ₦25 = ₦65 and Total paid). */
 export type ReceiptRow = { key: string; label: string; value?: string; money?: number; strong?: boolean; copy?: boolean };
 
 export function withdrawReceiptRows(transfer: Pick<Transfer, 'reference' | 'fee' | 'totalKobo'>): ReceiptRow[] {
   return [
     { key: 'reference', label: 'Reference', value: shortReference(transfer.reference), copy: true },
-    { key: 'provider', label: BANK_CHARGE, money: transfer.fee.providerFeeKobo },
-    { key: 'wawu', label: FEE_LABELS.wawu, money: transfer.fee.wawuFeeKobo },
-    { key: 'fees', label: 'Fees', money: transfer.fee.providerFeeKobo + transfer.fee.wawuFeeKobo },
+    // R-139: one Fee line, the transfer's own fee in full; the provider's charge is never a line of its own.
+    { key: 'fees', label: FEE_LINE, money: transfer.fee.totalFeeKobo },
     { key: 'total', label: 'Total paid', money: transfer.totalKobo, strong: true },
   ];
 }

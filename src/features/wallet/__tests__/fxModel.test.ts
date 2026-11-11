@@ -148,24 +148,27 @@ describe('WALLET-21 · the swap\'s ends, fees and words', () => {
   });
 
   it('writes the fee as the Hub\'s breakdown (BRIEF rules 3 and 4, R-23, R-53): the parts, Fees, then Total, and never "No fee", even at zero', () => {
-    const q = { fromCurrency: 'NGN' as const, fromDecimals: 2, providerFeeMinor: 0, wawuFeeMinor: 0, totalFromMinor: 15_800_000 };
+    const q = { fromCurrency: 'NGN' as const, fromDecimals: 2, providerFeeMinor: 0, wawuFeeMinor: 0, feeMinor: 0, vatMinor: 0, vatOn: false, totalMinor: 15_800_000, totalFromMinor: 15_800_000 };
     expect(feeSummary(q)).toBe('₦0.00');
     expect(feeSplit(q)).toBe('Bank charge ₦0.00 + WAWU fee ₦0.00');
     expect(feeSummary({ ...q, providerFeeMinor: null })).toBe('₦0.00 + bank charge');
     expect(feeSummary({ ...q, wawuFeeMinor: 5_000 })).toBe('₦50.00');
     expect(feeSplit({ ...q, providerFeeMinor: 1_200, wawuFeeMinor: 5_000 })).toBe('Bank charge ₦12.00 + WAWU fee ₦50.00');
+    // R-139: the review draws one Fee and the Total; the provider's charge is never a row.
     expect(feeRows(q)).toEqual([
-      { label: 'Bank charge', value: '₦0.00' },
-      { label: 'WAWU fee', value: '₦0.00' },
-      { label: 'Fees', value: '₦0.00' },
+      { label: 'Fee', value: '₦0.00' },
       { label: 'Total', value: '₦158,000.00' },
     ]);
-    expect(feeRows({ ...q, providerFeeMinor: null, wawuFeeMinor: 5_000, totalFromMinor: 15_805_000 })).toEqual([
-      { label: 'Bank charge', value: 'Shown on your receipt' },
-      { label: 'WAWU fee', value: '₦50.00' },
-      { label: 'Total', value: '₦158,050.00 + bank charge' },
+    expect(feeRows({ ...q, feeMinor: 5_000, totalMinor: 15_805_000 })).toEqual([
+      { label: 'Fee', value: '₦50.00' },
+      { label: 'Total', value: '₦158,050.00' },
     ]);
-    for (const row of [...feeRows(q), ...feeRows({ ...q, providerFeeMinor: null })]) expect(row.value).not.toMatch(/No fee|Nuvion/);
+    expect(feeRows({ ...q, feeMinor: 5_000, vatMinor: 375, vatOn: true, totalMinor: 15_805_375 })).toEqual([
+      { label: 'Fee', value: '₦50.00' },
+      { label: 'VAT', value: '₦3.75' },
+      { label: 'Total', value: '₦158,053.75' },
+    ]);
+    for (const row of [...feeRows(q), ...feeRows({ ...q, feeMinor: 1 })]) expect(row.value).not.toMatch(/No fee|Nuvion/);
   });
 
   it('never draws the provider\'s words from a read or an account opening: a declined call gives the screen\'s own line (M-02)', () => {

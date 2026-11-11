@@ -278,7 +278,7 @@ export function SwapScreen(props: SwapScreenProps) {
                 </Text>
               )}
             </View>
-            {(quote ? feeRows(quote).slice(0, 2).map((row) => ({ ...row, key: row.label === 'WAWU fee' ? 'wawu' : 'bank', muted: false })) : [{ label: 'Fees', value: 'Shown with the rate', key: 'pending', muted: true }]).map((row) => (
+            {(quote ? feeRows(quote).slice(0, 1).map((row) => ({ ...row, key: 'fee', muted: false })) : [{ label: 'Fee', value: 'Shown with the rate', key: 'pending', muted: true }]).map((row) => (
               <Fragment key={row.key}>
                 <View style={[styles.rule, { backgroundColor: colors.borderHairline }]} />
                 <View style={styles.infoRow}>

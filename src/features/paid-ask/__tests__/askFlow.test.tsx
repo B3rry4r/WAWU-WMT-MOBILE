@@ -641,7 +641,7 @@ describe('I3 · the ask sheet', () => {
     expect(rtl.within(sheet).getByText('Held by Who Made This? until Chidi answers')).toBeTruthy();
     const rows = rtl.within(sheet).getByTestId('ask-breakdown');
     expect(rtl.within(rows).getByLabelText('1,500 naira')).toBeTruthy();
-    expect(rtl.within(rows).getByText('Bank charge')).toBeTruthy();
+    expect(rtl.within(rows).getByText('Fee')).toBeTruthy();
     expect(rtl.within(rows).getByLabelText('23 naira 25 kobo')).toBeTruthy();
     expect(rtl.within(rows).getByLabelText('1,523 naira 25 kobo')).toBeTruthy();
     expect(rtl.within(sheet).getByText('Pay from wallet')).toBeTruthy();

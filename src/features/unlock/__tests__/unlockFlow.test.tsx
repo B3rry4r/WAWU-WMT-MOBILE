@@ -300,7 +300,7 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     expect(hub.quotes).toBe(1);
     expect(screen.getByText('How I built a ₦2M a month agency')).toBeTruthy();
     expect(screen.getByText(/Video · 18 min/)).toBeTruthy();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
     expect(screen.getAllByLabelText('2,500 naira')).toHaveLength(2); // the offer bar's chip and the sheet's Price row
     expect(screen.getByLabelText('23 naira 25 kobo')).toBeTruthy();
     expect(screen.getByLabelText('2,523 naira 25 kobo')).toBeTruthy();
@@ -315,7 +315,7 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
     hub.feeKobo = 0;
     const screen = await openSheet();
     expect(screen.queryByText('No fee')).toBeNull();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
     expect(screen.getByText('₦0')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
     expect(screen.getByText('Forever, in My purchases')).toBeTruthy();
@@ -338,7 +338,7 @@ describe('H3 to H5 and H14: the offer bar and the unlock sheet', () => {
   it('a quote with a fee never says "No fee": the charge, the Total and the button carry the total', async () => {
     const screen = await openSheet();
     expect(screen.queryByText('No fee')).toBeNull();
-    expect(screen.getByText('Bank charge')).toBeTruthy();
+    expect(screen.getByText('Fee')).toBeTruthy();
     expect(screen.getByText('Total')).toBeTruthy();
   });
 

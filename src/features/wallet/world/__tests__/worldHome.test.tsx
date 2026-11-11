@@ -70,7 +70,7 @@ globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) 
   const request = input instanceof Request ? input : new Request(String(input), init);
   const path = new URL(request.url).pathname.replace(/^\/api\/hub/, '');
   if (path === '/money/fx/accounts') return ok({ accounts: hub.accounts });
-  if (path === '/money/fx/currencies') return ok({ currencies: hub.listed, products: { openAccount: hub.listed.length > 0, swap: hub.swap, cryptoSend: true } });
+  if (path === '/money/fx/currencies') return ok({ currencies: hub.listed, products: { openAccount: hub.listed.length > 0, swap: hub.swap, cryptoSend: true }, localUsdIn: true });
   if (path.startsWith('/money/fx/accounts/') && path.endsWith('/transactions')) return ok({ items: path.includes('/a1/') ? hub.movements : [], nextCursor: null });
   if (path === '/money/abroad/corridors') return ok({ enabled: hub.enabled, minReceiveMinor: 100, wawuFeeKobo: 0, countries: [] });
   if (path === '/money/abroad/sources') return ok({ sources: SOURCES });

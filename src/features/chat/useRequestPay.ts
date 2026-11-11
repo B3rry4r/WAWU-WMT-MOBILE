@@ -5,9 +5,8 @@ import { isApiError } from '@/api/errors';
 import { walletBalanceQuery } from '@/api/money';
 import type { PayStatus } from '@/components/pay-sheet';
 import { attemptFor, dropAttempt, keepAttempt, type Attempt } from '@/features/money-attempt/attempts';
-import { feeLinesFromParts } from '@/features/money-attempt/fees';
 import { newRequestKey } from '@/features/wallet/api/settings';
-import { failureLine, limitLine, quoteAddsUp, quoteSpent } from '@/features/send/model';
+import { failureLine, feeLinesOf, limitLine, quoteAddsUp, quoteSpent } from '@/features/send/model';
 
 import type { MoneyRequest } from './api';
 import { declineMoneyRequest, fetchFeeQuote, fetchMoneyRequest, payMoneyRequest, requestKey, type FeeQuote } from './requestApi';
@@ -325,7 +324,7 @@ export function useRequestPay(args: RequestPayArgs) {
       ? {
           request: target,
           quote,
-          fees: feeLinesFromParts(quote.parts),
+          fees: feeLinesOf(quote),
           balanceKobo,
           shortfallKobo,
           addsUp,

@@ -22,6 +22,7 @@ import { CurrencyNote } from "../fx/CurrencyNote";
 import { FxBalanceCard } from "../fx/FxBalanceCard";
 import { FxDetailsSheet } from "../fx/FxDetailsSheet";
 import { ActionPill, CryptoSection, PaidFromAbroad, Transactions } from "../fx/FxTabBody";
+import { localDollarsOffered } from "../fx/model";
 import { addOptions, isCoinCode, maskedNumber } from "../fx/model";
 
 import {
@@ -178,6 +179,7 @@ export function WorldHome({ owner, adding = null }: { owner: string; adding?: st
             account.status === "open" && sendable.has(account.currency)
           }
           canSwap={swaps && account.status === "open"}
+          getPaid={localDollarsOffered(currencies.data ?? null, account.currency)}
         />
       ))}
       <CryptoSection currencies={currencies.data ?? null} accounts={fxAccounts.data ?? null} hidden={hidden} toNaira={false} />
@@ -224,6 +226,7 @@ export function AccountCard({
   account,
   canSendAbroad,
   canSwap,
+  getPaid = true,
   hidden = false,
   onToggleHidden = () => undefined,
   onRetry = () => undefined,
@@ -232,6 +235,8 @@ export function AccountCard({
   account: WorldAccount;
   canSendAbroad?: boolean;
   canSwap?: boolean;
+  /** Dollars received from local banks is off at the Hub (R-139 point 3): the USD account's Get paid details are not drawn. */
+  getPaid?: boolean;
   hidden?: boolean;
   onToggleHidden?: () => void;
   onRetry?: () => void;
@@ -324,7 +329,7 @@ export function AccountCard({
           ) : null}
         </View>
       ) : null}
-      {account.rawDetails?.status === "active" && number ? (
+      {account.rawDetails?.status === "active" && number && getPaid ? (
         <PaidFromAbroad
           code={account.currency as FxCode}
           onPress={() => setSheet(true)}

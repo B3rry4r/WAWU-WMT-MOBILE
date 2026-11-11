@@ -17,7 +17,6 @@ import { approveRequest, asBiometricResult, asPinResult, notApproved, useApprova
 import { fieldMetrics } from '@/components/TextField';
 import { Text } from '@/components/Text';
 import { AuthFrame } from '@/features/auth/AuthFrame';
-import { feeLinesFromParts } from '@/features/money-attempt/fees';
 import { WALLET_LABEL } from '@/features/money-attempt/refusal';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
@@ -30,6 +29,7 @@ import {
   hueOfPayee,
   limitLine,
   NOT_READY_LINE,
+  feeLinesOf,
   quoteAddsUp,
   type Payee,
 } from '@/features/send/model';
@@ -314,7 +314,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
   }
 
   const name = firstName(payee.name);
-  const fees = quote ? feeLinesFromParts(quote.parts) : [];
+  const fees = quote ? feeLinesOf(quote) : [];
   const confirming = kept?.phase === 'pending';
   const overlay = status.kind === 'failed' || showShort;
 
@@ -329,8 +329,9 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
             {quote ? (
               <View style={styles.fees} testID="chat-send-fees">
                 <Text variant="meta" tone="textMuted" style={styles.centre}>
-                  {`${fees.map((line) => `${line.label} ${naira(line.amountKobo)}`).join(' + ')} = ${naira(quote.totalKobo - quote.amountKobo)}`}
+                  {fees.map((line) => `${line.label} ${naira(line.amountKobo)}`).join(' + ')}
                 </Text>
+
                 <Text variant="kvValue" style={styles.centre} testID="chat-send-total">
                   {`Total ${naira(quote.totalKobo)}`}
                 </Text>
@@ -344,7 +345,7 @@ export function ChatSendScreen({ chatId, payee, onBack, onDone, onSetPin, onForg
             ) : null}
             {quote ? (
               <Text variant="muted" style={styles.centre} testID="chat-send-gets">
-                {`${name} gets ${naira(quote.amountKobo)}`}
+                {`${name} gets ${naira(quote.receiveMinor)}`}
               </Text>
             ) : null}
             {notice ? (

@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/Skeleton';
 import { EmptyState, ErrorState } from '@/components/StateViews';
 import { Text } from '@/components/Text';
 import { TextField } from '@/components/TextField';
-import { BANK_CHARGE, WAWU_FEE } from '@/features/events/buyModel';
 import { font, space, text } from '@/theme';
 
 import { matterMetrics as m } from '../look2';
@@ -132,10 +131,7 @@ export function FixedPriceScreen({ threadId, onBack, onStarted }: FixedArgs) {
           <KeyValueRow label="Price" value={<Money minorUnits={ok.priceNaira * 100} size={text.kvValue.fontSize} decimals={false} />} />
           {fee.data ? (
             <>
-              <KeyValueRow label={BANK_CHARGE} value={<Money minorUnits={fee.data.fee.providerFeeKobo} size={text.kvValue.fontSize} decimals={fee.data.fee.providerFeeKobo % 100 !== 0} />} />
-              {fee.data.fee.wawuFeeKobo > 0 ? (
-                <KeyValueRow label={WAWU_FEE} value={<Money minorUnits={fee.data.fee.wawuFeeKobo} size={text.kvValue.fontSize} decimals={fee.data.fee.wawuFeeKobo % 100 !== 0} />} />
-              ) : null}
+              <KeyValueRow label="Fee" value={<Money minorUnits={fee.data.fee.totalFeeKobo} size={text.kvValue.fontSize} decimals={fee.data.fee.totalFeeKobo % 100 !== 0} />} testID="legal-fixed-fee" />
               <KeyValueRow label="Total" value={<Money minorUnits={fee.data.totalKobo} size={text.kvValue.fontSize} decimals={fee.data.totalKobo % 100 !== 0} />} testID="legal-fixed-total" />
             </>
           ) : null}

@@ -116,6 +116,12 @@ describe('send abroad · what the screens say', () => {
       speed: 'Same day',
       expiresAt: '2026-10-24T12:00:00.000Z',
       validForSeconds: 179,
+      currency: 'USD',
+      feeMinor: 0,
+      vatMinor: 0,
+      vatOn: false,
+      totalMinor: 5000,
+      receiveMinor: 50180,
     };
     expect(readHeldQuote(JSON.stringify(quote))?.id).toBe('q');
     expect(readHeldQuote(JSON.stringify({ ...quote, amountFromMinor: 50.5 }))).toBeNull();
@@ -180,6 +186,11 @@ describe('send abroad from a foreign account · WAWU fee (WALLET-42)', () => {
       toDecimals: 2,
       wawuFeeKobo: 0,
       providerFeeMinor: null,
+      feeMinor: 0,
+      vatMinor: 0,
+      vatOn: false,
+      totalMinor: 300,
+      receiveMinor: 4026,
       expiresAt: '2026-10-24T10:00:00.000Z',
       speed: 'Instant',
       converted: true,
@@ -187,6 +198,9 @@ describe('send abroad from a foreign account · WAWU fee (WALLET-42)', () => {
     expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 150 }))?.wawuFeeMinor).toBe(150);
     expect(readHeldQuote(JSON.stringify(quote))).not.toBeNull();
     expect(readHeldQuote(JSON.stringify({ ...quote, wawuFeeMinor: 1.5 }))).toBeNull();
+    // A quote held from before the Hub said its Fee, VAT, Total and what is received is not drawn half empty.
+    const { feeMinor: _fee, ...old } = quote;
+    expect(readHeldQuote(JSON.stringify(old))).toBeNull();
   });
 });
 

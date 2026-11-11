@@ -88,7 +88,7 @@ export function RequestPaySheet({ sheet, name, notice }: RequestPaySheetProps) {
           {fees.map((line) => (
             <KeyValueRow key={line.label} label={line.label} value={<Money minorUnits={line.amountKobo} size={ROW_VALUE} decimals />} />
           ))}
-          {fees.length > 1 ? <KeyValueRow key="fees" label="Fees" value={<Money minorUnits={feesTotalKobo(fees)} size={ROW_VALUE} decimals />} /> : null}
+          {fees.length > 1 && !fees.some((f) => f.vat) ? <KeyValueRow key="fees" label="Fees" value={<Money minorUnits={feesTotalKobo(fees)} size={ROW_VALUE} decimals />} /> : null}
           <KeyValueRow key="total" label={TOTAL_LABEL} value={<Money minorUnits={total} size={ROW_VALUE} decimals />} testID="request-total" />
         </GroupedList>
         <WalletRow balanceKobo={sheet.balanceKobo} />

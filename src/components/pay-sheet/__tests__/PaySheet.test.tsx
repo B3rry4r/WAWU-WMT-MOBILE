@@ -431,9 +431,20 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
     it('draws a fee only when the quote has one, and adds it to the total', async () => {
       const p = props({ amountKobo: 30000, fees: [], source: source({ providerFeeMinor: 5, wawuFeeMinor: 2 }) });
       await render(<PaySheet {...p} />);
-      expect(screen.getByText('Bank charge')).toBeTruthy();
-      expect(screen.getByText('Conversion fee')).toBeTruthy();
+      expect(screen.getByText('Fee')).toBeTruthy();
+      expect(screen.queryByText('Conversion fee')).toBeNull();
+      expect(screen.queryByText('Bank charge')).toBeNull();
       expect(screen.getByRole('button', { name: 'Unlock · $0.30' })).toBeTruthy();
+    });
+
+    it('R-139: a Fee line and a VAT line read on their own, with the Total, and no "Fees" sum between them', async () => {
+      const p = props({ amountKobo: 750000, amountLabel: 'Tickets', details: [], fees: [{ label: 'Fee', amountKobo: 1500 }, { label: 'VAT', amountKobo: 113, vat: true }], actionLabel: 'Pay', actionJoin: 'space' });
+      await render(<PaySheet {...p} />);
+      expect(screen.getByText('Fee')).toBeTruthy();
+      expect(screen.getByText('VAT')).toBeTruthy();
+      expect(screen.queryByText('Fees')).toBeNull();
+      expect(screen.getByText('Total')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Pay ₦7,516.13' })).toBeTruthy();
     });
 
     it('a quote that ran out holds Pay back and asks for a new one', async () => {

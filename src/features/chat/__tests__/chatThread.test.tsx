@@ -230,8 +230,8 @@ describe('I18 and I19: a request someone made of the person', () => {
     expect(rtl.screen.getByText('Pay ₦12,000')).toBeTruthy();
     await tapPay();
     await rtl.screen.findByTestId('request-pay-sheet');
-    expect(rtl.screen.getByText('Bank charge')).toBeTruthy();
-    expect(rtl.screen.getByText('WAWU’s fee')).toBeTruthy();
+    expect(rtl.screen.getByText('Fee')).toBeTruthy();
+    expect(rtl.screen.queryByText('Bank charge')).toBeNull();
     expect(rtl.screen.queryByText(/Fintava/)).toBeNull();
     expect(rtl.screen.getByLabelText('25 naira 75 kobo')).toBeTruthy();
     expect(rtl.screen.getByLabelText('12,025 naira 75 kobo')).toBeTruthy();

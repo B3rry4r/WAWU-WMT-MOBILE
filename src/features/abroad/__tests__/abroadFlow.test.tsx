@@ -178,6 +178,13 @@ function quoteFor(body: { fromCurrency: string; amountMinor: number; side?: stri
     speed: 'Instant',
     expiresAt: new Date(Date.now() + 179_000).toISOString(),
     validForSeconds: 179,
+    // R-139: one Fee (the partner's share is inside it, never a line of its own), no VAT, the total that leaves, and what the other gets.
+    currency: body.fromCurrency,
+    feeMinor: (hub.partnerFee ?? 0) + hub.feeMinor,
+    vatMinor: 0,
+    vatOn: false,
+    totalMinor: fromMinor + (hub.partnerFee ?? 0) + hub.feeMinor,
+    receiveMinor: toMinor,
   };
 }
 const sendView = (status: string) => ({
@@ -499,7 +506,8 @@ describe('send abroad', () => {
       },
     ]);
     expect(screen.getByTestId('abroad-review-get').props.children).toBe('GH₵1,003.61');
-    expect(screen.getByTestId('abroad-review-partner-fee')).toBeTruthy();
+    expect(screen.getByTestId('abroad-review-fee')).toBeTruthy();
+    expect(screen.queryByText('Partner fee')).toBeNull();
     await pay();
     expect(await screen.findByTestId('abroad-receipt-screen')).toBeTruthy();
     expect(hub.sends).toHaveLength(1);
@@ -511,20 +519,22 @@ describe('send abroad', () => {
     expect(Object.values(hub.sends[0].body)).not.toContain('1234');
     expect((await screen.findByTestId('abroad-status')).props.children ?? true).toBeTruthy();
     expect(await screen.findByText('On its way')).toBeTruthy();
-    expect(screen.getByTestId('abroad-receipt-fee')).toHaveTextContent?.('Not named yet');
+    expect(screen.queryByText('Not named yet')).toBeNull();
+    expect(screen.queryByText('Partner fee')).toBeNull();
+    expect(screen.getByTestId('abroad-receipt-fee')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('abroad-done'));
     await waitFor(() => expect(pathname()).toBe('/wallet'));
   });
 
-  it("the partner's fee is its own row on the amount screen and on the review, before the PIN, and the total is what leaves the account (R-10)", async () => {
+  it('one Fee row on the review, before the PIN, never a partner fee, and the total is what leaves the account (R-139)', async () => {
     await toAmount();
     await fireEvent.press(screen.getByTestId('abroad-sources-USD'));
     for (const k of '100') await fireEvent.press(screen.getByTestId(`amount-key-${k}`));
     await screen.findByTestId('abroad-quote');
-    expect(within(screen.getByTestId('abroad-quote-fee')).getByText('$1.50')).toBeTruthy();
+    expect(screen.queryByTestId('abroad-quote-fee')).toBeNull();
     await fireEvent.press(screen.getByTestId('abroad-continue'));
     await screen.findByTestId('abroad-review-screen');
-    expect(within(screen.getByTestId('abroad-review-partner-fee')).getByText('$1.50')).toBeTruthy();
+    expect(within(screen.getByTestId('abroad-review-fee')).getByText('$1.50')).toBeTruthy();
     expect(within(screen.getByTestId('abroad-review-total')).getByText('$101.50')).toBeTruthy();
     expect(screen.getByText('Total from your USD account')).toBeTruthy();
     // The fee is known, so the line that said it would come later is gone, and nothing was sent yet.
@@ -532,12 +542,13 @@ describe('send abroad', () => {
     expect(hub.sends).toHaveLength(0);
   });
 
-  it('with no partner fee named for the route the review says the receipt will show it, draws no fee row and no total', async () => {
+  it('with no partner fee named for the route the review still draws the Hub’s Fee and Total, and no word about a partner', async () => {
     hub.partnerFee = null;
     await toReview();
-    expect(screen.getByTestId('abroad-provider-fee')).toBeTruthy();
-    expect(screen.queryByTestId('abroad-review-partner-fee')).toBeNull();
-    expect(screen.queryByTestId('abroad-review-total')).toBeNull();
+    expect(screen.getByTestId('abroad-review-fee')).toBeTruthy();
+    expect(screen.queryByTestId('abroad-provider-fee')).toBeNull();
+    expect(screen.queryByText(/partner/i)).toBeNull();
+    expect(within(screen.getByTestId('abroad-review-total')).getByText('$100.00')).toBeTruthy();
   });
 
   it('a wrong PIN then the right one sends once, on one key', async () => {
@@ -711,9 +722,9 @@ describe('send abroad from a foreign account', () => {
     await fireEvent.press(screen.getByTestId('abroad-continue'));
     await screen.findByTestId('abroad-review-screen');
     const rows = within(screen.getByTestId('abroad-review-rows'));
-    expect(rows.getByText('£1.75')).toBeTruthy();
+    expect(rows.getByText('£3.25')).toBeTruthy();
     expect(rows.queryByText(/₦/)).toBeNull();
-    // £3.00 + the partner's £1.50 + WAWU's £1.50.
+    // £3.00 + one Fee of £3.25.
     expect(within(screen.getByTestId('abroad-review-total')).getByText('£6.25')).toBeTruthy();
     expect(screen.getByText('Total from your GBP account')).toBeTruthy();
     await fireEvent.press(await screen.findByRole('button', { name: /^Send £/ }));
@@ -735,7 +746,7 @@ describe('send abroad from a foreign account', () => {
     await screen.findByTestId('abroad-review-screen');
     const rows = within(screen.getByTestId('abroad-review-rows'));
     expect(rows.queryByText(/₦/)).toBeNull();
-    expect(rows.getByText('£0.00')).toBeTruthy();
+    expect(rows.getByText('£1.50')).toBeTruthy();
   });
 
   async function toAmountScreenWith(mode: 'ok' | 'hang' | 'fail', sources: unknown[] | null) {

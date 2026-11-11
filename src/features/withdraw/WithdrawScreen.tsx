@@ -23,6 +23,7 @@ import { textOfKobo } from '@/components/amount-entry';
 import { AuthFrame } from '@/features/auth/AuthFrame';
 import { useOpenWalletEntry } from '@/features/open-wallet/entry';
 import { useSessionAccount } from '@/features/open-wallet/sessionAccount';
+import { refusalOf } from '@/features/send/model';
 import { fetchFeeQuote, sendToBankAccount, transferQuery, type Credential, type FeeQuote } from '@/features/send/api';
 import { dropIntent, putIntent, rereadIntent } from '@/features/send/intent';
 import { NOT_READY_LINE } from '@/features/send/model';
@@ -37,7 +38,6 @@ import {
   amountKobo as amountOf,
   AMOUNT_LABEL,
   AVAILABLE_LABEL,
-  bankGetsLine,
   blockLine,
   CHANGE_LABEL,
   destinationLine,
@@ -53,6 +53,8 @@ import {
   withdrawKey,
   withdrawLabel,
   WITHDRAW_TITLE,
+  GETS_LABEL,
+  TOTAL_LABEL,
 } from './model';
 
 /** The board's field: the amount at 26 bold with the naira sign, "Max" in the accent at the end; the balance's figure is 36. The radio is 26 with a 10 dot. */
@@ -297,14 +299,9 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
       onBack={props.onBack}
       footer={
         <View style={styles.foot}>
-          {quote ? (
-            <Text variant="muted" testID="withdraw-gets" style={styles.centre}>
-              {bankGetsLine(quote.amountKobo)}
-            </Text>
-          ) : null}
           <Button
             testID="withdraw-submit"
-            label={withdrawLabel(quote ? quote.totalKobo : null)}
+            label={withdrawLabel(quote ? quote.totalMinor : null)}
             full
             loading={busy}
             disabled={block !== null || quote === null || balance.data === undefined}
@@ -401,8 +398,10 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
         {rows.length > 0 ? (
           <GroupedList testID="withdraw-fees">
             {rows.map((row) => (
-              <KeyValueRow key={row.key} testID={`withdraw-fee-${row.key === 'fees' ? 'total' : row.key === 'Bank charge' ? 'bank' : 'wawu'}`} label={row.label} value={<Money minorUnits={row.kobo} size={14.5} weight={600} />} />
+              <KeyValueRow key={row.key} testID={`withdraw-fee-${row.key}`} label={row.label} value={<Money minorUnits={row.kobo} size={14.5} weight={600} />} />
             ))}
+            {quote ? <KeyValueRow testID="withdraw-fee-total" label={TOTAL_LABEL} value={<Money minorUnits={quote.totalMinor} size={14.5} weight={700} />} /> : null}
+            {quote ? <KeyValueRow testID="withdraw-gets" label={GETS_LABEL} value={<Money minorUnits={quote.receiveMinor} size={14.5} weight={700} />} /> : null}
             {arrival !== null ? (
               <KeyValueRow
                 testID="withdraw-arrives"
@@ -417,6 +416,10 @@ export function WithdrawScreen(props: WithdrawScreenProps) {
           </GroupedList>
         ) : settled > 0 && payout && amount === settled && quoted.isFetching ? (
           <Skeleton testID="withdraw-fees-loading" height={104} radius={radius.card} />
+        ) : settled > 0 && payout && amount === settled && quoted.isError && refusalOf(quoted.error) !== null ? (
+          <Text variant="secondary" tone="danger" testID="withdraw-refusal">
+            {refusalOf(quoted.error)}
+          </Text>
         ) : settled > 0 && payout && amount === settled && quoted.isError ? (
           <Pressable
             testID="withdraw-fees-retry"

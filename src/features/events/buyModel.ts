@@ -45,11 +45,9 @@ export function sheetSubtitle(order: Pick<WalletOrder, 'lines' | 'event'>): stri
   return `${linesText(order.lines)} · ${w.weekday} ${w.day} ${w.month}`;
 }
 
-/** The fee parts as the sheet's rows: the bank's charge, and WAWU's own fee when it has one. */
+/** The sheet's fee row (R-139 point 5): one Fee, the Hub's whole fee for this payment. The provider's own charge is never a line of its own. */
 export function feeLines(fee: PaymentQuote['fee']): PayFeeLine[] {
-  const lines: PayFeeLine[] = [{ label: BANK_CHARGE, amountKobo: fee.providerFeeKobo }];
-  if (fee.wawuFeeKobo > 0) lines.push({ label: WAWU_FEE, amountKobo: fee.wawuFeeKobo });
-  return lines;
+  return [{ label: 'Fee', amountKobo: fee.totalFeeKobo }];
 }
 
 /** True when the quote's total is the price plus its fee parts (whole kobo), so the button, the PIN line and the payment agree. */

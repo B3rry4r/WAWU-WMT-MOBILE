@@ -28,7 +28,7 @@ const unlock = {
   },
   amountKobo: 250000,
   details: [{ label: 'Yours', value: 'Forever, in My purchases' }],
-  fees: [{ label: 'Bank charge', amountKobo: 2325 }],
+  fees: [{ label: 'Fee', amountKobo: 2325 }],
   walletName: 'Naira wallet',
   actionLabel: 'Unlock',
 } satisfies Partial<PaySheetProps>;
@@ -45,7 +45,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onCancel'>> = {
   loading: { ...unlock, wallet: { kind: 'loading' }, status: { kind: 'review' } },
   'zero-fee': {
     ...unlock,
-    fees: [{ label: 'Bank charge', amountKobo: 0 }],
+    fees: [{ label: 'Fee', amountKobo: 0 }],
     wallet: open(48525075),
     status: { kind: 'review' },
   },
@@ -93,11 +93,23 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onCancel'>> = {
       { label: 'Bank', value: 'Guaranty Trust Bank' },
       { label: 'Account', value: '0123456789' },
     ],
-    fees: [
-      { label: 'Bank charge', amountKobo: 4000 },
-      { label: "WAWU's fee", amountKobo: 2500 },
-    ],
+    fees: [{ label: 'Fee', amountKobo: 6500 }],
     notes: [{ label: 'Note', value: 'Rent contribution' }],
+    walletName: 'Naira wallet',
+    actionLabel: 'Send',
+    recipientGetsKobo: 2500000,
+    wallet: open(48525075),
+    status: { kind: 'review' },
+  },
+  // R-139: Fee and VAT (VAT only when the Hub says it is on), the Total, and what the other person gets (example figures).
+  'send-vat': {
+    variant: 'send',
+    item: { title: 'Chidinma Adaeze Okoro', displayName: 'Chidinma Okoro', avatar: { hue: 'coral' } },
+    amountKobo: 2500000,
+    fees: [
+      { label: 'Fee', amountKobo: 6000 },
+      { label: 'VAT', amountKobo: 450, vat: true },
+    ],
     walletName: 'Naira wallet',
     actionLabel: 'Send',
     recipientGetsKobo: 2500000,
@@ -108,10 +120,7 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onCancel'>> = {
     variant: 'send',
     item: { title: 'Chidinma Adaeze Okoro', displayName: 'Chidinma Okoro', avatar: { hue: 'coral' } },
     amountKobo: 2500000,
-    fees: [
-      { label: 'Bank charge', amountKobo: 4000 },
-      { label: "WAWU's fee", amountKobo: 2500 },
-    ],
+    fees: [{ label: 'Fee', amountKobo: 6500 }],
     walletName: 'Naira wallet',
     actionLabel: 'Send',
     wallet: open(2500000),

@@ -171,10 +171,10 @@ function Breakdown({ tip, source }: { tip: TipState; source?: PaySource }) {
     rows.push(...sourceRows(source));
   } else if (q) {
     for (const f of tip.fees) rows.push(row(f.label, f.amountKobo, f.label));
-    if (tip.fees.length > 1) rows.push(row('Fees', feesTotalKobo(tip.fees), 'fees'));
+    if (tip.fees.length > 1 && !tip.fees.some((f) => f.vat)) rows.push(row('Fees', feesTotalKobo(tip.fees), 'fees'));
     rows.push(row('Total', q.payment.totalKobo, 'total'));
   } else {
-    rows.push(row('Bank charge', null, 'charge'), row('Total', null, 'total'));
+    rows.push(row('Fee', null, 'charge'), row('Total', null, 'total'));
   }
   return <GroupedList testID="tip-breakdown">{rows}</GroupedList>;
 }
