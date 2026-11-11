@@ -18,6 +18,8 @@ tier: T2
 
 ## Current state
 
+**Stopped by the lead: superseded by the owner's fee and routing brief of 11 Nov.** Work in progress on Hub `wmt/NUV-FEES` (tsc clean; specs, gates, contract build and protected suite NOT RUN). Built: `src/money/fees/percent-fee.ts` and the `pct:0.2,min:5000,max:50000` shape in `nuvion-fee-config.ts` (half-up rounding, PROVISIONAL, no Nuvion evidence); `CARD_ISSUE_FEE_USD_CENTS` with `card-fee-rate.service.ts` (Nuvion merchant FX quote through the seam, `409 rate_unavailable` when none). WAWU's card fee (G-WALLET-31-1) was already built and closed (`collectFee`, charged only after the card exists). Add-money option hiding not built.
+
 As of 11 Nov 2026.
 - **Status:** todo. Cut by the lead when the owner sent Nuvion's live commercials (11 Nov 2026) and said: cards stay on and WAWU makes money on them ("We are still supposed to make money from that"); card top-up stays off (Nuvion told the owner it is down).
 - **Why:** the Hub's Nuvion fee settings (`src/money/fees/nuvion-fee-config.ts`, `src/money/cards/card-config.ts`) take only a flat kobo figure or `from:fee` step bands, written when Nuvion had published no fees. Nuvion's live fees are percentages with a minimum and a maximum, and the card's is in dollars. WAWU's own card fee (`WAWU_FEE_CARD_KOBO`) is not built: above 0, making a card answers `503 fees_not_set` (gap G-WALLET-31-1).
