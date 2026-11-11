@@ -3,7 +3,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { Platform } from 'react-native';
 
-import { PICTURE_CACHE, PICTURE_WORKER, registerPictureCache } from '@/lib/pictureCache';
+import { OPEN_KEY, PICTURE_CACHE, PICTURE_WORKER, registerPictureCache } from '@/lib/pictureCache';
 
 /** WEBAPP-12: the web build keeps pictures under their own address; a phone is untouched. */
 let os: jest.ReplaceProperty<typeof Platform.OS> | undefined;
@@ -61,8 +61,9 @@ describe('the worker (public/wmt-sw.js)', () => {
     const listeners: Record<string, (event: unknown) => void> = {};
     const store = new Map<string, unknown>();
     const fetched: string[] = [];
+    const marker = { on: true };
     const cache = {
-      match: async (key: string) => store.get(key),
+      match: async (key: string) => (key === OPEN_KEY ? (marker.on ? {} : undefined) : store.get(key)),
       put: async (key: string, response: unknown) => void store.set(key, response),
       keys: async () => [...store.keys()],
       delete: async (key: string) => store.delete(key),
@@ -92,7 +93,7 @@ describe('the worker (public/wmt-sw.js)', () => {
       await Promise.all(waits);
       return { answered: answer !== undefined, got: got as Response | undefined };
     };
-    return { ask, fetched, store, sizes, network };
+    return { ask, fetched, store, sizes, network, marker };
   }
 
   const signed = (at: string) => `https://bucket.nyc3.digitaloceanspaces.com/content/cover/u1/abc.jpg?X-Amz-Date=${at}&X-Amz-Signature=sig${at}&X-Amz-Expires=604800`;
@@ -154,6 +155,21 @@ describe('the worker (public/wmt-sw.js)', () => {
     const huge = await w.ask('https://bucket.nyc3.digitaloceanspaces.com/p/huge.jpg?X-Amz-Signature=s');
     expect(huge.answered).toBe(true);
     expect([...w.store.keys()]).toEqual(held);
+  });
+
+  it('keeps nothing between a session ending and the next sign-in (no marker), but still shows the picture', async () => {
+    const w = boot();
+    w.marker.on = false;
+    const shown = await w.ask(signed('1'));
+    expect(shown.got?.status).toBe(200);
+    expect(w.store.size).toBe(0);
+    w.marker.on = true;
+    await w.ask(signed('1'));
+    expect(w.store.size).toBe(1);
+  });
+
+  it('names the same marker as the page code', () => {
+    expect(source).toContain(`const OPEN_KEY = '${OPEN_KEY}';`);
   });
 
   it('still holds at most 120 small pictures', async () => {

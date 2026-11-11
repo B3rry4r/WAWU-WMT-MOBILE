@@ -7,6 +7,8 @@ const CACHE = 'wmt-pictures-v1';
 const MAX_PICTURES = 120;
 // A free piece's preview is the whole photo (about 4.7 MB), so a count alone could hold about 560 MB on someone's disk.
 const MAX_BYTES = 60 * 1024 * 1024;
+// Written by the page while a session is open (`OPEN_KEY` in src/lib/pictureCache.ts); with no marker nothing is kept.
+const OPEN_KEY = 'https://wmt.invalid/session-open';
 const BYTES_HEADER = 'x-wmt-bytes';
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -39,13 +41,14 @@ async function answer(event, request, url) {
 async function keep(cache, key, response) {
   try {
     // The size is written onto the held copy, so the bound below can add up what is held without reading any picture again.
+    if (!(await cache.match(OPEN_KEY))) return;
     const blob = await response.blob();
     if (blob.size > MAX_BYTES) return;
     const headers = new Headers(response.headers);
     headers.set(BYTES_HEADER, String(blob.size));
     await cache.put(key, new Response(blob, { status: response.status, headers }));
     // Oldest stored goes first (keys come back in the order they were put), until both bounds hold.
-    const keys = await cache.keys();
+    const keys = (await cache.keys()).filter((k) => (k.url || k) !== OPEN_KEY);
     const sizes = [];
     let total = 0;
     for (const k of keys) {

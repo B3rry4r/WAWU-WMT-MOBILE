@@ -41,7 +41,10 @@ export function ErrorScreen({ error, retry }: ErrorBoundaryProps) {
           testID="error-retry"
           accessibilityRole="button"
           accessibilityLabel="Try again"
-          onPress={retry}
+          onPress={() => {
+            // A missing route file is cured by a reload once the person is online again; anything else, or a reload already tried, draws the screen again.
+            if (!reloadForNewDeploy(error)) retry();
+          }}
           style={[styles.button, { backgroundColor: colors.accent }]}
         >
           <Text style={[font(600), styles.buttonLabel, { color: colors.textOnAccent }]}>Try again</Text>

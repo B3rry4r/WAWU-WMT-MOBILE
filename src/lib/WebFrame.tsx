@@ -3,7 +3,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 
 import { useWawu } from '@/theme';
 
-import { registerPictureCache } from './pictureCache';
+import { registerPictureCache, useHoldPictures } from './pictureCache';
 import { captureLandingPath, useReturnAfterSignIn } from './returnPath';
 import { ShareNote } from './shareNote';
 import { FRAME_WIDTH, useIsFramed } from './useFrameWidth';
@@ -65,6 +65,7 @@ export function WebFrame({ children, root = false, fill = true, testID = 'web-fr
 /** What only the app's own frame carries (not a modal's): the share note, and the return to a link opened while signed out. */
 function RootExtras() {
   useReturnAfterSignIn();
+  useHoldPictures();
   return <ShareNote />;
 }
 
