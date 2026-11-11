@@ -36,3 +36,21 @@ Reading: Explore, Today and creators draw 6 avatars: main 30,313 KB (151.6 s mod
 **Seeded (setup only, by SQL on my own database):** accounts through the real sign-up; avatars through presign, PUT and PATCH (copies made by the Hub); the 6 creators' accountType and one live picture piece each by SQL, their piece pictures uploaded through the avatars folder (a content upload answers 402 without a tier); two pieces set to paid at 2,500. Handles set through `PUT /users/me/handle`.
 
 **NOT RUN:** full `npx jest -w 2` to a summary line (the run was paused during the measurement, resumed afterwards, log `/tmp/at-jest.log`; no suite was named as killed); the profile page measurement; the 390/1440 light and dark pictures of Explore, Today, a profile and a piece page, and the side-by-side avatar sharpness check (the pictures in /tmp/wmt-shots/app-thumbs/ from the first runs are of the Set up your account screen, not of these pages, and were not looked at as proof); in the browser: the forced null field, the forced 404 copy and the piece page network log (the first two are proved in jest only; the third by the table above); a feed card on Today (the stack's Today showed the creators rail only); a viewer holding a tier. Phone check: none needed beyond the owner's update.
+
+## Verifier report, round 0 (11 Nov 2026, T1 verifier)
+
+**Verdict: FIX.** The pictures are NOT RUN, so by hard rule 1 this cannot be MERGE.
+
+**Why the pictures are NOT RUN (blocker for this verification, not a code finding):** the Postgres the stack needs (127.0.0.1:14001) was not running on this machine (nothing listening on 14001 or 5432), and starting a system service is forbidden to this role. No Hub stack, no seeds, no browser walk. A second gap: the only photo files on the machine (/tmp/w12v/seed/img) are blurred colour blobs, which cannot show a sharpness loss. A re-run needs Postgres up and a real photo.
+
+**Ran, each to an EXIT line (worktree at 2c1299f9):**
+- tsc (4 GB heap): EXIT 0. `npm run lint`: EXIT 0 (0 errors, 16 warnings). `npm run gates`: EXIT 0 (63 gate tests OK). `check_tasks.py`: EXIT 0.
+- helper and component tests (thumbs.test.tsx, thumbsDrawn.test.tsx): 32 passed, EXIT 0.
+- builder's own full jest log (/tmp/at-jest.log): 546 suites passed, 8087 passed, 6 skipped, EXIT 0.
+- my full `npx jest -w 2`: see the line below.
+- Tests diff against main: only two new test files (172 added lines); no existing test, gate or baseline file touched. Nothing weakened.
+
+**Findings (code read only):**
+- MEDIUM: a copy that stalls (request never errors) is never replaced. `useCopy` reacts only to `onError`; there is no timeout, so a hung copy leaves the avatar or card on its placeholder indefinitely. A 404 or network error is handled once, with no loop (tests prove it in jest; the browser 404 count is NOT RUN).
+- Not verified in a browser: sharpness at 3x and 1x, the network table per screen, a null field in the browser, the paid-piece card network, the places left full. The helper logic (44 pt at 3x = 132 px = w640; null gives the full picture; `#wmt-pos` carried onto the copy) reads correct.
+- Paid piece: copies are taken only from `coverThumbs` and the preview's thumbs (`previewThumbs`, `thumbnailThumbs`); the code never builds a copy from the locked full file. Not seen on the wire.
