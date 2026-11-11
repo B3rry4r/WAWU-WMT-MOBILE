@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/icon';
+import { readPhone } from '@/features/geo/phone';
 import { Text } from '@/components/Text';
 import { useWawu } from '@/theme';
 
@@ -16,6 +17,8 @@ import { resetFailure, type Failure } from './signInFailure';
 const TITLE_TOP = 10;
 const TITLE_GAP = 6;
 const BODY_GAP = 18;
+/** design/_gen/kit.js line 38, `foot`: 10 between the buttons. */
+const FOOT_GAP = 10;
 /** design/_gen/auth.js line 23: the sent screen's content sits 120 px down (below the 50 px status bar the phone draws itself), with 16 between the result and the expiry line. */
 const SENT_TOP = 120;
 const SENT_GAP = 16;
@@ -31,10 +34,19 @@ export type ForgotPasswordScreenProps = {
   onSend: (email: string) => Promise<{ expiresInSeconds: number | null }>;
   /** Back to A22 (the back button on A23 and "Back to sign in" on A24). */
   onBackToSignIn: () => void;
+  /**
+   * Asks WAWU ID to send a 6-digit code to the account's phone (APP-RESET, R-133 point 4). Given, the screen offers "Send a code to
+   * my phone" under the email path, for the person whose email was never proven and so is mailed nothing.
+   */
+  onSendCode?: (identifier: string) => Promise<void>;
+  /** The code is on its way: the route opens the code boxes for this identifier (the email or the +234 number as it was sent). */
+  onCodeSent?: (identifier: string) => void;
   /** Email already typed on A22. */
   initialEmail?: string;
   /** Opens on A24 straight away (a preview, never the app). */
   initialSent?: { email: string; expiresInSeconds: number | null };
+  /** Opens on the phone-code path (a preview, never the app). */
+  initialByPhone?: boolean;
 };
 
 /**
@@ -42,20 +54,47 @@ export type ForgotPasswordScreenProps = {
  * is the one the user typed and the server accepted, and the expiry is the
  * server's own figure: when it sends none, the line is left out.
  */
-export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = '', initialSent }: ForgotPasswordScreenProps) {
+export function ForgotPasswordScreen({ onSend, onSendCode, onCodeSent, onBackToSignIn, initialEmail = '', initialSent, initialByPhone = false }: ForgotPasswordScreenProps) {
   const { colors } = useWawu();
   const [email, setEmail] = useState(initialEmail);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [problem, setProblem] = useState<string | undefined>();
   const [sent, setSent] = useState(initialSent ?? null);
+  /** The phone-code path: the same field, taking the email or the phone number, and a code sent instead of a link. */
+  const [byPhone, setByPhone] = useState(initialByPhone);
   const inFlight = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const switchTo = (phone: boolean) => {
+    if (inFlight.current) return;
+    setByPhone(phone);
+    setProblem(undefined);
+    setFailure(null);
+  };
 
   const submit = async () => {
     if (inFlight.current) return;
     const typed = email.trim();
-    if (!LOOKS_LIKE_EMAIL.test(typed)) {
+    // The phone path takes the account's email or its phone number; a number is written as +234... the way WAWU ID stores it.
+    let identifier = typed;
+    if (byPhone) {
+      if (!typed) {
+        setProblem('Enter your email or phone number.');
+        return;
+      }
+      if (!typed.includes('@')) {
+        const read = readPhone(typed, 'NG');
+        if (!read.ok) {
+          setProblem('Enter your email, or your phone number with its country code, like +234 801 234 5678.');
+          return;
+        }
+        identifier = read.e164;
+      } else if (!LOOKS_LIKE_EMAIL.test(typed)) {
+        setProblem('Enter your email, or your phone number with its country code, like +234 801 234 5678.');
+        return;
+      }
+    } else if (!LOOKS_LIKE_EMAIL.test(typed)) {
       setProblem(typed ? 'Enter the email you signed up with, like name@example.com.' : 'Enter your email.');
       return;
     }
@@ -63,8 +102,13 @@ export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = ''
     setBusy(true);
     setFailure(null);
     try {
-      const answer = await onSend(typed);
-      setSent({ email: typed, expiresInSeconds: answer.expiresInSeconds });
+      if (byPhone) {
+        await onSendCode?.(identifier);
+        onCodeSent?.(identifier);
+      } else {
+        const answer = await onSend(typed);
+        setSent({ email: typed, expiresInSeconds: answer.expiresInSeconds });
+      }
     } catch (error) {
       setFailure(resetFailure(error));
     } finally {
@@ -104,24 +148,49 @@ export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = ''
     );
   }
 
+  const canUsePhone = onSendCode !== undefined;
   return (
     <AuthFrame
       testID="forgot-password"
       scrollRef={scrollRef}
       navTitle="Reset password"
       onBack={onBackToSignIn}
-      footer={<Button label="Send reset link" full loading={busy} onPress={() => void submit()} testID="forgot-submit" />}
+      footer={
+        <View style={styles.footer}>
+          <Button
+            label={byPhone ? 'Send code' : 'Send reset link'}
+            full
+            loading={busy}
+            onPress={() => void submit()}
+            testID="forgot-submit"
+          />
+          {canUsePhone ? (
+            <Button
+              label={byPhone ? 'Email me a link instead' : 'Send a code to my phone'}
+              variant="secondary"
+              full
+              onPress={() => switchTo(!byPhone)}
+              testID="forgot-switch"
+            />
+          ) : null}
+        </View>
+      }
     >
       <View style={styles.body}>
         <View style={styles.titleBlock}>
           <Text variant="h1">Forgot your password?</Text>
-          {/* MECHANISM: WAWU ID POST /auth/forgot-password with method 'email' mails the link (auth.service.ts forgotPassword). */}
-          <Text variant="muted">{"We'll email you a link to set a new one."}</Text>
+          {/* MECHANISM: WAWU ID POST /auth/forgot-password with method 'email' mails the link, with method 'sms' sends a code (auth.service.ts forgotPassword). */}
+          <Text variant="muted" testID="forgot-line">
+            {byPhone
+              ? "We'll send a 6-digit code to the phone on your account. Type your email or your phone number."
+              : // MECHANISM: WAWU ID POST /auth/forgot-password with method 'email' mails the link (auth.service.ts forgotPassword).
+                "We'll email you a link to set a new one."}
+          </Text>
         </View>
         {failure ? <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="forgot-banner" /> : null}
         <AuthField
           scrollRef={scrollRef}
-          label="Email"
+          label={byPhone ? 'Email or phone number' : 'Email'}
           autoFocus
           testID="forgot-email"
           value={email}
@@ -131,11 +200,11 @@ export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = ''
             setFailure(null);
           }}
           error={problem}
-          keyboardType="email-address"
+          keyboardType={byPhone ? 'default' : 'email-address'}
           autoCapitalize="none"
           autoCorrect={false}
-          autoComplete="email"
-          textContentType="emailAddress"
+          autoComplete={byPhone ? 'off' : 'email'}
+          textContentType={byPhone ? 'none' : 'emailAddress'}
           returnKeyType="send"
           onSubmitEditing={() => void submit()}
         />
@@ -145,6 +214,7 @@ export function ForgotPasswordScreen({ onSend, onBackToSignIn, initialEmail = ''
 }
 
 const styles = StyleSheet.create({
+  footer: { gap: FOOT_GAP },
   body: { gap: BODY_GAP },
   titleBlock: { gap: TITLE_GAP, paddingTop: TITLE_TOP },
   sent: { alignItems: 'center', gap: SENT_GAP },

@@ -22,6 +22,21 @@ const BODY_TOP = 14;
  */
 export const SPENT_LINK_MESSAGE = 'It has expired or was already used.\nAsk for a new one.';
 
+/**
+ * The words of this screen, for the other two places the same form is used (APP-RESET): setting a first password from the activation
+ * mail, and resetting with a code sent to the phone. Left out, they are the reset link's.
+ */
+export type ResetPasswordCopy = {
+  navTitle?: string;
+  /** The read-only first field: the email for a link, "Account" for a phone code (the account may have been named by a phone number). */
+  accountLabel?: string;
+  saveLabel?: string;
+  doneTitle?: string;
+  doneMessage?: string;
+  invalidTitle?: string;
+  invalidMessage?: string;
+};
+
 export type ResetPasswordScreenProps = {
   /** The address in the link (lower case). Shown, never edited. */
   email: string;
@@ -41,6 +56,12 @@ export type ResetPasswordScreenProps = {
    */
   onSaved?: () => void;
   askLabel: string;
+  copy?: ResetPasswordCopy;
+  /**
+   * Looks at a refused save first. Returning true means the caller has taken the person somewhere else (the phone-code path sends a
+   * wrong code back to the code boxes), so this screen shows nothing for it.
+   */
+  onRefused?: (error: unknown) => boolean;
   /** What the fields start with, and which screen the app opens on (previews and tests, never the app). */
   initialPassword?: string;
   initialConfirm?: string;
@@ -65,6 +86,8 @@ export function ResetPasswordScreen({
   onAskForNewLink,
   onSaved,
   askLabel,
+  copy = {},
+  onRefused,
   initialPassword = '',
   initialConfirm = '',
   initialOutcome,
@@ -118,6 +141,7 @@ export function ResetPasswordScreen({
       await onSave(next);
       setOutcome('done');
     } catch (error) {
+      if (onRefused?.(error)) return;
       const refused = resetPasswordOutcome(error);
       if (refused.kind === 'invalid') setOutcome('invalid');
       else if (refused.kind === 'field') setFieldLine(refused.message);
@@ -134,8 +158,8 @@ export function ResetPasswordScreen({
         testID="reset-done"
         tone="in"
         icon="Check"
-        title="Password changed"
-        message="Sign in with your new password."
+        title={copy.doneTitle ?? 'Password changed'}
+        message={copy.doneMessage ?? 'Sign in with your new password.'}
         actionLabel="Sign in"
         onAction={onSignIn}
       />
@@ -147,8 +171,8 @@ export function ResetPasswordScreen({
         testID="reset-invalid"
         tone="warn"
         icon="Clock"
-        title="This link no longer works"
-        message={SPENT_LINK_MESSAGE}
+        title={copy.invalidTitle ?? 'This link no longer works'}
+        message={copy.invalidMessage ?? SPENT_LINK_MESSAGE}
         actionLabel={askLabel}
         onAction={onAskForNewLink}
       />
@@ -160,15 +184,15 @@ export function ResetPasswordScreen({
     <AuthFrame
       testID="reset-password"
       scrollRef={scrollRef}
-      navTitle="New password"
+      navTitle={copy.navTitle ?? 'New password'}
       onBack={onBack}
-      footer={<Button label="Save password" full loading={busy} onPress={() => void submit()} testID="reset-submit" />}
+      footer={<Button label={copy.saveLabel ?? 'Save password'} full loading={busy} onPress={() => void submit()} testID="reset-submit" />}
     >
       <View style={styles.body}>
         {failure ? <Banner tone={failure.tone} title={failure.title} body={failure.body} testID="reset-banner" /> : null}
         <AuthField
           scrollRef={scrollRef}
-          label="Email"
+          label={copy.accountLabel ?? 'Email'}
           testID="reset-email"
           value={email}
           disabled

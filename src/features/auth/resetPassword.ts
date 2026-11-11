@@ -2,6 +2,7 @@ import { isApiError } from '@/api/errors';
 import { MAX_LENGTH, MIN_LENGTH } from '@/features/settings/passwordFailure';
 
 import { resetFailure, type Failure } from './signInFailure';
+import type { Outcome } from './signupFailure';
 
 /** The same address pattern WAWU ID's DTO would accept: something, an at sign, something with a dot. */
 const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,4 +61,21 @@ export function resetPasswordOutcome(error: unknown): ResetOutcome {
     if (error.kind === 'validation') return { kind: 'field', message: `Use ${MIN_LENGTH} to ${MAX_LENGTH} characters.` };
   }
   return { kind: 'banner', failure: resetFailure(error) };
+}
+
+/** Seconds to wait before asking again, from the server's own figure; a 429 that names none is the shortest wait the screen can show. */
+const waitOf = (retry: number | null | undefined) => (typeof retry === 'number' && retry > 0 ? retry : 1);
+
+/**
+ * What the code boxes do with a refused "send another code" (APP-RESET). WAWU ID checks the code only when the new password is sent,
+ * so the boxes themselves never see a wrong code: the refusals here are about asking again.
+ */
+export function resetCodeOutcome(error: unknown): Outcome {
+  if (isApiError(error) && error.kind === 'rate_limited') return { kind: 'wait', seconds: waitOf(error.retryAfterSeconds) };
+  return { kind: 'notice', failure: resetFailure(error) };
+}
+
+/** Whether a refused phone-code reset means the code was wrong or expired (WAWU ID answers one 401 for both, and for an unknown account). */
+export function codeWasRefused(error: unknown): boolean {
+  return isApiError(error) && error.kind === 'unauthorized';
 }
