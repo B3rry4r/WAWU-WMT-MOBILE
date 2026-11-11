@@ -150,3 +150,11 @@ The wallet provider's own tables (`FintavaWallet`, `WalletHold`, `WalletPayment`
 **Tests that fail on `109213b5`** (5 of the 12 failed there, run against the old script): the verifier's seed (CreatorWallet, pending WalletLedgerEntry and WalletWithdrawal, pending Purchase, BillPayment, a WalletCard of another provider, CreditPurchase and CreditLot): the dry run lists each, apply exits 1, every table is unchanged; the payee side of an open hold refuses; `--allow-test-holds` is an error; a refusal prints no Audit line. And a clean sandbox-only account (a wallet with a balance and a WalletCard of the running provider) still deletes. The R-130 assertion moved out of this spec: a sale writes a Flutterwave `Purchase`, which the script now refuses; R-130 stays held by `sold-content-survives.contract.spec.ts`.
 
 **Checks:** tsc (alone, 4 GB) EXIT 0; eslint on the 3 changed files EXIT 0; gates EXIT 0; baseline EXIT 0; the spec 12 of 12 EXIT 0; account and account-purge suites on a fresh database, `--runInBand`: 29 suites, 392 tests, EXIT 0.
+
+## Verifier report, round 1 re-check (INTERIM, 11 Nov 2026, Hub `9f054474`)
+
+T2 verifier, local stack odv2_test (real WAWU ID, Nuvion stand-in). Interim, final report follows. So far: **verdict leaning FIX (1 blocker)**.
+- B1 listed tables: all 29 seeded one at a time; dry run lists the row, apply exits 1, Hub row counts and WAWU ID checksum unchanged, no Audit line. The other-provider rows refuse, the running-provider rows (nuvion WalletCard, CommunityPassRefund) pass.
+- **NEW blocker (list misses real-money tables):** an account with a paid `LegalRequest` (`consultationTxRef` set, paid by the Flutterwave webhook) or a paid `WaitlistRegistration` (`claimedByWawuId`, `flutterwaveTxId`, `paidKobo`) shows `Real-money rows: none` and apply DELETES the row (exit 0). Also not listed and not refused: `ServiceApplication` (amountPaid), `StorePurchase`/`StorePurchaseIntent`/`StoreSubscription` (App Store and Play money; kept anonymised), `WalletBill`, `SchoolEnrolment`, `FintavaLedgerEntry`, `MoneyBeneficiary`, `KycSubmission` payout bank.
+- M1: `--allow-test-holds` is an error; hold (either side), waiting earning, payment in flight (either side) each refuse, dry run names what to settle, nothing written.
+- tsc, eslint, gates, baseline: EXIT 0.
