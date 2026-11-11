@@ -19,11 +19,12 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
+- **Merged (lead, 11 Nov 2026):** Hub PR #266 merged as 158be141 (all 18 checks green on a62f0f9c); on the server since 14:06 UTC (health 200). Whether the live server has `AI_VOICE_BASE_URL` and `AI_VOICE_API_KEY` is not readable from outside (the tool list needs a sign-in); the owner's one-line check prints set or missing. Without both, legal stays on Gemini as before.
 - **Status:** review. Verifier round 1 re-check: MERGE (three lows). CI fix round 2 accepted on the lead's diff read. Hub PR #266 merged as 158be141 at 13:40 UTC (all 18 checks green on a62f0f9c); records on mobile `wmt/LEGAL-ELEVEN`, verifier report on `wmt/LEGAL-ELEVEN-verify`.
 - **Fixed and re-proved:** F-1 (one agent however many boots; a pin makes no list call; the race clean-up can only delete the agent the process just made), F-2 (preamble then JSON accepted, prose fails as before), F-3 (legal-only turn joining; Receptionist unchanged), F-4 (owner notes).
 - **Round 2 fix:** the PR check ("Protected route suite against the base branch's checker and lock") failed because `POST /legal/intake/:id/complete` answered 503: the harness has no AI_VOICE keys. The picker now uses ElevenLabs only where the keys are set; elsewhere Gemini as before. Details in the owner notes.
 - **Open:** three lows for the legal sweep (L1 log a failed race delete, L2 socket close after a response, L3 missing created time). NOT RUN against the real provider.
-- **Next:** the Hub deploy; then the first real legal turn on the provider is the owner's V9 (`legal.ai_provider=gemini` rolls back).
+- **Next:** the owner's key check; then the first real legal turn on the provider is the owner's V9 (`legal.ai_provider=gemini` rolls back). Lows are SWEEP-1111 rows L1 and L2.
 
 ## Owner notes (LEGAL-ELEVEN)
 
