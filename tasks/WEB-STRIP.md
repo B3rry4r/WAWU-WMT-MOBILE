@@ -7,7 +7,7 @@ order: 386
 priority: after-launch
 repo: wawuafrica
 type: removal
-status: todo
+status: review
 depends_on: []
 decisions: [R-48, R-126, R-127, R-133]
 passes: [V1, V2, V3, V4, V7, V9]
@@ -19,11 +19,9 @@ tier: T1
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** todo. Cut by the lead from R-133.
-- **Today** (wawuafrica `origin/main` bd72412): production runs join-only (`src/lib/site-mode.ts`). Open pages are the company pages, `/join`, `/join/paid`, the legal pages, `/reset-password`, and R-126's `/sign-in`, `/sign-up`, `/forgot-password`, `/create/new`, `/create/library` (rewritten to `src/app/upload-site/`). Every other path is sent to `/join` (`src/middleware.ts`, `redirectToJoin`).
-- **Faults found by the lead:** WAWU ID's activation mail links to `<host>/activate?token&email`; wawuafrica has no `/activate` page and join-only mode sends it to `/join`, so an activation link never works. Old app links (a profile, a piece, a receipt) also land on `/join`.
-- **Deploy:** the Vercel project `wawu` builds `main` only; merging deploys wawuafrica.com.
-- **Next:** builder on wawuafrica `wmt/WEB-STRIP`, then a T1 verifier.
+- **Status:** review. Verifier round 1 (T1): verdict MERGE, no defect, three lows (below). wawuafrica branch `wmt/WEB-STRIP` at 040dad1b on `origin/main` bd72412; nothing merged or deployed.
+- **Open, not defects:** (1) the Android app's own intent filters still list `/activate` and `/reset-password` (phones are parked, R-134), so an Android phone with the app installed may open the app on those mails; unclear, owner word; (2) the join page still promises the app on the App Store and Google Play (`JoinLanding.tsx:143` and `:346`, `join-content.ts:55`, `page.tsx:20`); (3) `/payment/return` still answers 307 to /join (as on main).
+- **NOT RUN:** a real activation or reset against WAWU ID; a deployed preview (the verifier never calls a live service).
 
 ## Read first
 
@@ -54,6 +52,7 @@ On wawuafrica.com a person can join, reset or set their password, and read the l
 - [ ] An old profile, piece or receipt link on wawuafrica.com opens the same place on usewmt.com.
 - [ ] `/.well-known/assetlinks.json`, `/.well-known/apple-app-site-association`, `/admin` and `/join` are untouched.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEB-STRIP.md](history/WEB-STRIP.md).
+
