@@ -515,6 +515,10 @@ Builder and verifier are always different sessions.
 76. [HUB-THUMBS](HUB-THUMBS.md) Pictures are served at the size they are drawn
 77. [APP-THUMBS](APP-THUMBS.md) The app draws the small copy of a picture where it draws a small picture
 78. [ACCT-DEL-FLW](ACCT-DEL-FLW.md) Deleting an account waits until its Flutterwave wallet is empty too
+79. [STUDIO-ON](STUDIO-ON.md) Studio's tools are on by default from the Hub, with no Dashboard step
+80. [WEB-STRIP](WEB-STRIP.md) wawuafrica.com keeps only join and the password pages; app links go to usewmt.com
+81. [ID-LINKS](ID-LINKS.md) Every link WAWU ID mails has a host, even when a setting is missing
+82. [APP-RESET](APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code
 
 ## Developer
 
