@@ -513,6 +513,7 @@ Builder and verifier are always different sessions.
 74. [WEBAPP-12](WEBAPP-12.md) Pictures, previews and the app's own files load fast on the web
 75. [HUB-IMG-LINKS](HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it
 76. [HUB-THUMBS](HUB-THUMBS.md) Pictures are served at the size they are drawn
+77. [APP-THUMBS](APP-THUMBS.md) The app draws the small copy of a picture where it draws a small picture
 
 ## Developer
 
