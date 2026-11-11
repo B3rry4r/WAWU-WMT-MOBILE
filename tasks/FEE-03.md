@@ -19,7 +19,7 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** FIX after verifier round 1 (11 Nov 2026): see tasks/history/FEE-03.md, Verifier report, round 1 (F1 deploy order, F2 abroad button, F8 missing pictures are the blockers to clear). Built 11 Nov 2026 on Hub `wmt/FEE-01` `176859ec`; see the Builder report. Cut by the lead from R-139 points 3, 5 and 11.
+- **Status:** verifier round 2 re-check on `b1f9e40d`: MERGE (lows only), see tasks/history/FEE-03.md, Verifier report, round 2 re-check. `npm run check` exit 0. Hub `wmt/FEE-01` still `263ecd12`, contract identical.
 - **What exists:** the confirm screens already show fees before the PIN: `features/send/ReviewScreen.tsx`, `features/withdraw/WithdrawScreen.tsx`, `features/abroad/views.tsx` (`AbroadReviewView`), `features/wallet/fx/swap/SwapReview.tsx`, `components/pay-sheet/PaySheet.tsx` (and TipSheets, AskSheets, RequestPaySheet, legal PaySheets), `features/addmoney/model.ts`. They draw today's provider plus WAWU lines.
 
 ## Read first
