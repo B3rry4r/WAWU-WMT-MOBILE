@@ -19,9 +19,9 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026.
-- **Status:** T2 verifier said FIX. Branch `wmt/OPS-DEL-TEST` on wawu-backend (109213b5). Report in the history file.
-- **Open:** B1 (blocker): the script deletes Flutterwave wallets, pending withdrawals, pending card payments, cards, bought credits with no refusal. M1: `--allow-test-holds` waives other people's money.
-- **Next:** builder fixes B1 and M1 with a spec per money table, then a T2 re-check. Not run on the server.
+- **Status:** round 1 fix built (B1, M1 and the lows), waiting for a T2 re-check. Branch `wmt/OPS-DEL-TEST` on wawu-backend. The first builder report, the verifier report and the round 1 report with the real-money table list are in [tasks/history/OPS-DEL-TEST.md](history/OPS-DEL-TEST.md).
+- **Not run on the server.** It runs only once this is merged and deployed, and then by the owner.
+- **Next:** the T2 re-check, then merge and deploy, then the owner runs the commands below.
 
 ## Read first
 
@@ -59,6 +59,29 @@ One command the owner runs on the live server. It deletes exactly one named test
 - [ ] Apply deletes that one account and nothing else (row counts of every table before and after; another account with the same name or a similar email is untouched).
 - [ ] Each refusal is shown: an account with real-money credentials, two matches, a missing confirmation phrase, a wrong phrase, and an open hold without the flag.
 - [ ] The WAWU ID side ends the same as an app deletion after its grace. The email's re-use is stated.
+
+## Builder report
+
+Current commands (round 1). The deploy's `nest build` compiles `scripts/` into `dist/scripts/`. The WAWU ID database string is read without typing it into the shell and without putting it in the shell's history: it is loaded from WAWU ID's own env file inside a subshell, so it never reaches the parent shell. WAWU ID's own `DATABASE_URL` is used; the script opens it read only (`default_transaction_read_only`). If the owner prefers a separate read-only login, use the `read -rs` form below.
+
+Both env files define `DATABASE_URL`, and the Hub's must win for the Hub, so WAWU ID's value is copied into its own name first and the Hub's file is loaded second:
+```
+cd /srv/wawu/hub-api
+# 1. dry run, writes nothing, prints the confirmation phrase:
+( set -a; . /etc/wawu/wawu-id.env; WAWU_ID_DATABASE_URL="$DATABASE_URL"; unset DATABASE_URL; . /etc/wawu/hub-api.env; set +a
+  node dist/scripts/ops/delete-test-account.js --email 'THE-TEST-EMAIL' )
+# 2. apply, only after reading the dry run (use the phrase it printed):
+( set -a; . /etc/wawu/wawu-id.env; WAWU_ID_DATABASE_URL="$DATABASE_URL"; unset DATABASE_URL; . /etc/wawu/hub-api.env; set +a
+  node dist/scripts/ops/delete-test-account.js --email 'THE-TEST-EMAIL' --apply --confirm 'DELETE THE-PHRASE' )
+```
+Or, with no env file for WAWU ID: `read -rs -p 'WAWU ID read-only db url: ' U; echo` then `( set -a; . /etc/wawu/hub-api.env; set +a; WAWU_ID_DATABASE_URL="$U" node dist/scripts/ops/delete-test-account.js ... )`.
+
+There is no flag that waives a blocker or a real-money row (`--allow-test-holds` is gone and is refused as an unknown option). Exit 0 is done or nothing to do, 1 refused (nothing changed), 2 stopped part way (run the same command again).
+
+**Known limits.**
+- **900 s token window.** The access token the account held before the deletion keeps working on the Hub for its life (900 s, `GET /users/me` answers 200 for up to that long). Refresh, sign-in and the refresh tokens are gone at once. An app deletion has the same window.
+- The sandbox proof is the provider's host; a live key on the sandbox host is not detectable by the script (the balance read would fail and the script would refuse).
+- A test account that sold a piece or bought anything through the website (Flutterwave) is refused, so this script cannot delete it. That is the ruling (11 Nov), not a gap.
 
 ## History
 
