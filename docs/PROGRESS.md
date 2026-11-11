@@ -7,9 +7,9 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 37 | 0 | 0 | 0 |
+| todo | 36 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 64 | 0 | 0 | 0 |
+| verifying | 65 | 0 | 0 | 0 |
 | review | 249 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -331,6 +331,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
 - [TIER-RENEW](../tasks/TIER-RENEW.md) Renew shows only when a tier is ending or has ended (You)
 - [HUB-IMG-LINKS](../tasks/HUB-IMG-LINKS.md) A picture keeps the same link for a day, so browsers can reuse it (You)
+- [HUB-THUMBS](../tasks/HUB-THUMBS.md) Pictures are served at the size they are drawn (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -537,6 +538,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
+- 11 Nov 2026 · HUB-THUMBS · pictures get 96 px and 640 px copies (public families only), served as additive app-only fields; backfill written, not run (Hub `wmt/HUB-THUMBS` `fd6b776`); built, verifying
 - 10 Nov 2026 · STUDIO-1110 · the Studio line of 30 Oct (POINTS-12 to 18, STUDIO-HOME: twelve new tools, the studio home) merged with today's line `7a6f585`, contract from Hub `8285e1b`; a Studio picture made a piece now gets its paid preview copy (R-118); smoke on the web export with the provider stand-in: 19 tools listed, four kinds run with points held then kept (built, verifying)
 - 30 Oct 2026 · STUDIO-HOME patch round 1 (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `d831d6fa`, HELD; app only, no native change, fingerprints android `c2474bd9` and ios `240378f1` unchanged): the verifier's findings. The More pop-over is capped to the room between its tile and the screen's safe edge with its rows scrolling inside it (it rises above the tile, or drops below when its rows fit better there); with a file in the box only Edit a photo and Music for a video (when the Hub lists its mood line) show the words box, every other file chip hides it (R-47: no dead control) and sends no words; a More row's description may take two lines. 24 new tests (7 pure, 17 on the real router including Android at 390x667 and the full 12-row list); no assertion changed. Pictures before / ElevenLabs / after / PT1, dark and light, in tasks/STUDIO-HOME.md.
 - 30 Oct 2026 · STUDIO-HOME · Built (Sonnet builder, T1; mobile `wmt/STUDIO-HOME` on `origin/wmt/S2-APP-2` `43abe9a1`; app only, HELD: not merged into the phones' line or main, not sent; no native change, fingerprints unchanged Android `c2474bd9`, iOS `240378f1`; status verifying): R-113 (lead, from the owner's ElevenLabs screenshot) the Studio tab is a studio home: the points card, "What would you like to make?", one prompt box with chips for the prompt tools the Hub lists, "+" to attach a photo, clip or recording (the chips become the tools that take it), a voice chip for Speech, "Make" opens the tool with the words and file already in at its quote (nothing charged on the home), a four-to-a-line grid (Speech, Music, Image, Video, Dubbing, Talking photo, Voice changer, More) with a More pop-over menu, and Recent (the last 10 results). Only what the Hub lists is drawn (R-47). 15 new tests including Android back, keyboard and picker; assertions changed and named in tasks/STUDIO-HOME.md (the caption line, and rows that moved into More). Pictures before / ElevenLabs / after / PT1, dark and light, in the task file.
@@ -550,4 +552,3 @@ From `docs/LOG.md`, newest first.
 - 10 Nov 2026 · VIDEO-PRIVACY · fix round 2: web (pending) uploads cleaned at publish, settle and sweep; cool-down; WebM budget (verifying)
 - 10 Nov 2026 · VIDEO-PRIVACY · fix round 1: bounded sample tables (crafted file no longer freezes the Hub), phone leftovers zeroed, ETag guard, own keys only, tries limit, big files cleaned after the confirm (verifying)
 - 10 Nov 2026 · VIDEO-PRIVACY · the Hub strips location, device and time tags from a stored mp4, mov or webm in place (no re-encode), on confirm, publish and a sweep; sweep for old videos written, not run (verifying)
-- 10 Nov 2026 · CARD-FEE-HISTORY · fix round 1 (Hub `6cb7775`): issuer row reads Bank charge (R-53), late-made and failed adoption, bounded fee retries, bounded wallet wait; checks EXIT 0; verifying

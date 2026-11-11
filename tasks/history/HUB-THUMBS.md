@@ -16,3 +16,9 @@ Filed: SHARED-CHANGES `HUB-THUMBS #1`. Gap: no contract types yet, so the app ca
 
 ## Verifier report
 
+
+### Round 2 (11 Nov): shared change applied, memory question
+
+- Applied SHARED-CHANGES HUB-THUMBS #1 on Hub `385bf16`: `ThumbLinks` and the optional fields `previewThumbs`, `coverThumbs` (content-piece type) and `avatarThumbs`, `coverThumbs` (profile types); `npm run contract:build`; `git diff origin/main -- contract/openapi.json` is 110 added lines, 0 removed (ThumbLinks schema plus the new optional properties on the feed card, strip, Explore, suggestion, profile and piece schemas).
+- Checks (own `hth_test_hub` on 14001, mock on 16318): tsc 0, eslint on changed files 0, gates 0, baseline 0, protected + openapi + the contract-shape specs 289/289 EXIT 0, `src/me` 72/72 EXIT 0, `src/search-response` 260/261 EXIT 1 (only `popular-name.contract.spec.ts`, which fails the same way on a clean `origin/main`), `notice-events` + thumbs spec EXIT 0 (the earlier 1 ms `pin_changed` failure was a flake).
+- Memory question: 5 confirms at once with 10 MB photos (4000x3000 JPEG), measured as extra RSS: 90 MB if all 5 ran together on 4 sharp threads, 20 MB on 1 thread, 9 MB with the Hub's own limit of 2 at once (the other 3 wait). All under 400 MB, so `sharp.concurrency` is left at its default. Caveat: shrink-on-load keeps JPEG small; a 12 MB PNG or WebP near the 50 megapixel cap decodes to up to about 200 MB each, so 2 at once could reach about 400 MB. If that matters, lower `MAX_THUMB_SOURCE_PIXELS` (one constant); `concurrency(1)` would not help that case and would only slow a batch (about the same time with 2 at once in the measurement).
