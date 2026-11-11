@@ -46,12 +46,12 @@ export function PositionedImage({ uri: link, frame, thumbs, drawn, blurRadius, o
   const actual = real && real.uri === plain ? real.ratio : null;
   const wrong = declared !== null && actual !== null && Math.abs(actual / declared.ratio - 1) > SHAPE_TOLERANCE;
   const position = declared && wrong ? (actual !== null && actual >= RATIO_MIN && actual <= RATIO_MAX ? { ...declared, ratio: actual } : null) : declared;
-  const onLoad = declared
-    ? (event: ImageLoadEventData) => {
-        const { width, height } = event.source;
-        if (width > 0 && height > 0) setReal((now) => (now && now.uri === plain && now.ratio === width / height ? now : { uri: plain, ratio: width / height }));
-      }
-    : undefined;
+  const onLoad = (event: ImageLoadEventData) => {
+    copy.onLoad();
+    if (!declared) return;
+    const { width, height } = event.source;
+    if (width > 0 && height > 0) setReal((now) => (now && now.uri === plain && now.ratio === width / height ? now : { uri: plain, ratio: width / height }));
+  };
 
   if (!position) {
     return (

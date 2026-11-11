@@ -103,3 +103,76 @@ describe('pictureCandidates with the Hub copies', () => {
     expect(pictureCandidates({ ...piece, coverThumbs: null }, 'https://f/p.jpg', { preview: undefined, drawn: 64 })).toEqual(['https://f/c.jpg', 'https://f/p.jpg']);
   });
 });
+
+describe.each(['android', 'web'] as const)('a copy that stalls, on %s', (os) => {
+  const original = Platform.OS;
+  beforeAll(() => {
+    Platform.OS = os;
+  });
+  afterAll(() => {
+    Platform.OS = original;
+  });
+  beforeEach(() => {
+    jest.useFakeTimers();
+    withRatio(1);
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('switches to the full picture at 8 s', async () => {
+    const { result } = await renderHook(() => useCopy(full, copies, 44));
+    expect(result.current.uri).toBe(copies.w96);
+    await act(async () => {
+      jest.advanceTimersByTime(7999);
+    });
+    expect(result.current.uri).toBe(copies.w96);
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+    expect(result.current.uri).toBe(full);
+  });
+
+  it('does not switch when the copy loads at 7.9 s', async () => {
+    const { result } = await renderHook(() => useCopy(full, copies, 44));
+    await act(async () => {
+      jest.advanceTimersByTime(7900);
+    });
+    await act(async () => {
+      result.current.onLoad();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(20000);
+    });
+    expect(result.current.uri).toBe(copies.w96);
+  });
+
+  it('leaves no timer behind when it unmounts before 8 s', async () => {
+    const set = jest.spyOn(globalThis, 'setTimeout');
+    const clear = jest.spyOn(globalThis, 'clearTimeout');
+    const view = await renderHook(() => useCopy(full, copies, 44));
+    const ours = set.mock.calls.map((c, i) => [c[1], set.mock.results[i].value] as const).filter(([ms]) => ms === 8000);
+    expect(ours).toHaveLength(1);
+    await view.unmount();
+    expect(clear.mock.calls.map((c) => c[0])).toContain(ours[0][1]);
+  });
+
+  it('ignores a late load after the switch, and never switches again', async () => {
+    const { result } = await renderHook(() => useCopy(full, copies, 44));
+    await act(async () => {
+      jest.advanceTimersByTime(8000);
+    });
+    await act(async () => {
+      result.current.onLoad();
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+    });
+    expect(result.current.uri).toBe(full);
+    expect(result.current.onError()).toBe('final');
+  });
+
+  it('sets no timer when there is no copy', async () => {
+    const set = jest.spyOn(globalThis, 'setTimeout');
+    await renderHook(() => useCopy(full, null, 44));
+    expect(set.mock.calls.filter((c) => c[1] === 8000)).toHaveLength(0);
+  });
+});

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PixelRatio } from 'react-native';
 
 /**
@@ -41,16 +41,28 @@ export function copyCandidates(full: string, copies: Copies, drawn?: number): st
   return small ? [`${small.split('#')[0]}${fragmentOf(full)}`, full] : [full];
 }
 
+/** A copy that has not loaded by now is given up on, as if it had failed (a request that stalls never errors). */
+export const COPY_TIMEOUT_MS = 8000;
+
 /**
- * The address to draw, and what to call when it fails to load. A small copy that fails switches to the full picture, once;
- * the full picture failing is the caller's to handle (`final`), so there is no loop and never a blank.
+ * The address to draw, and what to call when it fails or loads. A small copy that fails, or has not loaded within `COPY_TIMEOUT_MS`,
+ * switches to the full picture, once; the full picture failing is the caller's to handle (`final`), so there is no loop and never a blank.
+ * A copy that loads after the switch is ignored (the full picture is already the source).
  */
-export function useCopy(full: string, copies: Copies, drawn?: number): { uri: string; onError: () => 'retry' | 'final' } {
+export function useCopy(full: string, copies: Copies, drawn?: number): { uri: string; onError: () => 'retry' | 'final'; onLoad: () => void } {
   const [failed, setFailed] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<string | null>(null);
   const [first, second] = copyCandidates(full, copies, drawn);
   const uri = second !== undefined && first !== failed ? first : (second ?? first);
+  const waiting = second !== undefined && uri === first && loaded !== first;
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setTimeout(() => setFailed(first), COPY_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [waiting, first]);
   return {
     uri,
+    onLoad: () => setLoaded(uri),
     onError: () => {
       if (second !== undefined && uri === first) {
         setFailed(first);
