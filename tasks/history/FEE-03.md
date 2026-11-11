@@ -117,3 +117,7 @@ Fix round 2 (builder, Sonnet, 11 Nov 2026) on `origin/wmt/FEE-03-verify` `85ceea
 - **F3 now on the quote's fields:** `PaySource` gained an optional `quoted` (set by `usePaySource` from the payment quote when it says the whole set in the source's currency). The from-a-dollar sheet draws one Fee, VAT when on, and the quote's `totalMinor` (button and PIN line too). Without `quoted` it keeps the earlier rows (Bank charge, Conversion fee), so a Hub on Fintava is not a dead end. Spec in `PaySheet.test.tsx`; picture `pay-sheet-from-usd` retaken ($1.90 + Fee $0.08 = $1.98).
 - Next: when the lead names the final Hub head, regenerate once more if `git diff 263ecd12..<final> -- contract/openapi.json` shows a change.
 
+### Fix round 2, step 3 (Hub `wmt/FEE-01` head `c992b2ed`)
+
+- Contract regenerated from `c992b2ed`: `AbroadSendView` gains optional `currency`, `feeMinor`, `totalMinor` (`vatMinor` was there). The abroad send receipt (`receiptFeeRows` in `abroad/model.ts`) draws Fee, VAT when above nothing, and Total from those fields when the send says `feeMinor` and `totalMinor`; otherwise the rows as before (WAWU's fee, VAT when said, no Total). Spec with both shapes in `abroad/__tests__/model.test.ts`; `abroad-receipt` retaken (Fee $8.00, Total $108.00).
+

@@ -48085,6 +48085,18 @@
       "type": "integer",
       "nullable": true
      },
+     "currency": {
+      "type": "string",
+      "nullable": true
+     },
+     "feeMinor": {
+      "type": "integer",
+      "nullable": true
+     },
+     "totalMinor": {
+      "type": "integer",
+      "nullable": true
+     },
      "narration": {
       "type": "string",
       "nullable": true

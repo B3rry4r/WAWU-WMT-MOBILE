@@ -14323,6 +14323,9 @@ export interface components {
             wawuFeeKobo: number;
             wawuFeeMinor: number;
             vatMinor?: number | null;
+            currency?: string | null;
+            feeMinor?: number | null;
+            totalMinor?: number | null;
             narration: string | null;
             failureReason: string | null;
             speed: string;

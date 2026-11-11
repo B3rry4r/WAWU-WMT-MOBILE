@@ -14,6 +14,7 @@ import {
   wawuFeeText,
   type Field,
   type Rail,
+  receiptFeeRows,
 } from '../model';
 
 const digits = (key: string, pattern: string | null): Field => ({
@@ -201,6 +202,25 @@ describe('send abroad from a foreign account · WAWU fee (WALLET-42)', () => {
     // A quote held from before the Hub said its Fee, VAT, Total and what is received is not drawn half empty.
     const { feeMinor: _fee, ...old } = quote;
     expect(readHeldQuote(JSON.stringify(old))).toBeNull();
+  });
+});
+
+describe('the fee rows of a send abroad receipt (R-139)', () => {
+  const base = { wawuFeeKobo: 0, wawuFeeMinor: 800, fromCurrency: 'USD', fromDecimals: 2 };
+
+  it('with the send’s feeMinor and totalMinor it draws Fee, VAT when above nothing, and Total', () => {
+    expect(receiptFeeRows({ ...base, feeMinor: 800, vatMinor: 60, totalMinor: 10_860 })).toEqual([
+      { key: 'fee', label: 'Fee', text: '$8.00' },
+      { key: 'vat', label: 'VAT', text: '$0.60' },
+      { key: 'total', label: 'Total', text: '$108.60' },
+    ]);
+    expect(receiptFeeRows({ ...base, feeMinor: 800, vatMinor: 0, totalMinor: 10_800 }).map((r) => r.key)).toEqual(['fee', 'total']);
+  });
+
+  it('without them it draws the rows as before: WAWU’s fee, and VAT when the Hub says one, no Total', () => {
+    expect(receiptFeeRows(base)).toEqual([{ key: 'fee', label: 'Fee', text: '$8.00' }]);
+    expect(receiptFeeRows({ ...base, vatMinor: 60 })).toEqual([{ key: 'fee', label: 'Fee', text: '$8.00' }, { key: 'vat', label: 'VAT', text: '$0.60' }]);
+    expect(receiptFeeRows({ ...base, feeMinor: null, totalMinor: null }).map((r) => r.key)).toEqual(['fee']);
   });
 });
 

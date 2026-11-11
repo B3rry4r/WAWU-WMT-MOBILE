@@ -65,6 +65,21 @@ export function totalFromAccount(
  * foreign account (`wawuFeeMinor`, WALLET-42), naira when it comes from the naira wallet, and a zero in the account the money leaves
  * when there is none (a person with no naira wallet is never shown a naira figure).
  */
+type ReceiptFee = { wawuFeeKobo: number; wawuFeeMinor?: number; vatMinor?: number | null; feeMinor?: number | null; totalMinor?: number | null; fromCurrency: string; fromDecimals: number };
+
+/**
+ * The fee rows of a send's receipt (R-139): when the Hub says the send's `feeMinor` and `totalMinor` they are the Fee and the Total, with VAT
+ * when it is above nothing; otherwise the rows as before (WAWU's fee, and VAT when the Hub says one). Every figure is the Hub's.
+ */
+export function receiptFeeRows(send: ReceiptFee): { key: 'fee' | 'vat' | 'total'; label: string; text: string }[] {
+  const say = (minor: number) => formatMinor(minor, send.fromCurrency, send.fromDecimals);
+  const said = typeof send.feeMinor === 'number' && typeof send.totalMinor === 'number';
+  const rows: { key: 'fee' | 'vat' | 'total'; label: string; text: string }[] = [{ key: 'fee', label: 'Fee', text: said ? say(send.feeMinor as number) : wawuFeeText(send) }];
+  if (send.vatMinor) rows.push({ key: 'vat', label: 'VAT', text: say(send.vatMinor) });
+  if (said) rows.push({ key: 'total', label: 'Total', text: say(send.totalMinor as number) });
+  return rows;
+}
+
 export function wawuFeeText(fee: { wawuFeeKobo: number; wawuFeeMinor?: number; fromCurrency: string; fromDecimals: number }): string {
   const minor = fee.wawuFeeMinor ?? 0;
   if (minor > 0) return formatMinor(minor, fee.fromCurrency, fee.fromDecimals);
