@@ -524,6 +524,7 @@ Builder and verifier are always different sessions.
 85. [LEGAL-ELEVEN](LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change
 86. [SWEEP-1111](SWEEP-1111.md) Sweep of 11 Nov: the low findings of the day's Hub, WAWU ID and web tasks
 87. [NUV-LIVE](NUV-LIVE.md) A one-off command that retires every test-system Nuvion wallet record before the Hub moves to Nuvion live
+88. [NUV-FEES](NUV-FEES.md) Nuvion's live fees charged exactly (percentages with a minimum and maximum, the card's dollar fee at the day's rate) and WAWU's own card fee on top
 
 ## Developer
 
