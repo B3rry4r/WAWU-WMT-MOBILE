@@ -53,3 +53,12 @@ Money rows a clear deletes, exactly: CommunityPass (a pass whose WalletPayment i
 ## History
 
 Round reports, verifier reports and lead notes, word for word, oldest first: [history/OPS-CLEAR-ROOMS.md](history/OPS-CLEAR-ROOMS.md).
+
+## Builder report (fix round 1, 11 Nov 2026)
+
+- **Files (Hub head c5800e01):** `scripts/ops/room-money-rows.ts` (M1 rule, `sweepStartFor`), `scripts/ops/clear-communities.ts` (passes the sweep start; test-only `beforeRoom` hook), new `src/community/tests/ops-clear-communities-money.contract.spec.ts`. Merged OPS-DEL-TEST `7dfd5cf8` (merge commit, no conflict); `contract/openapi.json` unchanged by `npm run contract:build`, a second build left `git diff --exit-code contract/` clean.
+- **M1:** a funded earning with a host share, earned on or after the sweep's start and with no settlement keeps the room ("no settlement yet"). A control earned before the start clears.
+- **L5:** the matrix and races in the new spec; mutants (M1 rule, `FOR UPDATE`, in-transaction recheck) each fail it.
+- **Ran:** 37 suites / 501 tests green (ops specs, community, community-message, inbox, notification, me), tsc, eslint, gates, baseline all exit 0.
+- **NOT RUN:** the full contract suite, the protected suite, anything real.
+

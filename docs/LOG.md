@@ -1,5 +1,6 @@
 # Work log
 - 11 Nov 2026 · OPS-CLEAR-ROOMS · a one-off Hub command that lists every community, keeps any room holding real money, and clears the rest on the owner's typed phrase (R-136); written, not run against anything real (Hub `wmt/OPS-CLEAR-ROOMS` `688d93e3`); built, verifying
+- 11 Nov 2026 · OPS-CLEAR-ROOMS fix round 1 · a funded host share the sweep has not made yet keeps its room (M1); spec rows and two races that kill the lock and recheck mutants (L5); OPS-DEL-TEST 7dfd5cf8 merged (Hub `wmt/OPS-CLEAR-ROOMS` `c5800e01`); built, verifying
 - 11 Nov 2026 · APP-THUMBS · avatars, cards, grids and rows draw the Hub's 96 or 640 px copy for the size drawn times the pixel ratio, the full picture when there is none or the copy fails (once); pieces' own pages, zooms and full-width covers stay full (mobile `wmt/APP-THUMBS`, contract from Hub `bf3f4a3b`; built, verifying)
 - 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
 - 11 Nov 2026 · HUB-THUMBS · pictures get 96 px and 640 px copies (public families only), served as additive app-only fields; backfill written, not run (Hub `wmt/HUB-THUMBS` `fd6b776`); built, verifying

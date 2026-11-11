@@ -8,8 +8,8 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 39 | 0 | 0 | 0 |
-| building | 8 | 0 | 0 | 0 |
-| verifying | 54 | 0 | 0 | 0 |
+| building | 7 | 0 | 0 | 0 |
+| verifying | 55 | 0 | 0 | 0 |
 | review | 263 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
@@ -335,6 +335,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [CREATOR-TAKEDOWN](../tasks/CREATOR-TAKEDOWN.md) A creator can take a live or in-review piece down (You)
 - [CARD-FEE-HISTORY](../tasks/CARD-FEE-HISTORY.md) The virtual card's fee shows in the wallet history (You)
 - [UPLOAD-WORDS](../tasks/UPLOAD-WORDS.md) Every screen states the upload places the tier gives (You)
+- [OPS-CLEAR-ROOMS](../tasks/OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word (You)
 
 ## Being built (or fixing verifier findings)
 
@@ -345,7 +346,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [SWEEP-APP](../tasks/SWEEP-APP.md) App sweep: test gaps and small differences across the app (You)
 - [WEBAPP-05](../tasks/WEBAPP-05.md) The PIN and the selfie step work on a laptop (You)
 - [WEBAPP-06](../tasks/WEBAPP-06.md) On the web, paid things are paid from the wallet, and bills work (You)
-- [OPS-CLEAR-ROOMS](../tasks/OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word (You)
 
 ## Done
 
@@ -542,6 +542,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 From `docs/LOG.md`, newest first.
 
 - 11 Nov 2026 · OPS-CLEAR-ROOMS · a one-off Hub command that lists every community, keeps any room holding real money, and clears the rest on the owner's typed phrase (R-136); written, not run against anything real (Hub `wmt/OPS-CLEAR-ROOMS` `688d93e3`); built, verifying
+- 11 Nov 2026 · OPS-CLEAR-ROOMS fix round 1 · a funded host share the sweep has not made yet keeps its room (M1); spec rows and two races that kill the lock and recheck mutants (L5); OPS-DEL-TEST 7dfd5cf8 merged (Hub `wmt/OPS-CLEAR-ROOMS` `c5800e01`); built, verifying
 - 11 Nov 2026 · APP-THUMBS · avatars, cards, grids and rows draw the Hub's 96 or 640 px copy for the size drawn times the pixel ratio, the full picture when there is none or the copy fails (once); pieces' own pages, zooms and full-width covers stay full (mobile `wmt/APP-THUMBS`, contract from Hub `bf3f4a3b`; built, verifying)
 - 10 Nov 2026 · TIER-RENEW · Your tier shows Renew only when the Hub says the tier is ending or ended; an active tier shows Upgrade or, on the highest tier, no buy button (R-132; built, verifying)
 - 11 Nov 2026 · HUB-THUMBS · pictures get 96 px and 640 px copies (public families only), served as additive app-only fields; backfill written, not run (Hub `wmt/HUB-THUMBS` `fd6b776`); built, verifying
@@ -555,4 +556,3 @@ From `docs/LOG.md`, newest first.
 - 10 Nov 2026 · WEBAPP-12 · fix round 1: a tab open across a deploy reloads once when a route file is gone (never loops), held pictures are deleted at sign-out and on an account change, and the picture cache is also bound at 60 MB (built, verifying)
 - 10 Nov 2026 · WEBAPP-12 · web pictures and files load faster: first paint 11.7 to 8.5 s (route chunks, one import per icon, 2,047 to 1,490 KB), a picture worker keeps a re-signed picture under its stable address (second visit 3 to 8 MB and 7 to 45 s become 0 bytes and about 1.5 s); the phone is unchanged; Hub follow-ups (stable links, thumbnails, unsigned avatar link) named in the task (verifying)
 - 11 Nov 2026 · WEBAPP-11 · fix round 2: the install screen is drawn over the app, never instead of it (only on an offer within 3 s and before a touch; any answer latches the tab); no blank page after a cancelled install or with no offer (built, verifying)
-- 10 Nov 2026 · WEBAPP-11 · fix round 1: the steps card has its padding; on a computer Chrome and Edge show Install or step aside, Safari on a Mac shows Add to Dock, Firefox shows no screen; iPad Share is at the top (built, verifying)
