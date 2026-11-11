@@ -72,3 +72,37 @@ Builder session, 11 Nov 2026. Hub `wmt/NUV-LIVE` (head below) on main `158be141`
 
 **Checks, exit codes.** Hub head `1299ac73`. `npx tsc --noEmit` 0; eslint (no fix) on every changed `.ts` file 0; NUV-LIVE specs (behaviour 12 tests, live keys 1, schema walk 6, school payout 1, bill probe 1) plus `ops-real-money-schema-walk` and `ops-clear-communities*`: 8 suites, 33 tests pass; `python3 scripts/gates/run.py` 0 (0 fail, 139 warn, 88 accepted, 2255 files); `check_baseline.py` 0; `npm run contract:build` 0 then `git diff --exit-code contract/` 0; protected route suite as CI runs it (`ci-check.sh 158be141 HEAD 0`, fresh database) exit 0, 244 required tests passed; `npm run build` 0 and the built command from `dist/`: dry run against the test database exit 0 (writes nothing), a live-shaped key `nv_live_...` on the sandbox host exit 1 with the key not printed.
 **NOT RUN:** the reconcile sweep and a replayed test webhook (by construction only), the whole contract suite (CI), the real command on the real database, a second wallet opening by route with the same BVN.
+
+## Verifier report, round 1 re-check
+
+Verifier session, 11 Nov 2026. Hub `wmt/NUV-LIVE` `1299ac73` on main `158be141`. Own worktree and database (`nuvlv1_main`, dropped), stand-ins only, no provider called, no key file read. Probes and mutants were untracked or copied files, restored (`git status` clean), node_modules and dist removed.
+
+**Verdict: MERGE.** No finding of medium or worse. Lows go to the area sweep.
+
+| Pass | Result | Evidence |
+|---|---|---|
+| V1 diff | passed | vs main only `scripts/ops/` and `src/money/tests/ops-nuvion-live-reset*` change; `.pipeline`, `contract`, `prisma`, `scripts/gates`, protected suite and lock byte-identical to main |
+| V2 gates | passed | tsc 0; gates 0 fail (139 warn, 88 accepted, 2255 files); baseline 0; eslint (no fix) 0; NUV-LIVE specs 5 suites, 21 tests pass |
+| V3 protected routes | NOT RUN | diff touches no runtime file; builder ran `ci-check.sh` exit 0 (244 tests), I did not repeat it |
+| V4 invariants | passed | below |
+| V6 states | passed (round 0 probe, code path unchanged) | not re-driven |
+| V7 flows | passed | dry run, wrong phrase exit 1, apply exit 0, second dry run "Nothing to retire", refused person then settled then retired (builder spec, re-run) |
+| V8 money | passed | below |
+| V9 live seam | passed | built `dist/` command under `block-net.cjs`, real database |
+
+Checks asked for:
+1. **H1 and M2 closed.** School payee: the school spec passes. Mutant: the `school_payee_ids` step set to `base: FALSE` fails 2 tests (school spec and the rollback test). M2: removing the `counterpartyId`/`paymentDetailId` alternatives from `HOLDS_NUVION` fails 2 of the 6 walk tests. Both mutants restored.
+2. **Real-money person, invariant 1.** One person with a Nuvion wallet, entity, accounts, a sending book transfer and a pending `wawu-bank-` ledger row, plus a Flutterwave subaccount, credits 7, a pending charge, a pending `fintava` payment and a pending `fintava` ledger row. Apply exit 0, "Retired". The five real-money row sets are byte-identical before and after (JSON of every column). The real `NuvionMissedDeliverySweep` over a recording provider afterwards asked for `statement:OPER-LIVE/null` only. Whole-database apply through the built command (7 people, exit 0): audit says 0 left; a second dry run says 0 people; SQL scan of every `provider`/`walletProvider` column and every `nuvion*`, `*counterpartyId`, `*paymentDetailId`, `entityId` column shows only one `PointConversion` still `nuvion`, and it is `cancelled` with no timers (the table forbids a change).
+3. **The single refusing kind is the only one.** `EarningDeduction` has exactly one of `passRefundId`/`storePurchaseId` (schema comment), so the narrowed base plus `stayingRows` cover every deduction. A real `StoreEarningPayout` that is cancelled is re-planned by `planOne` (`store-payout.service.ts:284`, new merchant account, live wallet), and a final paid one is never read, so neither needs to refuse. An owed real `StoreEarning` carries no Nuvion id. I found no other row that stays and holds a test id. Decision (d) probed: a real store-refund debt of 1000 with 400 taken by a test move owed 600 before and 1000 after apply, provider still `nuvion`; no row is created or destroyed, the debt is simply whole again (finding 1).
+4. **Replaced tests.** All tests files are new relative to main, so the comparison is round 0 `c7c1862a` to `1299ac73`. The three kept-person tests became: a real-money person is retired with every real row (Flutterwave subaccount, credits 12, pending charge) asserted untouched; a payment in motion between a Flutterwave person and a partner is closed and relabelled while the real rows stay; the real-store-money block (owed earning stays owed, real debt stays, test debt relabelled, sandbox earning cancelled, a pending real payout refuses its person, apply ends exit 2, then after the payout is settled the next run retires the person and a last dry run finds nothing). Stronger than before. The mid-run "gains real money" test was removed because the rule it tested no longer exists. Live-keys, bill and unowned assertions are unchanged, and no gate, baseline, lock or contract file changed.
+5. **Built command.** Dry run against my database: exit 0, md5 of every table identical before and after, no phone, key, secret or account id in the output (0 matches). Live host exit 1; `nv_live_` key exit 1 (also quoted and upper case), the key is not printed; `WALLET_PROVIDER=fintava` exit 1; wrong phrase exit 1.
+
+### Findings
+
+**1. low, unclear (owner): decision (d) docks real earnings for a debt whose earlier payment was test money.** A real store-refund debt partly taken from a test move comes back in full (600 to 1000 in my probe), and it is taken from live earnings. If the creator's original payout of that real sale was made in test naira, the creator never received real money for it and is now also charged for the refund. Rare (a production store purchase on the test system) and the builder recorded it as decision (d). No spec covers the restore; test that would pin it: seed that debt and take, apply, assert owed equals the full amount and the deduction is listed under STAY.
+
+**2. low: a real store earning already `paid` through the test wallet is not re-owed.** Same root as finding 1: final payouts of real purchases are left alone as history, so such a creator has no live payment coming. Owner call; list "paid payouts of non-sandbox purchases" in the dry run if the owner wants to see them.
+
+**3. low: test hooks `onlyIds` and `beforePerson` remain in `Deps`.** Unchanged from round 0 finding 6; `main` never sets them.
+
+NOT RUN: protected route suite (V3) and the whole contract suite (CI), a replayed test webhook through the dispatcher (handlers key on the deleted `NuvionEntity`, read in round 0), a second wallet opening by route with the same BVN, the real command on the real database.

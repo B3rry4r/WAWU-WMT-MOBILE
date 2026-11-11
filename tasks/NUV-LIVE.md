@@ -19,7 +19,7 @@ tier: T2
 ## Current state
 
 As of 11 Nov 2026, fix round 1.
-- **Status:** built, verifying (round 1 of 2). Round 0 verifier said FIX: `SchoolPayee` test ids stayed (high), the schema walk could not see them (medium), and the lead ruled that the unit retired is the Nuvion TEST WALLET, not the person. Round 1 does all of that. Hub `wmt/NUV-LIVE` (head in `history/NUV-LIVE.md`, "Builder report, fix round 1"), on main `158be141`. No schema change, no fenced file, no contract change (`contract:build` leaves `contract/` as it is).
+- **Status:** verifier round 1 re-check says MERGE (3 lows, none blocking; see `history/NUV-LIVE.md`, Verifier report, round 1 re-check). Built, verifying (round 1 of 2). Round 0 verifier said FIX: `SchoolPayee` test ids stayed (high), the schema walk could not see them (medium), and the lead ruled that the unit retired is the Nuvion TEST WALLET, not the person. Round 1 does all of that. Hub `wmt/NUV-LIVE` (head in `history/NUV-LIVE.md`, "Builder report, fix round 1"), on main `158be141`. No schema change, no fenced file, no contract change (`contract:build` leaves `contract/` as it is).
 - **Files (Hub):** `scripts/ops/nuvion-live-reset.ts` (the command), `scripts/ops/nuvion-live-reset-kinds.ts` (every kind and its reason, the SQL steps), five specs under `src/money/tests/ops-nuvion-live-reset*.contract.spec.ts` (behaviour, live keys, schema walk, school payout, bill probe).
 - **Owner commands** (on the server, still on the test keys; after the two account deletes and the community clear, before the keys change):
   `cd /srv/wawu/hub-api; set -a; . /etc/wawu/hub-api.env; set +a`
