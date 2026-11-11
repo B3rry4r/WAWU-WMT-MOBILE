@@ -519,6 +519,7 @@ Builder and verifier are always different sessions.
 80. [WEB-STRIP](WEB-STRIP.md) wawuafrica.com keeps only join and the password pages; app links go to usewmt.com
 81. [ID-LINKS](ID-LINKS.md) Every link WAWU ID mails has a host, even when a setting is missing
 82. [APP-RESET](APP-RESET.md) Password reset, activation and change password work in the web app, by email or by phone code
+83. [OPS-CLEAR-ROOMS](OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word
 
 ## Developer
 
