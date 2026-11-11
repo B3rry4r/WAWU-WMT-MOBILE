@@ -523,6 +523,7 @@ Builder and verifier are always different sessions.
 84. [OPS-CLEAR-ROOMS](OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word
 85. [LEGAL-ELEVEN](LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change
 86. [SWEEP-1111](SWEEP-1111.md) Sweep of 11 Nov: the low findings of the day's Hub, WAWU ID and web tasks
+87. [NUV-LIVE](NUV-LIVE.md) A one-off command that retires every test-system Nuvion wallet record before the Hub moves to Nuvion live
 
 ## Developer
 

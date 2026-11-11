@@ -1021,3 +1021,12 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 3. **Privacy (lead default):** the provider keeps no legal conversation; where its platform cannot be told to keep none, the Hub deletes each one after use, as the Receptionist does (REC-DELETE).
 4. Gemini's code stays in the Hub, unused by legal, until a removal task after two weeks with no calls (the additive rule).
 **Carried out by:** LEGAL-ELEVEN (Hub).
+
+### R-138 · Nuvion goes live; wallets opened on Nuvion's test system start again
+*Owner, 11 Nov 2026 ("both the replacements for nuvion live keys ... also switch to the live url please ... but before the all in one copy and paste the webhook needs to be set up in nuvion").* The lead's defaults below are his; the owner may override any.
+1. **The Hub moves to Nuvion's live system** (`https://api.nuvion.co`, the live secret key, a live webhook, WAWU's live operational account). The owner registers the webhook in Nuvion's dashboard and pastes every value on the server; no key is written in chat, in a repo or in a task file.
+2. **Wallets opened on the test system start again (lead default).** Nuvion's live system does not know any test wallet, so before the keys change, a one-off command run by the owner retires every test wallet record. Each person opens their wallet again on live, with the same BVN and phone, and does the identity check again. Test money is not real money and does not move to live.
+3. **Test money never becomes real money (lead default).** No earning, refund, hold, payout or fee that came from test money is ever paid from a live account. What a person bought or unlocked with test money stays theirs (it was WAWU's own test); WAWU Credits and Studio points stay as counts.
+4. **Real money is never touched** (the OPS-DEL-TEST rule): Flutterwave, store purchases and any other real-money record stay as they are; the command refuses if it finds money it cannot prove is test money.
+5. **Order on the server:** the two account deletes and the community clear run first (they refuse on live keys), then the test-wallet reset, then the keys change in one paste with a backup and a one-line way back.
+**Carried out by:** NUV-LIVE (Hub, T2); the owner's paste.
