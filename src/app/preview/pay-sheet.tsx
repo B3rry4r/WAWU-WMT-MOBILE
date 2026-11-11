@@ -62,7 +62,8 @@ const cases: Record<string, Omit<PaySheetProps, 'onPay' | 'onCancel'>> = {
       decimals: 2,
       amountMinor: 190,
       providerFeeMinor: 0,
-      wawuFeeMinor: 0,
+      wawuFeeMinor: 8,
+      quoted: { feeMinor: 8, vatMinor: 0, vatOn: false, totalMinor: 198 },
       availableMinor: 12050,
       choices: [
         { id: 'NGN', label: 'Naira wallet', selected: false },

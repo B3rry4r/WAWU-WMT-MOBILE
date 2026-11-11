@@ -446,6 +446,17 @@ describe('R2-SOCIAL 2: the fee is its parts then the Total, never "No fee" (BRIE
       expect(screen.getByRole('button', { name: 'Pay ₦7,516.13' })).toBeTruthy();
     });
 
+    it('R-139: with the quote’s own fields the sheet draws one Fee, VAT only when on, and the quote’s Total, never a Bank charge', async () => {
+      const quoted = { feeMinor: 7, vatMinor: 1, vatOn: true, totalMinor: 38 };
+      const p = props({ amountKobo: 30000, fees: [], source: source({ providerFeeMinor: 0, wawuFeeMinor: 7, quoted }) });
+      await render(<PaySheet {...p} />);
+      expect(screen.getByTestId('source-fee')).toBeTruthy();
+      expect(screen.getByTestId('source-vat')).toBeTruthy();
+      expect(screen.queryByText('Bank charge')).toBeNull();
+      expect(screen.queryByText('Conversion fee')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Unlock · $0.38' })).toBeTruthy();
+    });
+
     it('a quote that ran out holds Pay back and asks for a new one', async () => {
       const refresh = jest.fn();
       const p = props({ amountKobo: 30000, fees: [], source: source({ expired: true, onRefresh: refresh }) });

@@ -94,6 +94,11 @@ export type PaySource = {
   /** The provider's charge and WAWU's conversion fee, each in the smallest unit; zero is not drawn. */
   providerFeeMinor: number;
   wawuFeeMinor: number;
+  /**
+   * The quote's own Fee, VAT, Total and what the account is charged (R-139), in this currency, when the Hub says them. Drawn as one Fee
+   * (VAT only when on) and its Total; without it the rows are the earlier ones (Bank charge, Conversion fee).
+   */
+  quoted?: { feeMinor: number; vatMinor: number; vatOn: boolean; totalMinor: number };
   /** The account's available balance; null when the Hub could not read it. */
   availableMinor: number | null;
   /** The quote ran out or was used: Pay is held back and `onRefresh` gets a new one (`quote_changed`). */
@@ -292,7 +297,8 @@ export function formatSource(minor: number, decimals: number, currency: string):
 }
 
 /** What leaves the buyer's account: the firm amount and its fees, in the smallest unit. */
-export function sourceTotalMinor(s: Pick<PaySource, 'amountMinor' | 'providerFeeMinor' | 'wawuFeeMinor'>): number {
+export function sourceTotalMinor(s: Pick<PaySource, 'amountMinor' | 'providerFeeMinor' | 'wawuFeeMinor' | 'quoted'>): number {
+  if (s.quoted) return s.quoted.totalMinor;
   return s.amountMinor + s.providerFeeMinor + s.wawuFeeMinor;
 }
 
@@ -355,10 +361,16 @@ export function sourceRows(s: PaySource): ReactElement[] {
   return [
     <KeyValueRow key="from" label="Pay from" value={s.accountName} testID="source-from" />,
     <KeyValueRow key="amount" label={`${s.currency} amount`} value={fmt(s.amountMinor)} testID="source-amount" />,
-    // The pay-from-a-dollar-account quote (`PaymentSourceView`) carries no `feeMinor`, `vatMinor` or `totalMinor` yet (FEE-01 is adding them),
-    // so it is drawn as before R-139. It moves to those fields, as the other sheets have, once the contract has them.
-    ...(s.providerFeeMinor > 0 ? [<KeyValueRow key="pfee" label="Bank charge" value={fmt(s.providerFeeMinor)} />] : []),
-    ...(s.wawuFeeMinor > 0 ? [<KeyValueRow key="wfee" label="Conversion fee" value={fmt(s.wawuFeeMinor)} />] : []),
+    // R-139: the quote's one Fee (the Hub folds the provider's charge into it) and VAT when on. A quote that does not say them is drawn as before.
+    ...(s.quoted
+      ? [
+          <KeyValueRow key="fee" label="Fee" value={fmt(s.quoted.feeMinor)} testID="source-fee" />,
+          ...(s.quoted.vatOn ? [<KeyValueRow key="vat" label="VAT" value={fmt(s.quoted.vatMinor)} testID="source-vat" />] : []),
+        ]
+      : [
+          ...(s.providerFeeMinor > 0 ? [<KeyValueRow key="pfee" label="Bank charge" value={fmt(s.providerFeeMinor)} />] : []),
+          ...(s.wawuFeeMinor > 0 ? [<KeyValueRow key="wfee" label="Conversion fee" value={fmt(s.wawuFeeMinor)} />] : []),
+        ]),
     <KeyValueRow key="total" label="Total" value={fmt(sourceTotalMinor(s))} testID="source-total" />,
   ];
 }
