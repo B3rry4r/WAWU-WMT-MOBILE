@@ -61,6 +61,7 @@ export function CreatorCard({ creator, width = creatorCardMetrics.railWidth, hei
       subtitle={labelOf(creator.field) ?? undefined}
       titleAccessory={tick ? <VerifiedTick kind={tick} size={creatorCardMetrics.tick} /> : undefined}
       imageUrl={creator.avatarUrl ?? undefined}
+      imageThumbs={creator.avatarThumbs}
       placeholder={<PortraitTile hue={hueFor(creator.wawuId)} testID={testID ? `${testID}-portrait` : undefined} />}
       width={width}
       height={height}

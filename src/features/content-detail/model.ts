@@ -250,7 +250,7 @@ export const COMMENT_MAX = 1000;
 /** The piece as the unlock and tip sheets know it (a `FeedItem`), from what this page has read. */
 export function asFeedItem(piece: Piece, detail: PieceDetail, engagement: Engagement, media: FeedItem['media']): FeedItem {
   const c = detail.creator;
-  const creator: FeedCreator = { wawuId: c.wawuId, displayName: c.displayName, handle: c.handle, avatarUrl: c.avatarUrl, verification: c.verification };
+  const creator: FeedCreator = { wawuId: c.wawuId, displayName: c.displayName, handle: c.handle, avatarUrl: c.avatarUrl, avatarThumbs: c.avatarThumbs, verification: c.verification };
   return {
     ...piece,
     // The cover is the Hub's, on a request that carries the app header (R-114); null when the piece has none.

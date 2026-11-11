@@ -36,7 +36,7 @@ function WorkTile({ work, onOpen }: { work: CardWork; onOpen?: () => void }) {
   const shown = useShownPrice();
   const tile = workTile(work, shown);
   // The work's cover first (R-114), then its thumbnail when that is a picture; a picture that will not load gives way to the next.
-  const { uri: picture, onError: pictureFailed } = usePicture(pictureCandidates(work, work.thumbnailUrl));
+  const { uri: picture, onError: pictureFailed } = usePicture(pictureCandidates(work, work.thumbnailUrl, { preview: work.thumbnailThumbs, drawn: Math.max(m.tileW, m.tileH) }));
   const body = (
     <>
       {picture ? <Image testID={`work-image-${work.id}`} source={{ uri: picture }} contentFit="cover" blurRadius={tile.locked ? m.tileBlur : 0} onError={pictureFailed} style={StyleSheet.absoluteFill} /> : null}

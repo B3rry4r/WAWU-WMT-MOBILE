@@ -401,6 +401,7 @@ export function VisitorProfileScreen({ wawuId, onBack, onOwn, onOpenAllWorks, on
                 wawuId={view.profile.wawuUserId}
                 name={name}
                 avatarUrl={view.profile.avatarUrl}
+                avatarThumbs={view.profile.avatarThumbs}
                 ticks={visitorTicks(view)}
                 badge={visitorBadge(view.fields)}
                 bio={view.profile.bio}

@@ -15207,6 +15207,10 @@ export interface components {
             priceKobo: number | null;
             earnPerSaleKobo: number | null;
         };
+        ThumbLinks: {
+            w96: string;
+            w640: string;
+        };
         ContentPieceResponse: {
             id: string;
             title: string;
@@ -15236,6 +15240,8 @@ export interface components {
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
             coverUrl?: string | null;
+            previewThumbs?: components["schemas"]["ThumbLinks"];
+            coverThumbs?: components["schemas"]["ThumbLinks"];
         };
         MyContentItem: {
             id: string;
@@ -15266,6 +15272,8 @@ export interface components {
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
             coverUrl: string | null;
+            previewThumbs?: components["schemas"]["ThumbLinks"];
+            coverThumbs?: components["schemas"]["ThumbLinks"];
             salesCount: number;
             rejectionReason: string | null;
             /** Format: date-time */
@@ -15304,11 +15312,16 @@ export interface components {
             savedByMe: boolean;
             followsCreator: boolean;
         };
+        Thumbs: {
+            w96: string;
+            w640: string;
+        };
         FeedCreator: {
             wawuId: string;
             displayName: string | null;
             handle: string | null;
             avatarUrl: string | null;
+            avatarThumbs?: components["schemas"]["Thumbs"];
             verification: components["schemas"]["VerificationState"];
         };
         MediaFrame: {
@@ -15353,6 +15366,8 @@ export interface components {
             fullAssetUrl: string | null;
             fullAssetLocked: boolean;
             coverUrl: string | null;
+            previewThumbs?: components["schemas"]["ThumbLinks"];
+            coverThumbs?: components["schemas"]["ThumbLinks"];
             likedByMe: boolean;
             savedByMe: boolean;
             followsCreator: boolean;
@@ -15380,6 +15395,8 @@ export interface components {
             title: string;
             thumbnailUrl: string | null;
             coverUrl: string | null;
+            thumbnailThumbs?: components["schemas"]["Thumbs"];
+            coverThumbs?: components["schemas"]["Thumbs"];
             durationLabel: string | null;
             pageCount: number | null;
             frameCount: number;
@@ -15392,6 +15409,8 @@ export interface components {
             headline: string | null;
             avatarUrl: string | null;
             coverUrl: string | null;
+            avatarThumbs?: components["schemas"]["Thumbs"];
+            coverThumbs?: components["schemas"]["Thumbs"];
             verification: components["schemas"]["VerificationState"];
             badge: components["schemas"]["PersonBadgeView"] | null;
             followers: number;
@@ -15412,6 +15431,8 @@ export interface components {
             headline: string;
             avatarUrl: string | null;
             coverUrl: string | null;
+            avatarThumbs?: components["schemas"]["Thumbs"];
+            coverThumbs?: components["schemas"]["Thumbs"];
             verification: components["schemas"]["VerificationState"];
             badge: components["schemas"]["PersonBadgeView"] | null;
             category: string;
@@ -15462,6 +15483,7 @@ export interface components {
             displayName: string | null;
             handle: string | null;
             avatarUrl: string | null;
+            avatarThumbs?: components["schemas"]["Thumbs"];
             verification: components["schemas"]["VerificationState"];
         };
         ContentDetail: {
@@ -17013,6 +17035,7 @@ export interface components {
             name: string;
             handle: string | null;
             avatarUrl: string | null;
+            avatarThumbs?: components["schemas"]["Thumbs"];
             field: string | null;
             pieceCount: number;
             verification: components["schemas"]["VerificationState"];
@@ -17445,6 +17468,7 @@ export interface components {
             name: string;
             handle: string | null;
             avatarUrl: string | null;
+            avatarThumbs?: components["schemas"]["Thumbs"];
             field: string | null;
             pieceCount: number;
             verification: components["schemas"]["VerificationState"];
@@ -17628,6 +17652,8 @@ export interface components {
             exp: number;
             verification: components["schemas"]["VerificationState"];
             experience: components["schemas"]["ProfileExperienceView"][];
+            avatarThumbs?: components["schemas"]["ThumbLinks"];
+            coverThumbs?: components["schemas"]["ThumbLinks"];
         };
         InterestOption: {
             id: string;
@@ -17672,6 +17698,8 @@ export interface components {
             bio: string | null;
             avatarUrl: string | null;
             coverUrl: string | null;
+            avatarThumbs?: components["schemas"]["ThumbLinks"];
+            coverThumbs?: components["schemas"]["ThumbLinks"];
             interests: string[];
             instagramHandle: string | null;
             whatsappHandle: string | null;

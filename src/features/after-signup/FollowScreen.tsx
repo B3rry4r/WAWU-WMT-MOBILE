@@ -78,7 +78,7 @@ export function FollowScreen({ step, onBack, onDone }: FollowScreenProps) {
               const role = labelOf(person.field) ?? undefined;
               return (
                 <View key={person.wawuId} style={styles.person} testID={`person-${person.wawuId}`}>
-                  <Avatar name={person.name} hue={hueFor(person.wawuId)} size={PERSON.avatar} source={person.avatarUrl ?? undefined} decorative />
+                  <Avatar name={person.name} hue={hueFor(person.wawuId)} size={PERSON.avatar} source={person.avatarUrl ?? undefined} thumbs={person.avatarThumbs} decorative />
                   <View style={styles.words}>
                     <View style={styles.nameLine}>
                       <Text variant="body" numberOfLines={1} style={[font(600), styles.name]}>

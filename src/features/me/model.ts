@@ -1,6 +1,7 @@
 import { formatMoney } from '@/components/Money';
 import type { MeterTier } from '@/components/ProductsMeter';
 import { APP_NAME_COPY } from '@/lib/appName';
+import type { Copies } from '@/lib/thumbs';
 import { nairaToKobo } from '@/api/kobo';
 import { compactCount, rowPicture } from '@/features/feed/model';
 import { profileLink } from '@/lib/appLinks';
@@ -135,6 +136,9 @@ export type GridTile = {
   still: string | null;
   /** The creator's own cover for the piece (R-114), or null: drawn before `still`. */
   cover?: string | null;
+  /** The Hub's small copies of `cover` and `still` (APP-THUMBS): missing or null, the full pictures are drawn. */
+  coverThumbs?: Copies;
+  stillThumbs?: Copies;
   kind: ContentPiece['contentType'];
   locked: boolean;
   /** "12K" for a free piece, "₦8,000" for a paid one. */
@@ -154,6 +158,8 @@ export function tileOf(piece: ContentPiece): GridTile {
     title: piece.title,
     still: rowPicture(piece.contentType, piece.previewAssetUrl),
     cover: piece.coverUrl ?? null,
+    coverThumbs: piece.coverThumbs,
+    stillThumbs: piece.previewThumbs,
     kind: piece.contentType,
     locked: paid,
     caption,
