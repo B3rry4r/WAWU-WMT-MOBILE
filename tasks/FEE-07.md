@@ -68,4 +68,6 @@ Built 12 Nov 2026. Hub `wmt/FEE-07` at 13a6a522 (on main 5f84a97a), dashboard `w
 
 ## Verifier report
 
+**MERGE** (12 Nov 2026). Full report in `tasks/history/FEE-07.md`. One MEDIUM follow-up: a refunded dollar bank payout (`outflows.refunded`, payment_type possibly bank-transfer) could be charged the dollar-received fee; guard it before or soon after merge. Two LOW (stale retired-row wording, `/money/fx` `localUsdIn`). Server step still owed: `FX_FEE_COLLECTOR_USD_BAN`.
+
 ## Owner sign-off
