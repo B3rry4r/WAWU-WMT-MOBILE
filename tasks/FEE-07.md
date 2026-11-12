@@ -18,6 +18,8 @@ tier: T2
 
 ## Current state
 
+**SERVER STEP OWED (the lead's):** set `FX_FEE_COLLECTOR_USD_BAN` on the server. The dollar-received fee and dollar payouts need it; without it the fee on a dollar inflow cannot be taken (the handler answers "failed", flagged for review, the credit is already written).
+
 As of 12 Nov 2026.
 - **Status:** todo. Cut by the lead from R-140. The Hub is live on Nuvion since 05:34 UTC (Hub main 5f84a97a, FEE-01 merged; dashboard main 9c4af591, FEE-02 merged).
 - **What exists** (lead's map of Hub main 5f84a97a):
@@ -62,7 +64,7 @@ Built 12 Nov 2026. Hub `wmt/FEE-07` at 13a6a522 (on main 5f84a97a), dashboard `w
 - **Nuvion's charge in the quote.** The Hub's only USD to NGN rate is `StoreUsdRateService` (store module, live quote with a 30 minute cache and a stored fallback). Not reused: it is store-scoped and a displayed charge that can drift from the charge the balance check and Nuvion apply would be unsafe. `NUVION_FEE_CARD_CREATE` stays.
 - **App.** No change needed: the app reads `totalFeeKobo`. One thing seen, not changed: `GET /money/fx` still returns `localUsdIn` from the old setting (default false).
 - **Dashboard.** Labels, fixed-fee editor, retired kind with no Change button. Pictures in `audits/FEE-07/`.
-- **Needs the lead:** `FX_FEE_COLLECTOR_USD_BAN` must be set on the server or a dollar inflow's fee cannot be taken (the handler answers "failed", flagged for review, the credit is already written). Dashboard `check:invariants` fails on one line: the naira-only rule bans the word "dollars" and the task's required label "Dollars received by bank transfer" is in `feeText.ts:9`. A gate was not edited; the lead rules (an allow for that line).
+- **Label (lead ruling, 12 Nov).** The naira-only invariant bans both "dollar" and "USD" in copy, so "USD received by bank transfer" also fails. The label is "Foreign currency received by bank transfer" (matches "Foreign currency bank payout"); `check:invariants` exits 0. No gate edited. Pictures re-taken.
 
 ## Verifier report
 

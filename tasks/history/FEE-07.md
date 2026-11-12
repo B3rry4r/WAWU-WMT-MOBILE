@@ -21,6 +21,10 @@ Fee-engine spec: added the `card_issue` seed row and five new tests; no old asse
 
 Hub: `npx tsc --noEmit` 0 for my files (only the missing `sharp` module in this machine's node_modules, same on main); `npx eslint --fix` on changed files 0, no unrelated edits; `scripts/dev/quiet.sh ... jest src/money/fees src/money/tests src/money/fx src/money/abroad src/nuvion/handlers` 0 (25 suites, 347 tests); `jest src/money/cards` 0 (70 tests); `jest src/protected-routes` 1: 248 pass, 5 fail (`/learn/*`, `/creators/:id/evg`: 404 for seed rows a freshly migrated database lacks, no money route); `python3 scripts/gates/run.py` 0 (0 fail); `check_baseline.py` 0; `npm run contract:build` 0, diff is `card_issue` added to three enums. Migration applied, run twice, rolled back, re-applied, and the rollback refused (exit 3) with an admin-changed row. Jest ran with a stub for `sharp` (not installed here) via `--moduleNameMapper`, and the contract build with a temporary `.d.ts` shim, removed.
 
-Dashboard: typecheck 0, lint 0 (old SHOP_DTO warning), `npm test` 0, `check:contrast` 0, `check:money-contract` 0 with `HUB_API_REF=origin/wmt/FEE-07`, `check:invariants` 1 (the label, above). `check:contract`, `check:ops-contract`, `check:oversight-contract` not run (fail on main).
+Dashboard: typecheck 0, lint 0 (old SHOP_DTO warning), `npm test` 0, `check:contrast` 0, `check:money-contract` 0 with `HUB_API_REF=origin/wmt/FEE-07`, `check:invariants` 1 (the label), then 0 after the lead's ruling relabelled it "Foreign currency received by bank transfer". `check:contract`, `check:ops-contract`, `check:oversight-contract` not run (fail on main).
 
 NOT RUN: the real Hub or Nuvion; a real sign-in; pictures are against a stand-in Hub in scratch, as FEE-02's were. Pictures (`audits/FEE-07/`, 1440x900, light and dark): list, Making a card with history, Dollars received preview, card fee editor, retired wire row.
+
+## Round 1 fix (12 Nov 2026)
+
+Label changed per the lead; the literal "USD received by bank transfer" was tried first and fails the same rule (`\bUSD\b`), so the label avoids both words. Dashboard checks after the change: typecheck 0, lint 0, `npm test` 0, `check:contrast` 0, `check:money-contract` 0 (with `HUB_API_REF=origin/wmt/FEE-07`), `check:invariants` 0. All ten pictures re-taken (the list shows the label in all of them).
