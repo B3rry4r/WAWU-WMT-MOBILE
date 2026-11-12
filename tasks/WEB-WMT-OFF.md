@@ -7,7 +7,7 @@ order: 398
 priority: launch
 repo: wawuafrica
 type: removal
-status: todo
+status: verifying
 depends_on: [WEB-STRIP]
 decisions: [R-141, R-133, R-48]
 passes: [V1, V2, V3, V4, V7, V9]
@@ -19,8 +19,10 @@ tier: T1
 ## Current state
 
 As of 12 Nov 2026.
-- **Status:** todo. Cut by the lead from R-141.
-- **What exists** (lead's map of wawuafrica main 03d0217, WEB-STRIP merged): `src/middleware.ts` lets the open pages through (`isOpenInJoinOnly`, `src/lib/site-mode.ts` `OPEN_PAGES`: "/", "/join", "/join/paid", legal, "/reset-password", "/forgot-password", "/activate", and the brand pages "/who-made-this", "/voices", "/about", "/partners", "/press", "/careers", "/contact"), sends an old app address to the same place on usewmt.com (`src/lib/app-redirects.ts`, 308) and every other closed path to /join (307). Links to /join or /who-made-this live in `src/app/(site)/_components/AppTiles.tsx`, `HeroScreens.tsx`, `src/app/(site)/who-made-this/page.tsx`, `src/app/join/**`, `src/lib/site/site-config.ts`. `scripts/check-site-mode.mjs` checks the live site against the rules.
+- **Status:** verifying. Built on wawuafrica `wmt/WEB-WMT-OFF` f4ccc9ca (from main 03d0217), scope widened by the lead the same day (R-141 point 4: the three password pages forward too).
+- **Done:** `/join` and `/who-made-this` answer 308 to https://usewmt.com in every site mode; `/reset-password`, `/forgot-password` and `/activate` answer 308 to the same path on usewmt.com with the query kept; any other closed path answers 307 to usewmt.com. Every Who Made This link or button on the brand pages is "Open Who Made This" to usewmt.com. `/join/paid` stays (called by Flutterwave's return for a payment made before this task; nothing starts a payment now) with a return-only page. Join page, Who Made This page and password-page code removed.
+- **Open for the verifier:** the Voices page's hero button now reads "Open Who Made This" (it said Register); the admin referral page still builds share links on `https://wawuafrica.com/join` (`JOIN_LINK_BASE`, `src/lib/api/referrals.ts`), which now land on usewmt.com home without the code (admin dashboard is live: left alone, lead to rule); a query that a URL treats as equal (`@` and `%40`) can come back in its percent form because Next parses it first.
+- Detail, the changed-assertion table and the check counts: tasks/history/WEB-WMT-OFF.md.
 
 ## Read first
 
@@ -50,8 +52,8 @@ A person who opens wawuafrica.com/join, /who-made-this, or any Who Made This lin
 - [ ] A person with a password reset or activation mail, old or new, finishes it on usewmt.com.
 - [ ] The legal pages, the brand pages and the admin pages still open.
 
-## Builder report
+## History
 
-## Verifier report
+Round reports, verifier reports and lead notes, word for word, oldest first: [history/WEB-WMT-OFF.md](history/WEB-WMT-OFF.md).
 
 ## Owner sign-off
