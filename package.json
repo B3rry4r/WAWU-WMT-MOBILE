@@ -112,6 +112,7 @@
         "expo-asset",
         "expo-constants",
         "expo-dev-client",
+        "expo-linking",
         "expo-image-manipulator",
         "expo-image-picker",
         "expo-media-library",
