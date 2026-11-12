@@ -55,6 +55,15 @@ Every dollar bank transfer into a person's dollar account is charged WAWU's one 
 
 ## Builder report
 
+Built 12 Nov 2026. Hub `wmt/FEE-07` at 13a6a522 (on main 5f84a97a), dashboard `wmt/FEE-07` at 78e63dc (on main 9c4af59). Full round in `tasks/history/FEE-07.md`.
+
+- **Dollars received (Hub).** `usd_local_in` prices every bank transfer into a dollar account ("bank-transfer", plus any names in `FX_LOCAL_USD_PAYMENT_TYPES`), always charged; `fx.product.local_usd_in.on` gates nothing (`productOn` is true). `FX_WIRE_PAYMENT_TYPES` is no longer read. `intl_wire_in` prices nothing and the admin route refuses a new row for it. USD 100 pays USD 7, USD 1,000 pays USD 15.
+- **Card fee (Hub).** Kind `card_issue` (NGN, fixed: percent 0, min = max), seeded NGN 5,000 by migration `20270101100000_card_issue_fee` (with `rollback.sql`). Under Nuvion the quote, `assertCanAfford`, the card row's `wawuFeeKobo` and `collectFee()` use the fee in force plus VAT; each card writes a `card_issue` record (reversed on failure). Fintava keeps `WAWU_FEE_CARD_KOBO`. Stale comment fixed.
+- **Nuvion's charge in the quote.** The Hub's only USD to NGN rate is `StoreUsdRateService` (store module, live quote with a 30 minute cache and a stored fallback). Not reused: it is store-scoped and a displayed charge that can drift from the charge the balance check and Nuvion apply would be unsafe. `NUVION_FEE_CARD_CREATE` stays.
+- **App.** No change needed: the app reads `totalFeeKobo`. One thing seen, not changed: `GET /money/fx` still returns `localUsdIn` from the old setting (default false).
+- **Dashboard.** Labels, fixed-fee editor, retired kind with no Change button. Pictures in `audits/FEE-07/`.
+- **Needs the lead:** `FX_FEE_COLLECTOR_USD_BAN` must be set on the server or a dollar inflow's fee cannot be taken (the handler answers "failed", flagged for review, the credit is already written). Dashboard `check:invariants` fails on one line: the naira-only rule bans the word "dollars" and the task's required label "Dollars received by bank transfer" is in `feeText.ts:9`. A gate was not edited; the lead rules (an allow for that line).
+
 ## Verifier report
 
 ## Owner sign-off
