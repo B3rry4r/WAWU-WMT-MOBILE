@@ -18,6 +18,8 @@ tier: T2
 
 ## Current state
 
+**SERVER STEP OWED (the lead's):** set `FX_FEE_COLLECTOR_USD_BAN` on the server. The dollar-received fee and dollar payouts need it; without it the fee on a dollar inflow cannot be taken (the handler answers "failed", flagged for review, the credit is already written).
+
 As of 12 Nov 2026.
 - **Status:** todo. Cut by the lead from R-140. The Hub is live on Nuvion since 05:34 UTC (Hub main 5f84a97a, FEE-01 merged; dashboard main 9c4af591, FEE-02 merged).
 - **What exists** (lead's map of Hub main 5f84a97a):
@@ -55,6 +57,17 @@ Every dollar bank transfer into a person's dollar account is charged WAWU's one 
 
 ## Builder report
 
+Built 12 Nov 2026. Hub `wmt/FEE-07` at 13a6a522 (on main 5f84a97a), dashboard `wmt/FEE-07` at 78e63dc (on main 9c4af59). Full round in `tasks/history/FEE-07.md`.
+
+- **Dollars received (Hub).** `usd_local_in` prices every bank transfer into a dollar account ("bank-transfer", plus any names in `FX_LOCAL_USD_PAYMENT_TYPES`), always charged; `fx.product.local_usd_in.on` gates nothing (`productOn` is true). `FX_WIRE_PAYMENT_TYPES` is no longer read. `intl_wire_in` prices nothing and the admin route refuses a new row for it. USD 100 pays USD 7, USD 1,000 pays USD 15.
+- **Card fee (Hub).** Kind `card_issue` (NGN, fixed: percent 0, min = max), seeded NGN 5,000 by migration `20270101100000_card_issue_fee` (with `rollback.sql`). Under Nuvion the quote, `assertCanAfford`, the card row's `wawuFeeKobo` and `collectFee()` use the fee in force plus VAT; each card writes a `card_issue` record (reversed on failure). Fintava keeps `WAWU_FEE_CARD_KOBO`. Stale comment fixed.
+- **Nuvion's charge in the quote.** The Hub's only USD to NGN rate is `StoreUsdRateService` (store module, live quote with a 30 minute cache and a stored fallback). Not reused: it is store-scoped and a displayed charge that can drift from the charge the balance check and Nuvion apply would be unsafe. `NUVION_FEE_CARD_CREATE` stays.
+- **App.** No change needed: the app reads `totalFeeKobo`. One thing seen, not changed: `GET /money/fx` still returns `localUsdIn` from the old setting (default false).
+- **Dashboard.** Labels, fixed-fee editor, retired kind with no Change button. Pictures in `audits/FEE-07/`.
+- **Label (lead ruling, 12 Nov).** The naira-only invariant bans both "dollar" and "USD" in copy, so "USD received by bank transfer" also fails. The label is "Foreign currency received by bank transfer" (matches "Foreign currency bank payout"); `check:invariants` exits 0. No gate edited. Pictures re-taken.
+
 ## Verifier report
+
+**MERGE** (12 Nov 2026). Full report in `tasks/history/FEE-07.md`. One MEDIUM follow-up: a refunded dollar bank payout (`outflows.refunded`, payment_type possibly bank-transfer) could be charged the dollar-received fee; guard it before or soon after merge. Two LOW (stale retired-row wording, `/money/fx` `localUsdIn`). Server step still owed: `FX_FEE_COLLECTOR_USD_BAN`.
 
 ## Owner sign-off
