@@ -7,7 +7,7 @@ order: 397
 priority: after-launch
 repo: wawu-backend
 type: money-path
-status: todo
+status: done
 depends_on: [FEE-01, FEE-02]
 decisions: [R-140, R-139, R-10]
 passes: [V1, V2, V3, V4, V6, V7, V8, V9]
@@ -17,6 +17,8 @@ tier: T2
 # FEE-07 · One fee on dollars received; the card fee in the dashboard
 
 ## Current state
+
+**Merged and live, 12 Nov 2026: Hub #269 merged at 16:30 UTC (main b51b4e37, all 18 checks green), deployed at 16:33 UTC (health 200). Dashboard #12 merged at 16:35 UTC (main 3465df8, check:money-contract against Hub main exit 0). Server step still owed by the owner: FX_FEE_COLLECTOR_USD_BAN=0017303033 (WAWU USD Fees), without which the dollar-received fee is recorded but not taken.**
 
 **Lead, 12 Nov 2026, 16:10 UTC: verifier rerun MERGE (7f3e140d); its MEDIUM (a refunded dollar payout priced as an inflow) fixed in round 1 (Hub 704c3800, dashboard bf5b62a) and accepted on the lead's diff read (about 13 lines of logic, two specs that fail on the old code). Hub PR #269 opened. LOW L3 to SWEEP-1111 F7. WAWU's USD fee account was created on live Nuvion ("WAWU USD Fees", 06:08 UTC); the owner sets FX_FEE_COLLECTOR_USD_BAN on the server.**
 

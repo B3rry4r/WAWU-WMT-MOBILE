@@ -7,11 +7,11 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 38 | 0 | 0 | 0 |
+| todo | 37 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 57 | 0 | 0 | 0 |
 | review | 272 | 0 | 0 | 0 |
-| done | 137 | 27 | 11 | 5 |
+| done | 138 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
 
@@ -540,6 +540,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [WALLET-18](../tasks/WALLET-18.md) Receipts (You)
 - [WALLET-27](../tasks/WALLET-27.md) Statements (You)
 - [TEST-01](../tasks/TEST-01.md) Tests pass on a cold cache and a loaded machine (You)
+- [FEE-07](../tasks/FEE-07.md) One WAWU fee on dollars received (1.5%, minimum USD 7), and WAWU's card fee set in the dashboard with a default (You)
 
 ## Next up
 
