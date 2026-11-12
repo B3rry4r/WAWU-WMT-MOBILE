@@ -7,7 +7,7 @@ order: 398
 priority: launch
 repo: wawuafrica
 type: removal
-status: verifying
+status: review
 depends_on: [WEB-STRIP]
 decisions: [R-141, R-133, R-48]
 passes: [V1, V2, V3, V4, V7, V9]
@@ -19,7 +19,8 @@ tier: T1
 ## Current state
 
 As of 12 Nov 2026.
-- **Status:** verifying. Built on wawuafrica `wmt/WEB-WMT-OFF` f4ccc9ca (from main 03d0217), scope widened by the lead the same day (R-141 point 4: the three password pages forward too).
+- **Status:** review. Verifier (12 Nov): MERGE, two low findings (admin referral links land on usewmt.com home and lose `?ref=`; stale "Paid on /join?" line on the full-mode sign-in page), report in the history note.
+- **Was:** verifying. Built on wawuafrica `wmt/WEB-WMT-OFF` f4ccc9ca (from main 03d0217), scope widened by the lead the same day (R-141 point 4: the three password pages forward too).
 - **Done:** `/join` and `/who-made-this` answer 308 to https://usewmt.com in every site mode; `/reset-password`, `/forgot-password` and `/activate` answer 308 to the same path on usewmt.com with the query kept; any other closed path answers 307 to usewmt.com. Every Who Made This link or button on the brand pages is "Open Who Made This" to usewmt.com. `/join/paid` stays (called by Flutterwave's return for a payment made before this task; nothing starts a payment now) with a return-only page. Join page, Who Made This page and password-page code removed.
 - **Open for the verifier:** the Voices page's hero button now reads "Open Who Made This" (it said Register); the admin referral page still builds share links on `https://wawuafrica.com/join` (`JOIN_LINK_BASE`, `src/lib/api/referrals.ts`), which now land on usewmt.com home without the code (admin dashboard is live: left alone, lead to rule); a query that a URL treats as equal (`@` and `%40`) can come back in its percent form because Next parses it first.
 - Detail, the changed-assertion table and the check counts: tasks/history/WEB-WMT-OFF.md.
