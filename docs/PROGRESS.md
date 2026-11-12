@@ -3,11 +3,11 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 462.**
+**Launch tasks done: 176 of 463.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
-| todo | 38 | 0 | 0 | 0 |
+| todo | 39 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 57 | 0 | 0 | 0 |
 | review | 271 | 0 | 0 | 0 |
@@ -542,7 +542,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 
 ## Next up
 
-- **You:** [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks
+- **You:** [NUV-10](../tasks/NUV-10.md) Nuvion on the production backend: live key, webhook, operational account, fees and limits, [SWEEP-MONEY](../tasks/SWEEP-MONEY.md) Money sweep: the low findings of the money tasks, [WEB-WMT-OFF](../tasks/WEB-WMT-OFF.md) wawuafrica.com stops carrying Who Made This; the join pages and the Who Made This page open usewmt.com
 - **Developer:** nothing unblocked
 - **Developer 2:** nothing unblocked
 - **Developer 3:** nothing unblocked

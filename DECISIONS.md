@@ -1057,3 +1057,12 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 
 **Carried out by:** FEE-07 (Hub and dashboard).
 
+### R-141 · wawuafrica.com stops carrying Who Made This; every Who Made This link opens usewmt.com
+*Owner, 12 Nov 2026 ("take down the other aspect of the who made this, the old who made this on the Wahoo Africa website ... the join link too ... just open a link to usewmt.com").*
+
+1. **The Who Made This parts of wawuafrica.com close:** the join pages (`/join`, the three tiers sold there, JOIN-TIERS) and the Who Made This brand page (`/who-made-this`) send the person to https://usewmt.com with a permanent redirect. Every Who Made This link or button left on the WAWU brand pages opens https://usewmt.com.
+2. **What stays:** the WAWU brand pages (home, Voices, About, Partners, Press, Careers, Contact), the legal pages, the password and activation pages that mails link to, the admin pages, and anything a payment already made still needs to finish (a paid registration's return, `/join/paid`, stays until it has no callers; then a removal task).
+3. This narrows R-133 point 1 (wawuafrica.com kept the join page).
+
+**Carried out by:** WEB-WMT-OFF (wawuafrica).
+
