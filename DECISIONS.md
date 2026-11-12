@@ -1061,7 +1061,8 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 *Owner, 12 Nov 2026 ("take down the other aspect of the who made this, the old who made this on the Wahoo Africa website ... the join link too ... just open a link to usewmt.com").*
 
 1. **The Who Made This parts of wawuafrica.com close:** the join pages (`/join`, the three tiers sold there, JOIN-TIERS) and the Who Made This brand page (`/who-made-this`) send the person to https://usewmt.com with a permanent redirect. Every Who Made This link or button left on the WAWU brand pages opens https://usewmt.com.
-2. **What stays:** the WAWU brand pages (home, Voices, About, Partners, Press, Careers, Contact), the legal pages, the password and activation pages that mails link to, the admin pages, and anything a payment already made still needs to finish (a paid registration's return, `/join/paid`, stays until it has no callers; then a removal task).
+2. **What stays:** the WAWU brand pages (home, Voices, About, Partners, Press, Careers, Contact), the legal pages, the admin pages, and anything a payment already made still needs to finish (a paid registration's return, `/join/paid`, stays until it has no callers; then a removal task).
+4. **The password and activation pages move too** (owner, 12 Nov: "why would password resets and activation emails still be ... on Wawu Africa?"). `/reset-password`, `/forgot-password` and `/activate` on wawuafrica.com forward to the same page on https://usewmt.com with the link's query kept, so a mail already sent still works and the person finishes on usewmt.com. New mails link to usewmt.com directly: WAWU ID's `FRONTEND_URL` is set to https://usewmt.com on the server (owner's paste).
 3. This narrows R-133 point 1 (wawuafrica.com kept the join page).
 
 **Carried out by:** WEB-WMT-OFF (wawuafrica).

@@ -35,6 +35,7 @@ A person who opens wawuafrica.com/join, /who-made-this, or any Who Made This lin
 
 ## Scope
 
+- `/reset-password`, `/forgot-password` and `/activate` answer a 308 to the same path on https://usewmt.com with the query kept byte for byte (R-141 point 4; usewmt.com serves all three and reads `token` and `email`). Their page code leaves the site.
 - `/join` and `/who-made-this` answer a 308 to https://usewmt.com (a sub-path or query is not needed there: the app's home). Closed paths that went to /join now go to https://usewmt.com too (the site no longer has a join page to send them to).
 - `/join/paid`: find what calls it (JOIN-TIERS: a paid registration's return). If a payment that was already made can still return there, it stays open and working; say in the report what calls it. Otherwise it also goes to usewmt.com.
 - Every link or button on the remaining brand pages that went to /join or /who-made-this opens https://usewmt.com, with copy that reads as opening the app ("Open Who Made This"), no em-dashes, no store promises the site cannot keep (SWEEP-1111 row W2 is closed by this).
@@ -46,7 +47,7 @@ A person who opens wawuafrica.com/join, /who-made-this, or any Who Made This lin
 
 - [ ] A person who opens wawuafrica.com/join or /who-made-this lands on usewmt.com.
 - [ ] A person who taps a Who Made This link on the WAWU brand home lands on usewmt.com.
-- [ ] A person with a password reset or activation mail still finishes it on wawuafrica.com.
+- [ ] A person with a password reset or activation mail, old or new, finishes it on usewmt.com.
 - [ ] The legal pages, the brand pages and the admin pages still open.
 
 ## Builder report
