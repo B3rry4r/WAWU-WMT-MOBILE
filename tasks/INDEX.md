@@ -434,6 +434,7 @@ Builder and verifier are always different sessions.
 416. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
 417. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
 418. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
+419. [FEE-07](FEE-07.md) One WAWU fee on dollars received (1.5%, minimum USD 7), and WAWU's card fee set in the dashboard with a default
 
 ## You · after launch
 

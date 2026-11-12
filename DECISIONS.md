@@ -1047,3 +1047,13 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 12. **Nuvion goes live after the fee engine** (owner, 11 Nov, "Wait for the fee engine"): the keys are swapped once the fee settings page and engine are built, checked and on the server, not before.
 13. **Lead defaults (the owner may override):** paying from the wallet balance stays (it is a move inside the app, free under point 2); "naira payments from buyers" means paying by card, bank transfer or USSD at checkout, which goes through Flutterwave. Fees are worked out in the currency of the amount with whole minor units, rounding half up. The starting fees are seeded as the first rows of the fee history, not written into code.
 **Carried out by:** FEE-01 (Hub: fee engine, history, provider rates, VAT, records, safety), FEE-02 (dashboard: fee settings and locked provider rates), FEE-03 (app: every confirm shows the fee and what is received; switched-off products hidden), FEE-04 (Hub and dashboard: daily report and monthly check against Nuvion), FEE-05 (Hub: declined, refunded and disputed charges passed on), FEE-06 (app and Hub: naira checkout by card, bank transfer or USSD through Flutterwave). Nuvion's go-live waits for FEE-01, FEE-02 and FEE-03.
+
+### R-140 · One fee on dollars received; WAWU's card fee set in the dashboard, with a default
+*Owner, 12 Nov 2026, after go-live ("Nuvion does not tell the difference between local and whatever ... it was AI-generated rubbish"; "charge maybe the highest, the 1.5% at least"; "Why didn't you put it by default ... go and update it now"; "both the card thing is updatable from the dashboard").*
+
+1. **Dollars received by bank transfer carry one WAWU fee: 1.5%, minimum USD 7, no maximum.** There is no international-wire versus local split: Nuvion's inflow says "bank-transfer" for both and nothing tells them apart. This replaces R-139 point 2's two dollar-received fees (1.25% wire, 1.5% local) and point 3's hold on dollars received from local banks. Nobody asks Nuvion which is which.
+2. **WAWU's own card fee is a fee in the dashboard's fee page**, with the history every fee has, not a server setting. Lead default (owner may change it in the dashboard): NGN 5,000 per card, on top of Nuvion's own charge for making it.
+3. **Every WAWU charge is changeable from the dashboard** (R-139 point 1 holds for the card fee too).
+
+**Carried out by:** FEE-07 (Hub and dashboard).
+
