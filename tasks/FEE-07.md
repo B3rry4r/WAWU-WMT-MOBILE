@@ -4,7 +4,7 @@ title: One WAWU fee on dollars received (1.5%, minimum USD 7), and WAWU's card f
 owner: YOU
 area: MONEY
 order: 397
-priority: launch
+priority: after-launch
 repo: wawu-backend
 type: money-path
 status: todo
@@ -17,6 +17,8 @@ tier: T2
 # FEE-07 · One fee on dollars received; the card fee in the dashboard
 
 ## Current state
+
+**Lead, 12 Nov 2026, 16:10 UTC: verifier rerun MERGE (7f3e140d); its MEDIUM (a refunded dollar payout priced as an inflow) fixed in round 1 (Hub 704c3800, dashboard bf5b62a) and accepted on the lead's diff read (about 13 lines of logic, two specs that fail on the old code). Hub PR #269 opened. LOW L3 to SWEEP-1111 F7. WAWU's USD fee account was created on live Nuvion ("WAWU USD Fees", 06:08 UTC); the owner sets FX_FEE_COLLECTOR_USD_BAN on the server.**
 
 **SERVER STEP OWED (the lead's):** set `FX_FEE_COLLECTOR_USD_BAN` on the server. The dollar-received fee and dollar payouts need it; without it the fee on a dollar inflow cannot be taken (the handler answers "failed", flagged for review, the credit is already written).
 

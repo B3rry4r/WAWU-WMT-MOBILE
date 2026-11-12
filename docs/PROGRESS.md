@@ -3,14 +3,14 @@
 Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 `npm run check` fails if it is out of date. Do not edit by hand.
 
-**Launch tasks done: 176 of 463.**
+**Launch tasks done: 176 of 461.**
 
 | | You | Developer | Developer 2 | Developer 3 |
 |---|---|---|---|---|
 | todo | 38 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
-| verifying | 58 | 0 | 0 | 0 |
-| review | 271 | 0 | 0 | 0 |
+| verifying | 57 | 0 | 0 | 0 |
+| review | 272 | 0 | 0 | 0 |
 | done | 137 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -286,6 +286,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [OPS-CLEAR-ROOMS](../tasks/OPS-CLEAR-ROOMS.md) A one-off command that clears every community on the live Hub, on the owner's word (You)
 - [LEGAL-ELEVEN](../tasks/LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change (You)
 - [FEE-02](../tasks/FEE-02.md) Dashboard: fee settings with history, and Nuvion's rates in a locked area (You)
+- [WEB-WMT-OFF](../tasks/WEB-WMT-OFF.md) wawuafrica.com stops carrying Who Made This; the join pages and the Who Made This page open usewmt.com (You)
 
 ## Being verified
 
@@ -346,7 +347,6 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [NUV-LIVE](../tasks/NUV-LIVE.md) A one-off command that retires every test-system Nuvion wallet record before the Hub moves to Nuvion live (You)
 - [FEE-01](../tasks/FEE-01.md) The fee engine: WAWU's fee schedule with history, Nuvion's rates in a locked table, VAT, a full record per transaction, and the withdrawal safety checks (You)
 - [FEE-03](../tasks/FEE-03.md) App: every withdrawal and payment shows the fee and what is received under the new schedule; switched-off products hidden; adding money by account number only (You)
-- [WEB-WMT-OFF](../tasks/WEB-WMT-OFF.md) wawuafrica.com stops carrying Who Made This; the join pages and the Who Made This page open usewmt.com (You)
 
 ## Being built (or fixing verifier findings)
 

@@ -4,7 +4,7 @@ title: wawuafrica.com stops carrying Who Made This; the join pages and the Who M
 owner: YOU
 area: WEB
 order: 398
-priority: launch
+priority: after-launch
 repo: wawuafrica
 type: removal
 status: review
@@ -17,6 +17,8 @@ tier: T1
 # WEB-WMT-OFF · wawuafrica.com stops carrying Who Made This
 
 ## Current state
+
+**Lead, 12 Nov 2026: verifier MERGE. Merged as wawuafrica PR #48 (68c51b74) and live at 11:39 UTC: /join and /who-made-this 308 to usewmt.com; /reset-password, /activate and /forgot-password 308 to the same page on usewmt.com with the query kept (checked live); /join/paid, /about and /legal/privacy 200. The gates check was red on main before this (17) and is 16 now. Lows to SWEEP-1111 W4 and W5.**
 
 As of 12 Nov 2026.
 - **Status:** review. Verifier (12 Nov): MERGE, two low findings (admin referral links land on usewmt.com home and lose `?ref=`; stale "Paid on /join?" line on the full-mode sign-in page), report in the history note.

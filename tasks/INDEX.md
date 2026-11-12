@@ -434,8 +434,6 @@ Builder and verifier are always different sessions.
 416. [LINKS-01](LINKS-01.md) Every link WAWU sends lands somewhere that works
 417. [CHECK-3](CHECK-3.md) Checkpoint 3: full verification and QA (nothing new is built)
 418. [RELEASE-02](RELEASE-02.md) Fix QA defects, re-verify, submit to the stores
-419. [FEE-07](FEE-07.md) One WAWU fee on dollars received (1.5%, minimum USD 7), and WAWU's card fee set in the dashboard with a default
-420. [WEB-WMT-OFF](WEB-WMT-OFF.md) wawuafrica.com stops carrying Who Made This; the join pages and the Who Made This page open usewmt.com
 
 ## You · after launch
 
@@ -530,6 +528,8 @@ Builder and verifier are always different sessions.
 89. [FEE-01](FEE-01.md) The fee engine: WAWU's fee schedule with history, Nuvion's rates in a locked table, VAT, a full record per transaction, and the withdrawal safety checks
 90. [FEE-02](FEE-02.md) Dashboard: fee settings with history, and Nuvion's rates in a locked area
 91. [FEE-03](FEE-03.md) App: every withdrawal and payment shows the fee and what is received under the new schedule; switched-off products hidden; adding money by account number only
+92. [FEE-07](FEE-07.md) One WAWU fee on dollars received (1.5%, minimum USD 7), and WAWU's card fee set in the dashboard with a default
+93. [WEB-WMT-OFF](WEB-WMT-OFF.md) wawuafrica.com stops carrying Who Made This; the join pages and the Who Made This page open usewmt.com
 
 ## Developer
 
