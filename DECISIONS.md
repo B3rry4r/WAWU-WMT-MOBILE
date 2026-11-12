@@ -1047,3 +1047,23 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 12. **Nuvion goes live after the fee engine** (owner, 11 Nov, "Wait for the fee engine"): the keys are swapped once the fee settings page and engine are built, checked and on the server, not before.
 13. **Lead defaults (the owner may override):** paying from the wallet balance stays (it is a move inside the app, free under point 2); "naira payments from buyers" means paying by card, bank transfer or USSD at checkout, which goes through Flutterwave. Fees are worked out in the currency of the amount with whole minor units, rounding half up. The starting fees are seeded as the first rows of the fee history, not written into code.
 **Carried out by:** FEE-01 (Hub: fee engine, history, provider rates, VAT, records, safety), FEE-02 (dashboard: fee settings and locked provider rates), FEE-03 (app: every confirm shows the fee and what is received; switched-off products hidden), FEE-04 (Hub and dashboard: daily report and monthly check against Nuvion), FEE-05 (Hub: declined, refunded and disputed charges passed on), FEE-06 (app and Hub: naira checkout by card, bank transfer or USSD through Flutterwave). Nuvion's go-live waits for FEE-01, FEE-02 and FEE-03.
+
+### R-140 · One fee on dollars received; WAWU's card fee set in the dashboard, with a default
+*Owner, 12 Nov 2026, after go-live ("Nuvion does not tell the difference between local and whatever ... it was AI-generated rubbish"; "charge maybe the highest, the 1.5% at least"; "Why didn't you put it by default ... go and update it now"; "both the card thing is updatable from the dashboard").*
+
+1. **Dollars received by bank transfer carry one WAWU fee: 1.5%, minimum USD 7, no maximum.** There is no international-wire versus local split: Nuvion's inflow says "bank-transfer" for both and nothing tells them apart. This replaces R-139 point 2's two dollar-received fees (1.25% wire, 1.5% local) and point 3's hold on dollars received from local banks. Nobody asks Nuvion which is which.
+2. **WAWU's own card fee is a fee in the dashboard's fee page**, with the history every fee has, not a server setting. Lead default (owner may change it in the dashboard): NGN 5,000 per card, on top of Nuvion's own charge for making it.
+3. **Every WAWU charge is changeable from the dashboard** (R-139 point 1 holds for the card fee too).
+
+**Carried out by:** FEE-07 (Hub and dashboard).
+
+### R-141 · wawuafrica.com stops carrying Who Made This; every Who Made This link opens usewmt.com
+*Owner, 12 Nov 2026 ("take down the other aspect of the who made this, the old who made this on the Wahoo Africa website ... the join link too ... just open a link to usewmt.com").*
+
+1. **The Who Made This parts of wawuafrica.com close:** the join pages (`/join`, the three tiers sold there, JOIN-TIERS) and the Who Made This brand page (`/who-made-this`) send the person to https://usewmt.com with a permanent redirect. Every Who Made This link or button left on the WAWU brand pages opens https://usewmt.com.
+2. **What stays:** the WAWU brand pages (home, Voices, About, Partners, Press, Careers, Contact), the legal pages, the admin pages, and anything a payment already made still needs to finish (a paid registration's return, `/join/paid`, stays until it has no callers; then a removal task).
+4. **The password and activation pages move too** (owner, 12 Nov: "why would password resets and activation emails still be ... on Wawu Africa?"). `/reset-password`, `/forgot-password` and `/activate` on wawuafrica.com forward to the same page on https://usewmt.com with the link's query kept, so a mail already sent still works and the person finishes on usewmt.com. New mails link to usewmt.com directly: WAWU ID's `FRONTEND_URL` is set to https://usewmt.com on the server (owner's paste).
+3. This narrows R-133 point 1 (wawuafrica.com kept the join page).
+
+**Carried out by:** WEB-WMT-OFF (wawuafrica).
+
