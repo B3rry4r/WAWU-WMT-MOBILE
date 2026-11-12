@@ -59,3 +59,12 @@ Label changed per the lead; the literal "USD received by bank transfer" was trie
 ### NOT RUN
 
 `src/nuvion/handlers` has no specs of its own (jest found none; the handler is covered through src/nuvion/tests); the rest of src/nuvion/tests and the whole Hub suite (CI); a Fintava card run; the real Hub, Nuvion or a real sign-in; two concurrent card creates against one wallet (the existing suite's once-only tests passed, nothing new written); dashboard pictures were seen only as the builder's stand-in pictures, not re-taken; check:contract, check:ops-contract, check:oversight-contract (fail on main).
+
+## Fix round 1 (12 Nov 2026)
+
+Hub `wmt/FEE-07` 704c3800, dashboard `wmt/FEE-07` (see branch head), records `wmt/FEE-07-fix`.
+
+1. **MEDIUM (verifier finding 1), fixed.** `fx.handler.ts` prices only a real inflow: an `outflows.*` event (a refunded or reversed payout of ours) never reaches `DollarFeeService.onForeignInflow`, which also takes an optional `direction` and answers `none` for `out`. Specs: `FEE-07 fix: a refunded USD bank-transfer payout ...` in `src/money/fx/tests/fx-money.contract.spec.ts` (handler: refund priced 0 times, real inflow once) and `src/money/fees/engine/tests/dollar-fees.spec.ts` (direction out charged nothing and no record; USD 100 inflow pays USD 7). Both fail on 13a6a522 and pass now.
+2. **LOW (finding 2), fixed.** The retired row says it is retired, that no one is charged it, and that foreign currency received by bank transfer is priced on the "Foreign currency received by bank transfer" line; no "Try an amount" on it. Pictures `light-5` and `dark-5` re-taken (stand-in Hub by request interception, 1440x900).
+3. Findings 3 and 4 unchanged (follow-up and ops).
+NOT RUN: a real Nuvion refunded record; sharp-dependent suites (money-fees and nuvion-fees contract specs, environment).
