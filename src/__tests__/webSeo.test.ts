@@ -28,4 +28,12 @@ describe('the web page head for search and sharing', () => {
     expect(readFileSync(join(ROOT, 'public/robots.txt'), 'utf8')).toContain('Sitemap: https://usewmt.com/sitemap.xml');
     expect(readFileSync(join(ROOT, 'public/sitemap.xml'), 'utf8')).toContain('<loc>https://usewmt.com</loc>');
   });
+  it('keeps signed-in screens out of robots.txt and the public pages in', () => {
+    const lines = readFileSync(join(ROOT, 'public/robots.txt'), 'utf8').split('\n');
+    const blocked = lines.filter((l) => l.startsWith('Disallow: ')).map((l) => l.slice('Disallow: '.length));
+    const isBlocked = (path: string) => blocked.some((b) => path.startsWith(b));
+    for (const p of ['/settings', '/wallet', '/checkout', '/withdraw', '/open-wallet-pin', '/chat/1', '/create-upload', '/inbox', '/transactions', '/profile/x']) expect(isBlocked(p)).toBe(true);
+    for (const p of ['/', '/welcome', '/sign-in', '/sign-up', '/about', '/terms', '/privacy-policy', '/u/someone', '/c/x', '/r/x', '/works/x', '/content/x', '/events/abc']) expect(isBlocked(p)).toBe(false);
+    expect(lines).toContain('Allow: /');
+  });
 });
