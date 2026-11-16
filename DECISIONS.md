@@ -1084,3 +1084,15 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 3. **A country a person chose is never replaced.**
 
 **Carried out by:** GEO-FILL (Hub), PLACES-PHONE (dashboard: the hint text on a phone).
+
+### R-144 · The adverts are the owner's three prize banners; the ones before them come off
+*Owner, 16 Nov 2026, sending three 1350 x 400 banners ("Drive. Gifted to one creator.", "5 DJI Osmo Pocket 3. Shoot your next big thing.", "4 Gaming Systems. Built to create."): "Update the ads on the WHO made this app please, remove the current ones and replace with these".*
+
+1. **Every advert on air or booked (scheduled, live or paused) is ended.** Drafts and ended adverts are not touched.
+2. **The three banners go on in that order**, each as a banner for the Explore slider and the Today card (R-116's shape). None has a tall picture, so the TGIF full screen shows no advert until one is booked for it. The Explore slider slides through all three (R-116); Today shows one advert, the first in the Hub's order, so the car.
+3. **"Register now" opens the address the advert being replaced opens**, and the three run until the date that advert ran to, with its weight. *Default (lead): nothing is chosen afresh; the owner may change the link, the dates or the order in the dashboard at any time.*
+4. **How it is done.** The lead holds no dashboard sign-in and never signs in as anyone, so the change is a one-time command on the Hub (`scripts/ops/ads-swap-1116.ts`, a dry run first, then an apply that needs the dry run's phrase), run on the server by a manual workflow after an independent check. It uploads the pictures through the Hub's own storage and writes the same rows and history the dashboard's "End" and "New, then Schedule" write.
+
+**Carried out by:** ADS-SWAP (Hub).
+
+*Added to R-142, 16 Nov 2026 (default, lead; the owner may override):* the Users page also lists people WAWU ID has banned and people whose deletion is still pending, because an admin must be able to find them. Only deleted accounts are left out.
