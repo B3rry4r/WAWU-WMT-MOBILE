@@ -1067,3 +1067,20 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 
 **Carried out by:** WEB-WMT-OFF (wawuafrica).
 
+### R-142 · The dashboard has a Users page: everyone who signed up, in one list
+*Owner, 16 Nov 2026 ("Why can't I also see a users page on wawu dashboard").*
+
+1. **The dashboard gets a Users page, under Support.** It lists every Who Made This account, creators and everyone else: name, handle, email, phone, country, the date they joined, whether they are a creator, whether they hold a tick, whether they have opened a wallet, and whether they are suspended. Totals sit on top (all accounts, creators, joined today). Search takes a name, a handle, a whole email or a whole phone number. A row opens the person (the creator lookup page for a creator).
+2. **Superadmin and support can read it.** It is read only. *Default (lead), the owner may change who sees it.* Emails and phone numbers are never written to a log.
+3. **Names, emails and phone numbers stay in WAWU ID.** The Hub asks WAWU ID for them through an internal, key-protected read and stores none of them.
+
+**Carried out by:** USERS-DASH (WAWU ID, Hub, dashboard).
+
+### R-143 · Every account has a country for the dashboard's counts
+*Owner, 16 Nov 2026 ("How are they 180 creators with no country????": 224 of 248 accounts showed "no country yet").* Extends R-85.
+
+1. **An account that has not chosen a country still counts under one on the dashboard:** the country WAWU ID holds for it, else the country of its phone number (the two sources GEO-02 already records, `wawu_id` and `phone`). Only a country the person chose themselves is shown to other people.
+2. **This no longer waits for the person to open the phone app.** Until now only the app told the Hub where a person was (`GET /me/location`, once per sign-in), so everyone who signed up on the website had no country. Every existing account is filled once, and from then on an account is filled the first time the Hub sees it signed in, on the website as well.
+3. **A country a person chose is never replaced.**
+
+**Carried out by:** GEO-FILL (Hub), PLACES-PHONE (dashboard: the hint text on a phone).
