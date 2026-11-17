@@ -7,7 +7,7 @@ order: 402
 priority: after-launch
 repo: wawu-dashboard
 type: admin-screen
-status: building
+status: review
 depends_on: []
 decisions: [R-142, R-47, R-29]
 passes: [V1, V2, V3, V4, V6, V7, V9]
@@ -18,7 +18,7 @@ tier: T2
 
 ## Current state
 
-Cut 16 Nov 2026 by the lead from the owner's question (R-142). Three builders dispatched the same hour (Sonnet, T2), branch `wmt/USERS-DASH` in each repo: WAWU ID (the internal read), Hub (`GET /admin/users`, `GET /admin/users/counts`), dashboard (the page). Nothing merged.
+Live since 17 Nov 2026, 00:25 UTC. Built by Sonnet builders and checked by separate Sonnet verifiers in each repo (each: round 1 fix with one medium, a fix round, a re-check with verdict merge). WAWU ID PR #34 (main `5677c75`, `POST /internal/users/list`), Hub PR #272 (main `434ba190`, `GET /admin/users`, `GET /admin/users/counts`), dashboard PR #14 (main `f8d950b`, the Users page). Released in that order; live probes without a sign-in: WAWU ID 401 with no key, Hub 401 with no admin session, the dashboard's `/users` sends a signed-out visitor to the login with no admin call made. Lead default added to R-142: banned and pending-deletion people are listed, only deleted accounts are left out. The verifiers' reports are in each repo under `docs/wmt-reports/`. Left for the owner: a look at the page signed in. Follow-up: the dashboard's `src/lib/api/contract/users.ts` is a hand copy of the Hub's shapes and is to be replaced by the generated types. The dashboard repo's two GitHub checks did not start (no runner was assigned, twice); the same checks, the tests and the build were run on the merged head by the lead and passed.
 
 ## Read first
 
@@ -39,10 +39,10 @@ The owner opens Users and sees every Who Made This account in one list, finds a 
 
 ## Capability checks
 
-- [ ] A superadmin or a support agent can open Users and see every account, newest first, with name, handle, email, phone, country, date joined, creator or not, tick, wallet opened or not, suspended or not.
-- [ ] They can search by part of a name, a handle, a whole email or a whole phone number written any usual way.
-- [ ] They can see the totals: all accounts, creators, joined today.
-- [ ] They can open a creator's row and land on that creator's lookup page.
-- [ ] A finance or reviewer role cannot open the page or call the routes.
-- [ ] The page works on a phone (360 and 390 wide) and on desktop, with loading, empty, no-result and error states.
-- [ ] No email or phone number is written to a log anywhere.
+- [x] A superadmin or a support agent can open Users and see every account, newest first, with name, handle, email, phone, country, date joined, creator or not, tick, wallet opened or not, suspended or not.
+- [x] They can search by part of a name, a handle, a whole email or a whole phone number written any usual way.
+- [x] They can see the totals: all accounts, creators, joined today.
+- [x] They can open a creator's row and land on that creator's lookup page.
+- [x] A finance or reviewer role cannot open the page or call the routes.
+- [x] The page works on a phone (360 and 390 wide) and on desktop, with loading, empty, no-result and error states.
+- [x] No email or phone number is written to a log anywhere.

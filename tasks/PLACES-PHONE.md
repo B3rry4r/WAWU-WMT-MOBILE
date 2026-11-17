@@ -7,7 +7,7 @@ order: 403
 priority: after-launch
 repo: wawu-dashboard
 type: admin-screen
-status: building
+status: review
 depends_on: []
 decisions: [R-143, R-47]
 passes: [V1, V6, V7, V9]
@@ -18,7 +18,7 @@ tier: T0
 
 ## Current state
 
-Cut 16 Nov 2026 by the lead from the owner's phone screenshot: on `/places` at phone width the hint "Most people first. Open a country to see its regions." (`src/components/places/PlacesScreen.tsx`, about line 160) is squeezed into a column one word wide beside the country picker. Built in the same run as USERS-DASH's dashboard part, branch `wmt/USERS-DASH`. Nothing merged.
+Live since 17 Nov 2026, 00:25 UTC (dashboard PR #14, main `f8d950b`, with USERS-DASH). The hint sits above the country picker on a phone; the verifier measured it at 360 and 390 and compared desktop with main. The same change adds the "Fill missing countries" button for the superadmin, with a confirm step and a result line.
 
 ## Goal
 
@@ -30,5 +30,5 @@ On a phone the hint reads as one or two normal lines and the picker has its full
 
 ## Capability checks
 
-- [ ] A user on a 360 or 390 wide phone can read the hint in normal lines, above or below the picker, with nothing overlapping.
-- [ ] A user on desktop sees the row as before.
+- [x] A user on a 360 or 390 wide phone can read the hint in normal lines, above or below the picker, with nothing overlapping.
+- [x] A user on desktop sees the row as before.
