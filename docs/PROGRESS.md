@@ -10,7 +10,7 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 | todo | 37 | 0 | 0 | 0 |
 | building | 7 | 0 | 0 | 0 |
 | verifying | 57 | 0 | 0 | 0 |
-| review | 272 | 0 | 0 | 0 |
+| review | 276 | 0 | 0 | 0 |
 | done | 138 | 27 | 11 | 5 |
 
 ## Built and verified, waiting for the owner's sign-off
@@ -287,6 +287,10 @@ Rebuilt from the task files by `python3 scripts/tasks/check_tasks.py --write`;
 - [LEGAL-ELEVEN](../tasks/LEGAL-ELEVEN.md) The legal assistant's AI turns run on ElevenLabs' agent platform, typed only, with no app change (You)
 - [FEE-02](../tasks/FEE-02.md) Dashboard: fee settings with history, and Nuvion's rates in a locked area (You)
 - [WEB-WMT-OFF](../tasks/WEB-WMT-OFF.md) wawuafrica.com stops carrying Who Made This; the join pages and the Who Made This page open usewmt.com (You)
+- [GEO-FILL](../tasks/GEO-FILL.md) Every account has a country on the dashboard: filled from WAWU ID or the phone when the person has not chosen one, without waiting for the app (You)
+- [USERS-DASH](../tasks/USERS-DASH.md) A Users page on the dashboard: everyone who signed up, with search and totals (You)
+- [PLACES-PHONE](../tasks/PLACES-PHONE.md) Where people are" reads right on a phone: the hint sits above the country picker (You)
+- [ADS-SWAP](../tasks/ADS-SWAP.md) The adverts are the owner's three prize banners; the ones before them come off (You)
 
 ## Being verified
 

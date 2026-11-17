@@ -530,6 +530,10 @@ Builder and verifier are always different sessions.
 91. [FEE-03](FEE-03.md) App: every withdrawal and payment shows the fee and what is received under the new schedule; switched-off products hidden; adding money by account number only
 92. [FEE-07](FEE-07.md) One WAWU fee on dollars received (1.5%, minimum USD 7), and WAWU's card fee set in the dashboard with a default
 93. [WEB-WMT-OFF](WEB-WMT-OFF.md) wawuafrica.com stops carrying Who Made This; the join pages and the Who Made This page open usewmt.com
+94. [GEO-FILL](GEO-FILL.md) Every account has a country on the dashboard: filled from WAWU ID or the phone when the person has not chosen one, without waiting for the app
+95. [USERS-DASH](USERS-DASH.md) A Users page on the dashboard: everyone who signed up, with search and totals
+96. [PLACES-PHONE](PLACES-PHONE.md) Where people are" reads right on a phone: the hint sits above the country picker
+97. [ADS-SWAP](ADS-SWAP.md) The adverts are the owner's three prize banners; the ones before them come off
 
 ## Developer
 

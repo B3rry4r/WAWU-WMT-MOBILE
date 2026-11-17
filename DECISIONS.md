@@ -1067,3 +1067,32 @@ The accepted types, the size limit and the calls that set, replace and remove a 
 
 **Carried out by:** WEB-WMT-OFF (wawuafrica).
 
+### R-142 · The dashboard has a Users page: everyone who signed up, in one list
+*Owner, 16 Nov 2026 ("Why can't I also see a users page on wawu dashboard").*
+
+1. **The dashboard gets a Users page, under Support.** It lists every Who Made This account, creators and everyone else: name, handle, email, phone, country, the date they joined, whether they are a creator, whether they hold a tick, whether they have opened a wallet, and whether they are suspended. Totals sit on top (all accounts, creators, joined today). Search takes a name, a handle, a whole email or a whole phone number. A row opens the person (the creator lookup page for a creator).
+2. **Superadmin and support can read it.** It is read only. *Default (lead), the owner may change who sees it.* Emails and phone numbers are never written to a log.
+3. **Names, emails and phone numbers stay in WAWU ID.** The Hub asks WAWU ID for them through an internal, key-protected read and stores none of them.
+
+**Carried out by:** USERS-DASH (WAWU ID, Hub, dashboard).
+
+### R-143 · Every account has a country for the dashboard's counts
+*Owner, 16 Nov 2026 ("How are they 180 creators with no country????": 224 of 248 accounts showed "no country yet").* Extends R-85.
+
+1. **An account that has not chosen a country still counts under one on the dashboard:** the country WAWU ID holds for it, else the country of its phone number (the two sources GEO-02 already records, `wawu_id` and `phone`). Only a country the person chose themselves is shown to other people.
+2. **This no longer waits for the person to open the phone app.** Until now only the app told the Hub where a person was (`GET /me/location`, once per sign-in), so everyone who signed up on the website had no country. Every existing account is filled once, and from then on an account is filled the first time the Hub sees it signed in, on the website as well.
+3. **A country a person chose is never replaced.**
+
+**Carried out by:** GEO-FILL (Hub), PLACES-PHONE (dashboard: the hint text on a phone).
+
+### R-144 · The adverts are the owner's three prize banners; the ones before them come off
+*Owner, 16 Nov 2026, sending three 1350 x 400 banners ("Drive. Gifted to one creator.", "5 DJI Osmo Pocket 3. Shoot your next big thing.", "4 Gaming Systems. Built to create."): "Update the ads on the WHO made this app please, remove the current ones and replace with these".*
+
+1. **Every advert on air or booked (scheduled, live or paused) is ended.** Drafts and ended adverts are not touched.
+2. **The three banners go on in that order**, each as a banner for the Explore slider and the Today card (R-116's shape). None has a tall picture, so the TGIF full screen shows no advert until one is booked for it (the four adverts ended each had a tall picture and showed there). The Explore slider slides through all three (R-116); Today shows one advert, the first in the Hub's order, so the car.
+3. **A tap on the new banners does what a tap on the advert being replaced does**, and the three run until the date that advert ran to, with its weight. *As found on 17 Nov 2026: four adverts were on air, none opened a link, all ran to 29 Jan 2027; so a tap on the new banners does nothing until the owner gives a link for "Register now".* *Default (lead): nothing is chosen afresh; the owner may change the link, the dates or the order in the dashboard at any time.*
+4. **How it is done.** The lead holds no dashboard sign-in and never signs in as anyone, so the change is a one-time command on the Hub (`scripts/ops/ads-swap-1116.ts`, a dry run first, then an apply that needs the dry run's phrase), run on the server by a manual workflow after an independent check. It uploads the pictures through the Hub's own storage and writes the same rows and history the dashboard's "End" and "New, then Schedule" write.
+
+**Carried out by:** ADS-SWAP (Hub).
+
+*Added to R-142, 16 Nov 2026 (default, lead; the owner may override):* the Users page also lists people WAWU ID has banned and people whose deletion is still pending, because an admin must be able to find them. Only deleted accounts are left out.
